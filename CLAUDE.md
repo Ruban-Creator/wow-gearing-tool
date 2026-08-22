@@ -126,6 +126,14 @@ columns** — never collapse them into one number, and never silently drop the r
 
 ## Staging
 
-See the user's full spec for §0–§9. Currently in **Stage 1** (adapter + ingestion) — STOP at its
-end and wait for review before Stage 2 (Survival mechanics / Expose Weakness raid-vs-personal
-question, a hard blocker on any ranked output).
+See the user's full spec for §0–§9. Stage 1 (adapter + ingestion), Stage 2 (Survival mechanics
+blocker), and Stage 3 (candidate pool: `profiles/tbc/candidate_pool_survival.json`, 79 items
+across 15 slots) are done. Next up: Stage 4 (§6, the valuation engine — actually computing
+`DPS*(S)` for these candidates).
+
+## Future scope (deferred to final implementation, not now)
+
+User wants a GUI eventually: run a sim on demand, a phase toggle to switch reference/candidate
+data between phases, etc. Not part of any current stage — noted here so it isn't lost, but
+don't build toward it until the user actually asks. Keep `core/`/`adapters/` command-line-first
+and UI-agnostic in the meantime so a GUI can sit on top later without a rewrite.
