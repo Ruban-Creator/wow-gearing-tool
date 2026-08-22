@@ -44,10 +44,17 @@ def sim_commit_sha() -> str:
 
 
 def load_item_db() -> dict[int, dict]:
+    """Keyed by item id, covering both gear (`items`) and consumables (potions,
+    elixirs, food, bandages, sappers, ...) - they're separate collections in
+    db.json. Without the second, ordinary bag/bank consumables would wrongly
+    show up as "unresolved" (the sim genuinely knows them, just not as gear)."""
     db_path = os.path.join(SIM_SUBMODULE, "assets", "database", "db.json")
     with open(db_path, encoding="utf-8") as f:
         db = json.load(f)
-    return {it["id"]: it for it in db.get("items", [])}
+    merged = {it["id"]: it for it in db.get("items", [])}
+    for it in db.get("consumables", []):
+        merged.setdefault(it["id"], it)
+    return merged
 
 
 def find_wse_character(name_realm: str) -> tuple[dict, str] | None:
