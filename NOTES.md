@@ -340,6 +340,12 @@ Also confirms: WowSimsExporter's export has no consumable/ammo/imbue selection s
 (only gear/talents/race/professions) — those always have to come from §0's stated assumptions
 for any real MV request, never auto-detected.
 
+**Second cross-check, different config** (Owl pet, TimelessArrow ammo, no scrolls, Curse of
+Elements/Wrath of Air/Mana Spring added, Windfury dropped to Regular): user's wowsims.com result
+2244.48 ± 62 player, Owl 440.01. Feeding their exact export through the pipeline unmodified:
+**2242.24 ± 62.36 player, Owl 439.35** — matches again, well inside Monte Carlo noise. Two
+independent configurations now confirm the bridge/wowsimcli chain reproduces wowsims.com exactly.
+
 **Update**: resolved. After a fresh in-game `/wse export` on Survival spec, `gear sync` now
 produces a real, populated `character.json` — 17/17 equipped, 22 bag items, 28 bank items (once
 the companion addon's `/gtexport`/bank-open was done), with unresolved items limited to
