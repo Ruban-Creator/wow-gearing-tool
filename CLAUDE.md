@@ -115,6 +115,15 @@ python cli/gear.py sync                                    # re-read addon expor
 python cli/gear.py preset <path/to/*.build.json>            # sanity-check the sim pipeline
 ```
 
+## Stage 2 decision: Expose Weakness raid contribution (analytical)
+
+Individual sims can't see the AP Lerynia's Expose Weakness grants to her raid's other physical
+attackers (they don't exist in that sim) — her own share is already correct in personal DPS
+(dynamic, tied to her live Agility — see NOTES.md). Decided: compute the raid-wide share
+analytically (`adapters/tbc/expose_weakness.py`) rather than switching to raid sims. Every
+future MV/valuation output must report **personal DPS and raid AP contribution as two separate
+columns** — never collapse them into one number, and never silently drop the raid column.
+
 ## Staging
 
 See the user's full spec for §0–§9. Currently in **Stage 1** (adapter + ingestion) — STOP at its

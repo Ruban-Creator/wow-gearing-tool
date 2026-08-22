@@ -278,8 +278,22 @@ estimated), granted identically to melee and ranged AP; uptime is close to 100% 
 talent (100% proc chance per ranged crit, refreshing a 7s duration against a hunter who's
 casting ranged specials constantly) but should be measured from actual sim output per candidate
 gear set rather than assumed; and the physical-attacker count comes from §0's stated raid comp
-(8-10). Not building either path yet — this is exactly the "I've seen your finding" checkpoint
-the doc calls for before proceeding.
+(8-10).
+
+**Decision: option (b), analytical.** Built `adapters/tbc/expose_weakness.py`:
+- `measured_ew_uptime(raid_sim_result)` — real uptime read from the sim's own
+  `encounterMetrics.targets[0].auras` (spell 34503's `uptimeSecondsAvg`) divided by
+  `avgIterationDuration`, not assumed. Validated against the earlier ablation run: **97.25%**
+  measured uptime (matches the log-based manual estimate).
+- `raid_ap_contribution(agility, uptime_fraction, physical_attacker_count)` — total AP granted
+  to the raid's *other* physical attackers (not Lerynia's own share, which is already inside
+  personal DPS). At her buffed Agility (1220, from the wowsims.com stats panel) and 9 attackers
+  (midpoint of §0's 8-10): **2669.6 total AP, ~296.6 AP each.**
+
+Deliberately stops at AP, not DPS — converting further to a DPS-equivalent needs each raid-mate's
+own AP-to-damage ratio (class, weapon speed, hit/crit), which isn't knowable generically. Future
+MV/valuation output should report this as its own column (raid AP contribution) alongside
+personal DPS, per the ground rule, not collapse it into a single number.
 
 ## 2026-08-22 — Existing preset assets to reuse (bootstraps §5's reference BiS list for free)
 
