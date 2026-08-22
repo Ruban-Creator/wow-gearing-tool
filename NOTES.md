@@ -356,6 +356,42 @@ standard error at this iteration count) and need the 30-50k resolve pass before 
 - Two-handed weapon path not explored - stuck with confirmed dual-wield (her real, validated
   wowsims.com export uses two 1H weapons).
 
+## 2026-08-22 — Correction: the Stage 4 screening conclusion was wrong
+
+User verified on wowsims.com directly and got numbers that flatly contradicted my "Rift Stalker
+beats Gronnstalker" screening finding. Chased it through several dead ends (a stripped-down
+rotation export missing `prepullActions`/`groups` - confirmed real, reproduced it exactly by
+deleting those fields from a known-good settings file, DPS crashed 2681.9->1160.4 because the
+character never moves into melee range without the prepull group - but that turned out to be a
+red herring for THIS discrepancy, not the cause) before finding the real issue.
+
+**Re-ran three configs at 30,000 iterations against her real, complete settings background**
+(full rotation intact, only `equipment.items` varied):
+- Current gear: 2681.9 combined
+- My optimizer's screened set: 2759.2 combined
+- **Full reference BiS (Gronnstalker 4pc + Insidious Bands + Madness of the Betrayer + dual
+  Blade of Infamy): 3030.9 combined** - beats my optimizer's own recommendation by 271.7, far
+  outside noise at this iteration count (SEM well under 1 DPS at n=30000).
+
+**Root causes of the wrong conclusion, all in the optimizer, not the simulator:**
+1. `set_bonus_branch` only forced the 4 armor pieces, holding wrist/trinkets/weapons at
+   whatever the greedy sweep had already picked (Vambraces of Ending, Dragonspine+Bloodlust
+   Brooch, dual Netherbane) instead of testing the full recommended bundle (Insidious Bands,
+   Madness of the Betrayer, dual Blade of Infamy) together. Too narrow a branch - the same
+   isolation error the whole tool exists to catch, just applied one level too shallow.
+2. The trinket-pair search picked Bloodlust Brooch over Madness of the Betrayer at 2000
+   *screening* iterations and that call was reported as final instead of being flagged for the
+   30-50k resolve pass the doc explicitly calls for on close ties.
+3. Non-owned candidates (Insidious Bands etc.) got the generic placeholder gem
+   (`gear_config.DEFAULT_GEM`, Delicate Living Ruby) instead of the better Phase 3 equivalent
+   (Delicate Crimson Spinel, id 32194, +10 vs +8 Agility) the reference set actually uses -
+   handicapping those candidates for real, not just cosmetically.
+
+**Action**: optimizer needs (a) a resolve pass at 30-50k on any close screening result before
+reporting it as final, per the doc's own two-tier process, and (b) broader forced branches that
+test a full recommended bundle against greedy's result, not just the set-bonus pieces in
+isolation. Not yet fixed in code as of this note - next thing to do.
+
 ## 2026-08-22 — Raid progression (from user)
 
 SSC/TK: full weekly clears already, ongoing. BT/MH: expected to start full weekly clears from
