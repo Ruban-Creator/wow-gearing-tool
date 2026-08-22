@@ -295,6 +295,67 @@ own AP-to-damage ratio (class, weapon speed, hit/crit), which isn't knowable gen
 MV/valuation output should report this as its own column (raid AP contribution) alongside
 personal DPS, per the ground rule, not collapse it into a single number.
 
+## 2026-08-22 — Stage 4: valuation engine built, screening pass run
+
+Built: `core/item_db.py` (DB lookups: unique flag, requiredProfession, gem sockets/colors -
+`GemColorMeta = 1` confirmed from `proto/common.proto`, not 8 as first guessed - color 8 is
+Prismatic), `core/gear_config.py` (17-slot config + hash for caching), `core/sim_cache.py`
+(persisted, keyed by gear hash + settings fingerprint + iterations/seed - never sims the same
+config twice), `adapters/tbc/valuation.py` (evaluates one config against a fixed settings
+background - her real, wowsims.com-validated `user_export_2.json` export, gear is the only
+variable), `core/optimizer.py` (warm-started per-slot greedy sweep + trinket-pair exhaustive +
+ranged exhaustive + explicit set-bonus forced-branch), `core/run_optimizer.py` (orchestrator).
+
+**Real concurrency bug found and fixed while building this**: `adapters/tbc/adapter.py`'s
+`run()` used fixed shared filenames (`_last_request.json`/`_last_result.json`) for its
+bridge/wowsimcli intermediate files. The optimizer runs many evaluations in parallel threads
+(each candidate in a slot sweep is independent) - concurrent calls collided on the same files
+and wowsimcli failed outright. Fixed to use a unique per-call temp filename (uuid token),
+cleaned up in a `finally` block.
+
+**Profession gating confirmed real and enforced**: `requiredProfession` is a genuine DB field
+(distinct from `sources[].crafted.profession`, which only describes who can *craft* an item, not
+who can *wear* it - e.g. Belt of Deep Shadow is Leatherworking-crafted but has no equip
+requirement, and she wears it despite not having Leatherworking). Surestrike Goggles v2.0
+(`requiredProfession: Engineering`) and Primalstrike Vest (`requiredProfession: Leatherworking`)
+excluded correctly - she only has Herbalism/Mining.
+
+**Screening result (2000 iterations, seed 1)**: current gear (warm start) = 2681.9 combined
+(player+pet). Greedy sweep + trinket pair + ranged exhaustive converged on: offhand -> Netherbane
+(dual Netherbane over Netherbane/Blade of the Unrequited), waist -> Don Alejandro's Money Belt,
+legs -> Bow-stitched Leggings, feet -> Shadowmaster's Boots, ring1 -> Band of the Eternal
+Champion, trinkets -> Dragonspine Trophy + Bloodlust Brooch, ranged -> Bristleblitz Striker.
+**Combined: 2758.8 (+76.9, ~2.9%).**
+
+**Set-bonus forced branch, the concrete payoff of this whole architecture (§1's core claim)**:
+forced a full swap to all 4 Gronnstalker's Armor T6 pieces (head/shoulder/chest/hands - Wowhead
+ranks every one of these individually as "Best," ahead of her current Rift Stalker T5 pieces).
+Forced-branch result: **2722.2, actually *worse* than keeping Rift Stalker's 4pc (2758.8) by
+36.7 combined DPS.** A per-slot EP ranking would have recommended every one of these four swaps
+individually - exactly the failure mode the doc opens with. Not fully explained yet (Gronnstalker
+4pc is +10% Steady Shot damage vs. Rift Stalker 4pc's +5% Steady Shot crit, so the raw numbers
+alone wouldn't predict this - the actual per-piece stat itemization on this specific gear must be
+carrying real weight here too), but it's a direct sim comparison, not an EP heuristic, so I'm not
+second-guessing the result itself.
+
+**Noise caveat, explicit per the doc's own two-tier process**: these are 2000-iteration
+screening numbers only. Per-slot deltas in the sweep range from 0.8 (feet) to 17.8 (ring1)
+combined DPS - the smaller ones are within or near the screening noise floor (~1.4-2 DPS
+standard error at this iteration count) and need the 30-50k resolve pass before being trusted.
+**Stopping here per the doc's explicit STOP before that high-iteration run.**
+
+**Known simplifications, disclosed not hidden**:
+- Gems held constant: her existing gems reused for owned items; new/candidate items get a
+  default of `Delicate Living Ruby` (the same gem she already uses in nearly every socket
+  herself, not an invented EP-based choice) in every non-meta socket. Meta gem slot untouched -
+  she already has Relentless Earthstorm Diamond (the standard Hunter/Agility meta), confirmed
+  from her real gear, not re-derived. Full gem re-optimization isn't implemented this pass.
+- Ranged weapon is exhaustive over candidates but does NOT re-verify/retune the rotation per
+  weapon speed, which the doc explicitly flags as mattering for Steady Shot weaving - every
+  ranged candidate ran under the same fixed rotation as the settings template.
+- Two-handed weapon path not explored - stuck with confirmed dual-wield (her real, validated
+  wowsims.com export uses two 1H weapons).
+
 ## 2026-08-22 — Raid progression (from user)
 
 SSC/TK: full weekly clears already, ongoing. BT/MH: expected to start full weekly clears from

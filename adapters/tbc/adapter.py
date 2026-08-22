@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import uuid
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SIM_DIR = os.path.join(REPO_ROOT, "sim", "tbc-new")
@@ -29,23 +30,34 @@ def run(individual_sim_settings_path: str, iterations: int, seed: int) -> dict:
     """Runs one IndividualSimSettings-shaped JSON file (protojson - e.g. one of
     the repo's own .build.json presets) through bridge.exe + wowsimcli.exe.
     Returns the parsed RaidSimResult dict. Raises RuntimeError with the sim's
-    own error message on failure (never swallows it)."""
+    own error message on failure (never swallows it). Uses a unique-per-call
+    temp filename pair so concurrent calls (the optimizer runs many in
+    parallel threads) never collide on the same file - a fixed shared
+    filename here caused real race-condition failures under threading."""
     os.makedirs(CACHE_DIR, exist_ok=True)
-    req_path = os.path.join(CACHE_DIR, "_last_request.json")
-    result_path = os.path.join(CACHE_DIR, "_last_result.json")
+    token = uuid.uuid4().hex[:12]
+    req_path = os.path.join(CACHE_DIR, f"_req_{token}.json")
+    result_path = os.path.join(CACHE_DIR, f"_res_{token}.json")
 
-    subprocess.run(
-        [BRIDGE_EXE, "-in", individual_sim_settings_path, "-out", req_path,
-         "-iterations", str(iterations), "-seed", str(seed)],
-        check=True,
-    )
-    subprocess.run(
-        [WOWSIMCLI_EXE, "sim", "--infile", req_path, "--outfile", result_path],
-        check=True, cwd=SIM_DIR,
-    )
+    try:
+        subprocess.run(
+            [BRIDGE_EXE, "-in", individual_sim_settings_path, "-out", req_path,
+             "-iterations", str(iterations), "-seed", str(seed)],
+            check=True,
+        )
+        subprocess.run(
+            [WOWSIMCLI_EXE, "sim", "--infile", req_path, "--outfile", result_path],
+            check=True, cwd=SIM_DIR,
+        )
 
-    with open(result_path, encoding="utf-8") as f:
-        result = json.load(f)
+        with open(result_path, encoding="utf-8") as f:
+            result = json.load(f)
+    finally:
+        for p in (req_path, result_path):
+            try:
+                os.remove(p)
+            except OSError:
+                pass
 
     if result.get("error"):
         raise RuntimeError(f"sim error: {result['error'].get('message', '')[:2000]}")
