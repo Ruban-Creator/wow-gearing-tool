@@ -1,0 +1,97 @@
+{
+  "source": "https://www.wowhead.com/tbc/guide/classes/hunter/survival/dps-bis-gear-pve-phase-2",
+  "source_note": "Wowhead, author Veramos, page 'Updated: 2026/05/12'. Kept as a distinct reference from Phase 3's list: this is what a raider progressing normally would already be wearing on entering Phase 3, not a P3 target.",
+  "fetched": "2026-08-22",
+  "slots": {
+    "head": [
+      {"rank": "Best", "item": "Rift Stalker Helm", "source": "Drop: Lady Vashj (Serpentshrine Cavern)"},
+      {"rank": "Best Until Tier 5", "item": "Beast Lord Helm", "source": "Drop: Pathaleon the Calculator (The Mechanar)"},
+      {"rank": "Optional", "item": "Surestrike Goggles v2.0", "source": "Profession: Engineering (BoP)"},
+      {"rank": "Optional", "item": "Demon Stalker Greathelm", "source": "Drop: Prince Malchezaar (Karazhan)"}
+    ],
+    "shoulder": [
+      {"rank": "Best", "item": "Rift Stalker Mantle", "source": "Drop: Void Reaver (Tempest Keep)"},
+      {"rank": "Best Until Tier 5", "item": "Beast Lord Mantle", "source": "Drop: Warlord Kalithresh (The Steamvault)"},
+      {"rank": "Optional", "item": "Shoulderpads of the Stranger", "source": "Drop: Hydross the Unstable (Serpentshrine Cavern)"},
+      {"rank": "Optional", "item": "Wastewalker Shoulderpads", "source": "Drop: Avatar of the Martyred (Heroic Auchenai Crypts)"}
+    ],
+    "back": [
+      {"rank": "Best", "item": "Thalassian Wildercloak", "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"},
+      {"rank": "Optional", "item": "Drape of the Dark Reavers", "source": "Drop: Shade of Aran (Karazhan)"},
+      {"rank": "Optional", "item": "Blood Knight War Cloak", "source": "Vendor: G'eras - 25 Badges of Justice"},
+      {"rank": "Optional", "item": "Auchenai Death Shroud", "source": "Drop: Avatar of the Martyred (Heroic Auchenai Crypts)"}
+    ],
+    "chest": [
+      {"rank": "Best", "item": "Rift Stalker Hauberk", "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"},
+      {"rank": "Best Until Tier 5", "item": "Beast Lord Cuirass", "source": "Drop: Warp Splinter (The Botanica)"},
+      {"rank": "Optional", "item": "Primalstrike Vest", "source": "Profession: Elemental Leatherworking (BoP)"},
+      {"rank": "Optional", "item": "Hauberk of Karabor", "source": "Quest: Varedis Must Be Stopped"}
+    ],
+    "wrist": [
+      {"rank": "Best", "item": "Vambraces of Ending", "source": "Drop: High Astromancer Solarian (Tempest Keep)"},
+      {"rank": "Best Raid Wide Increase", "item": "Ravager's Bands of Agility", "source": "Drop: Rokad the Ravager (Karazhan)"},
+      {"rank": "Optional", "item": "Felstalker Bracers", "source": "Profession: Leatherworking (BoE)"},
+      {"rank": "Optional", "item": "Bands of the Celestial Archer", "source": "Drop: Tempest Keep Trash Mobs"}
+    ],
+    "hands": [
+      {"rank": "Best", "item": "Gloves of Dexterous Manipulation", "source": "Drop: Attumen the Huntsman (Karazhan)"},
+      {"rank": "Optional", "item": "Beast Lord Handguards", "source": "Drop: Warchief Kargath Bladefist (The Shattered Halls)"},
+      {"rank": "Optional", "item": "Gauntlets of the Dragonslayer", "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"},
+      {"rank": "Optional", "item": "Fel Leather Gloves", "source": "Profession: Leatherworking (BoE)"}
+    ],
+    "waist": [
+      {"rank": "Best", "item": "Belt of Deep Shadow", "source": "Profession: Leatherworking"},
+      {"rank": "Best Raid Wide Increase", "item": "Lurker's Belt of Agility", "source": "Drop: Hyakiss the Lurker (Karazhan)"},
+      {"rank": "Optional", "item": "Belt of One-Hundred Deaths", "source": "Drop: Lady Vashj (Serpentshrine Cavern)"},
+      {"rank": "Optional", "item": "Belt of the Black Eagle", "source": "Profession: Leatherworking"}
+    ],
+    "legs": [
+      {"rank": "Best", "item": "Rift Stalker Leggings", "source": "Drop: Fathom-Lord Karathress (Serpentshrine Cavern)"},
+      {"rank": "Optional", "item": "Scaled Greaves of the Marksman", "source": "Drop: Doom Lord Kazzak (World Boss)"},
+      {"rank": "Optional", "item": "Void Reaver Greaves", "source": "Drop: Void Reaver (Tempest Keep)"},
+      {"rank": "Optional", "item": "Skulker's Greaves", "source": "Drop: Netherspite (Karazhan)"}
+    ],
+    "feet": [
+      {"rank": "Best", "item": "Cobra-Lash Boots", "source": "Drop: Lady Vashj (Serpentshrine Cavern)"},
+      {"rank": "Best", "item": "Star-Strider Boots", "source": "Drop: High Astromancer Solarian (Tempest Keep)"},
+      {"rank": "Best Raid Wide Increase", "item": "Glider's Sabatons of Agility", "source": "Drop: Shadikith the Glider (Karazhan)"},
+      {"rank": "Optional", "item": "Edgewalker Longboots", "source": "Drop: Moroes (Karazhan)"}
+    ],
+    "neck": [
+      {"rank": "Best", "item": "Telonicus's Pendant of Mayhem", "source": "Quest: Verdant Sphere - Kael'thas Sunstrider (Tempest Keep)"},
+      {"rank": "Optional", "item": "Necklace of the Deep", "source": "Profession: Jewelcrafting"},
+      {"rank": "Optional", "item": "Jagged Bark Pendant", "source": "Drop: Warp Splinter (The Botanica)"},
+      {"rank": "Optional", "item": "Prestor's Talisman of Connivery", "source": "Drop: Nefarian (Blackwing Lair)"}
+    ],
+    "ring": [
+      {"rank": "Best", "item": "Ring of the Recalcitrant", "source": "Quest: The Fall of Magtheridon (Magtheridon's Lair)"},
+      {"rank": "Optional", "item": "Band of Eternity", "source": "Quest: Champion's Pledge (Caverns of Time)"},
+      {"rank": "Optional", "item": "Ring of Lethality", "source": "Drop: Hydross the Unstable (Serpentshrine Cavern)"},
+      {"rank": "Optional", "item": "Pathfinder's Band", "source": "World Drop: Outland"}
+    ],
+    "trinket": [
+      {"rank": "Best", "item": "Dragonspine Trophy", "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"},
+      {"rank": "Best", "item": "Bloodlust Brooch", "source": "Vendor: G'eras - 41 Badges of Justice"},
+      {"rank": "Optional", "item": "Abacus of Violent Odds", "source": "Drop: Pathaleon the Calculator (The Mechanar)"},
+      {"rank": "Optional", "item": "Tsunami Talisman", "source": "Drop: Leotheras the Blind (Serpentshrine Cavern)"}
+    ],
+    "weapon_dual_wield": [
+      {"rank": "Best MH/OH", "item": "Netherbane", "source": "Drop: Al'ar (Tempest Keep)"},
+      {"rank": "Best OH - Personal DPS", "item": "Claw of the Phoenix", "source": "Drop: Al'ar (Tempest Keep)"},
+      {"rank": "Optional MH/OH", "item": "Stellaris", "source": "Drop: Nethermancer Sepethrea (The Mechanar)"},
+      {"rank": "Optional MH", "item": "Claw of the Watcher", "source": "Drop: Shirrak the Dead Watcher (Heroic Auchenai Crypts)"}
+    ],
+    "weapon_two_hand": [
+      {"rank": "Best", "item": "Twinblade of the Phoenix", "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"},
+      {"rank": "Best", "item": "Bloodmoon", "source": "Profession: Master Axesmith Blacksmith (BoP)"},
+      {"rank": "Optional", "item": "Legacy", "source": "Drop: The Crone (Karazhan)"},
+      {"rank": "Optional", "item": "Mooncleaver", "source": "Profession: Master Axesmith Blacksmith (BoP)"}
+    ],
+    "ranged": [
+      {"rank": "Best", "item": "Serpent Spine Longbow", "source": "Drop: Lady Vashj (Serpentshrine Cavern)"},
+      {"rank": "Optional", "item": "Arcanite Steam-Pistol", "source": "Drop: Al'ar (Tempest Keep)"},
+      {"rank": "Optional", "item": "Barrel-Blade Longrifle", "source": "Drop: Doomwalker (World Boss)"},
+      {"rank": "Optional", "item": "Sunfury Bow of the Phoenix", "source": "Drop: Prince Malchezaar (Karazhan)"}
+    ]
+  }
+}
