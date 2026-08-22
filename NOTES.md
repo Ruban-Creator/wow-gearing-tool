@@ -184,6 +184,24 @@ automatically. This is suggestive for Stage 2's Expose Weakness question but doe
 — recorded here only so Stage 2 doesn't have to rediscover it from scratch. Do not treat this as
 the answer; Stage 2 still has to read the actual hunter sim code per the doc's instruction.
 
+## 2026-08-22 — SavedVariables located; current export is NOT usable yet (needs your action)
+
+Found it: `WTF/Account/ELFIDELFI/SavedVariables/WowSimsExporter.lua` (the other candidate,
+`119781733#1`, is a 124-byte stub — wrong account). Confirms the Nightelf SV Hunter is
+**Lerynia-Thunderstrike**, professions Herbalism 375 / Mining 375 — matches §0.
+
+**But the auto-saved snapshot for Lerynia (timestamp 2026-08-22 11:20:00) has `"gear":{"items":
+[]}` — empty — and `"spec":"beast_mastery"`, not survival.** Auto-save fired (correctly, per the
+`OnCharacterChanged` logic already noted) but caught a moment with no gear resolved and/or the
+character on its other spec. This data isn't usable for ingestion as-is.
+
+**Action needed from you**: switch to Survival spec, make sure gear is equipped (not dead/ghost/
+character-select), then run `/wse export` once in-game to force a fresh save. I can't trigger
+this myself. The ingestion code below is written and tested against the shape of this file
+(validated against the other characters' non-empty entries in the same SavedVariables file, e.g.
+Rubán's warrior gear array), so it'll pick up a corrected Lerynia export automatically on the
+next `gear sync` — no code changes needed once you've re-exported.
+
 ## 2026-08-22 — Existing preset assets to reuse (bootstraps §5's reference BiS list for free)
 
 `ui/hunter/dps/gear_sets/phase_{1..4}/{bm,sv}/*.gear.json` and
@@ -193,3 +211,108 @@ every phase including **Phase 3 SV** (`2h_6p`, `2h_9p`, `dw_6p`, `dw_9p` — 2h/
 target protojson-compatible shape (`.build.json` = `IndividualSimSettings`). Use these directly
 as Stage 1's "preset SV BiS" baseline and as Stage 5's bootstrap reference list — no need to
 source or transcribe a BiS list separately.
+
+## 2026-08-22 — Correction: the DB extraction step above was unnecessary and got reverted
+
+After building, `git status` inside the submodule showed `assets/database/db.bin` (and several
+`proto/*.proto` / `*_auto_gen.go` / `*_auto_gen.ts` files) as **modified**, not untracked — the
+repo already ships a **pre-built, committed** item DB (`git show HEAD:assets/database/db.bin`
+existed, same byte size as my local extraction, committed 2026-08-19, three days before our
+pinned commit). Running `db2tool` + `gen_db` overwrote these tracked files with a fresh
+extraction from the local client instead of using what the pinned commit actually specifies —
+harmless in this case (same build 69110, results were numerically identical before/after — see
+below) but methodologically wrong: "record commit SHA in every output" only means something if
+the code+data at that SHA is what actually ran.
+
+**Fixed**: `git -C sim/tbc-new checkout -- .` reverted every tracked-file modification (the only
+survivor is the untracked `tools/database/generator-settings.local.json`, which is fine — never
+committed). Rebuilt `wowsimcli.exe` against the restored, pristine `db.bin`. Re-ran the baseline
+below and got byte-for-byte the same DPS numbers, so no harm done here — but the corrected
+takeaway for future sessions: **don't run `make db`/`db2tool`/`gen_db` unless
+`assets/database/db.bin` is actually untracked or missing after a fresh clone.** Check
+`git status` inside the submodule before assuming a "missing" build artifact needs regenerating
+— it may already be committed and just not built into the binary yet (the actual gap here was
+never the DB, only `sim/core/proto/*.pb.go`, which genuinely is gitignored upstream and does
+need `protoc` every time).
+
+## 2026-08-22 — Bridge built, real bug found and fixed (not worked around)
+
+Built `adapters/tbc/bridge/` (own Go module, `replace github.com/wowsims/tbc => ../../../sim/tbc-new`).
+First run against `ui/hunter/dps/builds/phase_3/sv/2h_9p.build.json` panicked inside
+`core.NewCharacter`: `index out of range [26] with length 26` on `PseudoStat_PseudoStatReducedCritTakenPercent`.
+Root cause, confirmed by counting: `proto/common.proto`'s `PseudoStat` enum has **27** values,
+but the shipped `.build.json`'s `bonusStats.pseudoStats` array has only **26** — a stale preset
+asset that predates a `PseudoStat` enum addition, at the *same* pinned commit (not a version
+skew on our end). `Stat` (42 values) matches its array length fine; only `PseudoStat` is short.
+Fixed by zero-padding `UnitStats.stats`/`.pseudoStats` up to `len(proto.Stat_name)` /
+`len(proto.PseudoStat_name)` in the bridge before use (`padUnitStats` in `main.go`) — zero is
+always the correct value for a stat the preset predates, so this can't invent a nonzero bonus,
+and it's logged to stderr every time it fires so it stays visible. Applies to both
+`player.bonusStats` and `player.itemSwap.prepullBonusStats`.
+
+## 2026-08-22 — Baseline run: preset Phase 3 SV BiS (2h_9p), 10k iterations, seed 1
+
+```
+python cli/gear.py preset sim/tbc-new/ui/hunter/dps/builds/phase_3/sv/2h_9p.build.json --iterations 10000 --seed 1
+```
+sim commit: `3267f8dfa4a20746d4982c1522fdec1d4eb77f4c`
+- **Player DPS: 1030.86 ± 44.13** (stdev; min 858.65, max 1186.16 across the 10k iterations)
+- **Pet (Ravager) DPS: 317.05 ± 15.43**
+- **Combined: 1347.91** — pet is ~23.5% of total damage
+- **Important gotcha for Stage 4+**: the sim's own `raidMetrics.dps` / `party.dps` rollup fields
+  are numerically identical to `player.dps` — they do **not** include pet damage. Confirmed by
+  direct comparison, not assumed. Any MV computation that reads the raid/party-level `dps`
+  rollup as "total" will silently drop ~23% of a Survival Hunter's real output. The optimizer
+  must sum `player.dps + sum(pet.dps for pet in player.pets)` itself.
+
+This preset's own bundled config does **not** match §0's assumed encounter/consumes exactly —
+using it unmodified for this baseline (as the "preset SV BiS" deliverable calls for), but note
+the differences for when Stage 4 builds requests from *my* actual raid setup instead of reusing
+presets wholesale:
+- Encounter: **180s ± 5s**, level 73 `MobTypeMechanical` target — not §0's 300s ± 60s.
+- Race: `RaceOrc` (the preset is race-generic/example, not tailored to Nightelf).
+- Consumables include `scrollAgi`/`scrollStr`/`petScrollAgi`/`petScrollStr` = true — §0 says
+  "no scrolls will be used." Flask/elixirs: `battleElixirId`/`guardianElixirId` (dual elixirs),
+  not a flask — §0 says "flask or elixirs," so this is consistent, just noting which the preset
+  picked.
+- Rotation: `rotation.type = "TypeSimple"` (not an APL priority list) — haven't inspected what
+  "Simple" rotation parameters this preset carries beyond the type tag; worth a closer look
+  before Stage 4 needs to reason about rotation choice.
+
+Full raid/party/debuffs/consumables/encounter JSON actually used is reproducible from the
+preset file itself (`ui/hunter/dps/builds/phase_3/sv/2h_9p.build.json`) — not re-pasted here
+since it's just that file's content; see the file directly.
+
+## 2026-08-22 — Companion addon note: WowSimsExporter's bag export never reaches disk
+
+Re-reading `WowSimsExporter.lua`'s `GenerateOutputBags()`: it returns JSON for the UI's textbox
+only — unlike the equipped-gear export, it is never passed to `SaveCharacterData`. So contrary
+to the plan's assumption, **bag contents never auto-save to SavedVariables at all**, not even
+with v3.2.4 installed — only equipped gear does. Bank was already known to be uncovered
+entirely. Rather than have the user paste bag exports by hand (defeats the "no clipboard round-
+trip" goal), extended the companion addon to dump both bags and bank
+(`Interface/AddOns/GearingToolExporter/`, `GTExporterDB` SavedVariables, `/gtexport` slash
+command, auto-saves on bank open and login). This makes it ~75 lines, over the doc's <50-line
+guideline for a bank-only addon — the overage is covering a second real gap (bags), not scope
+creep. Not yet exercised in-game (needs a reload/relogin to load, then a bank visit or
+`/gtexport`) — `ingest/build_character.py` reads it if present and degrades to empty
+bags/bank if not, so nothing breaks in the meantime.
+
+## 2026-08-22 — Ingestion pipeline built and tested (Lerynia's own data still blocked)
+
+`ingest/build_character.py`: parses `WowSimsExporter.lua` (via `slpp`) across every
+`WTF/Account/*/SavedVariables/`, JSON-decodes the nested `data` string per matching character,
+merges in `GearingToolExporter.lua`'s bags/bank if present, cross-references every item ID
+against `sim/tbc-new/assets/database/db.json`, and writes `data/character.json`. Unresolved IDs
+(not found in the sim DB) are kept under `unresolved`, never silently dropped, per the ground
+rule.
+
+**Validated against real data**: ran against `Rubán-Thunderstrike` (the account's warrior, who
+has a populated export) — 16/17 equipped slots resolved (1 empty ranged slot, correct for a
+warrior), 0 unresolved. Confirms the parser itself is correct end-to-end.
+
+**Lerynia (the actual target) still can't be ingested meaningfully** — her latest export has the
+empty-gear/wrong-spec problem noted above. `gear sync Lerynia-Thunderstrike` runs cleanly and
+writes a character.json, but with 0 equipped items and a warning printed. Needs your in-game
+action (switch to Survival, `/wse export`) before this produces anything real — no code changes
+needed after that, just re-run `python cli/gear.py sync`.

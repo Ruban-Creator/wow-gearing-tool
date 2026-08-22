@@ -81,6 +81,40 @@ data/                  character.json, sim-result cache (keyed by gear-config ha
 Python 3.13 for everything except the simulator itself (Go, vendored via submodule, built to
 `wowsimcli`). No Node/npm — only the CLI binary is needed, not the web UI.
 
+The adapter's translation step (`IndividualSimSettings` protojson → `RaidSimRequest` protojson,
+the CLI's actual input) is a small Go program (`adapters/tbc/bridge/`) rather than a Python
+reimplementation — it imports the submodule's own generated proto package via a `replace`
+directive, so field names/enums are never hand-copied. See NOTES.md, "Resolved: the CLI's
+actual input contract," for why this exists and how it was derived.
+
+## Local setup (this machine)
+
+Prerequisites installed this session: Go 1.26 (`winget install --id GoLang.Go`), protoc + 
+protoc-gen-go (`winget install --id Google.Protobuf` + `go install google.golang.org/protobuf/cmd/protoc-gen-go@latest`),
+Python `slpp` (`pip install -r requirements.txt`). None of these are on a fresh shell's PATH
+automatically in this git-bash environment — see NOTES.md for the exact PATH prepends needed.
+
+One-time build (from repo root). `assets/database/db.bin` (the item DB) is already **committed**
+in the submodule — do NOT run `db2tool`/`gen_db`/`make db` unless `git status` inside
+`sim/tbc-new` shows it's actually missing or you've bumped to a commit that changed it. The only
+genuinely-generated, gitignored-upstream piece is the protobuf Go bindings:
+```
+protoc -I=./sim/tbc-new/proto --go_opt=Mgoogle/protobuf/descriptor.proto=google.golang.org/protobuf/types/descriptorpb --go_out=./sim/tbc-new/sim/core ./sim/tbc-new/proto/*.proto
+cd sim/tbc-new && go build -o wowsimcli.exe --tags=with_db ./cmd/wowsimcli/cli_main.go
+cd ../../adapters/tbc/bridge && go build -o bridge.exe .
+```
+If a future submodule bump ever does need a DB rebuild: `tools/database/generator-settings.local.json`
+(untracked, not committed) is a copy of `generator-settings.json` with `BaseDir` pointed at the
+local WoW install root — see NOTES.md ("Building wowsimcli: real prerequisite chain") for the
+full db2tool/gen_db command and the DBCache pitfall. Afterwards, `git status` inside the
+submodule and `git checkout -- .` anything that shouldn't have changed before rebuilding.
+
+Day to day:
+```
+python cli/gear.py sync                                    # re-read addon export -> data/character.json
+python cli/gear.py preset <path/to/*.build.json>            # sanity-check the sim pipeline
+```
+
 ## Staging
 
 See the user's full spec for §0–§9. Currently in **Stage 1** (adapter + ingestion) — STOP at its
