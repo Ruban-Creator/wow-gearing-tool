@@ -295,6 +295,29 @@ own AP-to-damage ratio (class, weapon speed, hit/crit), which isn't knowable gen
 MV/valuation output should report this as its own column (raid AP contribution) alongside
 personal DPS, per the ground rule, not collapse it into a single number.
 
+## 2026-08-22 — Stage 3 bug: name->id resolution silently picked the wrong item
+
+User spotted it from a screenshot: my gap analysis said "Band of Eternity" wasn't on the Phase 2
+reference list at all, but Wowhead's own table clearly shows it there (rank "Optional"). Root
+cause: `core/gap_analysis.py`'s original `resolve_reference_ids` built `{name: id}` from the sim
+DB via a plain dict comprehension - but **"Band of Eternity" is 12 distinct item IDs in the DB**
+(29294-29308, itemization/random-suffix variants sharing one display name), and the comprehension
+silently kept whichever came last, which wasn't her actual ring's id (29298). The match check
+compared ids, so it missed a name that was genuinely present. Nothing in the unresolved-list
+reporting caught this either, since "some id resolved" ≠ "the *right* id resolved" - a name with
+duplicate ids never triggers the unresolved path.
+
+**Fixed**: match candidates against owned gear **by name**, not resolved id (`gap_analysis.py`).
+`resolve_reference_ids` now returns `ids` (plural, a list) per candidate for reference/display,
+but the actual owned-vs-candidate comparison is `candidate["item"] == owned_name`, which is
+unambiguous regardless of how many ids share that name. Re-ran: `ring1` moved from "NOT ON P2
+LIST" to correctly "was P2 Optional" - shifting it from the "real, longstanding gap" bucket into
+"expected P2->P3 progression." Corrected counts: 2 real gaps (trinket2, offhand), 4 expected-
+progression slots (waist, legs, ring1, ranged) - was previously reported as 3/3.
+
+**Lesson**: any future `{name: id}` lookup against this DB needs to assume names aren't unique,
+not just for rings - check for collisions before trusting a plain dict comprehension.
+
 ## 2026-08-22 — Existing preset assets to reuse (bootstraps §5's reference BiS list for free)
 
 `ui/hunter/dps/gear_sets/phase_{1..4}/{bm,sv}/*.gear.json` and

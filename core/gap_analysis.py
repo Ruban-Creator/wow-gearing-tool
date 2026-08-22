@@ -26,18 +26,20 @@ POSITION_TO_REF_SLOT = {
 }
 
 
-def resolve_reference_ids(reference: dict, item_db: dict[str, int]) -> dict:
-    """item_db: {item_name: item_id}. Returns the reference dict with an 'id'
-    added to every entry it could resolve, and a top-level 'unresolved' list
-    of item names that didn't match anything in the sim DB - never silently
-    dropped."""
+def resolve_reference_ids(reference: dict, item_db: dict[str, list[int]]) -> dict:
+    """item_db: {item_name: [item_ids]} - one name can legitimately map to
+    several item IDs (e.g. "Band of Eternity" is 12 distinct IDs in the sim
+    DB, itemization variants sharing one display name). Returns the
+    reference dict with 'ids' (plural) added to every entry it could
+    resolve, and a top-level 'unresolved' list of item names that matched
+    nothing at all - never silently dropped."""
     unresolved = []
     for slot, entries in reference["slots"].items():
         for entry in entries:
-            item_id = item_db.get(entry["item"])
-            if item_id is None:
+            ids = item_db.get(entry["item"], [])
+            if not ids:
                 unresolved.append(entry["item"])
-            entry["id"] = item_id
+            entry["ids"] = ids
     reference["unresolved"] = sorted(set(unresolved))
     return reference
 
@@ -53,7 +55,10 @@ def per_slot_gap(equipped_items: list[dict], reference: dict) -> list[dict]:
         owned_id = item.get("id") if item else None
         owned_name = item.get("name") if item else None
 
-        match = next((c for c in candidates if c.get("id") == owned_id), None)
+        # Match by name, not id: several distinct item ids can share one
+        # display name (itemization variants), so an id-only match misses
+        # real hits. See NOTES.md, "Band of Eternity" bug.
+        match = next((c for c in candidates if c["item"] == owned_name), None)
         best_rank_item = candidates[0] if candidates else None
 
         results.append({

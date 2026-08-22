@@ -19,10 +19,12 @@ db = json.load(open(
     os.path.join(REPO_ROOT, "sim", "tbc-new", "assets", "database", "db.json"),
     encoding="utf-8",
 ))
-name_to_id = {it["name"]: it["id"] for it in db.get("items", [])}
+name_to_ids = {}
+for it in db.get("items", []):
+    name_to_ids.setdefault(it["name"], []).append(it["id"])
 
-ref_p3 = ga.resolve_reference_ids(ref_p3, name_to_id)
-ref_p2 = ga.resolve_reference_ids(ref_p2, name_to_id)
+ref_p3 = ga.resolve_reference_ids(ref_p3, name_to_ids)
+ref_p2 = ga.resolve_reference_ids(ref_p2, name_to_ids)
 for label, ref in [("P3", ref_p3), ("P2", ref_p2)]:
     if ref["unresolved"]:
         print(f"UNRESOLVED {label} reference items (not found in sim DB by exact name):")
