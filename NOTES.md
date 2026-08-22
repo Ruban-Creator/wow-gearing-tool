@@ -202,6 +202,85 @@ this myself. The ingestion code below is written and tested against the shape of
 Rubán's warrior gear array), so it'll pick up a corrected Lerynia export automatically on the
 next `gear sync` — no code changes needed once you've re-exported.
 
+## 2026-08-22 — Stage 2: Survival mechanics, read from source (sim/hunter/talents.go, sim/core/debuffs.go)
+
+All five requested talents are implemented, none stubbed. Her actual build (decoded from her
+talents string against the field order in `proto/hunter.proto`'s `HunterTalents` message, then
+verified by summing to the UI's displayed "Survival 34/61" — the sums matched exactly, 3+3+3+2+
+0+0+0+2+2+0+0+3+2+2+3+0+0+5+1+0+3+0+0 = 34, confirming the positional mapping):
+**Expose Weakness 3/3, Lightning Reflexes 5/5, Thrill of the Hunt 1/3, Survival Instincts 2/3,
+Master Tactician 0/5 (not talented).**
+
+- **Lightning Reflexes** (`registerLightningReflexes`, talents.go:558): flat multiplicative
+  Agility, `1 + 0.03 * points`. At 5/5: +15% Agility.
+- **Survival Instincts** (`registerSurvivalInstincts`, talents.go:529): flat multiplicative
+  Attack Power AND Ranged Attack Power, `1 + 0.02 * points`. At 2/3: +4% AP/RAP.
+- **Thrill of the Hunt** (`registerThrillOfTheHunt`, talents.go:566): on a ranged-special crit
+  with a mana cost, `ProcChance = points/3`, refunds `40%` of that cast's mana cost. At 1/3:
+  33% proc chance.
+- **Master Tactician** (`registerMasterTactician`, talents.go:615): on ANY landed ranged hit
+  (not just crit), flat 6% proc chance regardless of points, grants `2% * points` Physical Crit
+  for 8s. Not on her build (0/5) so doesn't apply to her currently, but implemented correctly.
+- **Expose Weakness** (`registerExposeWeakness`, talents.go:590 + `core.ExposeWeaknessAura`,
+  debuffs.go:329): on a ranged crit, `ProcChance = points/3` (3/3 = 100%, guaranteed proc on
+  every ranged crit). Applies a 7s debuff on the target that grants `floor(hunterAgility * 0.25)`
+  bonus Attack Power AND Ranged Attack Power — stored as `target.PseudoStats.BonusAttackPower`/
+  `BonusRangedAttackPower`.
+
+### The gating question, answered with evidence
+
+**Where the granted AP goes**: `spell_result.go:171` and `unit.go:215` — the functions computing
+*any* attacker's effective (ranged) attack power against a target — read
+`target.PseudoStats.BonusAttackPower`/`BonusRangedAttackPower` and add it to *that attacker's*
+own AP for the purposes of their damage against this target. This is structurally raid-wide: in
+a real raid sim with multiple simulated attackers, all of them would receive this bonus when
+computing their damage against the debuffed boss. The mechanism is not personal-only by design.
+
+**But**: an individual sim only ever has one player unit in the simulated raid. The mechanism
+being raid-wide doesn't mean the *output* is raid-wide — there's no one else there to receive
+the benefit and have it show up in the DPS number. Confirmed two ways:
+1. In a debug (`--verbose`, 1 iteration) run, the Expose Weakness aura's stack count (=granted
+   AP) visibly changes over the fight — 277 stacks at one point, 305 at another, tracking her
+   *live* Agility as buffs/procs change it (a static input could never produce this; it would be
+   a constant).
+2. **Ablation test**: stripped `debuffs.exposeWeaknessUptime`/`exposeWeaknessHunterAgility`
+   (the manually-editable raid-assumption fields in the UI, e.g. "1080"/"90%") out of the request
+   entirely, re-ran with the same real gear/talents. The Expose Weakness aura still fires, still
+   dynamically, still scaled to her live Agility (298 stacks → Agility 1192 at first proc).
+   **This proves her own talented Expose Weakness (`hunter.registerExposeWeakness`) drives the
+   debuff independently of, and takes priority over, the static raid-config fields** — those UI
+   fields exist to model *another* hunter's Expose Weakness when the simulated character doesn't
+   have the talent herself; for a character who does, they're redundant no-ops (both code paths
+   register the same `Aura` identity via `GetOrRegisterAura`, and her character-construction-time
+   registration wins the race, since it's evidently already active before the raid-config setup
+   would apply its static uptime scheduler).
+
+**Answer**: for Lerynia specifically (Expose Weakness 3/3), the individual sim correctly and
+dynamically credits **her own share** of Expose Weakness's AP to her personal DPS — any candidate
+item that changes her Agility will correctly move this contribution in an MV calculation, no
+manual correction needed for that part. What the individual sim **cannot** see or report is the
+AP that her raid's other 8-10 physical attackers (§0's stated comp) would *also* receive from
+the same debuff, off the same live Agility — those units don't exist in an individual sim at all,
+so their share is neither computed nor reported. Net effect: **every point of Agility Lerynia
+gains is worth strictly more to the raid than what personal-DPS MV shows — the "underprices
+Agility, in one direction" failure mode the doc names is real, just not in the way I initially
+assumed** (it's not that her own EW benefit is miscounted; it's that the raid-mates' share is
+invisible to this sim mode by construction).
+
+### Path forward — needs your call, per §4's own fork
+
+The doc offers two options once this is established: (a) run valuations against the raid sim
+with your real comp, or (b) compute Expose Weakness's raid-wide value analytically and report
+personal DPS and raid contribution as two separate columns everywhere. I now have everything
+needed to build the analytical version: the coefficient is exactly `0.25` AP per point of
+Agility (from `SetStacks(sim, int32(agilityFunc()*0.25))` — read directly from source, not
+estimated), granted identically to melee and ranged AP; uptime is close to 100% given the 3/3
+talent (100% proc chance per ranged crit, refreshing a 7s duration against a hunter who's
+casting ranged specials constantly) but should be measured from actual sim output per candidate
+gear set rather than assumed; and the physical-attacker count comes from §0's stated raid comp
+(8-10). Not building either path yet — this is exactly the "I've seen your finding" checkpoint
+the doc calls for before proceeding.
+
 ## 2026-08-22 — Existing preset assets to reuse (bootstraps §5's reference BiS list for free)
 
 `ui/hunter/dps/gear_sets/phase_{1..4}/{bm,sv}/*.gear.json` and
