@@ -1,0 +1,3 @@
+[submodule "sim/tbc-new"]
+	path = sim/tbc-new
+	url = https://github.com/wowsims/tbc-new.git

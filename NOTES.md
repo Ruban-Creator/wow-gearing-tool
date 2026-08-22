@@ -40,3 +40,13 @@ addon format details, anything surprising. Newest at bottom.
   trinket2, mainhand, offhand, ranged. Ammo is explicitly excluded ("Not supported as item").
 - Phase 3 launches 2026-08-27 (5 days out from today). DB-coverage check for P3 items is
   expected to possibly show gaps/placeholders right now — not a bug if so.
+
+## 2026-08-22 — Go install, submodule pin
+
+- Installed Go 1.26.7 via `winget install --id GoLang.Go`. Installer puts it at
+  `C:\Program Files\Go\bin` and updates the machine PATH — new shells pick it up automatically,
+  but the git-bash tool session already open in this conversation did not; had to prepend
+  `/c/Program Files/Go/bin` to PATH manually in that session.
+- `wowsims/tbc-new` added as git submodule at `sim/tbc-new`, pinned commit
+  `3267f8dfa4a20746d4982c1522fdec1d4eb77f4c` (2026-08-19, "Add selected potion/conjured APL
+  check"). This is the SHA to report in every sim output per the ground rules.
