@@ -356,6 +356,31 @@ standard error at this iteration count) and need the 30-50k resolve pass before 
 - Two-handed weapon path not explored - stuck with confirmed dual-wield (her real, validated
   wowsims.com export uses two 1H weapons).
 
+## 2026-08-23 — Tiered leaderboard output; fixed a real resolve-budget mistake
+
+User asked for output grouped by acquisition tier (T6/T5/T4/Heroics/Vanilla carryover/Crafted/
+Reputation), each showing its next-5-best upgrades - matches how loot priority actually gets
+planned (T6 needs raid clears + competition + RNG; crafted/heroic you can just go get).
+
+**Also caught, mid-run**: the first full-sweep attempt (566 candidates) was taking far too long.
+User's diagnosis was right - `mv_single_tiered`'s "resolve anything within 8x the screening
+noise" rule, fine for a ~70-item curated pool, doesn't scale to a much larger uncurated one: most
+random raid drops don't beat an already-decent-itemized character, so hundreds of them cluster
+near zero and ALL of them were triggering the expensive 30k resolve pass. Killed the run.
+
+**Fixed** (`run_full_sweep_mv.py`, rewritten): screen every candidate once at 1,000 iterations
+(cheap), group by tier, take each tier's top 8 by screening MV, and ONLY resolve those at 30k -
+a little slack over "top 5" in case resolving nudges the order near the cutoff. Everything
+outside a tier's leaderboard stays at screening precision and is reported honestly as such
+("screened only" flag) rather than silently presented with resolved-looking confidence.
+
+Tier zone IDs pulled from the DB's own `zones` collection (queried every non-raid zone actually
+referenced by a phase<=3 item drop) and `ui/core/player.tsx`'s `RAID_IDS` map - not guessed from
+memory. Found two real content categories this way: 13 TBC heroic dungeons, and 12 vanilla
+zones (Ahn'Qiraj, Blackwing Lair, Molten Core, etc.) that still drop obtainable, phase<=3-tagged
+items - confirms Badge of the Swarmguard's Ahn'Qiraj source lines up with a real "Vanilla
+carryover" bucket, not a one-off.
+
 ## 2026-08-23 — Full item-DB sweep, replacing "curated guide = the pool"
 
 User caught a real scope gap: the candidate pool was built entirely from Wowhead's curated BiS
@@ -745,3 +770,42 @@ the companion addon's `/gtexport`/bank-open was done), with unresolved items lim
 non-combat clutter (profession materials, quest items). Also fixed `load_item_db()` to check
 `db.json`'s separate `consumables` collection in addition to `items` — ordinary consumables
 (elixirs, food, sappers) were wrongly landing in `unresolved` before that.
+
+**Full-sweep tiered-report fixes (three real bugs, all corrected before reporting results)**:
+1. Curated-item tier/source lookup was keyed by item *name* (`db_by_name = {it["name"]: it ...}`)
+   in `run_full_sweep_mv.py` — same collision class as the earlier "Band of Eternity" bug.
+   Miscategorized Gronnstalker's Leggings/Gloves and blanked Scaled Greaves of the Marksman /
+   Tsunami Talisman's source text. Fixed to look up by `c.item_id` via `idb.by_id()` instead.
+2. Netherstrand Longbow was reported as a real +131.6 T5 upgrade; the user caught it — it's one
+   of 7 items in Kael'thas Sunstrider's fight-only legendary pool (Warp Slicer, Infinity Blade,
+   Staff of Disintegration, Phaseshift Bulwark, Devastation, Cosmic Infuser, Netherstrand
+   Longbow), tagged `sources[].drop.otherName == "Legendaries"` in the DB — not real persistent
+   gear. Real legendaries (Warglaives, Thori'dal) don't carry that tag. Added
+   `is_encounter_only_legendary()` to `sweep_all_loot.py`'s `eligible()` filter.
+3. Gronnstalker's Armor set (setId 669: Leggings/Gloves/Helmet/Chestguard/Spaulders/Bracers/
+   Belt/Boots, ids 31001-31006 + 34443/34549/34570) has **no `sources` field at all** in
+   db.json — the DB simply doesn't carry drop data for this set on this server, so tier lookup
+   fell back to "Other" even though Wowhead's own curated text correctly says "Drop: The
+   Illidari Council (Black Temple)" / "Drop: Azgalor (Hyjal Summit)". Added `tier_from_text()`
+   to `run_full_sweep_mv.py`: when the DB gives no tier and curated text exists, match the
+   tier's own zone names as substrings of that text instead of leaving it stuck in "Other".
+
+**simserver.exe (persistent sim process) built and integrated.** `wowsimcli` reloads and
+unmarshals the whole embedded item DB (~2.3MB protobuf) fresh on every invocation — dominates
+wall-clock time on short (1000-iteration) screening calls, which is most of what a full sweep
+spends. `adapters/tbc/simserver/main.go` is a persistent version: loads the DB once
+(`sim.RegisterAll()`), then serves one `RaidSimRequest` protojson line in / one `RaidSimResult`
+protojson line out per request over stdin/stdout, calling the exact same
+`core.RunRaidSimConcurrentAsync` path `cmd/wowsimcli/cmd/basic_sim.go` uses. **Must be built with
+`go build -o simserver.exe --tags=with_db .`** — the first build omitted the tag and failed at
+runtime ("No item with id: 30141") since the embedded DB isn't active without it.
+`adapters/tbc/simserver_client.py` provides `SimServerPool` (N persistent processes, checked
+out/in like a connection pool — one process is strictly serial, concurrency comes from pool
+size, not from pipelining a single process). `adapters/tbc/valuation.py`'s `evaluate()` now
+calls `bridge.exe` directly (still fast, unchanged) to build the `RaidSimRequest`, then routes
+it through `simserver_client.get_pool()` instead of spawning `wowsimcli.exe` fresh
+(`USE_SIMSERVER = True` flag, file-based path kept as a fallback). Verified byte-identical
+player DPS between both paths on a fresh (uncached) seed; ~30% faster per call end-to-end
+(240ms vs 340ms warm, serial, including the bridge.exe step) — less than the previously-quoted
+isolated 2.15x since that number excluded bridge.exe's fixed cost, but a confirmed real win, and
+it stacks with the `MAX_WORKERS=4` thread pool the sweep already uses.

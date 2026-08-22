@@ -80,12 +80,30 @@ TYPE_RANGED = 14
 NO_ILVL_FLOOR_TYPES = {TYPE_TRINKET, TYPE_WEAPON, TYPE_RANGED}
 
 
+def is_encounter_only_legendary(item: dict) -> bool:
+    """Kael'thas Sunstrider's fight-only legendary weapon pool (Netherstrand
+    Longbow, Warp Slicer, Infinity Blade, etc.) - equippable only for that
+    one encounter, not real persistent gear. The DB tags all 7 of them with
+    sources[].drop.otherName == "Legendaries", which is exact and doesn't
+    match real persistent legendaries (Warglaives, Thori'dal) - confirmed by
+    checking every quality-5 item's raw source data, not guessed. Caught
+    only after reporting Netherstrand Longbow as a real +131.6 upgrade -
+    the user corrected it; this makes the exclusion systematic instead of a
+    one-off name check."""
+    for s in item.get("sources", []):
+        if s.get("drop", {}).get("otherName") == "Legendaries":
+            return True
+    return False
+
+
 def eligible(item: dict) -> bool:
     if item.get("phase", 99) > MAX_PHASE:
         return False
     if item.get("quality", 0) < MIN_QUALITY:
         return False
     if not item.get("sources"):
+        return False
+    if is_encounter_only_legendary(item):
         return False
     if item.get("type") not in NO_ILVL_FLOOR_TYPES:
         ilvl = item.get("scalingOptions", {}).get("0", {}).get("ilvl", 0)

@@ -1,20 +1,26 @@
 """Evaluate one 17-item gear config against a fixed settings background
 (buffs/debuffs/consumables/encounter/talents/rotation held constant - gear
 is the only variable, per the determinism ground rule). Thin over
-adapter.run(); adds the sim cache and a stable settings fingerprint so the
-cache key doesn't depend on file paths.
+adapter.run() (or, when USE_SIMSERVER, the persistent simserver.exe pool -
+see NOTES.md, "speed up the full sweep further": wowsimcli reloads and
+unmarshals the whole embedded item DB fresh on every invocation, which
+dominates wall-clock time on short screening-iteration calls; simserver
+loads it once and stays alive). Adds the sim cache and a stable settings
+fingerprint so the cache key doesn't depend on file paths.
 """
 from __future__ import annotations
 
 import hashlib
 import json
 import os
+import subprocess
 import sys
 import threading
 import uuid
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import adapter  # noqa: E402
+import simserver_client  # noqa: E402
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "core"))
 import sim_cache  # noqa: E402
@@ -22,6 +28,9 @@ import gear_config  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 CACHE_DIR = os.path.join(REPO_ROOT, "data", "cache")
+
+USE_SIMSERVER = True
+SIMSERVER_POOL_SIZE = 4
 
 _settings_lock = threading.Lock()
 _template_cache = {}
@@ -57,6 +66,33 @@ def settings_fingerprint(settings_path: str) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
 
 
+def _build_raid_sim_request(settings: dict, iterations: int, seed: int) -> dict:
+    """Runs the bridge (IndividualSimSettings -> RaidSimRequest expansion)
+    on the given settings dict. Kept as a real subprocess call to bridge.exe
+    - it's fast (no DB to load) and already proven correct; only the
+    wowsimcli step benefits enough from persistence to be worth pooling."""
+    token = uuid.uuid4().hex[:8]
+    in_path = os.path.join(CACHE_DIR, f"_vb_in_{token}.json")
+    out_path = os.path.join(CACHE_DIR, f"_vb_out_{token}.json")
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    with open(in_path, "w", encoding="utf-8") as f:
+        json.dump(settings, f)
+    try:
+        subprocess.run(
+            [adapter.BRIDGE_EXE, "-in", in_path, "-out", out_path,
+             "-iterations", str(iterations), "-seed", str(seed)],
+            check=True,
+        )
+        with open(out_path, encoding="utf-8") as f:
+            return json.load(f)
+    finally:
+        for p in (in_path, out_path):
+            try:
+                os.remove(p)
+            except OSError:
+                pass
+
+
 def evaluate(settings_path: str, items: list[dict], iterations: int, seed: int) -> dict:
     """Returns {"player_dps": ..., "player_stdev": ..., "pets": [...],
     "combined": ...}. Cached by (gear hash, settings fingerprint,
@@ -72,19 +108,25 @@ def evaluate(settings_path: str, items: list[dict], iterations: int, seed: int) 
     settings = _load_template(settings_path)
     settings["player"]["equipment"] = {"items": items}
 
-    token = uuid.uuid4().hex[:8]
-    tmp_settings = os.path.join(CACHE_DIR, f"_opt_settings_{token}.json")
-    os.makedirs(CACHE_DIR, exist_ok=True)
-    with open(tmp_settings, "w", encoding="utf-8") as f:
-        json.dump(settings, f)
-
-    try:
-        result = adapter.run(tmp_settings, iterations=iterations, seed=seed)
-    finally:
+    if USE_SIMSERVER:
+        raid_sim_request = _build_raid_sim_request(settings, iterations, seed)
+        pool = simserver_client.get_pool(SIMSERVER_POOL_SIZE)
+        result = pool.run(raid_sim_request)
+        if result.get("error"):
+            raise RuntimeError(f"sim error: {result['error'].get('message', '')[:2000]}")
+    else:
+        token = uuid.uuid4().hex[:8]
+        tmp_settings = os.path.join(CACHE_DIR, f"_opt_settings_{token}.json")
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(tmp_settings, "w", encoding="utf-8") as f:
+            json.dump(settings, f)
         try:
-            os.remove(tmp_settings)
-        except OSError:
-            pass
+            result = adapter.run(tmp_settings, iterations=iterations, seed=seed)
+        finally:
+            try:
+                os.remove(tmp_settings)
+            except OSError:
+                pass
 
     dps = adapter.player_and_pet_dps(result)
     total_pet = sum(p["avg"] for p in dps["pets"])
