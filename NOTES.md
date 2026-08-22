@@ -311,8 +311,38 @@ rule.
 has a populated export) — 16/17 equipped slots resolved (1 empty ranged slot, correct for a
 warrior), 0 unresolved. Confirms the parser itself is correct end-to-end.
 
-**Lerynia (the actual target) still can't be ingested meaningfully** — her latest export has the
-empty-gear/wrong-spec problem noted above. `gear sync Lerynia-Thunderstrike` runs cleanly and
-writes a character.json, but with 0 equipped items and a warning printed. Needs your in-game
-action (switch to Survival, `/wse export`) before this produces anything real — no code changes
-needed after that, just re-run `python cli/gear.py sync`.
+## 2026-08-22 — Cross-validated against wowsims.com; bug was mine, not the pipeline's
+
+User ran their real gear on the live site (https://www.wowsims.com/tbc/hunter/dps/) and got
+2310.14 ± 62 DPS; my own "sim my gear" one-off script gave 913.7-2518.7 depending on which
+borrowed rotation I used — neither close. Root-caused by feeding the user's *exact* exported
+JSON (their Export button output) straight through `bridge.exe` + `wowsimcli.exe` with zero
+modification: **got 2306.76 ± 63.05 player / 483.60 ± 19.64 pet — matches their screenshot
+almost exactly.** This confirms the bridge + wowsimcli toolchain (the actual Stage 1 deliverable)
+is correct against an independent, real-world reference.
+
+The bug was in my diagnostic script (`data/sim_my_gear.py`), not the pipeline: it substituted
+real race/gear/talents into the stale `phase_3/sv/2h_9p.build.json` preset and left everything
+else from that template, silently carrying over config that didn't match reality:
+- Ammo: preset's `TimelessArrow` vs. the real `AdamantiteStinger`.
+- Missing `mhImbueId`/`ohImbueId` (weapon stone imbues, correct for dual-wield) — the 2H preset
+  had `explosiveId`/sapper charges instead, wrong playstyle entirely.
+- Extra `partyBuffs` the preset assumed (`windfuryTotem`, `totemTwisting`) not present in the
+  user's actual raid buff selection.
+- Stale `apiVersion: 6` / 26-length `pseudoStats` vs. the live site's current `apiVersion: 14` /
+  27-length array (consistent with the "shipped presets are stale" finding above).
+
+**Lesson for every future request-building step**: don't fill gaps by borrowing fields from an
+unrelated preset. Either use a real, verified value (from the character export or from §0's
+explicit assumptions) or leave it flagged as missing — borrowing silently is exactly the kind of
+thing "never invent data" is meant to catch, and it did, just after the fact instead of before.
+Also confirms: WowSimsExporter's export has no consumable/ammo/imbue selection state at all
+(only gear/talents/race/professions) — those always have to come from §0's stated assumptions
+for any real MV request, never auto-detected.
+
+**Update**: resolved. After a fresh in-game `/wse export` on Survival spec, `gear sync` now
+produces a real, populated `character.json` — 17/17 equipped, 22 bag items, 28 bank items (once
+the companion addon's `/gtexport`/bank-open was done), with unresolved items limited to
+non-combat clutter (profession materials, quest items). Also fixed `load_item_db()` to check
+`db.json`'s separate `consumables` collection in addition to `items` — ordinary consumables
+(elixirs, food, sappers) were wrongly landing in `unresolved` before that.
