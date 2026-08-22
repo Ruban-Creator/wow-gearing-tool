@@ -356,6 +356,51 @@ standard error at this iteration count) and need the 30-50k resolve pass before 
 - Two-handed weapon path not explored - stuck with confirmed dual-wield (her real, validated
   wowsims.com export uses two 1H weapons).
 
+## 2026-08-23 — Full item-DB sweep, replacing "curated guide = the pool"
+
+User caught a real scope gap: the candidate pool was built entirely from Wowhead's curated BiS
+picks (Stage 3's bootstrap), which §5 always meant as a ranking heuristic for what to sim first,
+never a hard exclusion - but that's exactly what it had become, since nothing outside the guide
+ever entered the pool. An item the guide author judged not worth listing (off-meta, niche, or
+itemized for another spec but incidentally good here) was invisible no matter how good it
+actually was for this character.
+
+**Fix**: `core/sweep_all_loot.py` sweeps the sim's own item DB directly instead of depending on
+the guide's curation - eligibility by the DB's own fields only (classAllowlist includes Hunter
+if present; armorType Leather/Mail for armor slots; weaponType in Axe/Dagger/Fist/Polearm/Sword
+for one-handers, matching real TBC Hunter weapon proficiencies; rangedWeaponType in Bow/
+Crossbow/Gun; `phase <= 3` per the user's explicit "everything obtainable in P3 - drop, bought,
+or crafted - not P4/P5" scope; quality >= Rare; has a real `sources` entry). `core/
+run_full_sweep_mv.py` merges the sweep with the existing curated pool (union, nothing already
+found is lost) and runs the same MV pipeline over it.
+
+**A crude stat-weight score is used to pre-filter armor slots down to a top-15 shortlist per
+slot** before the real sim runs on them (1426 eligible items down to a tractable count) - this
+is exactly what §5 always intended EP to be used for ("decide what's worth simming first"), not
+a hard exclusion either.
+
+**Caught before running the expensive sim, from the user naming a specific example (Badge of the
+Swarmguard)**: the same TOP_N truncation, and an ilvl >= 115 floor meant to exclude leveling-zone
+junk, were BOTH being applied uniformly to trinkets and weapons too. Checked Badge of the
+Swarmguard directly: phase 1 (passes), quality 4/Epic (passes), but **ilvl 76** (fails the floor)
+and **zero raw stats in its base scalingOptions** - its entire value is an on-crit AP proc via
+itemEffects, which the crude score can't see at all, so it would've scored ~0 and been truncated
+even without the ilvl floor. Same failure mode §5 already named explicitly ("always keep all
+trinkets and all weapons... never a hard exclusion") - built the sweep without applying that rule
+the first time, fixed by exempting trinkets/weapons/ranged from both the ilvl floor and the
+top-N truncation entirely; armor slots keep both, since armor value is overwhelmingly raw-stat-
+budget-driven and doesn't have this problem the way procs do.
+
+**2H weapons remain excluded from this sweep, deliberately, for a real reason** (per the user):
+evaluating a 2H candidate fairly needs the rotation itself switched to melee weave
+(`meleeWeave:true`, confirmed present in the 2h_9p preset's `specRotationJson`, absent from
+dw_9p's - see the Stage 1 preset-diffing entry above) wherever the boss allows it - not just a
+worse number under the dual-wield settings, a wrong one, since the character would stay parked
+at range instead of weaving into melee. That branching isn't built yet; `slot_for_item()` returns
+`None` for `HandType.TwoHand` rather than silently reporting a number that tested the wrong
+playstyle. Next step if 2H ever needs checking: build a second settings variant with
+`meleeWeave:true` and route 2H candidates through it specifically.
+
 ## 2026-08-23 — Real bug: non-owned candidates got enchant=0, not their real enchant
 
 User pushed on the shoulders-alone discrepancy again after the canonical-settings fix didn't
