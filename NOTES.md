@@ -356,6 +356,37 @@ standard error at this iteration count) and need the 30-50k resolve pass before 
 - Two-handed weapon path not explored - stuck with confirmed dual-wield (her real, validated
   wowsims.com export uses two 1H weapons).
 
+## 2026-08-23 — Refocus: per-item MV, not just DPS*(pool)
+
+User's reminder: the actual goal is "is this item an upgrade, and how much" (§1's core
+question), not chasing decimal precision on one full-set number. Built `core/marginal_value.py`
++ `core/run_mv_report.py`: computes `MV(i) = DPS*(P u {i}) - DPS*(P)` per candidate against her
+CURRENT gear (not an already-optimized set - that's the actual baseline "this item dropped, bid
+or pass" gets asked against), reporting every candidate's delta with a noise bound.
+
+**Real bug caught before trusting the first run**: initial noise threshold used the sim's raw
+`player_stdev` (~62.5 DPS - the spread across *individual simulated fights*) as the tied-vs-not
+cutoff. That's not the uncertainty on a 30,000-iteration *average* - conflating the two made
+almost every real, verified difference read as "tied within noise." Fixed:
+`standard_error = player_stdev / sqrt(iterations)`, and the delta's combined error is
+`sqrt(SEM_a^2 + SEM_b^2)` for the two independent runs being compared. At 30k iterations this
+gives a real noise floor of ~0.5 DPS, not ~62.5.
+
+**With the fix, individual results are exactly the §1 failure-mode demonstration the tool exists
+for**: every single Gronnstalker T6 piece is a *downgrade* alone (Helmet -29.4, Spaulders -14.5,
+Chestguard -13.2, Gloves -10.1 - each one breaks her held Rift Stalker 4pc for a mediocre-in-
+isolation trade), while the full 4-piece package together is **+150.6, a clear upgrade** (see
+the "Correction" entry above for how that number was arrived at correctly). A per-slot EP
+ranking would recommend against every one of these four items individually and therefore never
+reach the package - this is the concrete, numeric version of "these three pieces are worth more
+together than separately" from §7.
+
+Other real upgrades found (MV vs current gear, single-item swaps, 30k iter): Dragonspine Trophy
++23.7, Band of the Eternal Champion +19.0, Don Alejandro's Money Belt +19.1, Bristleblitz
+Striker +14.9, Bow-stitched Leggings +9.0, Madness of the Betrayer +5.8, Shadowmaster's Boots
++5.9. Real downgrades among reference-list "Great"/"Best Until T5" items that looked
+individually plausible: every Beast Lord piece (T4, -43 to -70), most non-set alternatives.
+
 ## 2026-08-22 — Correction: the Stage 4 screening conclusion was wrong
 
 User verified on wowsims.com directly and got numbers that flatly contradicted my "Rift Stalker
