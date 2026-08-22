@@ -356,6 +356,35 @@ standard error at this iteration count) and need the 30-50k resolve pass before 
 - Two-handed weapon path not explored - stuck with confirmed dual-wield (her real, validated
   wowsims.com export uses two 1H weapons).
 
+## 2026-08-23 — Canonical settings locked in, background drift fixed
+
+The background settings I'd been using (`data/cache/user_export_2.json`) turned out to be just
+one snapshot among several inconsistent test sessions - diffed all three exports the user had
+sent and found real drift: Windfury Totem, Mana Spring/Wrath of Air Totem, Braided Eternium
+Chain, Curse of Elements, Blessing of Salvation, and weapon imbues were each present in some
+sessions and absent in others, none of it deliberate (confirmed by the shoulders test: swapping
+shoulders alone gave -14.5 under one background and -0.17 - matching the user's own -1.19 result
+- under another; same gear swap, different answer, purely from which background happened to be
+loaded). Pet type alone had been Owl/Ravager/Bat across three different sessions.
+
+**User's confirmed standing assumptions**:
+- Pet: Owl, always - now force-normalized in `valuation.py`'s `_load_template` regardless of
+  what's in any source file, so a future pasted test export can't silently change this again.
+- Totem-twisting Enhancement Shaman assumed: Windfury Totem (Regular) + Grace of Air Totem +
+  `totemTwisting: true`. NOT Mana Spring/Wrath of Air Totem - those aren't part of the twist.
+- Braided Eternium Chain: NOT assumed (was stray session state, not a real standing item).
+- Curse of Elements and Blessing of Salvation: assumed present.
+- Weapon imbues: NOT assumed - the imbue id used in earlier exports (29453) is Fist Weapon-only
+  per the user, and her actual weapons (axes/swords) don't qualify. Omitted entirely rather than
+  substituting a "correct" sword/axe stone she didn't ask for.
+
+Built `profiles/tbc/canonical_settings_survival.json` - a version-controlled (not gitignored
+scratch) canonical background reflecting all of the above, replacing the ad hoc
+`data/cache/user_export_2.json` as `SETTINGS_TEMPLATE` in both `run_optimizer.py` and
+`run_mv_report.py`. Re-ran the optimizer against it: conclusion unchanged (Gronnstalker bundle
+still wins, now +148.2 vs current gear's corrected 2656.0, was +150.6 under the old background) -
+the fix mattered for close-to-noise individual swaps like shoulders, not for the headline result.
+
 ## 2026-08-23 — Refocus: per-item MV, not just DPS*(pool)
 
 User's reminder: the actual goal is "is this item an upgrade, and how much" (§1's core

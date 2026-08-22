@@ -27,11 +27,22 @@ _settings_lock = threading.Lock()
 _template_cache = {}
 
 
+def _normalize(settings: dict) -> dict:
+    """Forces the pet to Owl regardless of what's in the source file.
+    Wowsims.com test exports have shown Owl/Ravager/Bat across different
+    sessions - none of that was a deliberate choice, just whatever the UI
+    happened to have loaded. Owl is the confirmed standing choice; every
+    settings file that flows through this pipeline gets normalized to it
+    so a stray future paste can't silently change the baseline again."""
+    settings["player"]["hunter"]["options"]["classOptions"]["petType"] = "Owl"
+    return settings
+
+
 def _load_template(settings_path: str) -> dict:
     with _settings_lock:
         if settings_path not in _template_cache:
             with open(settings_path, encoding="utf-8") as f:
-                _template_cache[settings_path] = json.load(f)
+                _template_cache[settings_path] = _normalize(json.load(f))
         # Deep-copy via round-trip so callers can mutate freely.
         return json.loads(json.dumps(_template_cache[settings_path]))
 

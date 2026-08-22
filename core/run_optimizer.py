@@ -9,7 +9,7 @@ import gear_config as gc  # noqa: E402
 import item_db as idb  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SETTINGS_TEMPLATE = os.path.join(REPO_ROOT, "data", "cache", "user_export_2.json")
+SETTINGS_TEMPLATE = os.path.join(REPO_ROOT, "profiles", "tbc", "canonical_settings_survival.json")
 POOL_PATH = os.path.join(REPO_ROOT, "profiles", "tbc", "candidate_pool_survival.json")
 REFERENCE_P3_PATH = os.path.join(REPO_ROOT, "profiles", "tbc", "reference_bis", "phase3_survival.json")
 
