@@ -1,14 +1,27 @@
 """Stage 4 (§6): DPS*(S) via warm-started per-slot greedy sweep, with
 trinkets/ranged/set-bonus handled as explicit branches since greedy search
-provably misses those. Screening-only (2k iterations) - resolving close
-ties at 30-50k is a separate, later pass per the doc's own STOP point.
+provably misses those.
+
+Corrected after a real miss (see NOTES.md, "Correction: the Stage 4
+screening conclusion was wrong"): the greedy sweep + a too-narrow
+set-bonus branch reported Rift Stalker T5 beating a full Gronnstalker T6
+transition, when the full transition actually wins by ~270 DPS once
+properly evaluated. Two fixes now in place:
+1. `full_bundle_branch` tests an entire named reference bundle (e.g. the
+   recommended full BiS set) against the greedy result directly, not just
+   one set's armor pieces in isolation with everything else left at
+   whatever greedy already picked.
+2. `resolve` re-evaluates any close screening call at high iterations
+   before it's reported as final - screening alone (2k iterations) isn't
+   trustworthy for calls within a few DPS of each other.
 
 Known simplifications, flagged rather than silently done:
-- Gems held constant at her existing default (Delicate Living Ruby, see
-  gear_config.DEFAULT_GEM) for candidate items she doesn't currently own.
-  Meta gem slot is held as-is (already her standard Hunter/Agility meta,
-  Relentless Earthstorm Diamond - confirmed from her actual gear, not
-  re-derived). Full gem re-optimization is not implemented this pass.
+- Gems: reuses her real gems for items she already owns; non-owned
+  candidates get gear_config.DEFAULT_GEM (Delicate Crimson Spinel, the
+  actual phase 3 gem the reference set uses - not phase 1, see the
+  DEFAULT_GEM fix in gear_config.py). Meta gem slot held as-is (already her
+  standard Hunter/Agility meta, Relentless Earthstorm Diamond). Full gem
+  re-optimization beyond this default still isn't implemented.
 - Ranged weapon is exhaustive over the candidate pool but does NOT
   re-verify/retune the rotation per weapon speed (the doc explicitly warns
   this matters for Steady Shot weaving) - every ranged candidate is
@@ -31,6 +44,7 @@ import valuation  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCREEN_ITERATIONS = 2000
+RESOLVE_ITERATIONS = 30000
 SEED = 1
 MAX_WORKERS = 4
 
@@ -70,6 +84,39 @@ POOL_KEY_TO_SLOTS = {
 }
 
 
+def find_owned_meta_gem(owned_items: list[dict]) -> int | None:
+    """Her current meta gem id, found from whichever owned item has a meta
+    socket - used to keep the meta gem filled on non-owned candidates that
+    also have a meta socket, instead of leaving that socket empty."""
+    for it in owned_items:
+        if not it:
+            continue
+        item = idb.by_id(it["id"])
+        if not item or not idb.is_meta_socket_item(item):
+            continue
+        for gem_id in it.get("gems") or []:
+            gem = idb.gem_by_id(gem_id)
+            if gem and gem.get("color") == idb.META_GEM_COLOR:
+                return gem_id
+    return None
+
+
+def gems_for_item(item: dict, meta_gem_id: int | None) -> list[int]:
+    """Builds a gems list matching gemSockets position-for-position - a
+    too-short list (skipping the meta socket's position entirely) silently
+    leaves that socket empty, which is exactly the bug that made a
+    non-owned meta-socketed candidate (e.g. Gronnstalker's Helmet) lose its
+    meta gem and get undervalued. See NOTES.md's screening correction."""
+    sockets = item.get("gemSockets") or []
+    gems = []
+    for color in sockets:
+        if color == idb.META_GEM_COLOR:
+            gems.append(meta_gem_id if meta_gem_id is not None else 0)
+        else:
+            gems.append(gc.DEFAULT_GEM)
+    return gems
+
+
 def load_candidates(pool_path: str, owned_items: list[dict]) -> dict[str, list[Candidate]]:
     """Resolves each candidate name to an id (preferring the id she already
     owns for that name, since a plain name lookup can hit multiple ids -
@@ -78,6 +125,7 @@ def load_candidates(pool_path: str, owned_items: list[dict]) -> dict[str, list[C
     equipped (never invents an enchant for an item she doesn't own)."""
     pool = json.load(open(pool_path, encoding="utf-8"))
     owned_by_name = {it["name"]: it for it in owned_items if it}
+    meta_gem_id = find_owned_meta_gem(owned_items)
 
     result = {slot: [] for slot in gc.SLOT_ORDER}
     for pool_key, entries in pool.items():
@@ -102,7 +150,7 @@ def load_candidates(pool_path: str, owned_items: list[dict]) -> dict[str, list[C
             if owned:
                 cands.append(Candidate(name, item_id, owned.get("enchant", 0), owned.get("gems")))
             else:
-                gems = [gc.DEFAULT_GEM] * len([s for s in (item.get("gemSockets") or []) if s != idb.META_GEM_COLOR]) if item else []
+                gems = gems_for_item(item, meta_gem_id) if item else []
                 cands.append(Candidate(name, item_id, 0, gems))
         for slot in target_slots:
             result[slot] = cands
@@ -125,6 +173,44 @@ def is_unique_conflict(config: list[dict], slot_idx: int, item_id: int) -> bool:
 
 def eval_config(settings_path: str, config: list[dict]) -> dict:
     return valuation.evaluate(settings_path, config, SCREEN_ITERATIONS, SEED)
+
+
+def resolve(settings_path: str, config: list[dict]) -> dict:
+    """High-iteration re-evaluation (§6: 'resolve only within-error ties at
+    30-50k'). Call this on any screening result before trusting it as
+    final - screening alone got a real comparison wrong once already."""
+    return valuation.evaluate(settings_path, config, RESOLVE_ITERATIONS, SEED)
+
+
+def resolve_name_to_config(name_list: list[str], candidates: dict[str, list["Candidate"]],
+                            owned_items: list[dict]) -> list[dict] | None:
+    """Builds a full 17-slot config from a flat list of item names (e.g. a
+    reference guide's 'recommended full set'), using the same
+    owned-enchant/gems-if-owned-else-DEFAULT_GEM resolution as the rest of
+    the candidate pool. Returns None if any name can't be placed - never
+    silently drops an item to make a bundle 'work'."""
+    by_name = {}
+    for slot_cands in candidates.values():
+        for c in slot_cands:
+            by_name.setdefault(c.name, []).append(c)
+
+    config = [None] * len(gc.SLOT_ORDER)
+    remaining = list(name_list)
+    # Fill slots that have exactly one still-unassigned name matching one of
+    # their candidates first (rings/trinkets/weapons need this since two
+    # slots share one pool and a name can appear twice, e.g. dual weapons).
+    for slot_idx, slot in enumerate(gc.SLOT_ORDER):
+        slot_names = {c.name for c in candidates.get(slot, [])}
+        for name in list(remaining):
+            if name in slot_names and config[slot_idx] is None:
+                cand = next(c for c in candidates[slot] if c.name == name)
+                config[slot_idx] = cand.as_entry()
+                remaining.remove(name)
+                break
+
+    if any(c is None for c in config) or remaining:
+        return None
+    return config
 
 
 def greedy_sweep(settings_path: str, config: list[dict], candidates: dict[str, list[Candidate]], log: list):
@@ -188,14 +274,31 @@ def trinket_pairs(settings_path: str, config: list[dict], candidates: list[Candi
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
         results = list(ex.map(try_pair, pairs))
 
-    best_pair, best_result = None, None
-    for pair, res in results:
-        if best_result is None or res["combined"] > best_result["combined"]:
-            best_pair, best_result = pair, res
+    results.sort(key=lambda pr: pr[1]["combined"], reverse=True)
+    top = results[:3]  # resolve the top few at high iteration - screening alone
+    # already picked the wrong trinket pair once (Bloodlust Brooch over
+    # Madness of the Betrayer), see NOTES.md.
+
+    def resolve_pair(pair_res):
+        pair, _ = pair_res
+        a, b = pair
+        trial = list(config)
+        trial[t1_idx] = a.as_entry()
+        trial[t2_idx] = b.as_entry()
+        return pair, resolve(settings_path, trial)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
+        resolved = list(ex.map(resolve_pair, top))
+
+    best_pair, best_result = max(resolved, key=lambda pr: pr[1]["combined"])
 
     config[t1_idx] = best_pair[0].as_entry()
     config[t2_idx] = best_pair[1].as_entry()
-    log.append({"slot": "trinket1+trinket2", "picked": f"{best_pair[0].name} + {best_pair[1].name}", "combined": best_result["combined"]})
+    log.append({
+        "slot": "trinket1+trinket2", "picked": f"{best_pair[0].name} + {best_pair[1].name}",
+        f"combined_resolved_@{RESOLVE_ITERATIONS}": best_result["combined"],
+        "top_3_screened": [f"{p[0].name}+{p[1].name}={r['combined']:.1f}" for p, r in top],
+    })
     return config
 
 
@@ -229,6 +332,38 @@ def set_bonus_branch(settings_path: str, greedy_config: list[dict], candidates: 
         "forced_wins": forced_result["combined"] > greedy_result["combined"],
     })
     return trial if forced_result["combined"] > greedy_result["combined"] else greedy_config
+
+
+def full_bundle_branch(settings_path: str, greedy_config: list[dict], candidates: dict[str, list[Candidate]],
+                        bundle_name: str, name_list: list[str], owned_items: list[dict], log: list) -> list[dict]:
+    """Forced branch, corrected version of set_bonus_branch: tests an ENTIRE
+    named bundle (e.g. a reference guide's full recommended set) against the
+    greedy result, not just one set's armor pieces with everything else left
+    at whatever greedy already picked. See NOTES.md - this is exactly the
+    gap that produced a wrong conclusion the first time around."""
+    bundle_config = resolve_name_to_config(name_list, candidates, owned_items)
+    if bundle_config is None:
+        log.append({"full_bundle_branch": bundle_name, "result": "could not resolve every item to a slot - skipped"})
+        return greedy_config
+
+    bundle_screen = eval_config(settings_path, bundle_config)
+    greedy_screen = eval_config(settings_path, greedy_config)
+    log.append({
+        "full_bundle_branch": bundle_name, "phase": "screening",
+        "bundle_combined": bundle_screen["combined"], "greedy_combined": greedy_screen["combined"],
+    })
+
+    # Close at screening, or the bundle already looks better - either way,
+    # don't trust screening alone; resolve both at high iterations.
+    bundle_resolved = resolve(settings_path, bundle_config)
+    greedy_resolved = resolve(settings_path, greedy_config)
+    winner = bundle_config if bundle_resolved["combined"] > greedy_resolved["combined"] else greedy_config
+    log.append({
+        "full_bundle_branch": bundle_name, "phase": f"resolved @ {RESOLVE_ITERATIONS} iter",
+        "bundle_combined": bundle_resolved["combined"], "greedy_combined": greedy_resolved["combined"],
+        "bundle_wins": bundle_resolved["combined"] > greedy_resolved["combined"],
+    })
+    return winner
 
 
 def _in_set(item_id: int, set_name: str) -> bool:

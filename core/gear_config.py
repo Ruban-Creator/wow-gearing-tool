@@ -12,8 +12,11 @@ SLOT_ORDER = [
     "mainhand", "offhand", "ranged",
 ]
 
-DEFAULT_GEM = 24028  # Delicate Living Ruby (+Agility, red) - her own established default;
-# see NOTES.md, Stage 4, for why this isn't an invented EP-based gem choice.
+DEFAULT_GEM = 32194  # Delicate Crimson Spinel (+10 Agility, red, phase 3) - was 24028
+# (Delicate Living Ruby, +8 Agility, phase 1) until NOTES.md's "screening conclusion was
+# wrong" correction: the phase-1 gem was quietly handicapping every non-owned candidate.
+# This is the gem actually used in the reference BiS set she verified on wowsims.com, not
+# an invented EP-based pick - same color, same stat, strictly better, no downside.
 
 
 def item_entry(item_id: int, enchant: int = 0, gems: list[int] | None = None) -> dict:

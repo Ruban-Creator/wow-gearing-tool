@@ -11,6 +11,7 @@ import item_db as idb  # noqa: E402
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETTINGS_TEMPLATE = os.path.join(REPO_ROOT, "data", "cache", "user_export_2.json")
 POOL_PATH = os.path.join(REPO_ROOT, "profiles", "tbc", "candidate_pool_survival.json")
+REFERENCE_P3_PATH = os.path.join(REPO_ROOT, "profiles", "tbc", "reference_bis", "phase3_survival.json")
 
 
 def main():
@@ -41,20 +42,30 @@ def main():
     config, passes = opt.greedy_sweep(SETTINGS_TEMPLATE, config, candidates, log)
     config = opt.trinket_pairs(SETTINGS_TEMPLATE, config, candidates["trinket1"], log)
     config = opt.ranged_exhaustive(SETTINGS_TEMPLATE, config, candidates["ranged"], log)
-    config = opt.set_bonus_branch(
+
+    reference = json.load(open(REFERENCE_P3_PATH, encoding="utf-8"))
+    # Quiver/ammo-pouch items aren't one of our 17 equip slots (they're bag
+    # items) - drop them from the bundle rather than let them block
+    # resolution of everything else.
+    bundle_names = [n for n in reference["recommended_full_set"] if n != "Quiver of a Thousand Feathers"]
+    config = opt.full_bundle_branch(
         SETTINGS_TEMPLATE, config, candidates,
-        "Gronnstalker's Armor", ["head", "shoulder", "chest", "hands"], log,
+        "Wowhead P3 recommended full set", bundle_names, owned_items, log,
     )
 
-    final = opt.eval_config(SETTINGS_TEMPLATE, config)
+    # Final resolve at high iteration - the number reported as "final" must
+    # never be a bare screening number again (see NOTES.md's correction).
+    final = opt.resolve(SETTINGS_TEMPLATE, config)
+    baseline_resolved = opt.resolve(SETTINGS_TEMPLATE, opt.build_owned_config(owned_items))
     elapsed = time.time() - start
 
     print(f"Greedy sweep: {passes} pass(es)")
     for entry in log:
         print(f"  {entry}")
     print()
-    print(f"Screening result @ {opt.SCREEN_ITERATIONS} iter: combined={final['combined']:.1f} "
-          f"(vs warm start {baseline['combined']:.1f}, +{final['combined'] - baseline['combined']:.1f})")
+    print(f"Screening baseline (current gear) @ {opt.SCREEN_ITERATIONS} iter: combined={baseline['combined']:.1f}")
+    print(f"RESOLVED @ {opt.RESOLVE_ITERATIONS} iter: current gear={baseline_resolved['combined']:.1f}, "
+          f"final={final['combined']:.1f} (+{final['combined'] - baseline_resolved['combined']:.1f})")
     print(f"Elapsed: {elapsed:.1f}s")
     print()
 

@@ -387,10 +387,36 @@ red herring for THIS discrepancy, not the cause) before finding the real issue.
    (Delicate Crimson Spinel, id 32194, +10 vs +8 Agility) the reference set actually uses -
    handicapping those candidates for real, not just cosmetically.
 
-**Action**: optimizer needs (a) a resolve pass at 30-50k on any close screening result before
-reporting it as final, per the doc's own two-tier process, and (b) broader forced branches that
-test a full recommended bundle against greedy's result, not just the set-bonus pieces in
-isolation. Not yet fixed in code as of this note - next thing to do.
+**Fixed, all three**:
+1. `gear_config.DEFAULT_GEM` changed from Delicate Living Ruby (24028, phase 1) to Delicate
+   Crimson Spinel (32194, phase 3) - the actual gem the reference set uses.
+2. `optimizer.full_bundle_branch` replaces the old `set_bonus_branch`: resolves an entire named
+   bundle of item names (e.g. a reference guide's full recommended set) to a complete config via
+   `resolve_name_to_config`, and compares it against the greedy result at both screening AND a
+   30k-iteration resolve pass before picking a winner.
+3. `optimizer.trinket_pairs` now resolves its top-3 screened pairs at 30k iterations before
+   picking a winner, instead of trusting the 2k screening ranking directly.
+
+**A second real bug found while wiring in the fix**: the original candidate gem-filling logic
+built a gems list *shorter* than the item's socket count whenever a socket was Meta - it skipped
+the meta position instead of filling it, so any non-owned candidate with a meta socket (e.g.
+Gronnstalker's Helmet, same 2-socket yellow+meta layout as her current Rift Stalker Helm) got
+evaluated with **no meta gem socketed at all**. Fixed: `gems_for_item` now builds the list
+position-for-position against `gemSockets`, filling the meta position with her own currently-
+socketed meta gem (found via `find_owned_meta_gem` - Relentless Earthstorm Diamond, the standard
+choice, not re-derived) instead of leaving it empty.
+
+**Re-ran the full optimizer after both fixes**: full bundle branch now correctly wins -
+**2832.5 combined @ 30k iterations (+150.6 vs current gear's 2681.9)**, chosen over the greedy
+sweep's 2776.8. Still short of the 3030.9 the user's exact manual gear+gems produced on
+wowsims.com - the remaining ~198 DPS gap is the disclosed, still-unfixed simplification: generic
+candidates get uniform `DEFAULT_GEM` in every non-meta socket, not the specific per-socket gem
+choices (e.g. Jagged Seaspray Emerald in two of the chestpiece's sockets, chasing a socket bonus)
+the real reference set uses. Directionally this only makes the true gap *bigger*, never flips
+which set wins, so the corrected conclusion (full Gronnstalker bundle beats current gear and
+beats the narrower greedy result) is solid even with generic gems - but the absolute DPS number
+is a conservative underestimate until per-socket gem optimization is implemented. Not doing that
+this pass; flagging it as the next known gap rather than leaving it undisclosed.
 
 ## 2026-08-22 — Raid progression (from user)
 
