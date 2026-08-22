@@ -132,6 +132,23 @@ def load_candidates(pool_path: str, owned_items: list[dict]) -> dict[str, list[C
         target_slots = POOL_KEY_TO_SLOTS.get(pool_key, [])
         if not target_slots:
             continue
+        # Enchants attach to the SLOT via the profession UI, not to a
+        # specific item - a non-owned candidate with enchant=0 was silently
+        # evaluated with no enchant at all (e.g. Gronnstalker's Spaulders
+        # missing the shoulder inscription), understating it by exactly
+        # that enchant's value. Real bug, caught by a user's own wowsims.com
+        # test disagreeing with this tool - see NOTES.md. Default to
+        # whichever target slot she currently has an enchant on; for
+        # rings/trinkets this naturally stays 0 since those slots never
+        # carry enchants in this game.
+        default_enchant = 0
+        for slot in target_slots:
+            slot_idx = gc.SLOT_ORDER.index(slot)
+            owned_here = owned_items[slot_idx] if slot_idx < len(owned_items) else None
+            if owned_here and owned_here.get("enchant"):
+                default_enchant = owned_here["enchant"]
+                break
+
         cands = []
         for entry in entries:
             name = entry["item"]
@@ -151,7 +168,7 @@ def load_candidates(pool_path: str, owned_items: list[dict]) -> dict[str, list[C
                 cands.append(Candidate(name, item_id, owned.get("enchant", 0), owned.get("gems")))
             else:
                 gems = gems_for_item(item, meta_gem_id) if item else []
-                cands.append(Candidate(name, item_id, 0, gems))
+                cands.append(Candidate(name, item_id, default_enchant, gems))
         for slot in target_slots:
             result[slot] = cands
     return result

@@ -356,6 +356,45 @@ standard error at this iteration count) and need the 30-50k resolve pass before 
 - Two-handed weapon path not explored - stuck with confirmed dual-wield (her real, validated
   wowsims.com export uses two 1H weapons).
 
+## 2026-08-23 — Real bug: non-owned candidates got enchant=0, not their real enchant
+
+User pushed on the shoulders-alone discrepancy again after the canonical-settings fix didn't
+close it (Gronnstalker's Spaulders standalone MV still read -14.8 in the tool, near-zero on
+wowsims.com). Isolated it by calling `adapter.run()` directly on a hand-built pair of settings
+files (bypassing the optimizer entirely) and got -1.0 - matching the user's observed result, not
+the tool's. That meant the bug was specifically in how `optimizer.load_candidates` builds
+candidates, not in the settings background.
+
+**Root cause, confirmed by inspection**: every non-owned candidate got `enchant=0` hardcoded,
+regardless of the item's actual owned-slot equivalent. Enchants attach to the *slot* via the
+profession UI, not to a specific item - a real player would obviously enchant a new shoulder
+piece with the same Greater Inscription of Vengeance she already uses. Evaluating Gronnstalker's
+Spaulders with **no shoulder enchant at all** understated it by roughly the enchant's own value,
+enough to flip "roughly even" into "clear downgrade." This wasn't shoulders-specific - it applied
+to every non-owned candidate in every slot with an enchant (weapons, boots, bracers, cloak,
+chest, legs, etc.), silently deflating most of the 79-item MV table.
+
+**Fixed**: `load_candidates` now defaults a non-owned candidate's enchant to whatever she
+currently has enchanted on that same slot, computed once per pool key from `owned_items`. Rings
+and trinkets correctly stay at 0 (no enchant slot exists for them in this game) - not a bug,
+just nothing to inherit.
+
+**Re-ran the optimizer after the fix - the shift is large, not marginal**: current gear
+(unchanged, 2656.0) -> full bundle **2999.7 (+343.7)**, more than double the previous +148.2.
+The full bundle branch's screening phase alone jumped 2809->3001. Greedy search now finds 3 of
+the 4 Gronnstalker pieces (head/shoulder/chest all pass its normal per-slot sweep, hands +38 in
+one step) on its own, without needing the forced branch to discover them - each piece no longer
+looks artificially worse than it is, so the local-optimum trap that made greedy avoid the set in
+the first place is largely gone. This is now much closer to the user's own wowsims.com full-BiS
+result (3030.9) - the remaining ~30 DPS gap is the still-disclosed, still-unfixed per-socket gem
+simplification (uniform DEFAULT_GEM vs her specific socket-bonus-chasing choices), not a new bug.
+
+**Lesson, stated plainly**: two significant optimizer bugs in a row (missing meta gem, then
+missing enchants) were both "non-owned candidate gets a worse default than reality" - systematic
+understatement of anything not currently equipped. Worth treating any future "candidate looks
+worse than expected" signal as a prompt to check what implicit default it's silently getting,
+not just re-running at higher iterations.
+
 ## 2026-08-23 — Canonical settings locked in, background drift fixed
 
 The background settings I'd been using (`data/cache/user_export_2.json`) turned out to be just
