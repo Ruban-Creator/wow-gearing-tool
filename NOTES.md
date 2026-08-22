@@ -295,6 +295,16 @@ own AP-to-damage ratio (class, weapon speed, hit/crit), which isn't knowable gen
 MV/valuation output should report this as its own column (raid AP contribution) alongside
 personal DPS, per the ground rule, not collapse it into a single number.
 
+## 2026-08-22 — Raid progression (from user)
+
+SSC/TK: full weekly clears already, ongoing. BT/MH: expected to start full weekly clears from
+Week 1 or Week 2 of Phase 3 (launches 2026-08-27). **Why this matters**: it means essentially
+the entire P2+P3 Survival reference list becomes realistically accessible on a weekly cadence
+very early in the phase, not a slow multi-month grind - relevant for Stage 5's time-horizon
+bucketing (`lasts the expansion` / `lasts this phase` / `replaced soon`) later. Doesn't change
+anything about Stage 4 (the valuation engine doesn't need cost/progression data, only gear
+configs) - only matters once cost/spend recommendations (§5 acquisition cost tags, §7) come up.
+
 ## 2026-08-22 — Stage 3 bug: name->id resolution silently picked the wrong item
 
 User spotted it from a screenshot: my gap analysis said "Band of Eternity" wasn't on the Phase 2

@@ -1,0 +1,1065 @@
+{
+  "back": [
+    {
+      "item": "Thalassian Wildercloak",
+      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Drape of the Dark Reavers",
+      "source": "Drop: Shade of Aran (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        },
+        {
+          "phase": "P3",
+          "rank": "Great"
+        }
+      ],
+      "best_rank_seen": "Great"
+    },
+    {
+      "item": "Auchenai Death Shroud",
+      "source": "Drop: Avatar of the Martyred (Heroic Auchenai Crypts)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional - Agility"
+        }
+      ],
+      "best_rank_seen": "Optional - Agility"
+    },
+    {
+      "item": "Blood Knight War Cloak",
+      "source": "Vendor: G'eras - 25 Badges of Justice",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    }
+  ],
+  "chest": [
+    {
+      "item": "Rift Stalker Hauberk",
+      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best Until Tier 6"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Gronnstalker's Chestguard",
+      "source": "Drop: Illidan Stormrage (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Beast Lord Cuirass",
+      "source": "Drop: Warp Splinter (The Botanica)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best Until Tier 5"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best Until Tier 5"
+        }
+      ],
+      "best_rank_seen": "Best Until Tier 5"
+    },
+    {
+      "item": "Primalstrike Vest",
+      "source": "Profession: Elemental Leatherworking (BoP)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    },
+    {
+      "item": "Hauberk of Karabor",
+      "source": "Quest: Varedis Must Be Stopped",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    }
+  ],
+  "feet": [
+    {
+      "item": "Cobra-Lash Boots",
+      "source": "Drop: Lady Vashj (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Star-Strider Boots",
+      "source": "Drop: High Astromancer Solarian (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Shadowmaster's Boots",
+      "source": "Drop: Mother Shahraz (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Glider's Sabatons of Agility",
+      "source": "Drop: Shadikith the Glider (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best Raid Wide Increase"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Best Raid Wide Increase"
+    },
+    {
+      "item": "Edgewalker Longboots",
+      "source": "Drop: Moroes (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    }
+  ],
+  "hands": [
+    {
+      "item": "Gloves of Dexterous Manipulation",
+      "source": "Drop: Attumen the Huntsman (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Great"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Gronnstalker's Gloves",
+      "source": "Drop: Azgalor (Hyjal Summit)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Rift Stalker Gauntlets",
+      "source": "Drop: Leotheras the Blind (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Great"
+        }
+      ],
+      "best_rank_seen": "Great"
+    },
+    {
+      "item": "Beast Lord Handguards",
+      "source": "Drop: Warchief Kargath Bladefist (The Shattered Halls)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        },
+        {
+          "phase": "P3",
+          "rank": "Great (4 Set)"
+        }
+      ],
+      "best_rank_seen": "Great (4 Set)"
+    },
+    {
+      "item": "Gauntlets of the Dragonslayer",
+      "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    },
+    {
+      "item": "Fel Leather Gloves",
+      "source": "Profession: Leatherworking (BoE)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    }
+  ],
+  "head": [
+    {
+      "item": "Rift Stalker Helm",
+      "source": "Drop: Lady Vashj (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Great"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Gronnstalker's Helmet",
+      "source": "Drop: Archimonde (Hyjal Summit)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Beast Lord Helm",
+      "source": "Drop: Pathaleon the Calculator (The Mechanar)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best Until Tier 5"
+        },
+        {
+          "phase": "P3",
+          "rank": "Great (4 Set)"
+        }
+      ],
+      "best_rank_seen": "Best Until Tier 5"
+    },
+    {
+      "item": "Surestrike Goggles v2.0",
+      "source": "Profession: Engineering (BoP)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    },
+    {
+      "item": "Demon Stalker Greathelm",
+      "source": "Drop: Prince Malchezaar (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    }
+  ],
+  "legs": [
+    {
+      "item": "Rift Stalker Leggings",
+      "source": "Drop: Fathom-Lord Karathress (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Bow-stitched Leggings",
+      "source": "Drop: Azgalor (Hyjal Summit)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Scaled Greaves of the Marksman",
+      "source": "Drop: Doom Lord Kazzak (World Boss)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    },
+    {
+      "item": "Void Reaver Greaves",
+      "source": "Drop: Void Reaver (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    },
+    {
+      "item": "Skulker's Greaves",
+      "source": "Drop: Netherspite (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    },
+    {
+      "item": "Gronnstalker's Leggings",
+      "source": "Drop: The Illidari Council (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    },
+    {
+      "item": "Shady Dealer's Pantaloons",
+      "source": "Drop: Azgalor (Hyjal Summit)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    }
+  ],
+  "neck": [
+    {
+      "item": "Telonicus's Pendant of Mayhem",
+      "source": "Quest: Verdant Sphere - Kael'thas Sunstrider (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Necklace of the Deep",
+      "source": "Profession: Jewelcrafting",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional - Agility"
+        }
+      ],
+      "best_rank_seen": "Optional - Agility"
+    },
+    {
+      "item": "Jagged Bark Pendant",
+      "source": "Drop: Warp Splinter (The Botanica)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional - Agility"
+        }
+      ],
+      "best_rank_seen": "Optional - Agility"
+    },
+    {
+      "item": "Prestor's Talisman of Connivery",
+      "source": "Drop: Nefarian (Blackwing Lair)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional - Agility"
+        }
+      ],
+      "best_rank_seen": "Optional - Agility"
+    }
+  ],
+  "ranged": [
+    {
+      "item": "Serpent Spine Longbow",
+      "source": "Drop: Lady Vashj (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Bristleblitz Striker",
+      "source": "Drop: Archimonde (Hyjal Summit)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Vengeful Gladiator's Rifle",
+      "source": "Arena Points - Arena Vendor",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best - Dwarf"
+        }
+      ],
+      "best_rank_seen": "Best - Dwarf"
+    },
+    {
+      "item": "Black Bow of the Betrayer",
+      "source": "Drop: Illidan Stormrage (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Second Best"
+        }
+      ],
+      "best_rank_seen": "Second Best"
+    },
+    {
+      "item": "Arcanite Steam-Pistol",
+      "source": "Drop: Al'ar (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    },
+    {
+      "item": "Barrel-Blade Longrifle",
+      "source": "Drop: Doomwalker (World Boss)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    },
+    {
+      "item": "Sunfury Bow of the Phoenix",
+      "source": "Drop: Prince Malchezaar (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    }
+  ],
+  "ring": [
+    {
+      "item": "Ring of the Recalcitrant",
+      "source": "Quest: The Fall of Magtheridon (Magtheridon's Lair)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Band of the Eternal Champion",
+      "source": "Quest: Champion's Covenant - Exalted The Scale of the Sands",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best 6% and 9%"
+        }
+      ],
+      "best_rank_seen": "Best 6% and 9%"
+    },
+    {
+      "item": "Band of Eternity",
+      "source": "Quest: Champion's Pledge (Caverns of Time)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    },
+    {
+      "item": "Ring of Lethality",
+      "source": "Drop: Hydross the Unstable (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    },
+    {
+      "item": "Pathfinder's Band",
+      "source": "World Drop: Outland",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    }
+  ],
+  "shoulder": [
+    {
+      "item": "Rift Stalker Mantle",
+      "source": "Drop: Void Reaver (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Great"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Gronnstalker's Spaulders",
+      "source": "Drop: Mother Shahraz (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Beast Lord Mantle",
+      "source": "Drop: Warlord Kalithresh (The Steamvault)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best Until Tier 5"
+        },
+        {
+          "phase": "P3",
+          "rank": "Great (4 Set)"
+        }
+      ],
+      "best_rank_seen": "Best Until Tier 5"
+    },
+    {
+      "item": "Shoulderpads of the Stranger",
+      "source": "Drop: Hydross the Unstable (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    },
+    {
+      "item": "Wastewalker Shoulderpads",
+      "source": "Drop: Avatar of the Martyred (Heroic Auchenai Crypts)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    }
+  ],
+  "trinket": [
+    {
+      "item": "Dragonspine Trophy",
+      "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Bloodlust Brooch",
+      "source": "Vendor: G'eras - 41 Badges of Justice",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Great"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Madness of the Betrayer",
+      "source": "Drop: The Illidari Council (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Ashtongue Talisman of Swiftness",
+      "source": "Vendor: Okuno - Exalted Ashtongue Deathsworn",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Good"
+        }
+      ],
+      "best_rank_seen": "Good"
+    },
+    {
+      "item": "Abacus of Violent Odds",
+      "source": "Drop: Pathaleon the Calculator (The Mechanar)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    },
+    {
+      "item": "Tsunami Talisman",
+      "source": "Drop: Leotheras the Blind (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    }
+  ],
+  "waist": [
+    {
+      "item": "Belt of Deep Shadow",
+      "source": "Profession: Leatherworking",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Don Alejandro's Money Belt",
+      "source": "Drop: Anetheron (Hyjal Summit)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Lurker's Belt of Agility",
+      "source": "Drop: Hyakiss the Lurker (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best Raid Wide Increase"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Best Raid Wide Increase"
+    },
+    {
+      "item": "Belt of One-Hundred Deaths",
+      "source": "Drop: Lady Vashj (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    },
+    {
+      "item": "Belt of the Black Eagle",
+      "source": "Profession: Leatherworking",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    }
+  ],
+  "weapon_dual_wield": [
+    {
+      "item": "Blade of Infamy",
+      "source": "Drop: Anetheron (Hyjal Summit)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best x2"
+        }
+      ],
+      "best_rank_seen": "Best x2"
+    },
+    {
+      "item": "Netherbane",
+      "source": "Drop: Al'ar (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best MH/OH"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Best MH/OH"
+    },
+    {
+      "item": "Stellaris",
+      "source": "Drop: Nethermancer Sepethrea (The Mechanar)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional MH/OH"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional MH/OH"
+        }
+      ],
+      "best_rank_seen": "Optional MH/OH"
+    },
+    {
+      "item": "Claw of the Watcher",
+      "source": "Drop: Shirrak the Dead Watcher (Heroic Auchenai Crypts)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional MH"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional MH"
+        }
+      ],
+      "best_rank_seen": "Optional MH"
+    },
+    {
+      "item": "Claw of the Phoenix",
+      "source": "Drop: Al'ar (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best OH - Personal DPS"
+        }
+      ],
+      "best_rank_seen": "Best OH - Personal DPS"
+    }
+  ],
+  "weapon_two_hand": [
+    {
+      "item": "Twinblade of the Phoenix",
+      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best - Weaving"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Bloodmoon",
+      "source": "Profession: Master Axesmith Blacksmith (BoP)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Halberd of Desolation",
+      "source": "Drop: High Warlord Naj'entus (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best - Hit"
+        }
+      ],
+      "best_rank_seen": "Best - Hit"
+    },
+    {
+      "item": "Legacy",
+      "source": "Drop: The Crone (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    },
+    {
+      "item": "Mooncleaver",
+      "source": "Profession: Master Axesmith Blacksmith (BoP)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    }
+  ],
+  "wrist": [
+    {
+      "item": "Vambraces of Ending",
+      "source": "Drop: High Astromancer Solarian (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Insidious Bands",
+      "source": "Drop: Teron Gorefiend (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Ravager's Bands of Agility",
+      "source": "Drop: Rokad the Ravager (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best Raid Wide Increase"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best Raid Wide Increase"
+        }
+      ],
+      "best_rank_seen": "Best Raid Wide Increase"
+    },
+    {
+      "item": "Felstalker Bracers",
+      "source": "Profession: Leatherworking (BoE)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        },
+        {
+          "phase": "P3",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    },
+    {
+      "item": "Bands of the Celestial Archer",
+      "source": "Drop: Tempest Keep Trash Mobs",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Optional"
+        }
+      ],
+      "best_rank_seen": "Optional"
+    }
+  ]
+}
