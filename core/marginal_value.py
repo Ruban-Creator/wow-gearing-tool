@@ -99,6 +99,44 @@ def mv_single(settings_path: str, baseline_config: list[dict], candidate: "opt.C
     }
 
 
+SCREEN_ITERATIONS = 2000
+RESOLVE_ITERATIONS = 30000
+# If a candidate's screening delta is already this many multiples of the
+# SCREENING noise away from zero, resolving at 30k practically never flips
+# the verdict (it can only sharpen the number) - not worth the 15x compute
+# cost. Generous on purpose: false "needs resolving" costs a few extra
+# seconds, false "doesn't need resolving" costs an actual wrong verdict.
+CLEAR_MARGIN_MULTIPLE = 8
+
+
+def mv_single_tiered(settings_path: str, baseline_config: list[dict], candidate: "opt.Candidate",
+                      baseline_screen: dict, baseline_resolve_cache: dict, seed: int = opt.SEED) -> dict:
+    """Screens at 2k iterations first; only pays for a 30k resolve pass when
+    the screening result is close enough to the noise floor that resolving
+    could plausibly change the verdict. Most candidates in a real pool are
+    clear upgrades or clear downgrades - this is where most of the runtime
+    was going for no accuracy benefit. baseline_resolve_cache is a 1-item
+    dict used as a lazy cache slot so the (expensive) baseline resolve only
+    ever runs once across the whole report, not once per close candidate."""
+    screen = mv_single(settings_path, baseline_config, candidate, baseline_screen, SCREEN_ITERATIONS, seed)
+    if "excluded_reason" in screen:
+        return screen
+
+    if abs(screen["mv"]) >= CLEAR_MARGIN_MULTIPLE * screen["noise_stdev"]:
+        screen["resolved"] = False
+        screen["iterations"] = SCREEN_ITERATIONS
+        return screen
+
+    if "value" not in baseline_resolve_cache:
+        baseline_resolve_cache["value"] = valuation.evaluate(settings_path, baseline_config, RESOLVE_ITERATIONS, seed)
+    baseline_resolve = baseline_resolve_cache["value"]
+
+    resolved = mv_single(settings_path, baseline_config, candidate, baseline_resolve, RESOLVE_ITERATIONS, seed)
+    resolved["resolved"] = True
+    resolved["iterations"] = RESOLVE_ITERATIONS
+    return resolved
+
+
 def mv_bundle(settings_path: str, baseline_config: list[dict], bundle_config: list[dict],
               baseline_result: dict, iterations: int, seed: int = opt.SEED) -> dict:
     """MV of a whole package (e.g. a set bonus) at once - for cases where no
