@@ -1163,3 +1163,39 @@ dropdown (multi-character support, not just Lerynia) - added to CLAUDE.md's exis
 scope" note. Tool rename to something including "Ruban" (e.g. RubanAutoSim) is planned as a
 final rework once the product is otherwise done - explicitly NOT now; folder path and internal
 naming stay as-is until then, per the user's own words.
+
+## 2026-08-23 — GearingToolCompanion: minimap button UX, a real font-template bug, auto-save on rep/arena change
+
+Added a minimap button + small status panel to the addon (left-click: save now, right-click: show
+bag/bank/reputation/arena counts + last-saved time) so the addon is usable without knowing
+`/gtexport` exists. Found and fixed through live in-game testing with the user:
+
+- **Real bug** (via BugGrabber): `CreateFontString(nil, "OVERLAY", "GameFontHeader")` errored -
+  "GameFontHeader" isn't a valid font template on this TBC Anniversary client build. Worse than
+  cosmetic: the error aborted the rest of the file's top-level execution from that line onward,
+  which is *why* the button initially had no working click/hover at all - `SetScript("OnClick", ...)`
+  and `OnEnter`/`OnLeave` were registered later in the file and never ran. Fixed by reusing
+  "GameFontNormalLarge" (already proven working elsewhere in the same file) instead of guessing
+  another template name blind.
+- Icon: started as `INV_Misc_Gear_01` (a very commonly reused "options" icon among other addons -
+  hard to tell apart in a crowded minimap-button-collector popout), then a bow (thematically
+  fitting, confirmed correctly detected by the user's MinimapButtonButton addon), then a custom
+  dark badge with a bold gold "R" (user's idea, no external texture file needed - just a
+  ColorTexture + FontString) - more legible at icon size and distinctive.
+- Save confirmation: a plain `print()` is easy to miss (scrolls away, chat window may not be
+  visible). Added `Announce()` - prints AND posts to `UIErrorsFrame` (the same floating on-screen
+  text Blizzard uses for "You are out of range") for every user-*triggered* save (slash command,
+  minimap click, status panel button). Passive/automatic saves (login, bag update) stay chat-only.
+- Auto-save triggers extended: bank already saved on `BANKFRAME_OPENED` (a real technical
+  requirement - bank container APIs return invalid data unless the bank frame is open).
+  Reputation/arena have no such restriction (`GetFactionInfo`/`GetArenaTeam` are always
+  queryable), so rather than tie their auto-save to "did the user open that UI tab" (a weak
+  proxy - reputation changes constantly without ever opening the reputation pane), hooked the
+  real data-change events instead: `UPDATE_FACTION` and `ARENA_TEAM_UPDATE`/
+  `ARENA_TEAM_ROSTER_UPDATE`, throttled to 1/sec same as the existing bag-update handler.
+
+Known unresolved: the minimap button's left-click doesn't reliably fire once wrapped inside
+MinimapButtonButton's popout (right-click/tooltip work fine there, confirming collection itself
+works) - suspected MBB click-forwarding quirk with hand-rolled buttons, not something fixable
+from this side without MBB's own source. `/gtexport` and the status panel's own "Save Now"
+button both work regardless and are the reliable fallbacks.
