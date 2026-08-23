@@ -30,6 +30,7 @@ import gear_config as gc  # noqa: E402
 import optimizer as opt  # noqa: E402
 import marginal_value as mv  # noqa: E402
 import set_bonus  # noqa: E402
+import acquisition_gate  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETTINGS_TEMPLATE = os.path.join(REPO_ROOT, "profiles", "tbc", "canonical_settings_survival.json")
@@ -132,6 +133,8 @@ def main():
     owned_all_ids = {it["id"] for it in owned_items if it}
     owned_all_ids |= {it["id"] for it in char["owned"]["bags"] if it}
     owned_all_ids |= {it["id"] for it in char["owned"]["bank"] if it}
+
+    acquisition_status = acquisition_gate.load_status()
 
     candidates = opt.load_candidates(POOL_PATH, owned_items)
     curated_ids = {c.item_id for cands in candidates.values() for c in cands if c.item_id}
@@ -274,7 +277,8 @@ def main():
         source, tier = item_meta.get(c.item_id, ("", "Other"))
         slot_label = item_slot_label.get(c.item_id, "Other")
         r = dict(r, source=source, tier=tier, slot=slot_label, item_id=c.item_id,
-                 set_note=set_notes_by_item.get(c.item_id))
+                 set_note=set_notes_by_item.get(c.item_id),
+                 gate=acquisition_gate.gate_for_item(source, slot_label, acquisition_status))
         by_tier_slot.setdefault((tier, slot_label), []).append((c, r))
 
     # A leaderboard item only needs the expensive 30k resolve if 1k screening
@@ -325,10 +329,21 @@ def main():
     print(f"Resolved {len(to_resolve)} (tier, slot) leaderboard candidates @ {RESOLVE_ITERATIONS} iter.\n")
 
     # --- Achieved BiS: slots where nothing in the whole P3 pool beats her
-    # current gear (real upgrade = same filter every tier uses below) ---
+    # current gear (real upgrade = same filter every tier uses below) - a
+    # gated upgrade she can't currently satisfy (reputation standing/arena
+    # rating not met) doesn't count as beating her current gear TODAY, so
+    # it doesn't disqualify the slot from Achieved BiS, even though it
+    # still shows up normally in its tier (never silently hidden).
+    def is_available_upgrade(r):
+        real_upgrade = (not r["tied_within_noise"] and r["mv"] > 0) or r.get("set_note")
+        if not real_upgrade:
+            return False
+        gate = r.get("gate")
+        return gate is None or gate["satisfied"]
+
     slots_with_upgrades = set()
     for (tier, slot), rows in by_tier_slot.items():
-        if any((not r["tied_within_noise"] and r["mv"] > 0) or r.get("set_note") for _, r in rows):
+        if any(is_available_upgrade(r) for _, r in rows):
             slots_with_upgrades.add(slot)
 
     display_to_real_slots = {}
@@ -399,9 +414,13 @@ def main():
                 # the 30k DPS resolve).
                 raid_ap = r.get("raid_ap_contribution")
                 raid_ap_str = f"{raid_ap:>+7.0f} raid AP" if raid_ap is not None else "    n/a raid AP"
-                print(f"    {r['name']:<36} {r['mv']:>+7.1f} DPS  {raid_ap_str}  {r['source']}{flag}")
+                gate = r.get("gate")
+                lock = "  [LOCKED]" if gate and not gate["satisfied"] else ""
+                print(f"    {r['name']:<36} {r['mv']:>+7.1f} DPS  {raid_ap_str}  {r['source']}{flag}{lock}")
                 if rescued_by_set(r):
                     print(f"        note: {r['set_note']}")
+                if gate:
+                    print(f"        gate: {gate['note']}")
             if len(upgrades) > 5:
                 print(f"    ...and {len(upgrades) - 5} more.")
         print()

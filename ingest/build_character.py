@@ -1,10 +1,11 @@
-"""Read WowSimsExporter + GearingToolExporter SavedVariables straight off disk
-(no clipboard) and build data/character.json.
+"""Read WowSimsExporter + GearingToolCompanion SavedVariables straight off disk
+(no clipboard) and build data/character.json (+ update data/acquisition_status.json's
+reputation standings).
 
 Ground truth for the shapes parsed here lives in NOTES.md ("SavedVariables
 located" and the WowSimsExporter source reading) - this file doesn't invent
 any field names, it mirrors what WowSimsExporter.lua / EquipmentSpec.lua /
-GearingToolExporter.lua actually write.
+GearingToolCompanion.lua actually write.
 """
 from __future__ import annotations
 
@@ -81,12 +82,33 @@ def find_wse_character(name_realm: str) -> tuple[dict, str] | None:
     return best, best_source
 
 
-def find_gt_exporter(name_realm: str) -> dict | None:
-    for path in find_savedvariables("GearingToolExporter"):
+def find_gt_companion(name_realm: str) -> dict | None:
+    for path in find_savedvariables("GearingToolCompanion"):
         db = parse_lua_savedvariables(path)
         if name_realm in db:
             return db[name_realm]
     return None
+
+
+def update_acquisition_status(reputation: dict, arena_teams: list) -> None:
+    """Merges fresh reputation standings into data/acquisition_status.json -
+    safe to overwrite, GetFactionInfo's standing is unambiguous. Arena
+    rating is NOT auto-applied to current_rating: GetArenaTeam's exact
+    field for "the personal rating that gates a gear purchase" isn't
+    confirmed against this client build (see the addon's own comment) -
+    the raw per-team dump is stored under raw_teams for a human to check
+    once, rather than the pipeline silently trusting a guessed field."""
+    path = os.path.join(REPO_ROOT, "data", "acquisition_status.json")
+    if not os.path.exists(path):
+        return
+    with open(path, encoding="utf-8") as f:
+        status = json.load(f)
+    if reputation:
+        status.setdefault("reputation", {}).update(reputation)
+    if arena_teams:
+        status.setdefault("arena", {})["raw_teams"] = arena_teams
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(status, f, indent=2)
 
 
 def resolve_items(raw_items: list[dict], item_db: dict[int, dict]) -> tuple[list[dict], list[dict]]:
@@ -115,19 +137,21 @@ def build(name_realm: str) -> dict:
     equipped_raw = char.get("gear", {}).get("items", [])
     equipped, equipped_unresolved = resolve_items(equipped_raw, item_db)
 
-    gt = find_gt_exporter(name_realm) or {}
+    gt = find_gt_companion(name_realm) or {}
     bags, bags_unresolved = resolve_items(gt.get("bags", []), item_db)
     bank, bank_unresolved = resolve_items(gt.get("bank", []), item_db)
 
     unresolved = equipped_unresolved + bags_unresolved + bank_unresolved
+
+    update_acquisition_status(gt.get("reputation", {}), gt.get("arena", []))
 
     return {
         "meta": {
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "sim_commit_sha": sim_commit_sha(),
             "wse_source_account": account,
-            "gt_exporter_present": bool(gt),
-            "gt_exporter_timestamp": gt.get("timestamp"),
+            "gt_companion_present": bool(gt),
+            "gt_companion_timestamp": gt.get("timestamp"),
         },
         "character": {
             "name": char.get("name"),
@@ -165,6 +189,17 @@ def main():
     if data["unresolved"]:
         for it in data["unresolved"]:
             print(f"    - id={it.get('id')} (not found in sim DB)")
+
+    status_path = os.path.join(REPO_ROOT, "data", "acquisition_status.json")
+    if os.path.exists(status_path):
+        with open(status_path, encoding="utf-8") as f:
+            status = json.load(f)
+        print(f"Updated {status_path}")
+        print(f"  reputation: {status.get('reputation', {})}")
+        raw_teams = status.get("arena", {}).get("raw_teams")
+        if raw_teams:
+            print(f"  arena raw_teams: {raw_teams}")
+            print("  (confirm which field is the real gear-purchase rating, then set arena.current_rating by hand)")
 
 
 if __name__ == "__main__":
