@@ -98,6 +98,8 @@ def mv_single(settings_path: str, baseline_config: list[dict], candidate: "opt.C
         slot_idx = gc.SLOT_ORDER.index(slot)
         if opt.is_unique_conflict(baseline_config, slot_idx, candidate.item_id):
             continue
+        if opt.is_hand_restricted_conflict(candidate.item_id, slot):
+            continue
         trial = list(baseline_config)
         trial[slot_idx] = candidate.as_entry()
         result = valuation.evaluate(settings_path, trial, iterations, seed)

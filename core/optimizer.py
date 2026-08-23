@@ -204,6 +204,32 @@ def is_unique_conflict(config: list[dict], slot_idx: int, item_id: int) -> bool:
     return False
 
 
+# common.proto HandType enum. TwoHand(4) is already filtered out upstream
+# (run_full_sweep_mv.py's slot_for_item) since it needs the melee-weave
+# rotation variant, not a plain slot swap. MainHand(1) and OffHand(3) were
+# NOT enforced anywhere until this was caught - a real gap, found via a
+# real matched pair (Claw of Molten Fury/MainHand + Fist of Molten
+# Fury/OffHand, Mount Hyjal trash, setId 719) that mv_single's "try every
+# slot this item could occupy" logic would otherwise have silently tested
+# in the WRONG slot for a hand-restricted weapon, producing an invalid
+# config instead of a real "unequippable here" exclusion.
+HAND_MAINHAND = 1
+HAND_ONEHAND = 2
+HAND_OFFHAND = 3
+HAND_TWOHAND = 4
+_SLOT_TO_HAND_RESTRICTION = {"mainhand": HAND_OFFHAND, "offhand": HAND_MAINHAND}
+
+
+def is_hand_restricted_conflict(item_id: int, slot: str) -> bool:
+    """True if this weapon's handType forbids it from going in `slot` -
+    e.g. a MainHand-restricted weapon can't go in the offhand slot."""
+    item = idb.by_id(item_id)
+    if not item:
+        return False
+    hand_type = item.get("handType")
+    return hand_type == _SLOT_TO_HAND_RESTRICTION.get(slot)
+
+
 def eval_config(settings_path: str, config: list[dict]) -> dict:
     return valuation.evaluate(settings_path, config, SCREEN_ITERATIONS, SEED)
 
