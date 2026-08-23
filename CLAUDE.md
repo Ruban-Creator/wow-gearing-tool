@@ -248,3 +248,32 @@ week nets 1-2 new items. Rough thinking, for discussion, not a plan:
   since they include the newly-owned item). Worth discussing whether that's an acceptable cost
   (it's proportional to remaining-candidate-count, not total-pool-size) or whether it needs its
   own optimization.
+
+**Idea collection #2, not decided — a three-tier funnel for scaling to a much bigger pool**
+(2026-08-23). Prompted by watching Stage 5's interaction matrix take ~15-20 minutes on Lerynia's
+already-narrow Phase 3 pool once the candidate-selection fix (below) widened it. The user's real
+concern: a FRESH LEVEL 70 CHARACTER STARTING IN PHASE 5 has every item from Phases 1-5
+simultaneously live as a real candidate for every slot at once - the pool this tool would need to
+search is enormously bigger than "one already-decently-geared character's Phase 3 upgrade list,"
+and it still needs to finish in a reasonable time. Rough shape, matching the existing prefilter
+principle above (a cheap pass may only ever prune what gets the expensive treatment, never BE the
+reported number) but formalized as three explicit tiers instead of one screen/resolve split:
+
+1. **Pre-screen** - something cheaper than today's 1000-iteration screen, to cut an enormous raw
+   pool (every phase's items at once) down to a manageable shortlist before spending even a cheap
+   sim run on each one. Not yet decided whether this should be a real (very-low-iteration) sim
+   call or a static EP-based prefilter using `STAT_WEIGHTS` - the ground rules already sanction
+   EP as a legitimate prefilter heuristic, just never as a reported number.
+2. **Screen** - today's existing 1-2k-iteration pass, applied to whatever survives step 1.
+3. **Finalize** - resolve only the top ~3 candidate FULL SETS (not top individual items or
+   pairs) at high precision - the user left the exact iteration count open ("12.5k baseline from
+   sim or your 30k, up to you"). The "12.5k" figure is NOT independently confirmed as a real
+   wowsims default - don't build against it as if verified without checking the sim's own
+   presets first.
+
+Worth noting: this reframes the exercise back toward the core `DPS*(S)` full-set search (Stage
+4), not just Stage 5's pairwise interaction matrix specifically - "finalize the 3 best sets"
+implies whole-gear-configuration finalists, which suggests this funnel principle may belong in
+`core/optimizer.py`'s own search too, not just `interaction_matrix.py`. Not scoped or planned -
+this is the rough shape only, for discussion once the tool needs to handle a pool this size (not
+yet - today's actual character is a single, already-geared Phase 3 Survival Hunter).
