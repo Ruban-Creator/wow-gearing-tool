@@ -71,12 +71,24 @@ class SimServerPool:
             self._available = threading.Semaphore(self.size)
 
     def run(self, raid_sim_request: dict) -> dict:
+        """Self-healing: if the checked-out process has died (see NOTES.md,
+        the overnight "simserver.exe crashes under sustained load" finding -
+        confirmed not tied to a specific request, cause still unknown), a
+        dead SimServerProcess left in rotation would fail EVERY future
+        request through it forever, not just the one that killed it.
+        Replaces it with a freshly-spawned process and retries once before
+        giving up, so a single process death degrades to "one slow request"
+        instead of silently wrecking the rest of a multi-hour run."""
         self._ensure_started()
         self._available.acquire()
         with self._lock:
             server = self._pool.pop()
         try:
-            return server.run(raid_sim_request)
+            try:
+                return server.run(raid_sim_request)
+            except RuntimeError:
+                server = SimServerProcess()  # replaces the dead one below
+                return server.run(raid_sim_request)
         finally:
             with self._lock:
                 self._pool.append(server)

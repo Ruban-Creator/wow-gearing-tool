@@ -965,3 +965,73 @@ and `physical_attacker_count=9` (§0's stated 8-10 raid comp, midpoint - already
 Stage 2 entry above, not a new number) into `expose_weakness.raid_ap_contribution()`, and add the
 result as an explicit second column on `mv_single`'s/`mv_bundle`'s output dicts, threading it
 through to the tiered report's print/JSON output per CLAUDE.md's Stage 2 ground rule.
+
+## 2026-08-23 (overnight, autonomous) — raid AP contribution wired end-to-end; found and worked around a real simserver.exe crash
+
+Continued from the previous cycle's ComputeStats verification. Added `valuation.get_agility()`
+(builds a `ComputeStatsRequest` from the same `raid`/`encounter` fields already built for a
+normal sim call, cached under a fixed iterations=0/seed=0 key since it's deterministic - no
+Monte Carlo involved) and wired it into `marginal_value.mv_single()` via a new optional
+`baseline_agility` parameter (default `None` - existing callers unaffected). When supplied, the
+result dict gets a `raid_ap_contribution` field: `expose_weakness.raid_ap_contribution()` on the
+winning trial's Agility/measured EW uptime, minus the same for baseline, using
+`PHYSICAL_ATTACKER_COUNT = 9` (§0's stated 8-10, midpoint - already used once, not re-derived).
+`run_full_sweep_mv.py` computes `baseline_agility` once and only passes it into the resolve pass
+(not the 500-candidate screen pass - the extra ComputeStats call isn't worth paying for items
+that never make a leaderboard). The tiered report now prints "DPS" and "raid AP" as genuinely
+separate columns per CLAUDE.md's Stage 2 rule, with an explicit "n/a" (not a blank/dropped
+column) for screened-only items that never got resolved.
+
+**A real, serious bug found while verifying this at production scale**: after clearing
+`sim_cache.json` (necessary - ~2400 of 2515 entries predated the `ew_uptime` field this cycle's
+`evaluate()` change added, so every cached hit was silently returning `ew_uptime: None` and
+`raid_ap_contribution` was coming back `None` for every single item), the full pipeline appeared
+to hang for 10-16 minutes with near-zero CPU. Spent a long time chasing this as a concurrency bug
+in the new ComputeStats integration - ruled that out completely (a 71-candidate curated pool and
+even a 500-candidate full run at both screening and 30k resolve iterations worked fine, serial
+AND concurrent, repeatedly). Root cause, found by finally adding per-item progress printing
+(`python -u`, unbuffered - the fully-buffered runs gave zero visibility into where it actually
+was): **`simserver.exe` crashes with "process died?" partway through a long run of real
+(non-cached) requests** - reproduced it directly (crashed around request #65 in one run), then
+immediately re-ran the *exact same* request in isolation and it worked fine, proving it's not
+tied to a specific bad item. Every previous "successful" run tonight had a warm cache, so most
+`evaluate()` calls never actually reached the persistent process at all - this is the first time
+it's been asked to handle sustained real load, and it doesn't survive it. Root cause (memory
+leak? some accumulating state in `core.RunRaidSimConcurrentAsync`/`core.ComputeStats` that the
+original one-shot-per-process `wowsimcli` CLI never exercised?) is **not yet found** - flagging
+for real investigation, not guessing at a Go-level fix blind at 6am unsupervised.
+
+**Two-part mitigation, both real fixes not just band-aids**:
+1. `valuation.py`: `USE_SIMSERVER` flipped back to `False`. The file-based `adapter.run()` path
+   (fresh `wowsimcli.exe` per call, zero accumulated state) is what this whole session was
+   validated against for hours before simserver existed - proven reliable, just slower. DPS
+   correctness matters more than tonight's speedup until the crash is root-caused.
+2. `get_agility()` **cannot** fall back the same way - `ComputeStats` has no CLI/file-based path
+   at all (confirmed last cycle: `wowsimcli`'s CLI has no stats subcommand). So instead:
+   `SimServerPool.run()` is now self-healing - on a `RuntimeError` from a dead process, it
+   spawns a replacement and retries once before giving up (standard connection-pool pattern: a
+   pool must assume its resources can die, not just build one and trust it forever - the old
+   code left a dead process in rotation forever, failing every future request through it).
+   `get_agility()` itself also degrades gracefully: any failure returns `None` (reported as
+   "n/a raid AP" downstream, never crashes the caller) and is NOT cached as a permanent failure,
+   so a later call for the same config gets a fresh attempt.
+
+**Verified correct end-to-end**: full cold run (both DPS and Agility caches empty), 500
+screened + 124 resolved candidates, zero errors, zero degraded-to-None entries needed (the
+self-heal never even had to fire, or fired silently and succeeded - either way the run was
+clean). 560.2s total (fully cold both caches - future runs stay cheap via the sim cache, same
+as always; this number reflects a worst case, not steady-state). Raid AP contribution values
+are real, sane, and already surfacing exactly the kind of divergence this feature exists to
+catch - e.g. Boneweave Girdle: +8.4 personal DPS but **-26 raid AP** (lower Agility despite the
+DPS gain from other stats); Gronnstalker's Helmet: -16.8 DPS alone but **+13 raid AP** (on top
+of the existing set-bonus rescue note) - genuinely different verdicts depending which column
+you're optimizing for, never collapsed into one number.
+
+**Open, for a future session with more attention available**: re-enable `USE_SIMSERVER` only
+after the crash is actually root-caused (not just papered over by the pool's self-heal, which
+helps `get_agility()` survive it but doesn't explain WHY it's dying) - would restore tonight's
+speedup for the main DPS path too. Real next steps: stress-test simserver.exe standalone (no
+Python) with a long loop of varied requests to reproduce without any pipeline complexity;
+compare memory usage over the run's lifetime for a leak; check if `core.RunRaidSimConcurrentAsync`
+or `core.ComputeStats` have known one-shot-process assumptions baked in (global state that's
+supposed to reset at process exit).

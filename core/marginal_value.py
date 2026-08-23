@@ -19,6 +19,12 @@ import optimizer as opt  # noqa: E402
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "adapters", "tbc"))
 import valuation  # noqa: E402
+import expose_weakness  # noqa: E402
+
+# From §0's stated raid comp (8-10 other physical attackers) - midpoint,
+# already used once for the by-hand worked example in NOTES.md's Stage 2
+# entry. Not re-derived or estimated here.
+PHYSICAL_ATTACKER_COUNT = 9
 
 # Populated by set_slot_hints() from the optimizer's own pool structure, so
 # mv_single only tries the slot(s) a candidate could actually occupy
@@ -62,11 +68,23 @@ def delta_noise(baseline_result: dict, candidate_result: dict, iterations: int) 
 
 
 def mv_single(settings_path: str, baseline_config: list[dict], candidate: "opt.Candidate",
-              baseline_result: dict, iterations: int, seed: int = opt.SEED) -> dict:
+              baseline_result: dict, iterations: int, seed: int = opt.SEED,
+              baseline_agility: float | None = None) -> dict:
     """MV of swapping ONE candidate into baseline_config's matching slot(s).
     For shared-pool items (rings/trinkets/weapons), tries every slot the
     item could occupy and reports whichever gives the bigger DPS gain -
-    that's what a real player would actually do with it."""
+    that's what a real player would actually do with it.
+
+    baseline_agility is optional and opt-in (default None): per CLAUDE.md's
+    Stage 2 ground rule, personal DPS and raid AP contribution must be
+    reported as two separate columns, never collapsed into one number - but
+    computing it costs an extra ComputeStats call per candidate, so callers
+    that don't pass baseline_agility get the exact same result as before
+    (raid_ap_contribution simply comes back None, not silently computed
+    wrong). Callers that DO pass it must compute it once for baseline_config
+    themselves (via valuation.get_agility) and reuse it across every
+    candidate call, not recompute it per candidate - it doesn't depend on
+    the candidate at all."""
     if candidate.excluded_reason:
         return {"name": candidate.name, "excluded_reason": candidate.excluded_reason}
 
@@ -75,6 +93,7 @@ def mv_single(settings_path: str, baseline_config: list[dict], candidate: "opt.C
         return {"name": candidate.name, "excluded_reason": "no known slot for this item id - call set_slot_hints() first"}
 
     best = None
+    best_trial = None
     for slot in slots:
         slot_idx = gc.SLOT_ORDER.index(slot)
         if opt.is_unique_conflict(baseline_config, slot_idx, candidate.item_id):
@@ -84,18 +103,35 @@ def mv_single(settings_path: str, baseline_config: list[dict], candidate: "opt.C
         result = valuation.evaluate(settings_path, trial, iterations, seed)
         if best is None or result["combined"] > best["combined"]:
             best = result
+            best_trial = trial
 
     if best is None:
         return {"name": candidate.name, "excluded_reason": "unique conflict in every candidate slot"}
 
     delta = best["combined"] - baseline_result["combined"]
     noise = delta_noise(baseline_result, best, iterations)
+
+    raid_ap_contribution = None
+    if baseline_agility is not None:
+        new_agility = valuation.get_agility(settings_path, best_trial)
+        baseline_uptime = baseline_result.get("ew_uptime")
+        new_uptime = best.get("ew_uptime")
+        if new_agility is not None and baseline_uptime is not None and new_uptime is not None:
+            base_ap = expose_weakness.raid_ap_contribution(baseline_agility, baseline_uptime, PHYSICAL_ATTACKER_COUNT)
+            new_ap = expose_weakness.raid_ap_contribution(new_agility, new_uptime, PHYSICAL_ATTACKER_COUNT)
+            raid_ap_contribution = new_ap - base_ap
+
     return {
         "name": candidate.name,
         "mv": delta,
         "noise_stdev": noise,
         "tied_within_noise": abs(delta) < 2 * noise,  # ~95% confidence band
         "new_combined": best["combined"],
+        # Marginal raid-wide AP this candidate grants the raid's other
+        # physical attackers via Expose Weakness, ON TOP OF personal DPS
+        # (already inside "mv" above) - never collapsed into one number,
+        # per the ground rule. None when baseline_agility wasn't supplied.
+        "raid_ap_contribution": raid_ap_contribution,
     }
 
 

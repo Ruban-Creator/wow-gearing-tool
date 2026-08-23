@@ -222,7 +222,11 @@ def main():
     mv.set_slot_hints(candidates)
     baseline_config = opt.build_owned_config(owned_items)
     baseline_screen = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, SCREEN_ITERATIONS, opt.SEED)
-    print(f"Baseline @ {SCREEN_ITERATIONS} iter (screening): combined={baseline_screen['combined']:.1f}\n")
+    # Deterministic (no Monte Carlo iterations involved - see valuation.get_agility),
+    # computed once and reused for every candidate below, never per-candidate.
+    baseline_agility = mv.valuation.get_agility(SETTINGS_TEMPLATE, baseline_config)
+    print(f"Baseline @ {SCREEN_ITERATIONS} iter (screening): combined={baseline_screen['combined']:.1f}, "
+          f"Agility={baseline_agility}\n")
 
     # Set-bonus rescue check (§1's whole reason to exist: a piece can look
     # like a downgrade alone and still be worth taking because it's on the
@@ -290,9 +294,16 @@ def main():
     # --- Pass 2: resolve only the leaderboard items still close enough to matter ---
     baseline_resolved = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
 
+    # raid_ap_contribution is only computed here (the leaderboard, ~100-150
+    # items), not in screen_one (~500) - it's an extra ComputeStats call per
+    # item, and only leaderboard items ever get displayed. Items that skip
+    # resolve entirely (CLEAR_MARGIN_MULTIPLE, "screened only" in the
+    # report) simply don't get one computed either - same "already clear,
+    # don't spend more compute on it" principle already applied to DPS.
     def resolve_one(cr):
         c, _ = cr
-        return c.item_id, mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_resolved, RESOLVE_ITERATIONS, opt.SEED)
+        return c.item_id, mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_resolved,
+                                        RESOLVE_ITERATIONS, opt.SEED, baseline_agility=baseline_agility)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
         resolved_pairs = list(ex.map(resolve_one, to_resolve))
@@ -305,8 +316,10 @@ def main():
                 r["mv"] = res["mv"]
                 r["noise_stdev"] = res["noise_stdev"]
                 r["tied_within_noise"] = res["tied_within_noise"]
+                r["raid_ap_contribution"] = res.get("raid_ap_contribution")
                 r["resolved"] = True
             else:
+                r["raid_ap_contribution"] = None
                 r["resolved"] = False
 
     print(f"Resolved {len(to_resolve)} (tier, slot) leaderboard candidates @ {RESOLVE_ITERATIONS} iter.\n")
@@ -347,7 +360,15 @@ def main():
             print(f"  -- {slot} ({len(upgrades)} upgrades{setnote_txt}, top 5 shown, {n_resolved}/5 resolved @ 30k) --")
             for r in upgrades[:5]:
                 flag = "" if r.get("resolved") else "  (screened only)"
-                print(f"    {r['name']:<36} {r['mv']:>+7.1f}  {r['source']}{flag}")
+                # Personal DPS and raid AP contribution as two separate
+                # columns, never collapsed into one number, per CLAUDE.md's
+                # Stage 2 ground rule - "n/a" (not a silently blank column)
+                # when it wasn't computed for this item (screened-only
+                # items skip the extra ComputeStats call, same as they skip
+                # the 30k DPS resolve).
+                raid_ap = r.get("raid_ap_contribution")
+                raid_ap_str = f"{raid_ap:>+7.0f} raid AP" if raid_ap is not None else "    n/a raid AP"
+                print(f"    {r['name']:<36} {r['mv']:>+7.1f} DPS  {raid_ap_str}  {r['source']}{flag}")
                 if rescued_by_set(r):
                     print(f"        note: {r['set_note']}")
             if len(upgrades) > 5:
