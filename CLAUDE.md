@@ -142,3 +142,30 @@ and UI-agnostic in the meantime so a GUI can sit on top later without a rewrite.
 Tool rename to something including the user's gamertag "Ruban" (e.g. RubanAutoSim) is also
 planned, as a final rework once the product is otherwise done — not yet, folder path and
 internal naming stay as-is until then.
+
+**Idea collection, not decided — discuss before building**: speeding up a re-sweep after a raid
+week nets 1-2 new items. Rough thinking, for discussion, not a plan:
+
+- The existing `sim_cache.json` (keyed by full gear-config hash, per the architecture above)
+  already doesn't need invalidating when new items arrive — a cached DPS for an old config is
+  still a true statement about that config forever. The real cost isn't repeated sim calls, it's
+  that `DPS*(P)` requires a joint *search* over shared-pool slots (rings/trinkets/weapons, set
+  bonuses), and that search currently seems to re-run from scratch over the whole pool rather
+  than reusing the previous optimal assignment.
+- Possible direction: decompose the search into independent single-slot optimization plus
+  explicit joint search only over the actually-coupled subgroups (ring pair, trinket pair,
+  weapon pair, any tier-set combo). A new item then only requires re-solving the specific
+  subgroup(s) it belongs to against the previously-known-optimal assignment for that subgroup,
+  not a full 15-slot re-search. This also happens to be closer to how "shared-pool slots" are
+  already described in the architecture (Stage 2's Ring/Trinket/Weapon note) — may be worth
+  building regardless of caching.
+- A cheap per-slot swap-and-resim could serve as a *prefilter* to decide which candidates are
+  even worth a real joint re-search — but per the ground rules at the top of this file, that can
+  only ever be a heuristic to prune what gets the expensive treatment, never the source of a
+  reported MV number itself.
+- Open question the user flagged directly: the baseline `DPS*(P)` itself shifts every time P
+  gains an item, so even a perfect sub-search cache still needs every remaining candidate's MV
+  recomputed against the new baseline (`DPS*(P_new ∪ {i})` configs that were never tried before,
+  since they include the newly-owned item). Worth discussing whether that's an acceptable cost
+  (it's proportional to remaining-candidate-count, not total-pool-size) or whether it needs its
+  own optimization.
