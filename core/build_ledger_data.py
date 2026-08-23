@@ -6,7 +6,10 @@ for the text report's nested loop, but not what the artifact's JS expects:
 a list of {name, slots: [{slot, items, more}]}, matching how it's actually
 rendered (iterate tiers in order, iterate slots in order, show top 5 +
 "N more"). "achieved_bis"/"two_hand"/"two_hand_meta" already match the JS's
-expected shape as-is and pass through unchanged.
+expected shape as-is and pass through unchanged - "two_hand" in particular
+is a flat top-N list across all tiers/zones (not grouped per tier, per the
+user - a tier-grouped 2H list was mostly clutter from every zone's own weak
+options), each row still carrying its own "tier" field for display context.
 
 Run this after any run_full_sweep_mv.py sweep, before re-splicing the
 artifact HTML - skipping it (or hand-rolling the transform inline again) is

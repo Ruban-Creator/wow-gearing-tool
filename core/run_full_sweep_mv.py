@@ -50,6 +50,10 @@ SCREEN_ITERATIONS = 1000  # cheap ranking pass across the whole pool
 RESOLVE_ITERATIONS = 30000  # precise, only spent on each (tier, slot) leaderboard
 LEADERBOARD_SIZE = 8  # per (tier, slot), resolved - a little slack over "top 5"
 # in case resolving nudges the screening order around near the cutoff
+TOP_N_2H = 5  # flat leaderboard across ALL tiers/zones, not grouped per tier -
+# per the user, tier-grouped 2H output was mostly clutter (every zone's own
+# weak options padding the list); the real question is just "what are her
+# best few 2H options, period", so only the overall top N are shown at all.
 
 TYPE_TO_SLOT = {
     1: "head", 2: "neck", 3: "shoulder", 4: "back", 5: "chest", 6: "wrist",
@@ -560,7 +564,7 @@ def main():
     # "given I'm already weaving, does switching to a 2H weapon help
     # further" - not "should I abandon DW entirely". The no-weave baseline
     # is printed alongside for context, never silently dropped.
-    two_hand_out: dict[str, list[dict]] = {}
+    two_hand_out: list[dict] = []
     two_hand_meta: dict = {}
     if weapon_2h_candidates:
         weave_dw_result = mv.valuation.evaluate(SETTINGS_2H, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
@@ -609,29 +613,28 @@ def main():
             resolve_2h_row(r)
 
         real_upgrades_2h = [r for r in rows_2h if not r["tied_within_noise"] and r["mv"] > 0]
-        for r in real_upgrades_2h:
-            two_hand_out.setdefault(r["tier"], []).append(r)
+        top_2h = real_upgrades_2h[:TOP_N_2H]
 
-        # Same rule as the main leaderboard: the #1-ranked item WITHIN EACH
-        # TIER (not just the single overall best) always gets resolved,
-        # regardless of margin - per the user, if a screened item ends up
-        # on top, actually sim it. Done after grouping by tier since that's
-        # what's actually displayed as "top of this tier".
-        for tier, tier_rows in two_hand_out.items():
-            top = max(tier_rows, key=lambda x: x["mv"])
-            if not top["resolved"]:
-                resolve_2h_row(top)
+        # Same rule as the main leaderboard: whatever's actually shown always
+        # gets the real resolve, regardless of margin - per the user, if a
+        # screened item ends up in the visible list, actually sim it.
+        for r in top_2h:
+            if not r["resolved"]:
+                resolve_2h_row(r)
+        top_2h.sort(key=lambda r: r["mv"], reverse=True)
+        two_hand_out = top_2h
 
         for r in rows_2h:
             r.pop("trial")
 
-        if real_upgrades_2h:
-            for tier in sorted(two_hand_out):
-                print(f"  -- {tier} ({len(two_hand_out[tier])} upgrade(s) vs weaving with current DW gear) --")
-                for r in sorted(two_hand_out[tier], key=lambda x: x["mv"], reverse=True)[:5]:
-                    flag = "" if r["resolved"] else "  (screened only)"
-                    horizon = horizon_tag(r)
-                    print(f"    {r['name']:<36} Player: {r['mv']:>+7.1f} DPS  {r['source']}{flag}{horizon}")
+        if top_2h:
+            print(f"  -- Top {len(top_2h)} 2H upgrade(s) across all tiers/zones vs weaving with current DW gear --")
+            for r in top_2h:
+                flag = "" if r["resolved"] else "  (screened only)"
+                horizon = horizon_tag(r)
+                print(f"    {r['name']:<36} Player: {r['mv']:>+7.1f} DPS  {r['tier']}: {r['source']}{flag}{horizon}")
+            if len(real_upgrades_2h) > len(top_2h):
+                print(f"    ...and {len(real_upgrades_2h) - len(top_2h)} more real upgrade(s) not shown.")
         else:
             print("  No 2H weapon beats weaving with her current DW gear.")
         print()
