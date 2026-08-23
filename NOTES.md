@@ -1659,3 +1659,40 @@ unknown rather than disqualifying (that list is already known to have real compl
 items our own sim finds as real upgrades that the guide's table just doesn't happen to rank);
 absence from Phase 4 or 5's table is treated as "no longer relevant" and stops the walk, since
 those lists are comprehensive per-slot rankings, not curated highlights.
+
+## 2026-08-23 — Best-4-of-5 tier combo finder; WoW-quality colors; phase-toggle-ready
+
+Two more real pieces added to the same session's work:
+
+**`set_bonus.best_four_of_five()`**: per the user, BiS guides almost always recommend 4 of a tier
+set's 5 armor pieces (occasionally all 5, rare; occasionally fewer, when bonuses are weak) - which
+slot should stay non-tier is determined by comparing REAL sim numbers across all five
+leave-one-slot-out combinations plus the full 5pc, not assumed from guide convention or a fixed
+add-order. Caught a real bug while verifying it against Rift Stalker Armor: when the "excluded"
+slot happened to be one she already owned the tier piece for (Hands - Rift Stalker Gauntlets), the
+first version just left it in place instead of testing a genuine non-tier alternative, silently
+making that combo a no-op duplicate of the full 5pc test. Fixed by swapping in the best real
+non-tier candidate for that slot (crude STAT_WEIGHTS prefilter) when needed - changed the real
+answer: excluding Hands (2709.2) beats excluding Legs (2687.6), which the broken version couldn't
+even see as an option. Wired into the main report, printing the best combo + excluded slot + real
+cost of going full 5pc for every relevant set.
+
+**WoW item-quality colors for the BiS-until tag**, worked out with the user over several rounds:
+green (BiS for the current phase only), blue (one more phase), purple (reaches the final phase),
+orange (reaches the final phase AND the item's own real DB `phase` is <= 2 - genuinely spans
+nearly the whole expansion, not just "permanent from now on"). Purple and orange are layered, not
+parallel alternatives - orange is the rarer subset of purple's condition, matching WoW's own
+epic-then-legendary escalation. Real example that resolved the design: Dragonspine Trophy (real
+Phase 1 Gruul's Lair drop, never replaced) reads orange; Gronnstalker's Spaulders (a Phase 3/T6
+piece that also happens to never get replaced) reads purple - both "permanent from here on," but
+only one has been relevant since near the start.
+
+**Generalized away from a hardcoded "current phase = 3" assumption**: per the user, this tool
+should work correctly whenever it's actually run in the future, not just during Phase 3 - a
+character could start using it from Phase 1. `time_horizon.py` now has named `CURRENT_PHASE`/
+`FINAL_PHASE` constants instead of scattered `3`/`4`/`5` literals, and `_load_phase_item_ranks()`
+scans phase 1..FINAL_PHASE instead of a fixed `(3,4,5)` tuple - picks up the already-existing
+`phase2_survival.json` for free, and would pick up a future phase1 file with zero code changes.
+Not a full phase-toggle (that's still a separate, later GUI feature per CLAUDE.md), just keeping
+the seam from being buried under a hardcoded assumption that would need finding and unpicking
+later.
