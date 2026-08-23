@@ -107,7 +107,7 @@ def tier_from_text(text: str, zone_by_id: dict) -> str | None:
     return None
 
 
-def describe_source_and_tier(item: dict, npc_by_id: dict, zone_by_id: dict) -> tuple[str, str]:
+def describe_source_and_tier(item: dict, npc_by_id: dict, zone_by_id: dict) -> tuple[str, str, int | None]:
     for s in item.get("sources", []):
         if "drop" in s:
             zid = s["drop"].get("zoneId")
@@ -115,13 +115,13 @@ def describe_source_and_tier(item: dict, npc_by_id: dict, zone_by_id: dict) -> t
             zone = zone_by_id.get(zid, f"zone {zid}")
             tier = next((t for t, zones in TIER_ZONES.items() if zid in zones), "Other drop")
             desc = f"Drop: {npc} ({zone})" if npc else f"Drop: ({zone})"
-            return desc, tier
+            return desc, tier, None
         if "crafted" in s:
             prof = idb.PROFESSION_NAMES.get(s["crafted"].get("profession"), "Profession")
-            return f"Crafted: {prof}", "Crafted"
+            return f"Crafted: {prof}", "Crafted", s["crafted"].get("spellId")
         if "rep" in s:
-            return "Reputation reward", "Reputation reward"
-    return "Source unclear", "Other"
+            return "Reputation reward", "Reputation reward", None
+    return "Source unclear", "Other", None
 
 
 def main():
@@ -224,11 +224,11 @@ def main():
             if c.item_id in item_meta or c.item_id is None:
                 continue
             db_item = idb.by_id(c.item_id)
-            db_desc, tier = describe_source_and_tier(db_item, npc_by_id, zone_by_id) if db_item else ("Source unclear", "Other")
+            db_desc, tier, craft_spell_id = describe_source_and_tier(db_item, npc_by_id, zone_by_id) if db_item else ("Source unclear", "Other", None)
             source = curated_source_text.get(c.name) or db_desc
             if tier == "Other" and source != db_desc:
                 tier = tier_from_text(source, zone_by_id) or tier
-            item_meta[c.item_id] = (source, tier)
+            item_meta[c.item_id] = (source, tier, craft_spell_id)
 
     # Owned items stay IN the candidate pool (set-bonus progression below
     # needs to see a bagged/banked piece to correctly credit it toward a
@@ -317,9 +317,10 @@ def main():
             continue
         if c.item_id in owned_all_ids:
             continue  # already hers - not an acquisition target, see note above
-        source, tier = item_meta.get(c.item_id, ("", "Other"))
+        source, tier, craft_spell_id = item_meta.get(c.item_id, ("", "Other", None))
         slot_label = item_slot_label.get(c.item_id, "Other")
         r = dict(r, source=source, tier=tier, slot=slot_label, item_id=c.item_id,
+                 craft_spell_id=craft_spell_id,
                  set_note=set_notes_by_item.get(c.item_id),
                  gate=acquisition_gate.gate_for_item(source, slot_label, acquisition_status))
         by_tier_slot.setdefault((tier, slot_label), []).append((c, r))
@@ -549,11 +550,12 @@ def main():
         for c, trial, r in screened_2h:
             delta = r["combined"] - weave_dw_result["combined"]
             noise = mv.delta_noise(weave_dw_result, r, SCREEN_ITERATIONS)
-            source, tier = item_meta.get(c.item_id, ("Source unclear", "Other"))
+            source, tier, craft_spell_id = item_meta.get(c.item_id, ("Source unclear", "Other", None))
             rows_2h.append({"name": c.name, "item_id": c.item_id, "trial": trial,
                              "mv": delta, "noise_stdev": noise,
                              "tied_within_noise": abs(delta) < 2 * noise,
-                             "source": source, "tier": tier, "resolved": False})
+                             "source": source, "tier": tier, "craft_spell_id": craft_spell_id,
+                             "resolved": False})
         rows_2h.sort(key=lambda r: r["mv"], reverse=True)
 
         to_resolve_2h = [r for r in rows_2h[:LEADERBOARD_SIZE]
