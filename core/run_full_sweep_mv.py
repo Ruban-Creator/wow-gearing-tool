@@ -31,6 +31,7 @@ import optimizer as opt  # noqa: E402
 import marginal_value as mv  # noqa: E402
 import set_bonus  # noqa: E402
 import acquisition_gate  # noqa: E402
+import time_horizon  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETTINGS_TEMPLATE = os.path.join(REPO_ROOT, "profiles", "tbc", "canonical_settings_survival.json")
@@ -322,7 +323,8 @@ def main():
         r = dict(r, source=source, tier=tier, slot=slot_label, item_id=c.item_id,
                  craft_spell_id=craft_spell_id,
                  set_note=set_notes_by_item.get(c.item_id),
-                 gate=acquisition_gate.gate_for_item(source, slot_label, acquisition_status))
+                 gate=acquisition_gate.gate_for_item(source, slot_label, acquisition_status),
+                 **time_horizon.lasts_until_phase(c.name))
         by_tier_slot.setdefault((tier, slot_label), []).append((c, r))
 
     # A leaderboard item only needs the expensive 30k resolve if 1k screening
@@ -505,7 +507,8 @@ def main():
                 raid_ap_str = f"Debuff: {raid_ap:>+5.1f} AP/ea" if raid_ap is not None else "Debuff:    n/a AP/ea"
                 gate = r.get("gate")
                 lock = "  [LOCKED]" if gate and not gate["satisfied"] else ""
-                print(f"    {r['name']:<36} Player: {r['mv']:>+7.1f} DPS  {raid_ap_str}  {r['source']}{flag}{lock}")
+                horizon = f"  [lasts P{r['lasts_until_phase']}]" if r.get("final_phase") else f"  [lasts until P{r['lasts_until_phase']}]"
+                print(f"    {r['name']:<36} Player: {r['mv']:>+7.1f} DPS  {raid_ap_str}  {r['source']}{flag}{lock}{horizon}")
                 if rescued_by_set(r):
                     print(f"        note: {r['set_note']}")
                 if gate:
@@ -555,7 +558,7 @@ def main():
                              "mv": delta, "noise_stdev": noise,
                              "tied_within_noise": abs(delta) < 2 * noise,
                              "source": source, "tier": tier, "craft_spell_id": craft_spell_id,
-                             "resolved": False})
+                             "resolved": False, **time_horizon.lasts_until_phase(c.name)})
         rows_2h.sort(key=lambda r: r["mv"], reverse=True)
 
         to_resolve_2h = [r for r in rows_2h[:LEADERBOARD_SIZE]
@@ -578,7 +581,8 @@ def main():
                 print(f"  -- {tier} ({len(two_hand_out[tier])} upgrade(s) vs weaving with current DW gear) --")
                 for r in sorted(two_hand_out[tier], key=lambda x: x["mv"], reverse=True)[:5]:
                     flag = "" if r["resolved"] else "  (screened only)"
-                    print(f"    {r['name']:<36} Player: {r['mv']:>+7.1f} DPS  {r['source']}{flag}")
+                    horizon = f"  [lasts P{r['lasts_until_phase']}]" if r.get("final_phase") else f"  [lasts until P{r['lasts_until_phase']}]"
+                    print(f"    {r['name']:<36} Player: {r['mv']:>+7.1f} DPS  {r['source']}{flag}{horizon}")
         else:
             print("  No 2H weapon beats weaving with her current DW gear.")
         print()

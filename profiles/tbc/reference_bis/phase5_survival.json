@@ -1,0 +1,99 @@
+{
+  "_comment": "Future-phase reference list, treated as truth for now per the user - we are NOT simming Phase 5 ourselves yet (that's later work). Used only for time-horizon flags, not for any MV computation. Phase 5 (Sunwell Plateau) is the final phase of TBC per the guide's own text.",
+  "source": "https://www.wowhead.com/tbc/guide/survival-hunter-dps-swp-phase-5-best-in-slot-gear-burning-crusade",
+  "source_note": "Wowhead, author Veramos, page 'Updated: 2026/02/22'.",
+  "fetched": "2026-08-23",
+  "final_phase": true,
+  "slots": {
+    "head": [
+      {"rank": "Best 6%", "item": "Coif of Alleria", "source": "Drop: Kil'jaeden (Sunwell Plateau)"},
+      {"rank": "Best 9%", "item": "Duplicitous Guise", "source": "Drop: Kil'jaeden (Sunwell Plateau)"},
+      {"rank": "Best Previous Phase Option", "item": "Cursed Vision of Sargeras", "source": "Drop: Illidan Stormrage (Black Temple)"},
+      {"rank": "Optional", "item": "Gronnstalker's Helmet", "source": "Drop: Archimonde (Hyjal Summit)"}
+    ],
+    "shoulder": [
+      {"rank": "Best", "item": "Gronnstalker's Spaulders", "source": "Drop: Mother Shahraz (Black Temple)"},
+      {"rank": "Optional", "item": "Mantle of the Golden Forest", "source": "Drop: Lady Sacrolash (Sunwell Plateau)"},
+      {"rank": "Optional", "item": "Shoulderpads of Vehemence", "source": "Drop: Lady Sacrolash (Sunwell Plateau)"},
+      {"rank": "Optional", "item": "Rift Stalker Mantle", "source": "Drop: Void Reaver (Tempest Keep)"}
+    ],
+    "back": [
+      {"rank": "Best", "item": "Cloak of Unforgivable Sin", "source": "Drop: Kil'jaeden (Sunwell Plateau)"},
+      {"rank": "Optional", "item": "Thalassian Wildercloak", "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"},
+      {"rank": "Optional", "item": "Dory's Embrace", "source": "Vendor: G'eras (60 Badges of Justice)"},
+      {"rank": "Optional", "item": "Cloak of Fiends", "source": "Drop: Zul'Aman Timed Event"}
+    ],
+    "chest": [
+      {"rank": "Best", "item": "Bladed Chaos Tunic", "source": "Drop: M'uru (Sunwell Plateau)"},
+      {"rank": "Best Alternative", "item": "Vicious Hawkstrider Hauberk", "source": "Drop: M'uru (Sunwell Plateau)"},
+      {"rank": "Leatherworking Alternative", "item": "Embrace of the Phoenix", "source": "Profession: Leatherworking; Drop: M'uru (Sunwell Plateau - BoP)"},
+      {"rank": "Leatherworking Hit Alternative", "item": "Carapace of Sun and Shadow", "source": "Profession: Leatherworking; Drop: M'uru (Sunwell Plateau - BoP)"}
+    ],
+    "wrist": [
+      {"rank": "Best", "item": "Gronnstalker's Bracers", "source": "Drop: Kalecgos (Sunwell Plateau)"},
+      {"rank": "Best Until Tier 6", "item": "Insidious Bands", "source": "Drop: Teron Gorefiend (Black Temple)"},
+      {"rank": "Optional", "item": "Master Assassin Wristwraps", "source": "Vendor: G'eras (35 Badges of Justice)"},
+      {"rank": "Optional", "item": "Vambraces of Ending", "source": "Drop: High Astromancer Solarian (Tempest Keep)"}
+    ],
+    "hands": [
+      {"rank": "Best", "item": "Thalassian Ranger Gauntlets", "source": "Drop: Kil'jaeden (Sunwell Plateau)"},
+      {"rank": "Best Alternative", "item": "Gloves of Immortal Dusk", "source": "Profession: Leatherworking (Sunwell Plateau pattern)"},
+      {"rank": "Alternative", "item": "Gronnstalker's Gloves", "source": "Drop: Azgalor (Hyjal Summit)"},
+      {"rank": "Best Until Tier 6", "item": "Rift Stalker Gauntlets", "source": "Drop: Leotheras the Blind (Serpentshrine Cavern)"}
+    ],
+    "waist": [
+      {"rank": "Best", "item": "Gronnstalker's Belt", "source": "Drop: Brutallus (Sunwell Plateau)"},
+      {"rank": "Best Alternative", "item": "Don Alejandro's Money Belt", "source": "Drop: Anetheron (Hyjal Summit)"},
+      {"rank": "Optional", "item": "Boneweave Girdle", "source": "Drop: Essence of Anger (Black Temple)"},
+      {"rank": "Optional", "item": "Bladeangel's Money Belt", "source": "Drop: Nalorakk (Zul'Aman)"}
+    ],
+    "legs": [
+      {"rank": "Best", "item": "Leggings of the Immortal Night", "source": "Drop: Felmyst (Sunwell Plateau)"},
+      {"rank": "Best Alternative", "item": "Starstalker Legguards", "source": "Drop: Kalecgos (Sunwell Plateau)"},
+      {"rank": "Alternative", "item": "Trousers of the Scryers' Retainer", "source": "Vendor: G'eras (100 Badges of Justice)"},
+      {"rank": "Alternative", "item": "Bow-stitched Leggings", "source": "Drop: Azgalor (Hyjal Summit)"}
+    ],
+    "feet": [
+      {"rank": "Best", "item": "Gronnstalker's Boots", "source": "Drop: Felmyst (Sunwell Plateau)"},
+      {"rank": "Best Until Tier 6", "item": "Shadowmaster's Boots", "source": "Drop: Mother Shahraz (Black Temple)"},
+      {"rank": "Temporary Hit Option", "item": "Nyn'jah's Tabi Boots", "source": "Vendor: G'eras (60 Badges of Justice)"},
+      {"rank": "Temporary Hit Option", "item": "Edgewalker Longboots", "source": "Drop: Moroes (Karazhan)"}
+    ],
+    "neck": [
+      {"rank": "Best Overall", "item": "Clutch of Demise", "source": "Drop: Brutallus (Sunwell Plateau)"},
+      {"rank": "Best Personal", "item": "Hard Khorium Choker", "source": "Profession: Jewelcrafting (BoP)"},
+      {"rank": "Optional", "item": "Choker of Endless Nightmares", "source": "Drop: Supremus (Black Temple)"},
+      {"rank": "Optional", "item": "Choker of Serrated Blades", "source": "Drop: Trash Mobs in Black Temple/Hyjal Summit"}
+    ],
+    "ring": [
+      {"rank": "Best", "item": "Hard Khorium Band", "source": "Profession: Jewelcrafting"},
+      {"rank": "Best", "item": "Angelista's Revenge", "source": "Vendor: G'eras (60 Badges of Justice)"},
+      {"rank": "Best Alternative", "item": "Signet of Primal Wrath", "source": "Drop: Zul'Aman Timed Event"},
+      {"rank": "Alternative", "item": "Band of the Eternal Champion", "source": "Quest: Champion's Covenant - Requires Exalted The Scale of the Sands"}
+    ],
+    "trinket": [
+      {"rank": "Best", "item": "Blackened Naaru Sliver", "source": "Drop: M'uru (Sunwell Plateau)"},
+      {"rank": "Best", "item": "Dragonspine Trophy", "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"},
+      {"rank": "Alternative", "item": "Berserker's Call", "source": "Drop: Zul'jin (Zul'Aman)"},
+      {"rank": "Good Hit Alternative", "item": "Madness of the Betrayer", "source": "Drop: The Illidari Council (Black Temple)"}
+    ],
+    "weapon_dual_wield": [
+      {"rank": "Best", "item": "Hand of the Deceiver", "source": "Drop: Kil'jaeden (Sunwell Plateau)"},
+      {"rank": "Best Alternative", "item": "Vanir's Right Fist of Brutality", "source": "Vendor: Smith Hauthaa (105 Badges of Justice)"},
+      {"rank": "Good Alternative", "item": "Crux of the Apocalypse", "source": "Drop: Kil'jaeden (Sunwell Plateau)"},
+      {"rank": "Good Alternative", "item": "Shiv of Exsanguination", "source": "Drop: Grand Warlock Alythess (Sunwell Plateau)"}
+    ],
+    "weapon_2h": [
+      {"rank": "Best", "item": "Shivering Felspine", "source": "Drop: Sunwell Plateau Trash Mobs"},
+      {"rank": "Best Survivability", "item": "Apolyon, the Soul-Render", "source": "Drop: Kil'jaeden (Sunwell Plateau)"},
+      {"rank": "Optional", "item": "Twinblade of the Phoenix", "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"},
+      {"rank": "Optional", "item": "Trollbane", "source": "Drop: Zul'Aman Timed Event"}
+    ],
+    "ranged": [
+      {"rank": "Best", "item": "Thori'dal, the Stars' Fury", "source": "Drop: Kil'jaeden (Sunwell Plateau)"},
+      {"rank": "Best Alternative", "item": "Golden Bow of Quel'Thalas", "source": "Drop: Grand Warlock Alythess (Sunwell Plateau)"},
+      {"rank": "Optional", "item": "Bristleblitz Striker", "source": "Drop: Archimonde (Hyjal Summit)"},
+      {"rank": "Optional", "item": "Vengeful Gladiator's Rifle", "source": "Arena Points - Arena Vendor"}
+    ]
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "_comment": "Future-phase reference list, treated as truth for now per the user - we are NOT simming Phase 4 ourselves yet (that's later work: sim it and find the actual best set per phase). Used only for time-horizon flags (will this item survive into Phase 4?), not for any MV computation.",
+  "source": "https://www.wowhead.com/tbc/guide/survival-hunter-dps-za-phase-4-best-in-slot-gear-burning-crusade",
+  "source_note": "Wowhead, author Veramos, page 'Updated: 2026/02/13'.",
+  "fetched": "2026-08-23",
+  "slots": {
+    "head": [
+      {"rank": "Best", "item": "Gronnstalker's Helmet", "source": "Drop: Archimonde (Hyjal Summit)"},
+      {"rank": "Best Personal", "item": "Cursed Vision of Sargeras", "source": "Drop: Illidan Stormrage (Black Temple)"},
+      {"rank": "Best Until Tier 6", "item": "Rift Stalker Helm", "source": "Drop: Lady Vashj (Serpentshrine Cavern)"},
+      {"rank": "Best Until Tier 5", "item": "Beast Lord Helm", "source": "Drop: Pathaleon the Calculator (The Mechanar)"}
+    ],
+    "shoulder": [
+      {"rank": "Best", "item": "Gronnstalker's Spaulders", "source": "Drop: Mother Shahraz (Black Temple)"},
+      {"rank": "Best Until T6", "item": "Rift Stalker Mantle", "source": "Drop: Void Reaver (Tempest Keep)"},
+      {"rank": "Best Until Tier 5", "item": "Beast Lord Mantle", "source": "Drop: Warlord Kalithresh (The Steamvault)"},
+      {"rank": "Optional", "item": "Shoulderpads of the Stranger", "source": "Drop: Hydross the Unstable (Serpentshrine Cavern)"}
+    ],
+    "back": [
+      {"rank": "Best", "item": "Thalassian Wildercloak", "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"},
+      {"rank": "Optional", "item": "Drape of the Dark Reavers", "source": "Drop: Shade of Aran (Karazhan)"},
+      {"rank": "Optional", "item": "Blood Knight War Cloak", "source": "Vendor: G'eras, Shattrath City - 25 Badges of Justice"},
+      {"rank": "Optional", "item": "Auchenai Death Shroud", "source": "Drop: Avatar of the Martyred (Heroic Auchenai Crypts)"}
+    ],
+    "chest": [
+      {"rank": "Best", "item": "Gronnstalker's Chestguard", "source": "Drop: Illidan Stormrage (Black Temple)"},
+      {"rank": "Best Until Tier 6", "item": "Rift Stalker Hauberk", "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"},
+      {"rank": "Best Until Tier 5", "item": "Beast Lord Cuirass", "source": "Drop: Warp Splinter (The Botanica)"},
+      {"rank": "Optional", "item": "Primalstrike Vest", "source": "Profession: Elemental Leatherworking (BoP)"}
+    ],
+    "wrist": [
+      {"rank": "Best", "item": "Insidious Bands", "source": "Drop: Teron Gorefiend (Black Temple)"},
+      {"rank": "Optional", "item": "Vambraces of Ending", "source": "Drop: High Astromancer Solarian (Tempest Keep)"},
+      {"rank": "Best Raid Wide Increase", "item": "Ravager's Bands of Agility", "source": "Drop: Rokad the Ravager (Karazhan)"},
+      {"rank": "Optional", "item": "Felstalker Bracers", "source": "Profession: Leatherworking (BoE)"}
+    ],
+    "hands": [
+      {"rank": "Best", "item": "Gronnstalker's Gloves", "source": "Drop: Azgalor (Hyjal Summit)"},
+      {"rank": "Optional", "item": "Gloves of Dexterous Manipulation", "source": "Drop: Attumen the Huntsman (Karazhan)"},
+      {"rank": "Great", "item": "Rift Stalker Gauntlets", "source": "Drop: Leotheras the Blind (Serpentshrine Cavern)"},
+      {"rank": "Great", "item": "Beast Lord Handguards", "source": "Drop: Warchief Kargath Bladefist (The Shattered Halls)"}
+    ],
+    "waist": [
+      {"rank": "Best", "item": "Don Alejandro's Money Belt", "source": "Drop: Anetheron (Hyjal Summit)"},
+      {"rank": "Optional", "item": "Belt of the Black Eagle", "source": "Profession: Leatherworking"},
+      {"rank": "Optional", "item": "Lurker's Belt of Agility", "source": "Drop: Hyakiss the Lurker (Karazhan)"},
+      {"rank": "Optional", "item": "Belt of One-Hundred Deaths", "source": "Drop: Lady Vashj (Serpentshrine Cavern)"}
+    ],
+    "legs": [
+      {"rank": "Best", "item": "Bow-stitched Leggings", "source": "Drop: Azgalor (Hyjal Summit)"},
+      {"rank": "Optional", "item": "Gronnstalker's Leggings", "source": "Drop: The Illidari Council (Black Temple)"},
+      {"rank": "Optional", "item": "Rift Stalker Leggings", "source": "Drop: Fathom-Lord Karathress (Serpentshrine Cavern)"},
+      {"rank": "Optional", "item": "Shady Dealer's Pantaloons", "source": "Drop: Azgalor (Hyjal Summit)"}
+    ],
+    "feet": [
+      {"rank": "Best", "item": "Shadowmaster's Boots", "source": "Drop: Mother Shahraz (Black Temple)"},
+      {"rank": "Optional", "item": "Cobra-Lash Boots", "source": "Drop: Lady Vashj (Serpentshrine Cavern)"},
+      {"rank": "Optional", "item": "Star-Strider Boots", "source": "Drop: High Astromancer Solarian (Tempest Keep)"},
+      {"rank": "Optional", "item": "Glider's Sabatons of Agility", "source": "Drop: Shadikith the Glider (Karazhan)"}
+    ],
+    "neck": [
+      {"rank": "Best", "item": "Telonicus's Pendant of Mayhem", "source": "Quest Reward: Verdant Sphere - Kael'thas Sunstrider (Tempest Keep)"},
+      {"rank": "Optional", "item": "Necklace of the Deep", "source": "Profession: Jewelcrafting"},
+      {"rank": "Optional", "item": "Jagged Bark Pendant", "source": "Drop: Warp Splinter (The Botanica)"},
+      {"rank": "Optional", "item": "Prestor's Talisman of Connivery", "source": "Drop: Nefarian (Blackwing Lair)"}
+    ],
+    "ring": [
+      {"rank": "Best 6% and 9%", "item": "Signet of Primal Wrath", "source": "Drop: Zul'Aman Timed Event"},
+      {"rank": "Best 6% and 9%", "item": "Band of the Eternal Champion", "source": "Quest: Champion's Covenant - Requires Exalted The Scale of the Sands"},
+      {"rank": "Optional", "item": "Ring of the Recalcitrant", "source": "Quest: The Fall of Magtheridon (Magtheridon's Lair)"},
+      {"rank": "Optional", "item": "Ring of Lethality", "source": "Drop: Hydross the Unstable (Serpentshrine Cavern)"}
+    ],
+    "trinket": [
+      {"rank": "Best", "item": "Dragonspine Trophy", "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"},
+      {"rank": "Best", "item": "Madness of the Betrayer", "source": "Drop: The Illidari Council (Black Temple)"},
+      {"rank": "Great", "item": "Bloodlust Brooch", "source": "Vendor: G'eras (41 Badges of Justice)"},
+      {"rank": "Good", "item": "Ashtongue Talisman of Swiftness", "source": "Vendor: Okuno - Requires Exalted Ashtongue Deathsworn"}
+    ],
+    "weapon_dual_wield": [
+      {"rank": "Best x2", "item": "Dagger of Bad Mojo", "source": "Drop: Hex Lord Malacrass (Zul'Aman)"},
+      {"rank": "Optional", "item": "Blade of Infamy", "source": "Drop: Anetheron (Hyjal Summit)"},
+      {"rank": "Optional", "item": "Netherbane", "source": "Drop: Al'ar (Tempest Keep)"},
+      {"rank": "Optional MH/OH", "item": "Stellaris", "source": "Drop: Nethermancer Sepethrea (The Mechanar)"}
+    ],
+    "weapon_2h": [
+      {"rank": "Best", "item": "Halberd of Desolation", "source": "Drop: High Warlord Naj'entus (Black Temple)"},
+      {"rank": "Optional", "item": "Trollbane", "source": "Drop: Zul'Aman Timed Event"},
+      {"rank": "Optional", "item": "Twinblade of the Phoenix", "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"},
+      {"rank": "Optional", "item": "Bloodmoon", "source": "Profession: Master Axesmith Blacksmith (BoP)"},
+      {"rank": "Optional", "item": "Legacy", "source": "Drop: The Crone (Karazhan)"}
+    ],
+    "ranged": [
+      {"rank": "Best", "item": "Bristleblitz Striker", "source": "Drop: Archimonde (Hyjal Summit)"},
+      {"rank": "Best - Dwarf", "item": "Vengeful Gladiator's Rifle", "source": "Arena Points - Arena Vendor"},
+      {"rank": "Second Best", "item": "Black Bow of the Betrayer", "source": "Drop: Illidan Stormrage (Black Temple)"},
+      {"rank": "Optional", "item": "Ancient Amani Longbow", "source": "Drop: Zul'jin (Zul'Aman)"}
+    ]
+  }
+}
