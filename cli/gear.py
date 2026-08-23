@@ -1,8 +1,4 @@
-"""`gear sync` / `gear best` - see CLAUDE.md and NOTES.md for why `best` is a
-stub right now: it needs (a) a fresh in-game export (current one has an empty
-gear array) and (b) Stage 2's Survival-mechanics blocker resolved before it's
-allowed to talk about my own gear's DPS at all, per the ground rules.
-"""
+"""`gear sync` / `gear best` / `gear preset`."""
 import argparse
 import os
 import sys
@@ -10,6 +6,7 @@ import sys
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(REPO_ROOT, "ingest"))
 sys.path.insert(0, os.path.join(REPO_ROOT, "adapters", "tbc"))
+sys.path.insert(0, os.path.join(REPO_ROOT, "core"))
 
 import build_character  # noqa: E402
 import adapter  # noqa: E402
@@ -31,11 +28,14 @@ def cmd_sync(args):
 
 
 def cmd_best(args):
-    print("`gear best` is deferred: Stage 2 (Survival mechanics / Expose Weakness raid-vs-")
-    print("personal question) has to be resolved before this tool emits any DPS number tied")
-    print("to your own gear - see CLAUDE.md ground rules. Use `gear sync` for now, and")
-    print("`gear preset <build.json>` to sanity-check the sim pipeline against the shipped")
-    print("reference presets in the meantime.")
+    """Real pipeline now (was a Stage-1 stub) - both blockers it was waiting
+    on are long resolved: Stage 2's Expose Weakness raid-vs-personal
+    question (now the "Debuff" column, per-attacker) and a real gear
+    export. Thin wrapper - run_full_sweep_mv.main() takes no arguments,
+    it reads data/character.json and the candidate pool from their fixed
+    repo-relative paths and writes data/cache/tiered_report.json."""
+    import run_full_sweep_mv
+    run_full_sweep_mv.main()
 
 
 def cmd_preset(args):
@@ -59,7 +59,7 @@ def main():
     p_sync.add_argument("character", nargs="?", default="Lerynia-Thunderstrike")
     p_sync.set_defaults(func=cmd_sync)
 
-    p_best = sub.add_parser("best", help="deferred - see CLAUDE.md")
+    p_best = sub.add_parser("best", help="full MV sweep against the owned pool - writes data/cache/tiered_report.json")
     p_best.set_defaults(func=cmd_best)
 
     p_preset = sub.add_parser("preset", help="run a shipped .build.json preset through the sim")
