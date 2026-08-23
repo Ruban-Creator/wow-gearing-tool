@@ -288,7 +288,7 @@ def main():
         # "real upgrade" for achieved-BiS/report-inclusion purposes).
         if not parts or not any_real:
             continue
-        note = f"part of {set_name} - isolated bonus value (stats held constant, screened): " + " · ".join(parts)
+        note = f"part of {set_name}: " + " · ".join(parts)
         for _, cand in set_bonus.set_pieces_in_pool(set_name, candidates):
             set_notes_by_item[cand.item_id] = note
     if set_notes_by_item:
