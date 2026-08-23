@@ -351,6 +351,37 @@ def main():
 
     print(f"Resolved {len(to_resolve)} (tier, slot) leaderboard candidates @ {RESOLVE_ITERATIONS} iter.\n")
 
+    # A "screened only" real upgrade (MV so far past the noise floor that
+    # CLEAR_MARGIN_MULTIPLE skipped its 30k DPS resolve) was still showing
+    # "Raid: n/a AP" - the DPS-skip decision had been silently skipping the
+    # AP column too, but get_agility() is a cheap, deterministic ComputeStats
+    # call (no Monte Carlo iterations, ~free compared to a resolve) and the
+    # DPS side of this call hits the sim_cache instantly (identical config/
+    # iterations/seed already ran in Pass 1) - so this costs one ComputeStats
+    # RPC per screened-only leaderboard upgrade, not a real resolve.
+    screened_upgrades_needing_ap = [
+        (c, r) for key, rows in by_tier_slot.items()
+        for c, r in rows[:LEADERBOARD_SIZE]
+        if not r["resolved"] and not r["tied_within_noise"] and r["mv"] > 0
+    ]
+
+    def add_ap_only(cr):
+        c, _ = cr
+        return c.item_id, mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_screen,
+                                        SCREEN_ITERATIONS, opt.SEED, baseline_agility=baseline_agility)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
+        ap_only_pairs = list(ex.map(add_ap_only, screened_upgrades_needing_ap))
+    ap_only_by_id = dict(ap_only_pairs)
+
+    for key, rows in by_tier_slot.items():
+        for c, r in rows:
+            if not r["resolved"] and c.item_id in ap_only_by_id:
+                r["raid_ap_contribution"] = ap_only_by_id[c.item_id].get("raid_ap_contribution")
+
+    if screened_upgrades_needing_ap:
+        print(f"Filled Raid AP for {len(screened_upgrades_needing_ap)} screened-only real upgrades.\n")
+
     # --- Achieved BiS: slots where nothing in the whole P3 pool beats her
     # current gear (real upgrade = same filter every tier uses below) - a
     # gated upgrade she can't currently satisfy (reputation standing/arena
