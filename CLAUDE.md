@@ -227,6 +227,10 @@ a blank wait wondering if it's stuck. Means the underlying pipeline needs to exp
 progress signal (e.g. a callback or periodic status write), not just print-to-stdout text - worth
 designing in from the start rather than bolting on later, per the same "keep core/adapters
 UI-agnostic so a GUI can sit on top without a rewrite" principle already governing this section.
+Also a resolve-iterations setting (2026-08-23) - per the user, expose the final resolve pass's
+iteration count as a real GUI setting rather than a hardcoded constant, since the right value is
+a genuine speed/precision tradeoff a user might want to tune (see the funnel idea below for the
+actual measured numbers behind this).
 etc. Not part of any current stage — noted here so it isn't lost, but don't build toward it until the
 user actually asks. Keep `core/`/`adapters/` command-line-first and UI-agnostic in the meantime so
 a GUI can sit on top later without a rewrite. Until the toggle exists, keep assuming 6% (moonkin
@@ -314,6 +318,30 @@ reported number) but formalized as three explicit tiers instead of one screen/re
    12.5k - that recollection was off, caught by checking rather than assuming. If this tier ever
    gets built, 25000 is the real, verified reference point to weigh against this tool's own 30000,
    not a guessed number.
+
+**Status (2026-08-23): tiers 1-2 are actually built**, not just an idea anymore -
+`core/interaction_matrix.py`'s `compute()` now runs a real 3-pass funnel: pre-screen @100 →
+screen @1000 → resolve @30000, each stage gating whether a pair gets promoted to the next.
+
+**Real, controlled A/B data** (10 real items, mixed magnitudes, same seed, cache cleared for a
+clean timing comparison) settled the "is 30k worth it" question concretely rather than by
+argument:
+
+| iterations | time/item | verdict vs the 30k reference |
+|---|---|---|
+| 100 | 0.25s | unreliable - 6 of 10 disagreed, confirms pre-screen-only use |
+| 1000 | 0.40s | 1 of 10 disagreed (a razor-thin +1.3 DPS real effect) |
+| 5000 | 1.04s | same 1 of 10 disagreed - every clear-magnitude item (±7 to ±51 DPS) matched 30k exactly |
+| 30000 | 5.33s | reference |
+
+Conclusion: 5000 is NOT safe as the final reported number (noise-honesty is a hard rule, and it
+missed exactly the case that matters - a small-but-real effect near the noise floor), but it's
+strong evidence for a 4th, intermediate "confirm @5000" tier between screen and finalize, since
+it agreed with 30k on every item that had a real, decision-relevant magnitude. Not yet built.
+Earlier in this same session, a single hand-tested wowsims comparison (30k: +1.06 DPS, 5k: -3.50
+DPS, sign flip) looked like it disproved 5k entirely - the fuller 10-item test clarifies that
+scary result was itself a near-zero-effect edge case, the same class of case the 10-item test's
+one disagreement also hit, not evidence that 5k is broadly unreliable.
 
 Worth noting: this reframes the exercise back toward the core `DPS*(S)` full-set search (Stage
 4), not just Stage 5's pairwise interaction matrix specifically - "finalize the 3 best sets"
