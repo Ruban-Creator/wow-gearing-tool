@@ -54,8 +54,9 @@ def gate_for_item(source_text: str, slot_label: str, status: dict) -> dict | Non
         if current is None:
             return {
                 "kind": "reputation", "satisfied": False,
-                "note": f"Requires {required_tier} with {faction} - your standing isn't recorded "
-                        f"(add it to data/acquisition_status.json).",
+                "note": f"Requires {required_tier} with {faction} - your standing isn't recorded yet. "
+                        f"Login and run /gtexport to save it (GearingToolCompanion reads reputation "
+                        f"automatically and this file updates on the next gear sync).",
             }
         try:
             satisfied = REPUTATION_TIERS.index(current) >= REPUTATION_TIERS.index(required_tier)
@@ -77,8 +78,10 @@ def gate_for_item(source_text: str, slot_label: str, status: dict) -> dict | Non
                             "slot isn't recorded - confirm before assuming it's obtainable."}
         if current is None:
             return {"kind": "arena", "satisfied": False,
-                    "note": f"Requires {required} rating - your current rating isn't recorded "
-                            f"(add arena.current_rating to data/acquisition_status.json)."}
+                    "note": f"Requires {required} rating - your current rating isn't recorded yet. "
+                            f"Login and run /gtexport to capture your arena teams, then confirm "
+                            f"which field is your real rating (GetArenaTeam's exact field isn't "
+                            f"confirmed on this client build) before it's set automatically."}
         satisfied = current >= required
         return {"kind": "arena", "satisfied": satisfied,
                 "note": f"Requires {required} rating - you're at {current}."}
