@@ -21,9 +21,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 import valuation  # noqa: E402
 import expose_weakness  # noqa: E402
 
-# From §0's stated raid comp (8-10 other physical attackers) - midpoint,
-# already used once for the by-hand worked example in NOTES.md's Stage 2
-# entry. Not re-derived or estimated here.
+# No longer baked into the reported number (see raid_ap_per_attacker below,
+# per the user - report per-attacker, not a total pre-multiplied by an
+# assumed raid size) - kept here as a documented reference point only.
+# From §0's stated raid comp (8-10 other physical attackers), midpoint.
 PHYSICAL_ATTACKER_COUNT = 9
 
 # Populated by set_slot_hints() from the optimizer's own pool structure, so
@@ -113,15 +114,22 @@ def mv_single(settings_path: str, baseline_config: list[dict], candidate: "opt.C
     delta = best["combined"] - baseline_result["combined"]
     noise = delta_noise(baseline_result, best, iterations)
 
-    raid_ap_contribution = None
+    raid_ap_per_attacker = None
     if baseline_agility is not None:
         new_agility = valuation.get_agility(settings_path, best_trial)
         baseline_uptime = baseline_result.get("ew_uptime")
         new_uptime = best.get("ew_uptime")
         if new_agility is not None and baseline_uptime is not None and new_uptime is not None:
-            base_ap = expose_weakness.raid_ap_contribution(baseline_agility, baseline_uptime, PHYSICAL_ATTACKER_COUNT)
-            new_ap = expose_weakness.raid_ap_contribution(new_agility, new_uptime, PHYSICAL_ATTACKER_COUNT)
-            raid_ap_contribution = new_ap - base_ap
+            # Per ONE physical attacker (count=1), not multiplied by an
+            # assumed raid size - per the user: report how much stronger/
+            # weaker the debuff itself gets, not a total pre-multiplied by
+            # PHYSICAL_ATTACKER_COUNT's assumed 9. This lets a raid lead or
+            # loot council apply their OWN actual physical-attacker count
+            # (which varies week to week) rather than trusting a baked-in
+            # midpoint assumption in the headline number.
+            base_ap = expose_weakness.raid_ap_contribution(baseline_agility, baseline_uptime, 1)
+            new_ap = expose_weakness.raid_ap_contribution(new_agility, new_uptime, 1)
+            raid_ap_per_attacker = new_ap - base_ap
 
     return {
         "name": candidate.name,
@@ -129,11 +137,13 @@ def mv_single(settings_path: str, baseline_config: list[dict], candidate: "opt.C
         "noise_stdev": noise,
         "tied_within_noise": abs(delta) < 2 * noise,  # ~95% confidence band
         "new_combined": best["combined"],
-        # Marginal raid-wide AP this candidate grants the raid's other
+        # Marginal AP this candidate grants to EACH of the raid's other
         # physical attackers via Expose Weakness, ON TOP OF personal DPS
         # (already inside "mv" above) - never collapsed into one number,
-        # per the ground rule. None when baseline_agility wasn't supplied.
-        "raid_ap_contribution": raid_ap_contribution,
+        # per the ground rule. Multiply by your raid's actual physical-
+        # attacker count for a total. None when baseline_agility wasn't
+        # supplied.
+        "raid_ap_per_attacker": raid_ap_per_attacker,
     }
 
 

@@ -321,7 +321,7 @@ def main():
     # --- Pass 2: resolve only the leaderboard items still close enough to matter ---
     baseline_resolved = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
 
-    # raid_ap_contribution is only computed here (the leaderboard, ~100-150
+    # raid_ap_per_attacker is only computed here (the leaderboard, ~100-150
     # items), not in screen_one (~500) - it's an extra ComputeStats call per
     # item, and only leaderboard items ever get displayed. Items that skip
     # resolve entirely (CLEAR_MARGIN_MULTIPLE, "screened only" in the
@@ -343,10 +343,10 @@ def main():
                 r["mv"] = res["mv"]
                 r["noise_stdev"] = res["noise_stdev"]
                 r["tied_within_noise"] = res["tied_within_noise"]
-                r["raid_ap_contribution"] = res.get("raid_ap_contribution")
+                r["raid_ap_per_attacker"] = res.get("raid_ap_per_attacker")
                 r["resolved"] = True
             else:
-                r["raid_ap_contribution"] = None
+                r["raid_ap_per_attacker"] = None
                 r["resolved"] = False
 
     print(f"Resolved {len(to_resolve)} (tier, slot) leaderboard candidates @ {RESOLVE_ITERATIONS} iter.\n")
@@ -377,7 +377,7 @@ def main():
     for key, rows in by_tier_slot.items():
         for c, r in rows:
             if not r["resolved"] and c.item_id in ap_only_by_id:
-                r["raid_ap_contribution"] = ap_only_by_id[c.item_id].get("raid_ap_contribution")
+                r["raid_ap_per_attacker"] = ap_only_by_id[c.item_id].get("raid_ap_per_attacker")
 
     if screened_upgrades_needing_ap:
         print(f"Filled Raid AP for {len(screened_upgrades_needing_ap)} screened-only real upgrades.\n")
@@ -427,9 +427,9 @@ def main():
     # per CLAUDE.md's "never invent data" rule. Sort/rank by Player.
     print("Player = DPS. Personal damage-per-second gain (real sim number, what this item does")
     print("         for YOUR damage).")
-    print("Raid   = AP. Attack Power granted to your raid's other physical attackers via Expose")
-    print("         Weakness - a different unit entirely, not DPS, not YOUR damage, never added")
-    print("         into Player.\n")
+    print("Debuff = AP, PER physical attacker in the raid. How much stronger/weaker your Expose")
+    print("         Weakness debuff gets - multiply by your raid's actual physical-attacker count")
+    print("         for a total. A different unit entirely, not DPS, never added into Player.\n")
 
     if achieved_bis:
         print("=== Achieved BiS (nothing in the Phase 3 pool beats these) ===")
@@ -480,8 +480,8 @@ def main():
                 # when it wasn't computed for this item (screened-only
                 # items skip the extra ComputeStats call, same as they skip
                 # the 30k DPS resolve).
-                raid_ap = r.get("raid_ap_contribution")
-                raid_ap_str = f"Raid: {raid_ap:>+6.0f} AP" if raid_ap is not None else "Raid:    n/a AP"
+                raid_ap = r.get("raid_ap_per_attacker")
+                raid_ap_str = f"Debuff: {raid_ap:>+5.1f} AP/ea" if raid_ap is not None else "Debuff:    n/a AP/ea"
                 gate = r.get("gate")
                 lock = "  [LOCKED]" if gate and not gate["satisfied"] else ""
                 print(f"    {r['name']:<36} Player: {r['mv']:>+7.1f} DPS  {raid_ap_str}  {r['source']}{flag}{lock}")
