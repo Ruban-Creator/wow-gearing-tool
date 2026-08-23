@@ -1512,3 +1512,20 @@ were ever written) - a rerun after the fix reproduced the exact known-good numbe
 (`None`/absent) is a real Python footgun - `x == y` doesn't distinguish "both real values happen
 to match" from "neither value applies at all." Should have guarded on "is this even a scenario
 where the check applies" first, not trusted equality to naturally handle the null case.
+
+## 2026-08-23 — "Raid AP" renamed to "Debuff", reported per-attacker not a fixed-total
+
+User's reasoning, from looking at the published ledger: the old column multiplied the Expose
+Weakness AP delta by `PHYSICAL_ATTACKER_COUNT` (a fixed assumed 9, from §0's stated raid comp
+midpoint) into one pre-baked total. That's the wrong shape for how this number actually gets
+used - a real raid's physical-attacker count varies week to week, and baking in one assumed
+count makes the number harder to argue to a raid lead/loot council and impossible to use for "at
+what attacker count does this become worth it" reasoning. Changed `mv_single()` to call
+`expose_weakness.raid_ap_contribution(..., count=1)` and report the PER-attacker delta instead -
+multiply by your raid's actual count for a total, which is now the reader's job, not this tool's
+assumption. `PHYSICAL_ATTACKER_COUNT` itself is kept in `marginal_value.py` only as a documented
+reference constant, no longer driving the reported number.
+
+Also renamed the column from "Raid" to "Debuff" - a more literal, accurate name (it's reporting
+how strong Lerynia's OWN Expose Weakness debuff is, not some already-aggregated raid total) that
+reads less ambiguously than "Raid," which could be misread as already being a raid-wide sum.
