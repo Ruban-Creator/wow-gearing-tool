@@ -267,9 +267,11 @@ reported number) but formalized as three explicit tiers instead of one screen/re
 2. **Screen** - today's existing 1-2k-iteration pass, applied to whatever survives step 1.
 3. **Finalize** - resolve only the top ~3 candidate FULL SETS (not top individual items or
    pairs) at high precision - the user left the exact iteration count open ("12.5k baseline from
-   sim or your 30k, up to you"). The "12.5k" figure is NOT independently confirmed as a real
-   wowsims default - don't build against it as if verified without checking the sim's own
-   presets first.
+   sim or your 30k, up to you"). Confirmed by the user checking the actual wowsims web UI
+   (Hunter, incognito, default "Iterations" field): the sim's own real default is **25000**, not
+   12.5k - that recollection was off, caught by checking rather than assuming. If this tier ever
+   gets built, 25000 is the real, verified reference point to weigh against this tool's own 30000,
+   not a guessed number.
 
 Worth noting: this reframes the exercise back toward the core `DPS*(S)` full-set search (Stage
 4), not just Stage 5's pairwise interaction matrix specifically - "finalize the 3 best sets"
