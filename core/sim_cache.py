@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import threading
+import time
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CACHE_PATH = os.path.join(REPO_ROOT, "data", "cache", "sim_cache.json")
@@ -25,7 +26,20 @@ def _save(cache: dict):
     tmp = CACHE_PATH + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(cache, f)
-    os.replace(tmp, CACHE_PATH)
+    # threading.Lock only guards this process - if another process (a
+    # second pipeline run, a stray test script, antivirus/OneDrive
+    # scanning the just-written file) has CACHE_PATH momentarily open,
+    # Windows os.replace raises PermissionError instead of just blocking.
+    # A few short retries ride out that transient window instead of
+    # crashing a run that's otherwise perfectly fine.
+    for attempt in range(5):
+        try:
+            os.replace(tmp, CACHE_PATH)
+            return
+        except PermissionError:
+            if attempt == 4:
+                raise
+            time.sleep(0.05 * (attempt + 1))
 
 
 def key(gear_hash: str, settings_fingerprint: str, iterations: int, seed: int) -> str:

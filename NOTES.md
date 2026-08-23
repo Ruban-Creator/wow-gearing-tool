@@ -809,3 +809,62 @@ player DPS between both paths on a fresh (uncached) seed; ~30% faster per call e
 (240ms vs 340ms warm, serial, including the bridge.exe step) — less than the previously-quoted
 isolated 2.15x since that number excluded bridge.exe's fixed cost, but a confirmed real win, and
 it stacks with the `MAX_WORKERS=4` thread pool the sweep already uses.
+
+**Per-slot leaderboards, owned-item exclusion, set-bonus rescue, and a real
+oversubscription bug found while building all three (session continued).**
+- Tiered report now breaks down top-5 by *equipment slot within each tier*
+  (Head/Trinket/Weapon/etc.), not one blended top-5 per tier - per the
+  user's correction that a tier's leaderboard was hiding real per-slot
+  upgrades behind bigger numbers from other slots. Empty (tier, slot)
+  combos just don't print (T4 legitimately has almost nothing for this
+  character - that's expected, not a bug).
+- Items she already owns (equipped + bags + bank, `data/character.json`'s
+  `owned.bags`/`owned.bank`) are excluded from every acquisition tier - not
+  something to go acquire. First attempt pruned them out of the whole
+  `candidates` pool, which also silently broke set-bonus math (a banked
+  piece needs to stay visible to `set_bonus.py` to be credited toward a set
+  combo) - the user caught this ("we don't want to filter out our gear
+  entirely"). Fixed: owned items stay in `candidates`, filtered only at the
+  final per-row report-building step.
+- Set-bonus rescue: before this, an item that's a downgrade alone but part
+  of a set whose combined MV is a real upgrade was just dropped like any
+  other downgrade - exactly the EP-blind-spot §1 exists to catch. Now
+  `set_bonus.set_progression()` runs once per distinct `setName` found in
+  the pool; any item whose own screened MV is NOT already a clear upgrade
+  gets an explicit info note if the set eventually becomes worth it. First
+  version attached the note to every member of a flagged set regardless of
+  the item's own verdict - so a genuinely-good standalone piece
+  (Gronnstalker's Leggings, +10.4 alone) got a false "downgrade alone"
+  label. Fixed: the note only prints when the item's own resolved/screened
+  mv isn't already a clear upgrade.
+- **Real oversubscription bug, found while investigating a 9-minute run**:
+  `SIMSERVER_POOL_SIZE=4` + `MAX_WORKERS=4` means up to 4 simserver
+  processes x 12 internal goroutines each (`runtime.NumCPU()` on this
+  6C/12T Ryzen 5 5600X) = 48-way parallelism fighting over 12 threads.
+  Measured: 747ms/call at (4,4) vs 101ms/call at (2,2) - **7.4x slower from
+  oversubscription alone**, not the sim being slow. Fixed both to 2 (must
+  stay matched - no reason to hold idle simserver processes a caller can't
+  reach). If this ever moves to different hardware, retune both to roughly
+  match `logical_threads / 12` (rounded up, min 1).
+- Reintroduced the "skip resolving what screening already made obvious"
+  rule (`marginal_value.CLEAR_MARGIN_MULTIPLE`, already used by
+  `mv_single_tiered` for the curated-71-item report) into the leaderboard
+  resolve step here too - only items still within 8x screening-noise of
+  zero get the 30k pass; a screened +35.7 with tight noise doesn't need it,
+  resolving can only sharpen a number that was never in question. Cut the
+  leaderboard resolve count from ~300+ to 124 on this pool.
+- **`sim_cache.py`'s `_save()` isn't safe against a second process touching
+  the same cache file** - `threading.Lock()` only guards one process; a
+  concurrent second Python process (a stray test script, in this session's
+  case) hitting the same `data/cache/sim_cache.json` caused a genuine
+  `PermissionError: [WinError 5]` on `os.replace` under Windows. Hardened
+  with a short retry/backoff (5 attempts, 50-200ms) rather than crashing a
+  perfectly fine run over someone else's transient file lock - but the
+  real lesson is **don't run manual test scripts against the same repo
+  while a real pipeline run is in flight**, they share the cache file.
+- GPU acceleration was asked about and ruled out: the sim is a branchy,
+  stateful per-iteration simulation (ability priority, proc rolls, buff
+  timers) - the worst case for GPU SIMT execution (warp divergence), and
+  `wowsimcli`'s engine has no GPU path to begin with. The real lever on
+  this hardware is core count (Monte Carlo iterations parallelize cleanly
+  across cores); RAM/storage/GPU upgrades wouldn't move this workload.

@@ -30,7 +30,14 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 CACHE_DIR = os.path.join(REPO_ROOT, "data", "cache")
 
 USE_SIMSERVER = True
-SIMSERVER_POOL_SIZE = 4
+# The Ryzen 5 5600X this runs on is 6C/12T, and wowsimcli/simserver already
+# use ALL logical threads internally per sim call ("Running N iterations on
+# 12 concurrent sims" - runtime.NumCPU()). A pool size of 4 means up to
+# 4x12=48-way parallelism fighting over 12 threads - measured 747ms/call
+# oversubscribed vs 101ms/call at pool_size=2 with MAX_WORKERS=2 to match
+# (7.4x). Keep this <= MAX_WORKERS in run_full_sweep_mv.py; there's no
+# reason to hold idle simserver processes a caller can never reach.
+SIMSERVER_POOL_SIZE = 2
 
 _settings_lock = threading.Lock()
 _template_cache = {}

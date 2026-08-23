@@ -1,13 +1,22 @@
 """Full-sweep MV, tiered by acquisition source (T6/T5/T4/Heroics/Vanilla
-carryover/Crafted/Reputation) per the user's request - and per the user's
-follow-up correction to how the compute budget gets spent: screen
-EVERYTHING cheap first, then only pay for the 30k resolve pass on each
-tier's leaderboard (top ~8, enough margin to keep "top 5" trustworthy after
-resolving), not on every candidate that happens to be near the noise floor.
-A candidate pool this large has hundreds of items clustered near zero
-(most random raid drops don't beat an already-decent-itemized character) -
-resolving all of them was the actual reason the first run of this was
-taking so long, not the sim being slow.
+carryover/Crafted/Reputation) and then broken down by equipment slot within
+each tier - top 5 per (tier, slot), not one blended top-5 per tier, per the
+user's correction. Compute budget: screen EVERYTHING cheap (1k iterations)
+first, then only pay for the 30k resolve pass on each (tier, slot)
+leaderboard's top ~8 (slack in case resolving reorders things near the
+cutoff) - and even then, only the ones still close enough to the noise
+floor that resolving could plausibly change the verdict (CLEAR_MARGIN_MULTIPLE,
+same rule marginal_value.mv_single_tiered already uses). A candidate pool
+this large has hundreds of items clustered near zero (most random raid
+drops don't beat an already-decent-itemized character) - resolving all of
+them was the actual reason the first run of this was taking so long, not
+the sim being slow. Items she already owns (equipped/bags/bank) are excluded
+from every tier - not an acquisition target - but stay in the working
+candidate pool so set-bonus math (see the "Set-bonus rescue check" below)
+still sees them. A piece that's a downgrade alone but part of a set whose
+combined MV is a real upgrade gets included anyway, flagged with an info
+note, rather than silently dropped - exactly the case §1 warns EP-only
+ranking misses.
 """
 import concurrent.futures
 import json
@@ -20,18 +29,19 @@ import item_db as idb  # noqa: E402
 import gear_config as gc  # noqa: E402
 import optimizer as opt  # noqa: E402
 import marginal_value as mv  # noqa: E402
+import set_bonus  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETTINGS_TEMPLATE = os.path.join(REPO_ROOT, "profiles", "tbc", "canonical_settings_survival.json")
 POOL_PATH = os.path.join(REPO_ROOT, "profiles", "tbc", "candidate_pool_survival.json")
 DB_PATH = os.path.join(REPO_ROOT, "sim", "tbc-new", "assets", "database", "db.json")
 SWEEP_PATH = os.path.join(REPO_ROOT, "data", "cache", "full_sweep_candidates.json")
-MAX_WORKERS = 4
+MAX_WORKERS = 2  # matches valuation.SIMSERVER_POOL_SIZE - see its comment for why 4 was 7.4x slower
 
 SCREEN_ITERATIONS = 1000  # cheap ranking pass across the whole pool
-RESOLVE_ITERATIONS = 30000  # precise, only spent on each tier's leaderboard
-LEADERBOARD_SIZE = 8  # per tier, resolved - a little slack over "top 5" in
-# case resolving nudges the screening order around near the cutoff
+RESOLVE_ITERATIONS = 30000  # precise, only spent on each (tier, slot) leaderboard
+LEADERBOARD_SIZE = 8  # per (tier, slot), resolved - a little slack over "top 5"
+# in case resolving nudges the screening order around near the cutoff
 
 TYPE_TO_SLOT = {
     1: "head", 2: "neck", 3: "shoulder", 4: "back", 5: "chest", 6: "wrist",
@@ -39,6 +49,22 @@ TYPE_TO_SLOT = {
     14: "ranged",
 }
 TWO_HAND = 4
+
+# Display grouping for the per-slot leaderboards: ring1/ring2, trinket1/
+# trinket2, and mainhand/offhand share one pool each (an item can go in
+# either half of the pair) so they're reported as one slot, not two.
+SLOT_DISPLAY = {
+    "head": "Head", "neck": "Neck", "shoulder": "Shoulder", "back": "Back",
+    "chest": "Chest", "wrist": "Wrist", "hands": "Hands", "waist": "Waist",
+    "legs": "Legs", "feet": "Feet", "ranged": "Ranged",
+    "ring1": "Ring", "ring2": "Ring",
+    "trinket1": "Trinket", "trinket2": "Trinket",
+    "mainhand": "Weapon", "offhand": "Weapon",
+}
+SLOT_DISPLAY_ORDER = [
+    "Head", "Neck", "Shoulder", "Back", "Chest", "Wrist", "Hands", "Waist",
+    "Legs", "Feet", "Ring", "Trinket", "Ranged", "Weapon",
+]
 
 TIER_ZONES = {
     "T6 (Black Temple / Mount Hyjal)": {3606, 3959},
@@ -99,6 +125,13 @@ def main():
 
     char = json.load(open(os.path.join(REPO_ROOT, "data", "character.json"), encoding="utf-8"))
     owned_items = char["equipped"]["items"]
+    # Everything she already possesses - equipped AND sitting in bags/bank -
+    # isn't something to go acquire, so it's excluded from every tier below
+    # (not just filtered by "would it improve DPS", which could still say
+    # yes for a bagged item she hasn't bothered equipping).
+    owned_all_ids = {it["id"] for it in owned_items if it}
+    owned_all_ids |= {it["id"] for it in char["owned"]["bags"] if it}
+    owned_all_ids |= {it["id"] for it in char["owned"]["bank"] if it}
 
     candidates = opt.load_candidates(POOL_PATH, owned_items)
     curated_ids = {c.item_id for cands in candidates.values() for c in cands if c.item_id}
@@ -171,12 +204,45 @@ def main():
                 tier = tier_from_text(source, zone_by_id) or tier
             item_meta[c.item_id] = (source, tier)
 
-    print(f"Curated pool: {len(curated_ids)} items. Sweep added {new_count} new candidates.\n")
+    # Owned items stay IN the candidate pool (set-bonus progression below
+    # needs to see a bagged/banked piece to correctly credit it toward a
+    # set bonus) - they're filtered out only at the final report-row step,
+    # so an already-owned item never appears as something to go acquire,
+    # while still counting toward whether a set is worth completing.
+    print(f"Curated pool: {len(curated_ids)} items. Sweep added {new_count} new candidates "
+          f"({len(owned_all_ids)} already owned - kept for set-bonus math, hidden from acquisition tiers).\n")
+
+    item_slot_label = {}
+    for slot, cands in candidates.items():
+        label = SLOT_DISPLAY.get(slot, slot.capitalize())
+        for c in cands:
+            if c.item_id is not None:
+                item_slot_label.setdefault(c.item_id, label)
 
     mv.set_slot_hints(candidates)
     baseline_config = opt.build_owned_config(owned_items)
     baseline_screen = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, SCREEN_ITERATIONS, opt.SEED)
     print(f"Baseline @ {SCREEN_ITERATIONS} iter (screening): combined={baseline_screen['combined']:.1f}\n")
+
+    # Set-bonus rescue check (§1's whole reason to exist: a piece can look
+    # like a downgrade alone and still be worth taking because it's on the
+    # path to a set bonus - never drop those silently, flag them instead).
+    set_names = {idb.by_id(c.item_id).get("setName")
+                 for cands in candidates.values() for c in cands
+                 if c.item_id is not None and idb.by_id(c.item_id) and idb.by_id(c.item_id).get("setName")}
+    set_notes_by_item: dict[int, str] = {}
+    for set_name in sorted(set_names):
+        prog = set_bonus.set_progression(SETTINGS_TEMPLATE, set_name, candidates, baseline_config,
+                                          baseline_screen, owned_items, SCREEN_ITERATIONS)
+        first_upgrade = next((p for p in prog.get("progression", []) if p["upgrade"]), None)
+        if not first_upgrade:
+            continue
+        note = (f"downgrade alone, but part of {set_name} - {first_upgrade['pieces_held']}pc combo "
+                f"is +{first_upgrade['mv_vs_current_gear']:.1f} vs current gear (screened)")
+        for _, cand in set_bonus.set_pieces_in_pool(set_name, candidates):
+            set_notes_by_item[cand.item_id] = note
+    if set_notes_by_item:
+        print(f"Set-bonus rescue check: {len(set_notes_by_item)} item(s) flagged across {len(set_names)} set(s).\n")
 
     seen_ids = set()
     all_candidates = []
@@ -194,21 +260,34 @@ def main():
         screened = list(ex.map(screen_one, all_candidates))
     print(f"Screened {len(screened)} candidates @ {SCREEN_ITERATIONS} iter in {time.time()-start:.1f}s")
 
-    # --- Pick each tier's leaderboard from the screening results ---
-    by_tier: dict[str, list] = {}
+    # --- Pick each (tier, slot) leaderboard from the screening results ---
+    by_tier_slot: dict[tuple[str, str], list] = {}
     for c, r in screened:
         if r.get("excluded_reason"):
             continue
+        if c.item_id in owned_all_ids:
+            continue  # already hers - not an acquisition target, see note above
         source, tier = item_meta.get(c.item_id, ("", "Other"))
-        r = dict(r, source=source, tier=tier, item_id=c.item_id)
-        by_tier.setdefault(tier, []).append((c, r))
+        slot_label = item_slot_label.get(c.item_id, "Other")
+        r = dict(r, source=source, tier=tier, slot=slot_label, item_id=c.item_id,
+                 set_note=set_notes_by_item.get(c.item_id))
+        by_tier_slot.setdefault((tier, slot_label), []).append((c, r))
 
+    # A leaderboard item only needs the expensive 30k resolve if 1k screening
+    # left it close enough to the noise floor that resolving could plausibly
+    # change the verdict or move the shown number meaningfully - the same
+    # CLEAR_MARGIN_MULTIPLE rule mv_single_tiered already uses elsewhere.
+    # Resolving something already 8+ screening-noise-widths from zero can
+    # only sharpen a number that was never in question, so it's skipped
+    # (kept at its screened value, flagged "(screened only)" in the report).
     to_resolve = []
-    for tier, rows in by_tier.items():
+    for key, rows in by_tier_slot.items():
         rows.sort(key=lambda cr: cr[1]["mv"], reverse=True)
-        to_resolve.extend(rows[:LEADERBOARD_SIZE])
+        for c, r in rows[:LEADERBOARD_SIZE]:
+            if abs(r["mv"]) < mv.CLEAR_MARGIN_MULTIPLE * r["noise_stdev"]:
+                to_resolve.append((c, r))
 
-    # --- Pass 2: resolve only each tier's leaderboard, properly ---
+    # --- Pass 2: resolve only the leaderboard items still close enough to matter ---
     baseline_resolved = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
 
     def resolve_one(cr):
@@ -219,7 +298,7 @@ def main():
         resolved_pairs = list(ex.map(resolve_one, to_resolve))
     resolved_by_id = dict(resolved_pairs)
 
-    for tier, rows in by_tier.items():
+    for key, rows in by_tier_slot.items():
         for c, r in rows:
             if c.item_id in resolved_by_id:
                 res = resolved_by_id[c.item_id]
@@ -230,26 +309,51 @@ def main():
             else:
                 r["resolved"] = False
 
-    print(f"Resolved {len(to_resolve)} leaderboard candidates @ {RESOLVE_ITERATIONS} iter.\n")
+    print(f"Resolved {len(to_resolve)} (tier, slot) leaderboard candidates @ {RESOLVE_ITERATIONS} iter.\n")
 
-    order = list(TIER_ZONES.keys()) + ["Crafted", "Reputation reward", "Other", "Other drop"]
+    tier_order = list(TIER_ZONES.keys()) + ["Crafted", "Reputation reward", "Other", "Other drop"]
     tiered_out = {}
-    for tier in order:
-        rows = by_tier.get(tier, [])
-        upgrades = [r for _, r in rows if not r["tied_within_noise"] and r["mv"] > 0]
-        upgrades.sort(key=lambda r: r["mv"], reverse=True)
-        tiered_out[tier] = upgrades
-        if not upgrades:
+    for tier in tier_order:
+        slots_here = {slot for (t, slot) in by_tier_slot if t == tier}
+        tier_upgrades_total = 0
+        tier_out = {}
+        for slot in sorted(slots_here, key=lambda s: (SLOT_DISPLAY_ORDER.index(s) if s in SLOT_DISPLAY_ORDER else 99, s)):
+            rows = by_tier_slot.get((tier, slot), [])
+            upgrades = [r for _, r in rows
+                        if (not r["tied_within_noise"] and r["mv"] > 0) or r.get("set_note")]
+            upgrades.sort(key=lambda r: r["mv"], reverse=True)
+            if not upgrades:
+                continue
+            tier_out[slot] = upgrades
+            tier_upgrades_total += len(upgrades)
+
+        if tier_upgrades_total == 0:
             print(f"=== {tier} ===\n  No real upgrades found.\n")
+            tiered_out[tier] = {}
             continue
-        n_resolved = sum(1 for u in upgrades[:5] if u.get("resolved"))
-        print(f"=== {tier} ({len(upgrades)} real upgrades, top 5 shown, {n_resolved}/5 resolved @ 30k) ===")
-        for r in upgrades[:5]:
-            flag = "" if r.get("resolved") else "  (screened only)"
-            print(f"  {r['name']:<38} {r['mv']:>+7.1f}  {r['source']}{flag}")
-        if len(upgrades) > 5:
-            print(f"  ...and {len(upgrades) - 5} more.")
+
+        print(f"=== {tier} ===")
+        for slot, upgrades in tier_out.items():
+            # Only show the set-bonus note where it's actually rescuing this
+            # item (its own mv is a downgrade/tie) - an item already a real
+            # upgrade on its own merits isn't "a downgrade alone", even if
+            # it happens to belong to a set that was checked too.
+            def rescued_by_set(u):
+                return bool(u.get("set_note")) and not (not u["tied_within_noise"] and u["mv"] > 0)
+
+            n_resolved = sum(1 for u in upgrades[:5] if u.get("resolved"))
+            n_setnote = sum(1 for u in upgrades if rescued_by_set(u))
+            setnote_txt = f", {n_setnote} set-bonus-only" if n_setnote else ""
+            print(f"  -- {slot} ({len(upgrades)} upgrades{setnote_txt}, top 5 shown, {n_resolved}/5 resolved @ 30k) --")
+            for r in upgrades[:5]:
+                flag = "" if r.get("resolved") else "  (screened only)"
+                print(f"    {r['name']:<36} {r['mv']:>+7.1f}  {r['source']}{flag}")
+                if rescued_by_set(r):
+                    print(f"        note: {r['set_note']}")
+            if len(upgrades) > 5:
+                print(f"    ...and {len(upgrades) - 5} more.")
         print()
+        tiered_out[tier] = tier_out
 
     elapsed = time.time() - start
     print(f"Elapsed: {elapsed:.1f}s")
