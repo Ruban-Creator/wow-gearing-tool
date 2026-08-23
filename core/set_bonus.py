@@ -122,6 +122,27 @@ def count_set_pieces_in_config(set_name: str, config: list[dict]) -> int:
 ARMOR_SET_SLOTS = ["head", "shoulder", "chest", "hands", "legs"]
 
 
+def best_non_set_alt(slot: str, set_name: str,
+                      candidates: dict[str, list["opt.Candidate"]]) -> "opt.Candidate | None":
+    """Best candidate for `slot` that ISN'T part of set_name, by the same
+    disclosed crude-score prefilter used elsewhere in this codebase
+    (STAT_WEIGHTS) - a real, non-set alternative for a slot that currently
+    holds a set piece, since leaving that slot untouched wouldn't be a
+    real exclusion at all. Extracted from best_four_of_five() so other
+    callers (e.g. a "what if this set weren't active" rescue check) can
+    reuse it instead of re-deriving the same crude score a third time."""
+    best, best_score = None, None
+    for cand in candidates.get(slot, []):
+        item = idb.by_id(cand.item_id) if cand.item_id else None
+        if not item or item.get("setName") == set_name:
+            continue
+        stats = item.get("scalingOptions", {}).get("0", {}).get("stats", {})
+        score = sum(STAT_WEIGHTS.get(k, 0) * v for k, v in stats.items())
+        if best_score is None or score > best_score:
+            best, best_score = cand, score
+    return best
+
+
 def best_four_of_five(settings_path: str, set_name: str, candidates: dict[str, list["opt.Candidate"]],
                        baseline_config: list[dict], owned_items: list[dict], iterations: int) -> dict | None:
     """Which 4 of a 5-piece armor set's slots should actually hold the set
@@ -155,24 +176,6 @@ def best_four_of_five(settings_path: str, set_name: str, candidates: dict[str, l
     if len(tier_item_by_slot) < 5:
         return None
 
-    def best_non_set_alt(slot: str) -> "opt.Candidate | None":
-        """Best candidate for `slot` that ISN'T part of set_name, by the
-        same disclosed crude-score prefilter used elsewhere in this
-        codebase (STAT_WEIGHTS) - only needed when baseline_config
-        already holds the tier piece there itself (common when she's
-        partway or fully into the set), since leaving that slot
-        untouched wouldn't be a real exclusion at all."""
-        best, best_score = None, None
-        for cand in candidates.get(slot, []):
-            item = idb.by_id(cand.item_id) if cand.item_id else None
-            if not item or item.get("setName") == set_name:
-                continue
-            stats = item.get("scalingOptions", {}).get("0", {}).get("stats", {})
-            score = sum(STAT_WEIGHTS.get(k, 0) * v for k, v in stats.items())
-            if best_score is None or score > best_score:
-                best, best_score = cand, score
-        return best
-
     def build_config(included_slots: frozenset[str]) -> list[dict]:
         cfg = list(baseline_config)
         for slot in ARMOR_SET_SLOTS:
@@ -183,7 +186,7 @@ def best_four_of_five(settings_path: str, set_name: str, candidates: dict[str, l
                 current = baseline_config[idx]
                 current_item = idb.by_id(current["id"]) if current and current.get("id") else None
                 if current_item and current_item.get("setName") == set_name:
-                    alt = best_non_set_alt(slot)
+                    alt = best_non_set_alt(slot, set_name, candidates)
                     if alt is not None:
                         cfg[idx] = alt.as_entry()
                     # else: no real non-set alternative found in the pool at
@@ -213,6 +216,65 @@ def best_four_of_five(settings_path: str, set_name: str, candidates: dict[str, l
         "combined_dps": results[best_combo],
         "full_five_dps": results[all_five],
         "all_options": {tuple(sorted(k)): v for k, v in results.items()},
+    }
+
+
+def rescue_check(settings_path: str, candidate: "opt.Candidate", slot: str, set_name: str,
+                  baseline_config: list[dict], candidates: dict[str, list["opt.Candidate"]],
+                  iterations: int, seed: int) -> dict | None:
+    """For a candidate that's currently a real downgrade in `slot` only
+    because it breaks set_name's currently-active bonus, checks whether
+    it's a real upgrade against a baseline where set_name is ALREADY
+    broken elsewhere - a real, non-set alternative swapped into one of
+    set_name's OTHER currently-held slots - i.e. "is this genuinely a
+    strong item once the set bonus isn't in play at all."
+
+    Per the user (2026-08-23): built specifically because the interaction
+    matrix's pairwise search was too expensive to run in a reasonable time
+    for this same question - Attumen's "Gloves of Dexterous Manipulation"
+    is the real, validated case this exists to catch (a real +13-14 DPS
+    gain once paired with a swap that already breaks the same set bonus,
+    invisible if only checked against the untouched baseline). This is a
+    SINGLE extra real sim call per downgrade candidate, not a combinatorial
+    search over every possible pairing - deliberately not an analytical
+    stat-correction estimate either (tried computing this via
+    isolate_bonus_value's isolated bonus number added back to the net MV;
+    a real side-by-side check showed that analytical shortcut disagreeing
+    with an actual paired sim by a wide margin, so this always runs the
+    real sim instead of estimating).
+
+    Returns None if there's no other real non-set alternative available to
+    break the set with (e.g. only one slot currently holds the set)."""
+    slot_order = gc.SLOT_ORDER
+    current_set_slots = [s for s in slot_order
+                          if s != slot
+                          and (lambda e: e and e.get("id") and (idb.by_id(e["id"]) or {}).get("setName") == set_name)
+                          (baseline_config[slot_order.index(s)])]
+    if not current_set_slots:
+        return None
+    other_slot = current_set_slots[0]
+    alt = best_non_set_alt(other_slot, set_name, candidates)
+    if alt is None:
+        return None
+
+    other_idx = slot_order.index(other_slot)
+    broken_baseline = list(baseline_config)
+    broken_baseline[other_idx] = alt.as_entry()
+    broken_result = mv.valuation.evaluate(settings_path, broken_baseline, iterations, seed)
+
+    slot_idx = slot_order.index(slot)
+    trial = list(broken_baseline)
+    trial[slot_idx] = candidate.as_entry()
+    trial_result = mv.valuation.evaluate(settings_path, trial, iterations, seed)
+
+    delta = trial_result["combined"] - broken_result["combined"]
+    noise = mv.delta_noise(broken_result, trial_result, iterations)
+    return {
+        "mv_if_set_broken": delta,
+        "noise_stdev": noise,
+        "tied_within_noise": abs(delta) < 2 * noise,
+        "via_slot": other_slot,
+        "via_item": alt.name,
     }
 
 

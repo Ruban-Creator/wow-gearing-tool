@@ -32,7 +32,6 @@ import marginal_value as mv  # noqa: E402
 import set_bonus  # noqa: E402
 import acquisition_gate  # noqa: E402
 import time_horizon  # noqa: E402
-import interaction_matrix  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETTINGS_TEMPLATE = os.path.join(REPO_ROOT, "profiles", "tbc", "canonical_settings_survival.json")
@@ -428,6 +427,60 @@ def main():
 
     print(f"Resolved {len(to_resolve)} (tier, slot) leaderboard candidates @ {RESOLVE_ITERATIONS} iter.\n")
 
+    # --- Pass 3: "rescue" check - is a real downgrade actually a strong
+    # item once the active set bonus it breaks isn't in play at all? Per
+    # the user (2026-08-23): built specifically to replace the interaction
+    # matrix's much more expensive pairwise search for this exact question
+    # (that search's real cost - 7558 pairs, ~19 minutes just for the
+    # cheapest screening tier - blew well past a 15-minute total budget).
+    # A single extra real sim call per real-downgrade leaderboard
+    # candidate in a currently-set-active armor slot, not a combinatorial
+    # search over every possible pairing. Real, validated motivating case:
+    # Attumen's "Gloves of Dexterous Manipulation" - a real downgrade
+    # today (breaks Rift Stalker Armor's 4pc bonus) but a genuine +13-14
+    # DPS gain once that bonus is already broken by another slot.
+    display_to_armor_slot = {SLOT_DISPLAY[s]: s for s in set_bonus.ARMOR_SET_SLOTS}
+    thresholds = set_bonus.set_bonus_thresholds()
+    active_set_by_slot: dict[str, str] = {}
+    for slot in set_bonus.ARMOR_SET_SLOTS:
+        idx = gc.SLOT_ORDER.index(slot)
+        entry = baseline_config[idx] if idx < len(baseline_config) else None
+        if not entry or not entry.get("id"):
+            continue
+        item = idb.by_id(entry["id"])
+        set_name = item.get("setName") if item else None
+        ths = thresholds.get(set_name) if set_name else None
+        if ths and set_bonus.count_set_pieces_in_config(set_name, baseline_config) >= min(ths):
+            active_set_by_slot[slot] = set_name
+
+    rescue_notes_by_item: dict[int, str] = {}
+    rescue_mv_by_item: dict[int, float] = {}
+    if active_set_by_slot:
+        for c, r in to_resolve:
+            if r.get("tied_within_noise") or r["mv"] >= 0:
+                continue  # only real downgrades are candidates for a rescue note
+            phys_slot = display_to_armor_slot.get(r["slot"])
+            if phys_slot not in active_set_by_slot:
+                continue
+            set_name = active_set_by_slot[phys_slot]
+            check = set_bonus.rescue_check(SETTINGS_TEMPLATE, c, phys_slot, set_name,
+                                            baseline_config, candidates, RESOLVE_ITERATIONS, opt.SEED)
+            if check and not check["tied_within_noise"] and check["mv_if_set_broken"] > 0:
+                rescue_notes_by_item[c.item_id] = (
+                    f"Not an upgrade today (breaks {set_name}'s bonus), but a real "
+                    f"{check['mv_if_set_broken']:+.1f} DPS gain once that bonus is "
+                    f"already broken elsewhere (e.g. via {check['via_item']} in {phys_slot})."
+                )
+                rescue_mv_by_item[c.item_id] = check["mv_if_set_broken"]
+        if rescue_notes_by_item:
+            print(f"Rescue check: {len(rescue_notes_by_item)} item(s) found to be real upgrades "
+                  f"once their set-bonus break is already priced in elsewhere.\n")
+
+    for key, rows in by_tier_slot.items():
+        for c, r in rows:
+            r["rescue_note"] = rescue_notes_by_item.get(c.item_id)
+            r["rescue_mv"] = rescue_mv_by_item.get(c.item_id)
+
     # A "screened only" real upgrade (MV so far past the noise floor that
     # CLEAR_MARGIN_MULTIPLE skipped its 30k DPS resolve) was still showing
     # "Raid: n/a AP" - the DPS-skip decision had been silently skipping the
@@ -524,8 +577,13 @@ def main():
         for slot in sorted(slots_here, key=lambda s: (SLOT_DISPLAY_ORDER.index(s) if s in SLOT_DISPLAY_ORDER else 99, s)):
             rows = by_tier_slot.get((tier, slot), [])
             upgrades = [r for _, r in rows
-                        if (not r["tied_within_noise"] and r["mv"] > 0) or r.get("set_note")]
-            upgrades.sort(key=lambda r: r["mv"], reverse=True)
+                        if (not r["tied_within_noise"] and r["mv"] > 0) or r.get("set_note") or r.get("rescue_note")]
+            # Sort by the RESCUED value for rescue-flagged items, not the
+            # raw (currently-negative) net mv - otherwise a genuinely
+            # strong rescued item sorts to the bottom of its own slot and
+            # never makes the top-5 cutoff below, defeating the point of
+            # surfacing it at all.
+            upgrades.sort(key=lambda r: r["rescue_mv"] if r.get("rescue_note") else r["mv"], reverse=True)
             if not upgrades:
                 continue
             tier_out[slot] = upgrades
@@ -565,6 +623,8 @@ def main():
                 print(f"    {r['name']:<36} Player: {r['mv']:>+7.1f} DPS  {raid_ap_str}  {r['source']}{flag}{lock}{horizon}")
                 if rescued_by_set(r):
                     print(f"        note: {r['set_note']}")
+                if r.get("rescue_note"):
+                    print(f"        note: {r['rescue_note']}")
                 if gate:
                     print(f"        gate: {gate['note']}")
             if len(upgrades) > 5:
@@ -656,31 +716,16 @@ def main():
     else:
         print("=== 2H Weapon Options (melee weave rotation) ===\n  No eligible 2H weapons in the pool.\n")
 
-    # --- Stage 5 (§7): interaction matrix - real complements/substitutes/
-    # rescues, not visible from any single item's MV alone. Uses the FULL
-    # screened pool (by_tier_slot), not the already-filtered tiered_out -
-    # per the user, a pool of only solo-upgrade items can never find a
-    # "rescue" (real downgrade alone, real upgrade paired with the right
-    # other swap) since the candidate itself would never enter the pool. ---
-    interactions = interaction_matrix.compute(
-        SETTINGS_TEMPLATE, by_tier_slot, baseline_config,
-        SCREEN_ITERATIONS, RESOLVE_ITERATIONS, opt.SEED)
-    print("=== Interaction Matrix (top-3-per-slot + Hit/Expertise + full active-set-slot pool) ===")
-    if interactions:
-        for row in interactions:
-            a, b = row["item_a"], row["item_b"]
-            sign = "+" if row["interaction"] > 0 else ""
-            a_tag = " (owned)" if a.get("owned") else ""
-            b_tag = " (owned)" if b.get("owned") else ""
-            print(f"  {row['kind'].upper():<11} {a['name']}{a_tag} ({a['slot']}) + {b['name']}{b_tag} ({b['slot']}): "
-                  f"I={sign}{row['interaction']:.1f} DPS  "
-                  f"(alone: {a['name']} {row['mv_a']:+.1f}, {b['name']} {row['mv_b']:+.1f}, "
-                  f"together: {row['mv_joint']:+.1f})")
-            for note in row.get("set_notes", []):
-                print(f"      note: {note}")
-    else:
-        print("  No real (non-tied) interactions found among the tested pairs.")
-    print()
+    # Stage 5 (§7, the pairwise interaction matrix) is dropped from the
+    # active pipeline per the user (2026-08-23) - its real cost (128
+    # candidates -> 7558 pairs, ~19 minutes just for the cheapest screening
+    # tier) blew well past a 15-minute total-runtime budget, and every
+    # sound way found to shrink that pool (an EP cutoff, in particular)
+    # turned out to structurally conflict with the exact "rescue" items
+    # it existed to find. Replaced by the much cheaper rescue_check pass
+    # above (Pass 3) - a single extra real sim call per real-downgrade
+    # leaderboard candidate, not a combinatorial search. The module
+    # (core/interaction_matrix.py) stays in git history, just unused.
 
     elapsed = time.time() - start
     print(f"Elapsed: {elapsed:.1f}s")
@@ -688,8 +733,7 @@ def main():
     out_path = os.path.join(REPO_ROOT, "data", "cache", "tiered_report.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump({"baseline_screened": baseline_screen["combined"], "achieved_bis": achieved_bis,
-                   "tiers": tiered_out, "two_hand": two_hand_out, "two_hand_meta": two_hand_meta,
-                   "interactions": interactions}, f, indent=2)
+                   "tiers": tiered_out, "two_hand": two_hand_out, "two_hand_meta": two_hand_meta}, f, indent=2)
     print(f"Wrote {out_path}")
 
 
