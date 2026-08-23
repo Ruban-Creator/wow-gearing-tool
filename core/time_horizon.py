@@ -1,20 +1,30 @@
-"""How long a candidate stays relevant, per the user: "lasts until Phase N" -
-not the original spec's coarse three-bucket label, and no re-derivation of
-cost-based "don't spend" advice (acquisition cost tracking was dropped this
-session in favor of Wowhead linking).
+"""How long an item stays the guide's actual top pick, per the user's two
+corrections to the first version of this:
 
-Phase 4 and Phase 5 reference BiS lists are treated as truth for now, exactly
-like the existing Phase 3 list already is - not simmed by us. A later build
-is expected to sim these phases directly and find the real best set per
-phase, per the user; this module is deliberately a thin, disclosed stand-in
-until then, not a permanent design.
+1. "Cursed Vision of Sargeras is not BiS in P5... it should read BiS until
+   Phase 4" - being merely LISTED in a later phase's guide (even as a
+   real, usable item) isn't the interesting signal; STAYING the genuine
+   top recommendation is. Cursed Vision is Phase 4's "Best Personal" (a
+   real top-tier pick for one gearing route) but Phase 5's "Best Previous
+   Phase Option" (explicitly a leftover, not actually recommended anymore)
+   - the tag needs to reflect that it stops being BiS after Phase 4, not
+   that it's technically still mentioned in Phase 5.
+2. "our cloak... a Phase 2 item that will only get replaced in Phase 5,
+   that's important to know" vs. "it's not important to know that tier 5
+   is an alternative to tier 6, we understand that without a tag" - an old
+   item staying genuinely BEST for many phases is a real, non-obvious
+   finding worth surfacing; an item that was only ever a stepping-stone
+   alternative (never the guide's real top pick, even now) doesn't need a
+   tag at all - that's already obvious.
 
-Matching is by item NAME against each list's flattened item set, the same
-convention `run_full_sweep_mv.py` already uses for curated_source_text - an
-exact string match, not fuzzy. A name that doesn't match anywhere (guide
-wording drift, a slightly different string) fails safe: treated as "not
-found in a later list" rather than asserting it lasts, since overclaiming
-longevity is worse than under-claiming it.
+So the only thing tracked is bis_until_phase: the last phase (3/4/5) for
+which the item's rank in that phase's reference list genuinely reads as
+the top pick, not a fallback. None when it was never that (in which case
+no tag is shown by the caller at all).
+
+Phase 4 and Phase 5 reference BiS lists are treated as truth for now, per
+the user - not simmed ourselves; that's later work (sim these phases
+directly and find the real best set per phase).
 """
 from __future__ import annotations
 
@@ -26,12 +36,26 @@ REF_DIR = os.path.join(REPO_ROOT, "profiles", "tbc", "reference_bis")
 
 _phase_item_ranks_cache: dict[int, dict[str, str]] | None = None
 
+# Rank strings that start with "Best" but explicitly signal "not actually
+# the current top pick" - a temporary stepping stone within the phase
+# ("Until Tier X"), a leftover from an earlier phase kept only because
+# nothing better has dropped yet ("Previous Phase Option"), or a named
+# runner-up presented alongside a plain "Best" in the same slot
+# ("Alternative", "Second Best"). Everything else starting with "Best"
+# (plain "Best", "Best Personal", "Best 6%", "Best x2", "Best Overall",
+# "Best Raid Wide Increase", ...) represents a genuine top pick for at
+# least one legitimate gearing route, not a fallback.
+_NOT_ACTUALLY_BEST = ("until", "previous", "alternative", "second")
+
+
+def _is_true_bis(rank: str) -> bool:
+    r = rank.lower()
+    if not r.startswith("best"):
+        return False
+    return not any(bad in r for bad in _NOT_ACTUALLY_BEST)
+
 
 def _load_phase_item_ranks() -> dict[int, dict[str, str]]:
-    """phase -> {item_name: rank}. Where an item appears more than once in
-    one phase's list (different slot entries, e.g. a trinket listed under
-    two "Best" rows), the LAST-seen rank wins - a rare, harmless tie in
-    practice since the ranks agree in every real case checked."""
     global _phase_item_ranks_cache
     if _phase_item_ranks_cache is not None:
         return _phase_item_ranks_cache
@@ -51,24 +75,32 @@ def _load_phase_item_ranks() -> dict[int, dict[str, str]]:
 
 
 def lasts_until_phase(item_name: str) -> dict:
-    """{"lasts_until_phase": N, "final_phase": bool, "is_best": bool}. N is
-    the highest phase (3/4/5) whose reference list still names this item
-    anywhere (any rank, any slot) - not necessarily "Best", just still a
-    real option; is_best reflects whether its rank AT THAT PHASE actually
-    reads "Best..." (vs "Optional"/"Alternative"/"Good"/"Great" - a real
-    pick, just not the top one) - per the user, a non-Best rank should
-    read "alternative for Phase N", not implied to still be the top
-    choice. Phase 3 is the floor (everything in the current pool is Phase
-    3 or earlier by construction); an item absent from both the Phase 4
-    and Phase 5 lists gets N=3, meaning it's expected to be replaced next
-    phase. final_phase=True means it survives all the way to Phase 5, the
-    confirmed last phase of TBC."""
+    """{"bis_until_phase": N or None, "final_phase": bool}.
+
+    Walks phase 3 -> 4 -> 5. Absence from Phase 3's own table is treated
+    as unknown, not disqualifying - the Phase 3 curated list is already
+    known to have real completeness gaps (items our own sim finds as real
+    upgrades that the guide's table just doesn't happen to rank), so
+    skipping it there avoids under-claiming. Absence from Phase 4 or 5's
+    table, by contrast, is treated as "no longer relevant" and stops the
+    walk - those lists are comprehensive per-slot rankings, so an item
+    that's dropped out entirely really has been superseded. A rank that's
+    present but fails _is_true_bis also stops the walk immediately
+    (whatever phase it was true BiS through is already recorded).
+
+    None means never confirmed as a genuine top pick in any list - the
+    caller should show no tag at all for these, not a vague "alternative"
+    label; that case was already obvious without a tag, per the user."""
     by_phase = _load_phase_item_ranks()
-    last = 3
-    rank = by_phase.get(3, {}).get(item_name, "")
-    for phase in (4, 5):
-        if item_name in by_phase.get(phase, {}):
-            last = phase
-            rank = by_phase[phase][item_name]
-    return {"lasts_until_phase": last, "final_phase": last >= 5,
-            "is_best": rank.lower().startswith("best")}
+    bis_until = None
+    for phase in (3, 4, 5):
+        rank = by_phase.get(phase, {}).get(item_name)
+        if rank is None:
+            if phase == 3:
+                continue
+            break
+        if _is_true_bis(rank):
+            bis_until = phase
+        else:
+            break
+    return {"bis_until_phase": bis_until, "final_phase": bis_until == 5}

@@ -84,15 +84,16 @@ TIER_ZONES = {
 
 
 def horizon_tag(r: dict) -> str:
-    """'[lasts P5]' when it's still the top pick at the highest phase it
-    appears in; '[alternative for P4]' when that phase's list has it as a
-    real option but NOT the top one (Optional/Alternative/Good/Great, not
-    Best...) - per the user, don't imply it's still the recommended choice
-    when the guide itself doesn't say so."""
-    phase = r["lasts_until_phase"]
-    if not r.get("is_best", True):
-        return f"  [alternative for P{phase}]"
-    return f"  [lasts P{phase}]" if r.get("final_phase") else f"  [lasts until P{phase}]"
+    """'[BiS through P5]' when it's the guide's genuine top pick all the
+    way to the final phase; '[BiS until P4]' when it stops being the top
+    pick after that phase (whether or not it's still technically listed
+    later, e.g. as a leftover option). Empty when it was never confirmed
+    as a real top pick at all - per the user, that case doesn't need a
+    tag, it's already obvious a stepping-stone item is a stepping stone."""
+    phase = r.get("bis_until_phase")
+    if phase is None:
+        return ""
+    return f"  [BiS through P{phase}]" if r.get("final_phase") else f"  [BiS until P{phase}]"
 
 
 def slot_for_item(item: dict) -> str | None:
