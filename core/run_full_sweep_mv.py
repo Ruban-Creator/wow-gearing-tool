@@ -425,9 +425,11 @@ def main():
     # aren't known to this tool) into one number would require inventing
     # an AP->DPS conversion for those unknown attackers - decided against,
     # per CLAUDE.md's "never invent data" rule. Sort/rank by Player.
-    print("Player = personal DPS gain (real sim number, what this item does for YOUR damage).")
-    print("Raid   = Attack Power granted to your raid's other physical attackers via Expose")
-    print("         Weakness (not DPS, not YOUR damage, never added into Player).\n")
+    print("Player = DPS. Personal damage-per-second gain (real sim number, what this item does")
+    print("         for YOUR damage).")
+    print("Raid   = AP. Attack Power granted to your raid's other physical attackers via Expose")
+    print("         Weakness - a different unit entirely, not DPS, not YOUR damage, never added")
+    print("         into Player.\n")
 
     if achieved_bis:
         print("=== Achieved BiS (nothing in the Phase 3 pool beats these) ===")
