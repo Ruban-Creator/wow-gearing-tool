@@ -38,6 +38,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import item_db as idb  # noqa: E402
 import gear_config as gc  # noqa: E402
+import gem_optimizer  # noqa: E402
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "adapters", "tbc"))
 import valuation  # noqa: E402
@@ -102,19 +103,13 @@ def find_owned_meta_gem(owned_items: list[dict]) -> int | None:
 
 
 def gems_for_item(item: dict, meta_gem_id: int | None) -> list[int]:
-    """Builds a gems list matching gemSockets position-for-position - a
-    too-short list (skipping the meta socket's position entirely) silently
-    leaves that socket empty, which is exactly the bug that made a
-    non-owned meta-socketed candidate (e.g. Gronnstalker's Helmet) lose its
-    meta gem and get undervalued. See NOTES.md's screening correction."""
-    sockets = item.get("gemSockets") or []
-    gems = []
-    for color in sockets:
-        if color == idb.META_GEM_COLOR:
-            gems.append(meta_gem_id if meta_gem_id is not None else 0)
-        else:
-            gems.append(gc.DEFAULT_GEM)
-    return gems
+    """Real per-socket gem choice (chase the item's one all-or-nothing
+    socket bonus vs. pure Agility everywhere, whichever scores higher) -
+    see gem_optimizer.py. Still guarantees the meta socket never silently
+    goes empty (the original bug this function was built to fix - a
+    too-short gems list skipping the meta position, undervaluing e.g.
+    Gronnstalker's Helmet - see NOTES.md's screening correction)."""
+    return gem_optimizer.best_gems_for_item(item, meta_gem_id)
 
 
 def load_candidates(pool_path: str, owned_items: list[dict]) -> dict[str, list[Candidate]]:
@@ -175,7 +170,28 @@ def load_candidates(pool_path: str, owned_items: list[dict]) -> dict[str, list[C
 
 
 def build_owned_config(equipped_items: list[dict]) -> list[dict]:
-    return [gc.item_entry(it["id"], it.get("enchant", 0), it.get("gems")) if it else {} for it in equipped_items]
+    """Optimal gems for her CURRENT gear, not her literal real (possibly
+    outdated) socketed gems - matching CLAUDE.md's own MV(i) = DPS*(P∪{i})
+    - DPS*(P) formula: DPS*(P) is the BEST achievable from pool P, gems
+    included, not "whatever happens to be socketed right now". Real bug
+    this fixes: her actual Rift Stalker Hauberk was still socketed with
+    Delicate Living Ruby (phase 1) instead of the better Delicate Crimson
+    Spinel (phase 3, gear_config.DEFAULT_GEM) - a free re-gem she hadn't
+    done yet, which was silently understating her own baseline and
+    thereby overstating every candidate's true marginal value. Applying
+    the same gem_optimizer treatment here that candidates already get
+    keeps the comparison fair on both sides. Enchants stay real (her
+    actual current enchant, never invented)."""
+    meta_gem_id = find_owned_meta_gem(equipped_items)
+    config = []
+    for it in equipped_items:
+        if not it:
+            config.append({})
+            continue
+        item = idb.by_id(it["id"])
+        gems = gem_optimizer.best_gems_for_item(item, meta_gem_id) if item else it.get("gems")
+        config.append(gc.item_entry(it["id"], it.get("enchant", 0), gems))
+    return gem_optimizer.ensure_meta_requirement(config, equipped_items, meta_gem_id)
 
 
 def is_unique_conflict(config: list[dict], slot_idx: int, item_id: int) -> bool:

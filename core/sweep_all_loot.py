@@ -20,7 +20,11 @@ Eligibility, all from the DB's own fields - never guessed:
 """
 import json
 import os
+import sys
 from collections import defaultdict
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from stat_weights import STAT_WEIGHTS  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(REPO_ROOT, "sim", "tbc-new", "assets", "database", "db.json")
@@ -37,20 +41,9 @@ MAX_PHASE = 3
 MIN_QUALITY = 3
 MIN_ILVL = 115  # excludes leveling-zone/world gear; heroic-dungeon tier and up
 TOP_N_PER_TYPE = 15  # cheap pre-filter per §5: EP decides what's worth SIMMING, not the final answer
-
-# Crude, disclosed stat-weight heuristic - for RANKING/PRUNING only, never
-# treated as the answer. Real value always comes from the sim afterward.
-STAT_WEIGHTS = {
-    "0": 0.5,   # Strength
-    "1": 2.0,   # Agility
-    "17": 1.0,  # AttackPower
-    "18": 1.0,  # RangedAttackPower
-    "20": 0.8,  # MeleeHitRating
-    "21": 1.2,  # MeleeCritRating
-    "22": 0.8,  # MeleeHasteRating
-    "23": 0.9,  # ArmorPenetration
-    "24": 0.3,  # ExpertiseRating
-}
+# STAT_WEIGHTS (crude, disclosed, ranking-only heuristic) now lives in
+# stat_weights.py, shared with gem_optimizer.py - one set of numbers,
+# not two that could drift apart.
 
 
 def crude_score(item: dict) -> float:
