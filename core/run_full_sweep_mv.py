@@ -324,6 +324,37 @@ def main():
 
     print(f"Resolved {len(to_resolve)} (tier, slot) leaderboard candidates @ {RESOLVE_ITERATIONS} iter.\n")
 
+    # --- Achieved BiS: slots where nothing in the whole P3 pool beats her
+    # current gear (real upgrade = same filter every tier uses below) ---
+    slots_with_upgrades = set()
+    for (tier, slot), rows in by_tier_slot.items():
+        if any((not r["tied_within_noise"] and r["mv"] > 0) or r.get("set_note") for _, r in rows):
+            slots_with_upgrades.add(slot)
+
+    display_to_real_slots = {}
+    for real, disp in SLOT_DISPLAY.items():
+        display_to_real_slots.setdefault(disp, []).append(real)
+
+    achieved_bis = []
+    for slot in SLOT_DISPLAY_ORDER:
+        if slot in slots_with_upgrades:
+            continue
+        items_here = []
+        for real in display_to_real_slots.get(slot, []):
+            idx = gc.SLOT_ORDER.index(real)
+            owned = owned_items[idx] if idx < len(owned_items) else None
+            if owned:
+                items_here.append({"name": owned.get("name", "?"), "item_id": owned.get("id")})
+        if items_here:
+            achieved_bis.append({"slot": slot, "items": items_here})
+
+    if achieved_bis:
+        print("=== Achieved BiS (nothing in the Phase 3 pool beats these) ===")
+        for entry in achieved_bis:
+            names = ", ".join(i["name"] for i in entry["items"])
+            print(f"  {entry['slot']:<10} {names}")
+        print()
+
     tier_order = list(TIER_ZONES.keys()) + ["Crafted", "Reputation reward", "Other", "Other drop"]
     tiered_out = {}
     for tier in tier_order:
@@ -381,7 +412,8 @@ def main():
 
     out_path = os.path.join(REPO_ROOT, "data", "cache", "tiered_report.json")
     with open(out_path, "w", encoding="utf-8") as f:
-        json.dump({"baseline_screened": baseline_screen["combined"], "tiers": tiered_out}, f, indent=2)
+        json.dump({"baseline_screened": baseline_screen["combined"], "achieved_bis": achieved_bis,
+                   "tiers": tiered_out}, f, indent=2)
     print(f"Wrote {out_path}")
 
 
