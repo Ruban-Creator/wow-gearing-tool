@@ -15,6 +15,7 @@ import item_db as idb  # noqa: E402
 import gear_config as gc  # noqa: E402
 import optimizer as opt  # noqa: E402
 import marginal_value as mv  # noqa: E402
+from stat_weights import STAT_WEIGHTS  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ITEM_SETS_GO = os.path.join(REPO_ROOT, "sim", "tbc-new", "sim", "hunter", "item_sets.go")
@@ -116,6 +117,103 @@ def count_set_pieces_in_config(set_name: str, config: list[dict]) -> int:
         if item and item.get("setName") == set_name:
             count += 1
     return count
+
+
+ARMOR_SET_SLOTS = ["head", "shoulder", "chest", "hands", "legs"]
+
+
+def best_four_of_five(settings_path: str, set_name: str, candidates: dict[str, list["opt.Candidate"]],
+                       baseline_config: list[dict], owned_items: list[dict], iterations: int) -> dict | None:
+    """Which 4 of a 5-piece armor set's slots should actually hold the set
+    piece, and which slot is better left to its real BiS alternative
+    instead - determined by comparing all five real 4-piece combinations
+    (leave-one-slot-out) plus the full 5-piece set against real sim
+    numbers, not assumed from guide convention or a fixed add-order.
+
+    Per the user: BiS guides almost always recommend 4 of 5 tier pieces,
+    occasionally all 5 (rare) or fewer (when the bonuses are weak) - the
+    excluded slot keeps whatever real, non-tier item is already in
+    baseline_config for it (her current gear there, which the rest of
+    this pipeline has already separately confirmed/optimized), not a
+    guessed alternative. Returns None if fewer than 5 of the 5 canonical
+    armor slots have a real tier piece available (owned or in the pool) -
+    the leave-one-out comparison isn't meaningful for an incomplete set."""
+    tier_item_by_slot: dict[str, "opt.Candidate"] = {}
+    for slot in ARMOR_SET_SLOTS:
+        idx = gc.SLOT_ORDER.index(slot)
+        owned_entry = owned_items[idx] if idx < len(owned_items) else None
+        if owned_entry:
+            owned_db_item = idb.by_id(owned_entry["id"])
+            if owned_db_item and owned_db_item.get("setName") == set_name:
+                tier_item_by_slot[slot] = opt.Candidate(
+                    owned_db_item["name"], owned_entry["id"],
+                    owned_entry.get("enchant", 0), owned_entry.get("gems"))
+    for slot, cand in set_pieces_in_pool(set_name, candidates):
+        if slot in ARMOR_SET_SLOTS:
+            tier_item_by_slot[slot] = cand  # pool entry (real gems/enchant already resolved) wins if both exist
+
+    if len(tier_item_by_slot) < 5:
+        return None
+
+    def best_non_set_alt(slot: str) -> "opt.Candidate | None":
+        """Best candidate for `slot` that ISN'T part of set_name, by the
+        same disclosed crude-score prefilter used elsewhere in this
+        codebase (STAT_WEIGHTS) - only needed when baseline_config
+        already holds the tier piece there itself (common when she's
+        partway or fully into the set), since leaving that slot
+        untouched wouldn't be a real exclusion at all."""
+        best, best_score = None, None
+        for cand in candidates.get(slot, []):
+            item = idb.by_id(cand.item_id) if cand.item_id else None
+            if not item or item.get("setName") == set_name:
+                continue
+            stats = item.get("scalingOptions", {}).get("0", {}).get("stats", {})
+            score = sum(STAT_WEIGHTS.get(k, 0) * v for k, v in stats.items())
+            if best_score is None or score > best_score:
+                best, best_score = cand, score
+        return best
+
+    def build_config(included_slots: frozenset[str]) -> list[dict]:
+        cfg = list(baseline_config)
+        for slot in ARMOR_SET_SLOTS:
+            idx = gc.SLOT_ORDER.index(slot)
+            if slot in included_slots:
+                cfg[idx] = tier_item_by_slot[slot].as_entry()
+            else:
+                current = baseline_config[idx]
+                current_item = idb.by_id(current["id"]) if current and current.get("id") else None
+                if current_item and current_item.get("setName") == set_name:
+                    alt = best_non_set_alt(slot)
+                    if alt is not None:
+                        cfg[idx] = alt.as_entry()
+                    # else: no real non-set alternative found in the pool at
+                    # all - leave the tier piece as a last resort rather
+                    # than inventing a substitute; this combo's number will
+                    # then honestly reflect "still 5pc effectively" for
+                    # that slot, not a false 4pc claim.
+        return cfg
+
+    all_five = frozenset(ARMOR_SET_SLOTS)
+    combos = {all_five: build_config(all_five)}
+    for leave_out in ARMOR_SET_SLOTS:
+        four = all_five - {leave_out}
+        combos[four] = build_config(four)
+
+    results = {}
+    for combo_slots, cfg in combos.items():
+        r = mv.valuation.evaluate(settings_path, cfg, iterations, opt.SEED)
+        results[combo_slots] = r["combined"]
+
+    best_combo = max(results, key=results.get)
+    excluded = sorted(all_five - best_combo)
+    return {
+        "set_name": set_name,
+        "best_combo_slots": sorted(best_combo),
+        "excluded_slot": excluded[0] if excluded else None,
+        "combined_dps": results[best_combo],
+        "full_five_dps": results[all_five],
+        "all_options": {tuple(sorted(k)): v for k, v in results.items()},
+    }
 
 
 def isolate_bonus_value(settings_path: str, set_name: str, threshold: int,

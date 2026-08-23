@@ -305,6 +305,21 @@ def main():
         note = f"part of {set_name}: " + " · ".join(parts)
         for _, cand in set_bonus.set_pieces_in_pool(set_name, candidates):
             set_notes_by_item[cand.item_id] = note
+
+        # Which 4 of the 5 armor slots should actually hold the set piece,
+        # per the user: guides almost always recommend 4pc, occasionally
+        # all 5 (rare) or fewer (weak bonuses) - determined by real sim
+        # comparison across all five leave-one-out combos, not assumed.
+        combo = set_bonus.best_four_of_five(SETTINGS_TEMPLATE, set_name, candidates,
+                                             baseline_config, owned_items, SCREEN_ITERATIONS)
+        if combo is not None:
+            if combo["excluded_slot"] is not None:
+                print(f"  Best combo for {set_name}: {', '.join(combo['best_combo_slots'])} "
+                      f"(leave {combo['excluded_slot']} non-tier) - "
+                      f"full 5pc is {combo['full_five_dps'] - combo['combined_dps']:+.1f} vs this (screened)")
+            else:
+                print(f"  Best combo for {set_name}: all 5 pieces ({combo['combined_dps']:.1f})")
+
     if set_notes_by_item:
         print(f"Set-bonus check: {len(set_notes_by_item)} item(s) flagged across {len(set_names)} set(s).\n")
 
@@ -337,7 +352,7 @@ def main():
                  craft_spell_id=craft_spell_id,
                  set_note=set_notes_by_item.get(c.item_id),
                  gate=acquisition_gate.gate_for_item(source, slot_label, acquisition_status),
-                 **time_horizon.lasts_until_phase(c.name))
+                 **time_horizon.lasts_until_phase(c.name, c.item_id))
         by_tier_slot.setdefault((tier, slot_label), []).append((c, r))
 
     # A leaderboard item only needs the expensive 30k resolve if 1k screening
@@ -571,7 +586,7 @@ def main():
                              "mv": delta, "noise_stdev": noise,
                              "tied_within_noise": abs(delta) < 2 * noise,
                              "source": source, "tier": tier, "craft_spell_id": craft_spell_id,
-                             "resolved": False, **time_horizon.lasts_until_phase(c.name)})
+                             "resolved": False, **time_horizon.lasts_until_phase(c.name, c.item_id)})
         rows_2h.sort(key=lambda r: r["mv"], reverse=True)
 
         to_resolve_2h = [r for r in rows_2h[:LEADERBOARD_SIZE]
