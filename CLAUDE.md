@@ -196,8 +196,15 @@ actually be raiding Sunwell Plateau day one even though it's technically "in pha
 way to say "I can currently get into Karazhan and Gruul's, not SWP," the candidate pool search
 space balloons with content that isn't really accessible yet, which is also a more practical fix
 for that scaling problem than pure compute optimization (see the three-tier funnel idea above -
-this filter shrinks the actual problem instead of just computing the huge version faster). etc.
-Not part of any current stage — noted here so it isn't lost, but don't build toward it until the
+this filter shrinks the actual problem instead of just computing the huge version faster), and a
+real progress indicator (2026-08-23) - a big sweep can genuinely run 15-20+ minutes (watched this
+happen live this session once the candidate pool got wider), and a user watching a GUI needs
+actual feedback (candidates screened so far / total, current phase: screening vs resolving), not
+a blank wait wondering if it's stuck. Means the underlying pipeline needs to expose a real
+progress signal (e.g. a callback or periodic status write), not just print-to-stdout text - worth
+designing in from the start rather than bolting on later, per the same "keep core/adapters
+UI-agnostic so a GUI can sit on top without a rewrite" principle already governing this section.
+etc. Not part of any current stage — noted here so it isn't lost, but don't build toward it until the
 user actually asks. Keep `core/`/`adapters/` command-line-first and UI-agnostic in the meantime so
 a GUI can sit on top later without a rewrite. Until the toggle exists, keep assuming 6% (moonkin
 present) per the user's stated raid comp - never silently switch to 9% without being asked.
