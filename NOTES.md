@@ -1607,3 +1607,23 @@ items specifically, also added a small 🔨 link to the real crafting recipe pag
 (`wowhead.com/tbc/spell=<spellId>`) - found that `sources[].crafted.spellId` was already sitting
 in the DB, just discarded by `describe_source_and_tier()` (only the profession name was kept).
 Now threaded through as `craft_spell_id` on every report row.
+
+## 2026-08-23 — Time-horizon flags: "lasts until Phase N" / "alternative for Phase N"
+
+Replaces the original spec's coarse three-bucket label with a precise phase number, per the
+user, and drops the cost-paired "scarce currency + replaced soon = don't spend" logic since
+acquisition cost tracking was dropped in favor of Wowhead linking. Fetched real Phase 4
+(Zul'Aman) and Phase 5 (Sunwell Plateau - confirmed the final phase of TBC by the guide's own
+text) Survival Hunter BiS guides from Wowhead, same author/format/structure as the existing
+Phase 3 list - `profiles/tbc/reference_bis/phase{4,5}_survival.json`. Explicitly treated as
+truth for now, not simmed ourselves - the user's own framing: a later build sims these phases
+directly and finds the real best set per phase; this is a disclosed stand-in until then.
+
+`core/time_horizon.py` matches by item NAME against each list's flattened item set (same
+exact-match convention `run_full_sweep_mv.py` already uses for `curated_source_text`), finds the
+highest phase the name still appears in at all, and separately checks whether its rank AT THAT
+PHASE actually reads "Best..." vs "Optional"/"Alternative"/"Good"/"Great". User's follow-up catch:
+being listed in a future phase's guide doesn't mean still recommended - Gronnstalker's Helmet is
+real BiS through Phase 4 but drops to "Optional" once Coif of Alleria takes over in Phase 5, so
+the tag reads "alternative for P5" instead of implying it's still the top pick. A name that
+doesn't match anywhere fails safe to "lasts until Phase 3" rather than asserting longevity.
