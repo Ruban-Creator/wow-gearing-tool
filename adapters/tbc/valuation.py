@@ -26,6 +26,33 @@ import expose_weakness  # noqa: E402
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "core"))
 import sim_cache  # noqa: E402
 import gear_config  # noqa: E402
+import item_db  # noqa: E402
+
+# Fist weapons only, per the user: they benefit disproportionately from
+# Weightstone's FLAT +14 crit rating / +12 weapon damage (a bigger relative
+# gain than on a bladed weapon, whose higher base damage dilutes the same
+# flat bonus) - confirmed real, sourced item id from
+# sim/core/consumes.go's case 34340 ("Addy Weightstone"), matching the
+# user's own in-game tooltip exactly ("Increase blunt weapon damage by 12
+# and add 14 critical hit rating for 1 hour"). Every other weapon type is
+# deliberately left as whatever the settings file already specifies
+# (currently unset/0) - not guessed at, since the user only asked for fist
+# weapons specifically.
+FIST_WEAPON_TYPE = 3
+FIST_WEAPON_IMBUE_ID = 34340
+
+
+def _apply_weapon_imbues(settings: dict, items: list[dict]) -> None:
+    if not items:
+        return
+    mh = items[gear_config.SLOT_ORDER.index("mainhand")] if len(items) > gear_config.SLOT_ORDER.index("mainhand") else None
+    oh = items[gear_config.SLOT_ORDER.index("offhand")] if len(items) > gear_config.SLOT_ORDER.index("offhand") else None
+    consumables = settings["player"]["consumables"]
+    for slot_item, field in ((mh, "mhImbueId"), (oh, "ohImbueId")):
+        if slot_item and slot_item.get("id"):
+            item = item_db.by_id(slot_item["id"])
+            if item and item.get("weaponType") == FIST_WEAPON_TYPE:
+                consumables[field] = FIST_WEAPON_IMBUE_ID
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 CACHE_DIR = os.path.join(REPO_ROOT, "data", "cache")
@@ -79,14 +106,27 @@ def _load_template(settings_path: str) -> dict:
         return json.loads(json.dumps(_template_cache[settings_path]))
 
 
-def settings_fingerprint(settings_path: str) -> str:
-    """Hash of everything in the template EXCEPT player.equipment.items -
-    the fixed background gear runs must hold constant. Used as part of the
-    cache key so two different backgrounds never collide."""
-    template = _load_template(settings_path)
+def _fingerprint_settings(settings: dict) -> str:
+    """Hash of everything in the settings dict EXCEPT player.equipment.items
+    - the fixed background gear runs must hold constant. Takes the dict
+    directly (not a file) so callers that mutate settings first (e.g.
+    evaluate()'s per-config weapon imbue selection) get a fingerprint that
+    actually reflects what's about to run, not the un-mutated file."""
+    template = json.loads(json.dumps(settings))  # deep copy, don't mutate caller's dict
     template["player"]["equipment"] = None
     canonical = json.dumps(template, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
+
+
+def settings_fingerprint(settings_path: str) -> str:
+    """Hash of everything in the file-loaded template EXCEPT
+    player.equipment.items. Used as part of the cache key so two different
+    backgrounds never collide. Reflects only the settings FILE - callers
+    whose effective settings differ from the file (e.g. evaluate()'s
+    per-config weapon imbue mutation) must fingerprint their own mutated
+    dict via _fingerprint_settings() instead, or the cache key would miss
+    that dimension."""
+    return _fingerprint_settings(_load_template(settings_path))
 
 
 def _build_raid_sim_request(settings: dict, iterations: int, seed: int) -> dict:
@@ -121,14 +161,19 @@ def evaluate(settings_path: str, items: list[dict], iterations: int, seed: int) 
     "combined": ...}. Cached by (gear hash, settings fingerprint,
     iterations, seed) - never sims the same config twice."""
     gear_hash = gear_config.config_hash(items)
-    fp = settings_fingerprint(settings_path)
+    settings = _load_template(settings_path)
+    # Mutate (fist-weapon imbue selection) BEFORE fingerprinting - the
+    # fingerprint must reflect what's actually about to run, not the raw
+    # file, or two configs that differ only by triggering a different
+    # imbue would collide on the same cache key.
+    _apply_weapon_imbues(settings, items)
+    fp = _fingerprint_settings(settings)
     cache_key = sim_cache.key(gear_hash, fp, iterations, seed)
 
     cached = sim_cache.get(cache_key)
     if cached is not None:
         return cached
 
-    settings = _load_template(settings_path)
     settings["player"]["equipment"] = {"items": items}
 
     if USE_SIMSERVER:
