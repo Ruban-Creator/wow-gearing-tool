@@ -1792,3 +1792,44 @@ crash - the note text originally used a Unicode arrow character (U+2192),
 which isn't in cp1252 (the default Windows console codepage) and crashed
 print(). Replaced with ASCII "->" - the same class of bug could hit any
 future non-ASCII character added to printed report text on this machine.
+
+A follow-up conversation with the user surfaced two more real problems with
+this stage, both fixed the same session:
+
+1. **A real testing bug on my (Claude's) side, not the tool's**: the user
+   asked whether Attumen the Huntsman's "Gloves of Dexterous Manipulation"
+   (id 28506, real Karazhan epic - 35 Agi/42 AP/42 RAP) should be an upgrade
+   once a T6 shoulder swap already breaks Rift Stalker Armor's 4pc bonus. My
+   first manual check said no (-32.2 alone, still a small downgrade even
+   after the shoulder swap) - wrong, because I built the test candidate with
+   enchant=0 instead of her real current hands enchant (id 2564, copied from
+   `character.json`). The actual sweep pipeline always copies the current
+   slot's enchant onto non-owned candidates (see run_full_sweep_mv.py's
+   `default_enchant` logic) - my manual verification script didn't, and that
+   alone was worth ~16.5 DPS. With the enchant applied correctly: gloves
+   alone = -15.7 (not -32.2), and paired with a T6 shoulder swap, the gloves
+   are a REAL +13.4 to +13.9 DPS upgrade (noise ~0.5) - the user's original
+   intuition was correct.
+
+   This also surfaced a real STRUCTURAL gap in the interaction matrix, not
+   yet fixed: candidate selection only pulls from the tiered report's
+   already-filtered "real upgrade" list (top 3 per slot by mv, mv>0 or has a
+   set_note). An item like Attumen's Gloves - a real downgrade ALONE purely
+   because it breaks a set bonus, but a real upgrade once paired with
+   another set-breaking swap - never enters the candidate pool at all, so
+   the matrix can never discover this class of finding on its own; it can
+   only confirm/deny a specific pairing someone already suspects. Flagged to
+   the user, not yet resolved - would mean including "solo downgrade,
+   explained by a set-bonus break" items in the pool too, which meaningfully
+   grows the pair count beyond the current ~50.
+
+2. **A real, confirmed labeling problem, not just presentation**: calling a
+   set-bonus-artifact row "COMPLEMENT" (with a large positive number) reads
+   as "pursue this pairing," which is actively wrong for these rows - the
+   honest takeaway for e.g. Gronnstalker's Spaulders + Beast Lord Handguards
+   is "Beast Lord Handguards is just a bad item, full stop; pairing it with
+   Spaulders doesn't change that." Fixed: rows with a set_notes entry now
+   get a neutral "artifact" kind instead of complement/substitute, and sort
+   AFTER the genuinely novel rows (previously all 50 rows sorted purely by
+   |interaction|, which buried the 3 real trinket findings under 47 near-
+   identical ~+30 artifact rows at the top of the list).
