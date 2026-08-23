@@ -83,6 +83,18 @@ TIER_ZONES = {
 }
 
 
+def horizon_tag(r: dict) -> str:
+    """'[lasts P5]' when it's still the top pick at the highest phase it
+    appears in; '[alternative for P4]' when that phase's list has it as a
+    real option but NOT the top one (Optional/Alternative/Good/Great, not
+    Best...) - per the user, don't imply it's still the recommended choice
+    when the guide itself doesn't say so."""
+    phase = r["lasts_until_phase"]
+    if not r.get("is_best", True):
+        return f"  [alternative for P{phase}]"
+    return f"  [lasts P{phase}]" if r.get("final_phase") else f"  [lasts until P{phase}]"
+
+
 def slot_for_item(item: dict) -> str | None:
     t = item.get("type")
     if t == 13:
@@ -507,7 +519,7 @@ def main():
                 raid_ap_str = f"Debuff: {raid_ap:>+5.1f} AP/ea" if raid_ap is not None else "Debuff:    n/a AP/ea"
                 gate = r.get("gate")
                 lock = "  [LOCKED]" if gate and not gate["satisfied"] else ""
-                horizon = f"  [lasts P{r['lasts_until_phase']}]" if r.get("final_phase") else f"  [lasts until P{r['lasts_until_phase']}]"
+                horizon = horizon_tag(r)
                 print(f"    {r['name']:<36} Player: {r['mv']:>+7.1f} DPS  {raid_ap_str}  {r['source']}{flag}{lock}{horizon}")
                 if rescued_by_set(r):
                     print(f"        note: {r['set_note']}")
@@ -581,7 +593,7 @@ def main():
                 print(f"  -- {tier} ({len(two_hand_out[tier])} upgrade(s) vs weaving with current DW gear) --")
                 for r in sorted(two_hand_out[tier], key=lambda x: x["mv"], reverse=True)[:5]:
                     flag = "" if r["resolved"] else "  (screened only)"
-                    horizon = f"  [lasts P{r['lasts_until_phase']}]" if r.get("final_phase") else f"  [lasts until P{r['lasts_until_phase']}]"
+                    horizon = horizon_tag(r)
                     print(f"    {r['name']:<36} Player: {r['mv']:>+7.1f} DPS  {r['source']}{flag}{horizon}")
         else:
             print("  No 2H weapon beats weaving with her current DW gear.")
