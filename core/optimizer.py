@@ -222,12 +222,27 @@ _SLOT_TO_HAND_RESTRICTION = {"mainhand": HAND_OFFHAND, "offhand": HAND_MAINHAND}
 
 def is_hand_restricted_conflict(item_id: int, slot: str) -> bool:
     """True if this weapon's handType forbids it from going in `slot` -
-    e.g. a MainHand-restricted weapon can't go in the offhand slot."""
+    e.g. a MainHand-restricted weapon can't go in the offhand slot.
+
+    Real bug caught here (not just theoretical): `hand_type ==
+    _SLOT_TO_HAND_RESTRICTION.get(slot)` alone silently returned True for
+    EVERY non-weapon item in EVERY non-weapon slot, since a non-weapon
+    item's handType is None and _SLOT_TO_HAND_RESTRICTION.get(slot) for a
+    non-weapon slot is ALSO None - `None == None` is True, so mv_single
+    excluded every candidate from every armor/jewelry slot as a "hand
+    conflict" (surfaced as almost the entire gear set falsely showing as
+    Achieved BiS - nothing beats it - when real upgrades existed and had
+    just been reported minutes earlier). This only means anything for a
+    real weapon in a real weapon slot."""
+    if slot not in _SLOT_TO_HAND_RESTRICTION:
+        return False
     item = idb.by_id(item_id)
     if not item:
         return False
     hand_type = item.get("handType")
-    return hand_type == _SLOT_TO_HAND_RESTRICTION.get(slot)
+    if hand_type is None:
+        return False
+    return hand_type == _SLOT_TO_HAND_RESTRICTION[slot]
 
 
 def eval_config(settings_path: str, config: list[dict]) -> dict:
