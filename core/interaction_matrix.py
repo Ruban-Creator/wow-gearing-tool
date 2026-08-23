@@ -45,6 +45,9 @@ import valuation  # noqa: E402
 MAX_WORKERS = 2  # matches run_full_sweep_mv.py - see its comment for why 4 was 7.4x slower
 
 TOP_N_PER_SLOT = 3
+EXTRA_SCAN_LIMIT = 7  # how far beyond TOP_N_PER_SLOT to look for Hit/Expertise
+# extras - bounds pool growth for slots with a large full pool (e.g. Ranged's
+# 54 real candidates) instead of scanning the entire remaining pool.
 # proto/common.proto Stat indices - real numbers confirmed via core/stat_weights.py,
 # not guessed.
 HIT_STAT_IDX = 20   # MeleeHitRating
@@ -56,41 +59,222 @@ EXTRA_STAT_INDICES = (HIT_STAT_IDX, EXPERTISE_STAT_IDX)
 # valid, unlike every other slot label where only one item can be worn.
 PAIRED_SLOT_GROUPS = {"Ring", "Trinket", "Weapon"}
 
+# Physical slots feeding each paired display group - used to pull her
+# CURRENTLY OWNED items into the candidate pool too. Per the user
+# (2026-08-23): only 2 trinkets/rings/weapons can ever be worn, so "is this
+# new candidate worth it" has to be checked against what she already has in
+# the OTHER slot, not just against other new candidates - a pool of only
+# acquisition targets can never surface "X isn't actually better than my
+# current Y" (real example: Tsunami Talisman looked like a solid pairing
+# candidate until checked against her real Bloodlust Brooch, which it does
+# NOT beat in trinket1).
+OWNED_ANCHOR_SLOTS = {
+    "Ring": ["ring1", "ring2"],
+    "Trinket": ["trinket1", "trinket2"],
+    "Weapon": ["mainhand", "offhand"],
+}
+
+# Three-tier funnel, per the user (2026-08-23): pre-screen very cheap to cut
+# the pair list before spending even the mid-cost screen on each one. The
+# pre-screen gate is deliberately more LENIENT (lower multiple) than the
+# real screen gate - pre-screen noise is much higher (SEM ~sqrt(10)x worse
+# than the 1000-iteration screen), so it should err toward promoting
+# borderline pairs to the more precise next stage rather than dropping them
+# too early on a noisy first look.
+PRESCREEN_ITERATIONS = 100
+PRESCREEN_GATE_MULTIPLE = 2
+
 # A pair's screened interaction has to clear this many multiples of the
-# screening-noise floor before it's worth paying for the 30k resolve -
+# screening-noise floor before it's worth paying for the resolve pass -
 # same logic/multiplier as marginal_value.CLEAR_MARGIN_MULTIPLE, applied
 # to whether the interaction itself looks like it could be real at all.
 SCREEN_GATE_MULTIPLE = 3
 
 
-def select_candidates(tiers: dict, top_n: int = TOP_N_PER_SLOT,
+# Every SINGLE-occupancy display slot - deliberately NOT limited to the
+# classic 5 tier-armor slots (head/shoulder/chest/hands/legs). Per the user
+# (2026-08-23): Phase 5 has real sets that include boots/belt/wrist too, not
+# just the traditional tier pattern - hardcoding to the classic 5 would
+# silently miss an active set bonus sitting on any other slot. Ring/
+# Trinket/Weapon are excluded here since those are paired groups with their
+# own separate owned-anchor handling (see owned_anchor_candidates), not
+# single-occupancy slots.
+SINGLE_OCCUPANCY_SLOT_NAMES = {
+    "head": "Head", "neck": "Neck", "shoulder": "Shoulder", "back": "Back",
+    "chest": "Chest", "wrist": "Wrist", "hands": "Hands", "waist": "Waist",
+    "legs": "Legs", "feet": "Feet", "ranged": "Ranged",
+}
+
+
+def active_set_slot_labels(baseline_config: list[dict]) -> set[str]:
+    """Which of her single-occupancy slot labels currently hold a piece of
+    a set that's AT OR ABOVE one of its own real bonus thresholds right now
+    (e.g. all 4 of Head/Shoulder/Chest/Hands for Rift Stalker Armor's 4pc,
+    confirmed from her real equipped gear - never hardcoded to one set name
+    OR one fixed slot list, so this still works correctly if her gear, the
+    active set, or which slots that set even occupies changes in a future
+    session/phase). These are exactly the slots where a candidate's SOLO
+    verdict is least trustworthy - swapping any one of them alone pays the
+    full cost of breaking the set, which a paired swap elsewhere might not
+    actually cost twice (see _threshold_notes) or might even avoid paying
+    at all (a genuine rescue)."""
+    thresholds = set_bonus.set_bonus_thresholds()
+    labels = set()
+    for slot_name, label in SINGLE_OCCUPANCY_SLOT_NAMES.items():
+        idx = gc.SLOT_ORDER.index(slot_name)
+        entry = baseline_config[idx] if idx < len(baseline_config) else None
+        if not entry or not entry.get("id"):
+            continue
+        item = idb.by_id(entry["id"])
+        set_name = item.get("setName") if item else None
+        ths = thresholds.get(set_name) if set_name else None
+        if not ths:
+            continue
+        count = set_bonus.count_set_pieces_in_config(set_name, baseline_config)
+        if any(count >= th for th in ths):
+            labels.add(label)
+    return labels
+
+
+# Display slot label -> the physical SLOT_ORDER name(s) it draws from -
+# needed to find what's CURRENTLY worn there (see select_candidates' owned
+# Hit/Expertise check below).
+DISPLAY_SLOT_TO_PHYSICAL = {
+    "Head": ["head"], "Neck": ["neck"], "Shoulder": ["shoulder"], "Back": ["back"],
+    "Chest": ["chest"], "Wrist": ["wrist"], "Hands": ["hands"], "Waist": ["waist"],
+    "Legs": ["legs"], "Feet": ["feet"], "Ranged": ["ranged"],
+    "Ring": ["ring1", "ring2"], "Trinket": ["trinket1", "trinket2"], "Weapon": ["mainhand", "offhand"],
+}
+
+
+def _owned_hit_exp(baseline_config: list[dict], slot_label: str, stat_indices: tuple[int, ...]) -> float:
+    """Largest Hit+Expertise total currently sitting in any physical slot
+    this display group maps to. A candidate with ZERO Hit/Expertise for a
+    slot that currently HAS it is just as cap-relevant as one that ADDS
+    Hit/Expertise where there was none - giving up Hit in one slot to gain
+    it in another only works as a real strategy if both directions are
+    caught, not just "does the candidate itself carry Hit/Expertise"."""
+    best = 0.0
+    for slot_name in DISPLAY_SLOT_TO_PHYSICAL.get(slot_label, []):
+        idx = gc.SLOT_ORDER.index(slot_name)
+        entry = baseline_config[idx] if idx < len(baseline_config) else None
+        if not entry or not entry.get("id"):
+            continue
+        vec = set_bonus.item_stat_vector(entry["id"], entry.get("gems"))
+        best = max(best, sum(vec[i] for i in stat_indices))
+    return best
+
+
+def select_candidates(by_tier_slot: dict, active_set_slots: set[str], baseline_config: list[dict],
+                       top_n: int = TOP_N_PER_SLOT,
                        extra_stat_indices: tuple[int, ...] = EXTRA_STAT_INDICES) -> list[dict]:
-    """tiers is tiered_report.json's raw "tiers" dict-of-dicts
-    ({tier_name: {slot_label: [item_row, ...]}}). Returns a flat,
-    deduplicated list of {item_id, name, slot} for the interaction matrix's
-    candidate pool."""
-    by_slot: dict[str, list[dict]] = {}
-    for slot_dict in tiers.values():
-        for slot, items in slot_dict.items():
-            by_slot.setdefault(slot, []).extend(items)
+    """by_tier_slot is run_full_sweep_mv.py's full SCREENED pool -
+    {(tier, slot_label): [(Candidate, result_dict), ...]} - deliberately
+    NOT the already-filtered "real upgrades only" tiered report. Per the
+    user (2026-08-23): a candidate pool built only from things that already
+    look like solo upgrades can never find a "rescued" pair - an item that's
+    a real downgrade ALONE (because it breaks her currently-active set
+    bonus, or simply because a Hit/Expertise item's extra rating looks
+    wasted in isolation) but a real upgrade once paired with the right
+    other swap. Real example this missed before the fix: Attumen's "Gloves
+    of Dexterous Manipulation" never entered the pool at all (a solo
+    downgrade, no set of its own), so the matrix could never discover it
+    was a real +13-14 DPS gain once paired with a T6 shoulder swap that
+    already breaks the same set bonus.
+
+    For active_set_slots (her current set's own slots), EVERY real screened
+    candidate is included, not just the top N - any of them could plausibly
+    be the "other half" of a rescue. For every other slot, keeps the
+    original top-N-by-mv-plus-Hit/Expertise-extras logic, but now checking
+    Hit/Expertise against the FULL screened pool too (not just the already-
+    filtered real-upgrade list), AND against what's currently worn there,
+    not just the candidate's own stats - per the user, "giving up Hit on
+    slot X to gain it on slot Y" only gets tested if the slot-X candidate
+    (which typically has LESS Hit than what's currently there, not more)
+    is in the pool too, not just the slot-Y candidate that adds it."""
+    by_slot: dict[str, list[tuple]] = {}
+    for (_tier, slot), rows in by_tier_slot.items():
+        by_slot.setdefault(slot, []).extend(rows)
 
     selected: list[dict] = []
     seen_ids: set[int] = set()
-    for slot, items in by_slot.items():
-        items = sorted(items, key=lambda r: r["mv"], reverse=True)
-        chosen = list(items[:top_n])
-        chosen_ids = {r["item_id"] for r in chosen}
-        for r in items[top_n:]:
-            vec = set_bonus.item_stat_vector(r["item_id"], None)
-            if r["item_id"] not in chosen_ids and any(vec[i] for i in extra_stat_indices):
-                chosen.append(r)
-                chosen_ids.add(r["item_id"])
-        for r in chosen:
-            if r["item_id"] in seen_ids:
+    for slot, rows in by_slot.items():
+        rows = sorted(rows, key=lambda cr: cr[1]["mv"], reverse=True)
+        if slot in active_set_slots:
+            # Every candidate EXCEPT ones already screened as tied-within-
+            # noise (statistically indistinguishable from doing nothing) -
+            # per the user, a candidate whose own solo effect is noise can't
+            # be the "real downgrade" half of a rescue, and including it
+            # anyway was pure wasted screen/resolve compute on pairs that
+            # were never going to show anything. A REAL downgrade (even a
+            # small one, as long as it's a statistically real effect) still
+            # gets through - this only cuts candidates that are provably no
+            # different from the status quo, not ones that are merely small.
+            # Tried an EP-based cutoff here on 2026-08-23 (keep only set
+            # members/Hit-Expertise carriers/candidates within
+            # EP_CUTOFF_FRACTION of the slot's best) - reverted the same
+            # session once real verification caught it excluding Attumen's
+            # "Gloves of Dexterous Manipulation" (crude_ep 154 vs a 165
+            # cutoff), the exact validated rescue this pool-gap fix exists
+            # to catch. Not a tuning problem - it's a structural
+            # contradiction: ANY pre-filter that scores a candidate by "how
+            # good does it look alone" (EP or otherwise) will, by
+            # construction, exclude exactly the items that only look good
+            # in combination. Real pool reduction for these slots has to
+            # come from the pair-level funnel (pre-screen/screen), which
+            # tests the actual joint effect instead of a solo proxy.
+            chosen = [(c, r) for c, r in rows if not r.get("tied_within_noise")]
+        else:
+            chosen = list(rows[:top_n])
+            chosen_ids = {c.item_id for c, _r in chosen}
+            owned_hit_exp = _owned_hit_exp(baseline_config, slot, extra_stat_indices)
+            # Bounded scan window, not the whole remaining pool - a slot
+            # like Ranged has 54 real candidates in the full screened pool,
+            # and "owned_hit_exp > 0" alone (true for her current Ranged
+            # weapon) would otherwise flag literally every one of them as
+            # an "extra", since a candidate merely having LESS Hit/Expertise
+            # than owned satisfies the check regardless of how far down the
+            # ranking it sits. Capping the scan to the next EXTRA_SCAN_LIMIT
+            # candidates by mv still catches "close contender, held back by
+            # its Hit/Expertise trade-off" without pulling in irrelevant
+            # bottom-of-the-pool items that were never going to matter.
+            for c, _r in rows[top_n:top_n + EXTRA_SCAN_LIMIT]:
+                vec = set_bonus.item_stat_vector(c.item_id, None)
+                cand_hit_exp = sum(vec[i] for i in extra_stat_indices)
+                if c.item_id not in chosen_ids and (cand_hit_exp or owned_hit_exp):
+                    chosen.append((c, _r))
+                    chosen_ids.add(c.item_id)
+        for c, _r in chosen:
+            if c.item_id in seen_ids:
                 continue
-            seen_ids.add(r["item_id"])
-            selected.append({"item_id": r["item_id"], "name": r["name"], "slot": slot})
+            seen_ids.add(c.item_id)
+            selected.append({"item_id": c.item_id, "name": c.name, "slot": slot, "owned": False})
     return selected
+
+
+def owned_anchor_candidates(baseline_config: list[dict]) -> list[tuple[dict, "opt.Candidate"]]:
+    """Her real currently-worn items in each paired slot group (e.g.
+    Bloodlust Brooch + Hourglass of the Unraveller for Trinket), as real
+    Candidate objects built from their actual id/enchant/gems in
+    baseline_config - not defaults, not guessed. These aren't acquisition
+    targets (she already has them), but they belong in the SAME pairwise
+    pool as new candidates so a new item's value gets checked against what
+    it would actually have to beat: whichever owned item stays in the other
+    slot."""
+    anchors = []
+    for group_label, slot_names in OWNED_ANCHOR_SLOTS.items():
+        for slot_name in slot_names:
+            slot_idx = gc.SLOT_ORDER.index(slot_name)
+            entry = baseline_config[slot_idx] if slot_idx < len(baseline_config) else None
+            if not entry or not entry.get("id"):
+                continue
+            item = idb.by_id(entry["id"])
+            if not item:
+                continue
+            cand = opt.Candidate(item["name"], entry["id"], entry.get("enchant", 0), entry.get("gems"))
+            info = {"item_id": entry["id"], "name": item["name"], "slot": group_label, "owned": True}
+            anchors.append((info, cand))
+    return anchors
 
 
 def enumerate_pairs(selected: list[dict]) -> list[tuple[dict, dict]]:
@@ -268,23 +452,45 @@ def _threshold_notes(baseline_config: list[dict], trial_a: list[dict], trial_b: 
     return notes
 
 
-def compute(settings_path: str, candidates_by_slot: dict, baseline_config: list[dict],
-            tiers: dict, screen_iterations: int, resolve_iterations: int, seed: int) -> list[dict]:
-    """Returns a list of interaction rows, sorted by |interaction| descending,
-    already filtered to real (non-tied-within-noise) pairs only - 549+
-    candidate pairs is far too many to report raw, and the vast majority
-    have no meaningful interaction at all (unrelated slots/stats)."""
-    cand_by_id = {c.item_id: c for cands in candidates_by_slot.values()
-                  for c in cands if c.item_id is not None}
+def compute(settings_path: str, by_tier_slot: dict, baseline_config: list[dict],
+            screen_iterations: int, resolve_iterations: int, seed: int) -> list[dict]:
+    """by_tier_slot is run_full_sweep_mv.py's full screened pool -
+    {(tier, slot_label): [(Candidate, result_dict), ...]}, NOT the already-
+    filtered "real upgrades" tiered report (see select_candidates for why).
+    Returns a list of interaction rows, sorted "rescue" findings first, then
+    genuinely novel complement/substitute pairs, then set-bonus artifacts
+    last - already filtered to real (non-tied-within-noise) pairs only,
+    since even the expanded pool's pair count is far too many to report raw
+    and the vast majority have no meaningful interaction at all."""
+    cand_by_id = {c.item_id: c for rows in by_tier_slot.values() for c, _r in rows}
 
-    selected = select_candidates(tiers)
+    active_set_slots = active_set_slot_labels(baseline_config)
+    selected = select_candidates(by_tier_slot, active_set_slots, baseline_config)
     selected = [s for s in selected if s["item_id"] in cand_by_id]
+    print(f"Interaction matrix: active-set slots={sorted(active_set_slots)}, "
+          f"{len(selected)} candidates before owned anchors")
+
+    # Her currently-worn items in each paired slot group (Ring/Trinket/
+    # Weapon) join the pool too - a new candidate's real value has to be
+    # checked against what it would actually have to beat (whichever owned
+    # item stays in the other slot), not just against other new candidates.
+    existing_ids = {s["item_id"] for s in selected}
+    for info, cand in owned_anchor_candidates(baseline_config):
+        if info["item_id"] in existing_ids:
+            continue
+        selected.append(info)
+        cand_by_id[info["item_id"]] = cand
+        existing_ids.add(info["item_id"])
+
     pairs = enumerate_pairs(selected)
+    print(f"Interaction matrix: {len(selected)} total candidates (incl. owned anchors), "
+          f"{len(pairs)} pairs to screen")
     if not pairs:
         return []
 
     baseline_resolve = valuation.evaluate(settings_path, baseline_config, resolve_iterations, seed)
     baseline_screen = valuation.evaluate(settings_path, baseline_config, screen_iterations, seed)
+    baseline_prescreen = valuation.evaluate(settings_path, baseline_config, PRESCREEN_ITERATIONS, seed)
 
     # Each selected candidate's OWN MV, resolved at the same 30k precision
     # the joint numbers will use - mostly free (cache hits): a top-3-per-
@@ -302,6 +508,30 @@ def compute(settings_path: str, candidates_by_slot: dict, baseline_config: list[
             single_trial[s["item_id"]] = trial
 
     pairs = [(a, b) for a, b in pairs if a["item_id"] in single_resolved and b["item_id"] in single_resolved]
+
+    # --- Pass 0: pre-screen every pair, very cheap, to cut the pair list
+    # before spending the mid-cost screen on each one ---
+    def prescreen_pair(pair):
+        a, b = pair
+        joint, _trial = _best_joint(settings_path, baseline_config, cand_by_id[a["item_id"]],
+                                     cand_by_id[b["item_id"]], PRESCREEN_ITERATIONS, seed)
+        return a, b, joint
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
+        prescreened = list(ex.map(prescreen_pair, pairs))
+
+    pairs = []
+    for a, b, joint in prescreened:
+        if joint is None:
+            continue
+        mv_ij_prescreen = joint["combined"] - baseline_prescreen["combined"]
+        i_resolved = single_resolved[a["item_id"]]["combined"] - baseline_resolve["combined"]
+        j_resolved = single_resolved[b["item_id"]]["combined"] - baseline_resolve["combined"]
+        interaction_prescreen = mv_ij_prescreen - i_resolved - j_resolved
+        gate_noise = math.sqrt(_sem(joint, PRESCREEN_ITERATIONS) ** 2 + _sem(baseline_prescreen, PRESCREEN_ITERATIONS) ** 2)
+        if abs(interaction_prescreen) >= PRESCREEN_GATE_MULTIPLE * gate_noise:
+            pairs.append((a, b))
+    print(f"Pre-screen @ {PRESCREEN_ITERATIONS} iter: {len(pairs)} of {len(prescreened)} pairs promoted to full screen")
 
     # --- Pass 1: screen every pair's joint config, cheap ---
     def screen_pair(pair):
@@ -355,6 +585,20 @@ def compute(settings_path: str, candidates_by_slot: dict, baseline_config: list[
         if tied:
             continue  # noise-honesty: not a real interaction, don't report it as one
         notes = _threshold_notes(baseline_config, single_trial[a["item_id"]], single_trial[b["item_id"]], joint_trial)
+
+        # The actual headline question, per the user (2026-08-23): does the
+        # PAIR end up a real upgrade even though one (or both) of the items
+        # alone would have been a real downgrade? That's a "rescue" - the
+        # single most actionable finding this stage can produce, and takes
+        # priority over the complement/substitute/artifact framing below.
+        noise_a = mv.delta_noise(baseline_resolve, i_result, resolve_iterations)
+        noise_b = mv.delta_noise(baseline_resolve, j_result, resolve_iterations)
+        noise_joint = mv.delta_noise(baseline_resolve, joint, resolve_iterations)
+        a_real_downgrade = mv_a < 0 and abs(mv_a) >= 2 * noise_a
+        b_real_downgrade = mv_b < 0 and abs(mv_b) >= 2 * noise_b
+        joint_real_upgrade = mv_joint > 0 and abs(mv_joint) >= 2 * noise_joint
+        rescued = joint_real_upgrade and (a_real_downgrade or b_real_downgrade)
+
         # "complement"/"substitute" imply an actionable recommendation
         # ("pursue this pairing" / "don't"), which is exactly wrong for a
         # set_notes row - per the user, a row explained by a shared
@@ -362,18 +606,29 @@ def compute(settings_path: str, candidates_by_slot: dict, baseline_config: list[
         # artifact, and calling it a "complement" reads as advice to chase
         # a pairing that means nothing. Those get a neutral "artifact"
         # kind instead; complement/substitute are reserved for pairs with
-        # no set-bonus explanation, i.e. the genuinely novel ones.
-        kind = "artifact" if notes else ("complement" if interaction > 0 else "substitute")
+        # no set-bonus explanation, i.e. the genuinely novel ones. "rescue"
+        # overrides both when it applies - it's the most useful thing this
+        # stage can say, whatever else is also true about the pair.
+        if rescued:
+            kind = "rescue"
+        elif notes:
+            kind = "artifact"
+        else:
+            kind = "complement" if interaction > 0 else "substitute"
         rows.append({
             "item_a": a, "item_b": b,
             "mv_a": mv_a, "mv_b": mv_b, "mv_joint": mv_joint,
             "interaction": interaction, "noise_stdev": noise,
             "kind": kind,
+            "rescued": rescued,
             "set_notes": notes,
         })
 
     # Real (non-artifact) findings first, largest |interaction| within each
     # group - per the user, set-bonus artifact rows are noise, not signal,
     # and shouldn't bury the genuinely novel pairs at the bottom of the list.
-    rows.sort(key=lambda r: (r["kind"] == "artifact", -abs(r["interaction"])))
+    # Rescues sort first (the actual headline finding), then real
+    # complement/substitute pairs, then artifacts last.
+    kind_priority = {"rescue": 0, "complement": 1, "substitute": 1, "artifact": 2}
+    rows.sort(key=lambda r: (kind_priority[r["kind"]], -abs(r["interaction"])))
     return rows
