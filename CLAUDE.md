@@ -300,8 +300,13 @@ reported number) but formalized as three explicit tiers instead of one screen/re
    pool (every phase's items at once) down to a manageable shortlist before spending even a cheap
    sim run on each one. Not yet decided whether this should be a real (very-low-iteration) sim
    call or a static EP-based prefilter using `STAT_WEIGHTS` - the ground rules already sanction
-   EP as a legitimate prefilter heuristic, just never as a reported number.
-2. **Screen** - today's existing 1-2k-iteration pass, applied to whatever survives step 1.
+   EP as a legitimate prefilter heuristic, just never as a reported number. User's concrete
+   proposal (2026-08-23): 100 iterations for this tier - real SEM math checks out (the sim's own
+   player_stdev was ~74 at 1000 iterations in the user's own test, so SEM ≈ 74/√100 ≈ 7.4 DPS at
+   100 - noisy, but only affects which pairs get promoted to the next tier, never a reported
+   number, so the tradeoff is real but bounded).
+2. **Screen** - the user's proposal: 500-1000 iterations (matches today's existing
+   `SCREEN_ITERATIONS`), applied to whatever survives step 1.
 3. **Finalize** - resolve only the top ~3 candidate FULL SETS (not top individual items or
    pairs) at high precision - the user left the exact iteration count open ("12.5k baseline from
    sim or your 30k, up to you"). Confirmed by the user checking the actual wowsims web UI
