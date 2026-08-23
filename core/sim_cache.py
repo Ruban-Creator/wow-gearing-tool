@@ -23,15 +23,22 @@ def _load() -> dict:
 
 def _save(cache: dict):
     os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
-    tmp = CACHE_PATH + ".tmp"
+    # Unique per-call tmp name (pid + high-res timestamp) - real incident
+    # (2026-08-23): a fixed ".tmp" name meant two concurrent processes (a
+    # background sweep + a stray diagnostic script) both wrote to the SAME
+    # tmp path; whichever process's os.replace() ran second found the file
+    # already gone (renamed away by the first), crashing with
+    # FileNotFoundError. threading.Lock only guards this process, never
+    # protected against that - a unique tmp name per write removes the
+    # collision entirely instead of retrying around it.
+    tmp = f"{CACHE_PATH}.tmp.{os.getpid()}.{time.time_ns()}"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(cache, f)
-    # threading.Lock only guards this process - if another process (a
-    # second pipeline run, a stray test script, antivirus/OneDrive
-    # scanning the just-written file) has CACHE_PATH momentarily open,
-    # Windows os.replace raises PermissionError instead of just blocking.
-    # A few short retries ride out that transient window instead of
-    # crashing a run that's otherwise perfectly fine.
+    # If another process (antivirus/OneDrive scanning the just-written
+    # file) has CACHE_PATH momentarily open, Windows os.replace raises
+    # PermissionError instead of just blocking. A few short retries ride
+    # out that transient window instead of crashing a run that's
+    # otherwise perfectly fine.
     for attempt in range(5):
         try:
             os.replace(tmp, CACHE_PATH)
