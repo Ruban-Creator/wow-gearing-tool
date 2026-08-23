@@ -156,10 +156,17 @@ Next up: **Stage 5** (§7, the strategy layer) — chiefly the interaction matri
 `I(i,j) = MV(i,j) − MV(i) − MV(j)` for the top ~12 candidates (complements/substitutes as
 packages), the single largest unbuilt piece of the original spec. Also still open from §8
 (Outputs): `results.csv`/`winner.json` as literal files (currently substituted by
-`data/cache/tiered_report.json` + the HTML ledger, not the spec'd files themselves), package
-goals (ties to the interaction matrix), and the gems/enchants free-reshuffle-vs-requires-gold
-split. Per-currency spend sections from §8 are moot — acquisition-cost tracking was explicitly
-dropped in favor of Wowhead linking.
+`data/cache/tiered_report.json` + the HTML ledger, not the spec'd files themselves), and package
+goals (ties to the interaction matrix).
+
+**Dropped from §8, per the user (2026-08-23) — gold-based decisions are explicitly not something
+this tool should factor in.** This kills two §8 items outright, not just "not yet": per-currency
+spend sections (already moot once acquisition-cost tracking was dropped for Wowhead linking
+instead), and the gems/enchants free-reshuffle-vs-requires-gold split (the two-number split's only
+purpose was surfacing which portion of an item's value needs gold spent to realize - once gold
+isn't a factor the tool should weigh at all, that distinction has no use). Every report number
+should keep assuming the fully-optimal gem/enchant loadout, same as it already does, with no
+"free vs. gold-gated" breakdown.
 
 **Stage 6 (new, added 2026-08-23): multi-class/multi-spec support** — extend beyond Lerynia's
 Survival Hunter to any class/spec `wowsims/tbc-new` itself supports. Per the user, this is a big
