@@ -165,6 +165,12 @@ Tool rename to something including the user's gamertag "Ruban" (e.g. RubanAutoSi
 planned, as a final rework once the product is otherwise done — not yet, folder path and
 internal naming stay as-is until then.
 
+Publishing `addons/GearingToolCompanion/` to CurseForge is planned as one of the final steps too
+— account + project via console.curseforge.com, tagged for the Anniversary client flavor
+specifically (not retail/normal Classic), a declared license, and either manual zip uploads per
+release or a `.pkgmeta` file driving their GitHub-based packager off this repo directly. Not yet —
+the addon is still actively changing session to session.
+
 **Idea collection, not decided — discuss before building**: speeding up a re-sweep after a raid
 week nets 1-2 new items. Rough thinking, for discussion, not a plan:
 
