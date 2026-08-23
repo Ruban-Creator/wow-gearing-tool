@@ -171,6 +171,15 @@ specifically (not retail/normal Classic), a declared license, and either manual 
 release or a `.pkgmeta` file driving their GitHub-based packager off this repo directly. Not yet —
 the addon is still actively changing session to session.
 
+An optional self-hosted rebuild of the HTML ledger is also planned, to be scoped later - the
+claude.ai Artifact platform's CSP blocks loading Wowhead's real tooltip-preview script (only
+Google Fonts is allowed through), but that CSP doesn't exist on a plain HTML file served from
+somewhere we control (an external webserver, or the user's Synology NAS) - Wowhead's script is
+explicitly designed for third-party embedding, so a self-hosted build could get full, authentic
+in-game-style tooltips on hover, not just the click-through links the Artifact version has. Not
+built - needs its own plan (build/deploy process, whether to keep the Artifact version as the
+convenient default alongside it, etc.) once the rest of the tool is otherwise done.
+
 **Idea collection, not decided — discuss before building**: speeding up a re-sweep after a raid
 week nets 1-2 new items. Rough thinking, for discussion, not a plan:
 
