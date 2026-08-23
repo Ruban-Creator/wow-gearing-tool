@@ -1352,3 +1352,100 @@ from container data at all: a module-level `bankIsOpen` flag, set `true` on `BAN
 on that flag. This is the standard, reliable pattern other bank addons use - inferring "is the
 bank open" from any container-API side effect is fragile precisely because slot *counts* and
 slot *contents* are populated on different lifecycles that aren't obvious until tested live.
+
+## 2026-08-23 — Real hit cap numbers (Wowhead-sourced), and she's currently well over it
+
+User pushed back on the joint-search proposal for hit-rating threshold crossings with real
+context: "we gain 3% hit as survival from talents." Rather than guess at TBC hit mechanics from
+memory, fetched Wowhead's own Hunter stat priority guide directly (in-browser, since the static
+fetch only returns the JS shell): **base hit cap is 142 rating (9%) vs a raid boss with no
+hit-affecting buffs; with Improved Faerie Fire (Balance Druid talent) it drops to 95 rating
+(6%); 15.77 rating = 1% hit.** Her `canonical_settings_survival.json` already assumes Improved
+Faerie Fire (`"faerieFire": "TristateEffectImproved"`), so her real target is 95/6%, not 142/9% -
+confirmed via the wowsims.com live site too, which only ships a 6%-hit Survival preset (no 9%
+variant), consistent with "always assume a moonkin" being the standard community assumption for
+this spec, not an arbitrary choice.
+
+Cross-checked her stated "3% from talents" against the sim's own `ComputeStats` RPC (not hand
+math): her gear alone gives 104 hit rating (`finalStats.stats[20]`, ≈6.6%), and
+`pseudoStats[24]` (`PseudoStatRangedHitPercent`) reports her actual computed hit chance as
+**9.595%** - matching 6.6% (gear) + ~3% (talent) almost exactly, confirming her number is real
+and the sim already applies it correctly (talent-derived hit doesn't even show up as "rating" at
+all, it's a separate PseudoStat channel - `sim/hunter/talents.go`'s
+`hunter.AddStat(stats.PhysicalHitPercent, ...)` for Surefooted confirms this mechanism is real
+and modeled).
+
+**Net finding: she's over-capped by ~3.6 percentage points right now (~57 rating of pure
+waste)**, spread across 5 gear pieces (Rift Stalker Mantle/Hauberk/Gauntlets, Belt of Deep
+Shadow, Arcanite Steam-Pistol). Per the user's own framing, this isn't a "mistake" - it's just
+what P2 BiS itemization gives you; P3 gear naturally itemizes differently. Checked whether this
+needed a new analysis pass: it didn't - the already-completed full sweep's existing per-item MV
+numbers for these exact 5 slots already correctly account for the wasted hit, since the real sim
+computes actual miss-chance-driven damage rather than a crude heuristic. All 5 slots already had
+real, sim-verified upgrades in the existing report (Shoulder +8.2, Chest package +25.2, Hands
++8.1, Waist +13.4, Weapon +9.7) - nothing new needed computing.
+
+Added a GUI future-scope note (not built) for a 6%/9% hit-target toggle, since wowsims itself
+ships both as presets for other specs - see CLAUDE.md.
+
+## 2026-08-23 — Melee weave: real mechanism traced, real +333 DPS finding, boss-dependent
+
+User: "we still need to implement the 2 handed features since meleeweaving can lead to a big dps
+gain." Investigated properly before building anything, since `slot_for_item()` had deliberately
+excluded 2H weapons with a note that evaluating them under the DW rotation "would be a wrong
+number, not just worse" - the melee-weave rotation itself was never built.
+
+**How the sim actually consumes rotation config, traced from source rather than assumed**:
+grepped the entire vendored sim for consumers of `SpecRotationJson` (the `TypeSimple` knob that
+supposedly carries `meleeWeave:true`/`false`) - found **zero Go backend consumers**, only the
+raw proto definition. The web UI must pre-compile `TypeSimple` + `specRotationJson` into a full
+`TypeAPL`-equivalent script client-side at save/export time; the backend just executes whatever's
+in `rotation.priorityList`/`groups`/`valueVariables` verbatim, regardless of what `rotation.type`
+claims. Confirmed: our own `canonical_settings_survival.json` already contains this fully
+compiled APL, and it ALREADY has weave-conditional branches built into the same script used for
+non-weave play - every relevant action is gated on one boolean:
+`{"variableRef":{"name":"Melee weave"}}`, currently `{"const":{"val":"false"}}}`. The real,
+correct switch is flipping that one constant, not touching `specRotationJson` at all (which
+nothing reads).
+
+Created `profiles/tbc/canonical_settings_survival_2h.json` = the DW settings with only that one
+constant flipped to `"true"`. Verified this is a real mechanic and not a bug via the raw damage
+breakdown (`raidMetrics`, not just the aggregate DPS number) on a test 2H config (Twinblade of
+the Phoenix, offhand emptied): ranged auto shot (`OtherActionShoot`) fires at its completely
+normal, unthrottled rate; the offhand attack action correctly shows **zero casts** (proof the
+slot is genuinely empty, not silently still swinging); and the mainhand melee auto-attack channel
+- which sits at exactly zero casts for a normal kiting hunter, since distance-from-target never
+drops into melee range - picks up real, substantial additional damage from the periodic
+weave-in windows. This is genuinely free damage from filling otherwise-wasted GCD gaps, not a
+double-count artifact.
+
+**Tested on her actual current DW gear, zero item changes**: +333 DPS combined just from
+flipping the rotation (2685.9 -> 3018.8, ~12.4%) - larger than every single item MV found this
+entire session, combined. This raised an immediate question: should this become the new default
+baseline for everything? User's answer: **"we do plan to weave on bosses that allow for it but
+not all do."** So there is no single correct baseline - it's genuinely boss-dependent, unlike
+every other setting in this tool (buffs/debuffs/talents are raid-wide constants). Decided: keep
+`canonical_settings_survival_2h.json` as a separate, explicitly-labeled variant rather than
+replacing the default - matches the same "two separate, never-silently-collapsed numbers"
+principle already established for Player/Raid columns.
+
+**Real, DB-confirmed correctness gap found along the way**: `handType` was only ever checked for
+the `TwoHand` exclusion. `MainHand`-only (1) and `OffHand`-only (3) restrictions were never
+enforced anywhere - `mv_single`'s "try every slot this item could occupy" logic for
+`weapon_dual_wield` items could have silently tested a hand-restricted weapon in the wrong slot.
+Found via a real example the user raised: Mount Hyjal TRASH drop (`sources[].drop.otherName ==
+"Trash"`, zone 3606) "The Fists of Fury" (setId 719) - **Claw of Molten Fury** (id 32946,
+`handType:1`/MainHand-only) + **Fist of Molten Fury** (id 32945, `handType:3`/OffHand-only), a
+deliberately matched pair. Fixed with `optimizer.is_hand_restricted_conflict()`, wired into
+`mv_single` alongside the existing unique-item conflict check.
+
+Tested the real pair itself: **-49.9 DPS without weave, -39.4 DPS even with weave on**, vs her
+current Netherbane/Blade of the Unrequited - a real downgrade either way, weave narrows the gap
+but doesn't flip the sign. Checked for a "Weightstone" consumable (the user's hypothesis was
+"upgrade IF we use weightstones on both") to see if that could close the remaining gap: **this
+sim's DB has no Weightstone-equivalent modeled at all** - nothing matching in the `enchants`
+table, and the settings schema (`apiVersion 14`) has no weapon-applied-consumable field at all
+(the old `mhImbueId`/`ohImbueId` fields mentioned in an earlier NOTES entry belong to a stale,
+different schema version, not this one). Reported the raw comparison as real and correct, and
+explicitly flagged that Weightstone's real effect is outside what this sim can currently answer -
+not silently assumed to be zero, not guessed at a value either.
