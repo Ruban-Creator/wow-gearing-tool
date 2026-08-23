@@ -1833,3 +1833,41 @@ this stage, both fixed the same session:
    AFTER the genuinely novel rows (previously all 50 rows sorted purely by
    |interaction|, which buried the 3 real trinket findings under 47 near-
    identical ~+30 artifact rows at the top of the list).
+
+## 2026-08-23 - Tried an EP cutoff for the interaction matrix pool, reverted - structural conflict
+
+After confirming the active-set-slot full-pool rule was producing a genuinely large
+search space (122 candidates -> 7558 pairs, measured, not estimated), tried adding a
+crude STAT_WEIGHTS-based EP cutoff for non-set, non-Hit/Expertise candidates in those
+slots (keep only if within 70% of the slot's best EP). This is the same prefilter
+pattern already used elsewhere in this codebase (sweep_all_loot.py's own candidate
+filter, gem_optimizer.py's gem choice) and explicitly sanctioned by the ground rules
+as a legitimate prefilter heuristic.
+
+Real verification (comparing against a real external EP reference the user pulled up,
+and cross-checking every active-set-slot item's crude score directly) caught something
+the ground rules already warned about, seen concretely instead of abstractly this time:
+Attumen's "Gloves of Dexterous Manipulation" - id 28506, the exact, already-validated
+rescue this whole pool-gap fix exists to catch (+13-14 DPS once paired with a T6
+shoulder swap that breaks the same set bonus) - scored crude_ep=154 against a cutoff of
+165 (70% of Hands' best, 236). The EP filter would have excluded it.
+
+This isn't a threshold-tuning problem (moving 0.7 to some other fraction). It's a
+structural conflict: a "rescue" is by definition an item that looks unremarkable or bad
+by any solo-item metric (crude EP, real solo sim MV, doesn't matter which) - that's
+what makes it invisible to a naive report in the first place. Any prefilter that scores
+candidates by "how good does this look alone" will, by construction, exclude exactly
+the items the mechanism is supposed to find. Reverted the EP cutoff entirely.
+
+The correct lever for pool size, confirmed by this investigation: real pair-level
+screening (the pre-screen@100 -> screen@1000 -> resolve@30000 funnel), which tests the
+actual joint effect instead of a solo proxy, is the only sound way to shrink the search
+space for these specific slots. The pre-screen tier's own cost across thousands of real
+pairs (measured: ~5946 pairs, roughly 12 minutes just for the cheapest tier) is the
+honest, necessary cost of doing this analysis correctly for a genuinely deep,
+well-itemized raid tier - not a bug to engineer away with a shortcut.
+
+Also generalized active_set_slot_labels() the same session: was hardcoded to the
+classic 5 tier-armor slots (head/shoulder/chest/hands/legs); per the user, Phase 5 has
+real sets on boots/belt/wrist too, so hardcoding to 5 slots would silently miss an
+active set bonus anywhere else. Now checks every single-occupancy slot dynamically.
