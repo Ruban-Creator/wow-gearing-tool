@@ -1114,3 +1114,52 @@ path until this is root-caused - a real production run easily exceeds 34 RaidSim
 `get_agility`/ComputeStats path remains unaffected (verified separately at 500/500 calls with
 zero issues - `ComputeStats` never goes through `RunRaidSimConcurrentAsync` at all, consistent
 with the resource being specific to that function).
+
+## 2026-08-23 — Acquisition gating (reputation/arena rating) + addon rename to GearingToolCompanion
+
+User caught a real bug from the ledger: Ring wasn't showing as Achieved BiS even though it should
+be - Band of the Eternal Champion (a real +18.3 DPS upgrade) requires Exalted with The Scale of
+the Sands, which she isn't yet. The sim has no concept of acquisition gating at all (prices an
+item once you have it, not whether you can currently get it) - nothing upstream would ever catch
+this. Generalized to also cover arena rating gates per the user's own correction (Vengeful
+Gladiator's Rifle - Arena Points doesn't mean rating-unlocked; user confirmed Anniversary ruleset
+values: Weapons need 1700, Shoulders need 2000).
+
+**`core/acquisition_gate.py`**: text-pattern detection against the same `source` string already
+shown in the report - not a new data source. The DB doesn't structurally encode "Exalted" for
+every item (Band of the Eternal Champion has no `sources` field at all - the info only exists in
+Wowhead's curated text) and has zero arena rating data, so a DB-field-only approach would miss
+exactly the cases that matter. Compares against `data/acquisition_status.json` (new, user-
+maintained, not addon-synced by default logic - reputation section IS now auto-updated by
+`gear sync`, see below). Unknown standing/rating always defaults to "gate not satisfied" -
+conservative, disclosed, never silently assumes the favorable case.
+
+Gated items still show normally in their tier (never hidden), tagged `[LOCKED]` in the console /
+a red "locked" badge + explicit note in the HTML ledger. They no longer count as "beats current
+gear" for Achieved BiS purposes. Caught two previously-unflagged gates in the same pass:
+Ashtongue Talisman of Swiftness (Exalted Ashtongue Deathsworn) and Vengeful Gladiator's Rifle
+(1700 rating, Ranged).
+
+**Addon renamed `GearingToolExporter` -> `GearingToolCompanion`** (its scope outgrew "bank
+export" - now also reads reputation and arena data). Old addon folder deleted from
+`Interface/AddOns/` (WoW install, not this repo - the addon has never lived in git, it has to sit
+in the client's AddOns folder to load; `addons/BankExporter/` in this repo is just an empty
+placeholder, always has been). `GTExporterDB` -> `GTCompanionDB` SavedVariables global,
+`ingest/build_character.py` updated to match (`find_gt_companion`, `gt_companion_present`/
+`gt_companion_timestamp` meta keys).
+
+New Lua: `DumpReputation()` (walks `GetNumFactions()`, expanding collapsed headers, standing IDs
+mapped to names - Hated..Exalted) auto-merges into `data/acquisition_status.json`'s `reputation`
+dict on every `gear sync`. `DumpArena()` (`GetArenaTeam(1..3)`) is NOT auto-trusted -
+**GetArenaTeam's exact field for "the personal rating that gates a gear purchase" isn't confirmed
+against this TBC Anniversary client build**, so raw per-team data is dumped to
+`acquisition_status.json`'s `arena.raw_teams` for a human to check once; `arena.current_rating`
+stays manual until that's confirmed. **Needs the user to relogin/reload UI in-game once** before
+`gear sync` will pick up the renamed addon's SavedVariables file at all (same pattern as every
+previous addon change this session) - not yet exercised with real reputation/arena data.
+
+**Also recorded** (not built): user wants the eventual GUI to include a character-select
+dropdown (multi-character support, not just Lerynia) - added to CLAUDE.md's existing "Future
+scope" note. Tool rename to something including "Ruban" (e.g. RubanAutoSim) is planned as a
+final rework once the product is otherwise done - explicitly NOT now; folder path and internal
+naming stay as-is until then, per the user's own words.
