@@ -1627,3 +1627,35 @@ being listed in a future phase's guide doesn't mean still recommended - Gronnsta
 real BiS through Phase 4 but drops to "Optional" once Coif of Alleria takes over in Phase 5, so
 the tag reads "alternative for P5" instead of implying it's still the top pick. A name that
 doesn't match anywhere fails safe to "lasts until Phase 3" rather than asserting longevity.
+
+## 2026-08-23 — Reworked again: "BiS until Phase N", not "lasts/alternative for"
+
+The version above was still wrong per the user, in a more fundamental way than a labeling tweak.
+Two real corrections:
+
+1. Cursed Vision of Sargeras showed "[lasts P5]" because it's technically LISTED in the Phase 5
+   guide - but only as "Best Previous Phase Option," an explicit leftover the guide itself says
+   isn't really recommended anymore. Being listed at all was never the useful signal; staying the
+   genuine top pick is. It's Phase 4's "Best Personal" (a real top-tier choice for one gearing
+   route) but stops being BiS once Phase 5's real options exist - should read "BiS until P4".
+2. Thalassian Wildercloak, owned since Phase 2, staying the guide's actual top pick all the way
+   through Phase 4 is a real, non-obvious finding worth surfacing clearly - "BiS until P4" (gets
+   replaced once Phase 5 starts). Conversely, an item that was only ever a stepping-stone
+   alternative (never the guide's real top pick, even now - e.g. Rift Stalker Hauberk, kept
+   around only until the real Tier 6 piece drops) doesn't need a tag at all. Per the user: "its
+   not important to know that tier 5 is an alternative to tier 6 we understand that without a
+   tag" - showing a tag for every non-BiS item was noise, not signal.
+
+`lasts_until_phase()` (function name kept, return shape changed) now returns `bis_until_phase`
+(None when the item was never confirmed a genuine top pick anywhere - no tag shown for these at
+all) instead of the old `lasts_until_phase`/`is_best` pair. Walks phase 3 -> 4 -> 5, stopping at
+the first rank that doesn't read as an actual top pick - excludes any rank containing "Until"
+("Best Until Tier X" - a within-phase stepping stone), "Previous" ("Best Previous Phase Option" -
+an explicit leftover), "Alternative", or "Second" (both mean "a named runner-up next to a plain
+Best in the same slot"). Plain "Best" and route-qualified variants that ARE genuine top picks for
+a legitimate gearing choice ("Best Personal", "Best 6%"/"Best 9%", "Best x2", "Best Overall",
+"Best Raid Wide Increase") all still count. Absence from Phase 3's own table is treated as
+unknown rather than disqualifying (that list is already known to have real completeness gaps -
+items our own sim finds as real upgrades that the guide's table just doesn't happen to rank);
+absence from Phase 4 or 5's table is treated as "no longer relevant" and stops the walk, since
+those lists are comprehensive per-slot rankings, not curated highlights.
