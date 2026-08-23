@@ -1730,3 +1730,65 @@ in the submodule, rather than a value hand-copied into the DATA blob each time).
 line. Lesson: any one-off transform between a data file and the artifact needs to be a checked-in
 script, not an ad-hoc snippet in that turn's Bash call - otherwise the next session has no way to
 know it was ever needed.
+
+## 2026-08-23 - Stage 5 (§7): interaction matrix built, real set-bonus artifact caught and labeled
+
+I(i,j) = MV(i,j) - MV(i) - MV(j), computed for real via a genuine joint two-item
+sim (core/interaction_matrix.py) - nothing else in this tool evaluates two-item
+swaps together. Candidate pool per the user: top 3 real-upgrade candidates per
+slot, plus any candidate beyond the top 3 carrying nonzero Hit or Expertise
+Rating (stat indices 20/24, confirmed via core/stat_weights.py) - the exact
+items whose true value depends on a cap threshold elsewhere in the set, which
+is the whole reason this stage exists. Same-slot pairs are skipped UNLESS the
+slot is a paired group (ring1/ring2, trinket1/trinket2, mainhand/offhand DW) -
+those pairs are real, wearable, and often the most interesting to test.
+
+First real run surfaced something worth recording carefully: 47 of the 50 real
+(non-tied) interactions found were not real item synergy at all, but a set-bonus
+accounting artifact. She currently sits at Rift Stalker Armor's 4pc breakpoint
+(4/5 pieces: Head/Shoulder/Chest/Hands). Swapping any ONE of those slots alone
+drops her to 3pc, losing the 4pc bonus - that cost is correctly baked into that
+item's own solo MV. Swapping TWO of those slots at once still only drops her to
+2pc - the 4pc bonus is lost exactly once either way, not twice - so naively
+summing two solo MVs double-counts a cost the joint config only pays once,
+producing a phantom "+30 DPS complement" for almost any two candidates that
+touch her current 4pc slots, regardless of whether the items have anything real
+to do with each other. A second, related case: Rift Stalker Leggings (a slot
+she doesn't currently fill with this set) ADDS a piece while another candidate
+REMOVES one - together the count nets back to 4, "restoring" a bonus that was
+never really in danger from the pair as a unit.
+
+Per the user ("maybe on set items we add a value with 2pc or 4pc"), rather than
+filtering these out, each interaction row now carries a set_notes list labeling
+the real mechanism using the sim's own actual thresholds (never guessed -
+set_bonus.set_bonus_thresholds() reads them from item_sets.go). Two distinct
+cases, both correctly detected:
+- "lost by either item alone, not lost again together" (the double-counting
+  case above)
+- "one item's swap alone would lose it, but the other backfills the displaced
+  piece" (the Rift Stalker Leggings case)
+
+Both use set-piece BUCKETS (how many thresholds cleared: e.g. for [2,4], a
+piece count of 3 and 2 are the SAME bucket, both "only the 2pc tier") rather
+than a naive per-threshold >=/< comparison - the first version of this used the
+naive comparison and it never fired, because dropping from 4 to 3 and 4 to 2
+both read as "no longer >=4," so the "did together cross the SAME way as
+alone" signal was structurally unreachable. Verified against real data after
+the fix: all 47 set-bonus-driven pairs now carry a note; the 3 genuinely novel
+pairs (all trinket substitutes, see below) correctly carry none.
+
+The 3 real findings that survived: Dragonspine Trophy, Tsunami Talisman, and
+Madness of the Betrayer are pairwise SUBSTITUTES, not complements to combine.
+Verified by hand: Tsunami Talisman is a real downgrade in trinket1 (-5.8 DPS
+vs. her current Bloodlust Brooch) and only a real upgrade in trinket2 (+8.6) -
+the same slot Dragonspine Trophy also wants (+24.1 there vs only +9.0 in
+trinket1). Wearing both forces one into its worse slot, so together (+16.7)
+undershoots what summing their solo MVs would suggest (+32.7). A "substitute"
+finding is a caution against pairing them, not a recommendation - the ledger's
+legend/copy was tightened after this read ambiguously in an early draft.
+
+Also fixed while verifying against a real run: a Windows console encoding
+crash - the note text originally used a Unicode arrow character (U+2192),
+which isn't in cp1252 (the default Windows console codepage) and crashed
+print(). Replaced with ASCII "->" - the same class of bug could hit any
+future non-ASCII character added to printed report text on this machine.

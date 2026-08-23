@@ -147,17 +147,18 @@ columns** — never collapse them into one number, and never silently drop the r
 
 See the user's full spec for §0–§9. Done: Stage 1 (adapter + ingestion), Stage 2 (Survival
 mechanics blocker), Stage 3 (candidate pool: `profiles/tbc/candidate_pool_survival.json`, 79
-items across 15 slots), and Stage 4 (§6, the valuation engine actually computing `DPS*(S)` for
-these candidates — `core/run_full_sweep_mv.py` + the Phase 3 Upgrade Ledger artifact; still gets
-real refinements as gaps are found, e.g. the top-1-always-resolves fix and the flat top-5 2H list,
-but the stage itself is built and in active use).
+items across 15 slots), Stage 4 (§6, the valuation engine actually computing `DPS*(S)` for these
+candidates — `core/run_full_sweep_mv.py` + the Phase 3 Upgrade Ledger artifact; still gets real
+refinements as gaps are found, e.g. the top-1-always-resolves fix and the flat top-5 2H list, but
+the stage itself is built and in active use), and Stage 5 (§7, the interaction matrix —
+`core/interaction_matrix.py`, `I(i,j) = MV(i,j) − MV(i) − MV(j)` for the top 3 real-upgrade
+candidates per slot plus any candidate carrying nonzero Hit/Expertise Rating; real joint two-item
+sims, not estimates; a pair is only a "package" if it's a genuinely high-interaction pair — no
+rollup into named bundles beyond that, per the user).
 
-Next up: **Stage 5** (§7, the strategy layer) — chiefly the interaction matrix
-`I(i,j) = MV(i,j) − MV(i) − MV(j)` for the top ~12 candidates (complements/substitutes as
-packages), the single largest unbuilt piece of the original spec. Also still open from §8
-(Outputs): `results.csv`/`winner.json` as literal files (currently substituted by
-`data/cache/tiered_report.json` + the HTML ledger, not the spec'd files themselves), and package
-goals (ties to the interaction matrix).
+Still open from §8 (Outputs): `results.csv`/`winner.json` as literal files (currently substituted
+by `data/cache/tiered_report.json` + the HTML ledger, not the spec'd files themselves). Package
+goals are effectively covered by Stage 5's interaction matrix now that it's built.
 
 **Dropped from §8, per the user (2026-08-23) — gold-based decisions are explicitly not something
 this tool should factor in.** This kills two §8 items outright, not just "not yet": per-currency
