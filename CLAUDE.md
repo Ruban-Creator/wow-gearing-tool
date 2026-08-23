@@ -209,6 +209,11 @@ in-game-style tooltips on hover, not just the click-through links the Artifact v
 built - needs its own plan (build/deploy process, whether to keep the Artifact version as the
 convenient default alongside it, etc.) once the rest of the tool is otherwise done.
 
+**Version 2 / a separate future feature build (explicitly not this build)**: a Google Sheets
+export function for the results.csv/winner.json outputs from §8 - per the user, this would be
+nice but isn't part of the current build; noted here only so the idea isn't lost, not scoped or
+planned yet.
+
 **Idea collection, not decided — discuss before building**: speeding up a re-sweep after a raid
 week nets 1-2 new items. Rough thinking, for discussion, not a plan:
 
