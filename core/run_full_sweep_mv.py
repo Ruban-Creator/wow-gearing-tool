@@ -48,6 +48,20 @@ SWEEP_PATH = os.path.join(REPO_ROOT, "data", "cache", "full_sweep_candidates.jso
 MAX_WORKERS = 2  # matches valuation.SIMSERVER_POOL_SIZE - see its comment for why 4 was 7.4x slower
 
 SCREEN_ITERATIONS = 1000  # cheap ranking pass across the whole pool
+# Tried lowering this to 5000 on 2026-08-23 based on an initial "looks about
+# the same" observation - reverted the same session once the user directly
+# tested it side-by-side in the wowsims web UI: the same swap comparison
+# read +1.06 DPS at 30k iterations but -3.50 DPS at 5k - not just noisier,
+# the sign flipped. That's exactly the failure mode noise-honesty exists to
+# prevent (a near-zero true effect misreported as a confident directional
+# finding), so 30k stays as the real resolve precision. Real numbers from
+# that test: stdev~73 both times: SEM(30k)~=0.42, combined delta-noise
+# ~=0.6 (the +1.06 result was ALREADY borderline at 30k); SEM(5k)~=1.03,
+# combined delta-noise ~=1.5 (nowhere near tight enough to trust for an
+# effect this small). 30k is the floor for a REPORTED number - a lower
+# iteration count is fine for a screening/pre-screening GATE decision
+# (worst case there is wasted compute, not a wrong answer), never for a
+# number that gets shown as final.
 RESOLVE_ITERATIONS = 30000  # precise, only spent on each (tier, slot) leaderboard
 LEADERBOARD_SIZE = 8  # per (tier, slot), resolved - a little slack over "top 5"
 # in case resolving nudges the screening order around near the cutoff
@@ -642,17 +656,23 @@ def main():
     else:
         print("=== 2H Weapon Options (melee weave rotation) ===\n  No eligible 2H weapons in the pool.\n")
 
-    # --- Stage 5 (§7): interaction matrix - real complements/substitutes,
-    # not visible from any single item's MV alone ---
+    # --- Stage 5 (§7): interaction matrix - real complements/substitutes/
+    # rescues, not visible from any single item's MV alone. Uses the FULL
+    # screened pool (by_tier_slot), not the already-filtered tiered_out -
+    # per the user, a pool of only solo-upgrade items can never find a
+    # "rescue" (real downgrade alone, real upgrade paired with the right
+    # other swap) since the candidate itself would never enter the pool. ---
     interactions = interaction_matrix.compute(
-        SETTINGS_TEMPLATE, candidates, baseline_config, tiered_out,
+        SETTINGS_TEMPLATE, by_tier_slot, baseline_config,
         SCREEN_ITERATIONS, RESOLVE_ITERATIONS, opt.SEED)
-    print("=== Interaction Matrix (top-3-per-slot + Hit/Expertise candidates) ===")
+    print("=== Interaction Matrix (top-3-per-slot + Hit/Expertise + full active-set-slot pool) ===")
     if interactions:
         for row in interactions:
             a, b = row["item_a"], row["item_b"]
             sign = "+" if row["interaction"] > 0 else ""
-            print(f"  {row['kind'].upper():<11} {a['name']} ({a['slot']}) + {b['name']} ({b['slot']}): "
+            a_tag = " (owned)" if a.get("owned") else ""
+            b_tag = " (owned)" if b.get("owned") else ""
+            print(f"  {row['kind'].upper():<11} {a['name']}{a_tag} ({a['slot']}) + {b['name']}{b_tag} ({b['slot']}): "
                   f"I={sign}{row['interaction']:.1f} DPS  "
                   f"(alone: {a['name']} {row['mv_a']:+.1f}, {b['name']} {row['mv_b']:+.1f}, "
                   f"together: {row['mv_joint']:+.1f})")
