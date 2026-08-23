@@ -1589,3 +1589,21 @@ larger than a pure heal effect would suggest at first glance - plausible explana
 pet DPS uptime (a pet that doesn't die/go quiet from unhealed damage keeps dealing damage longer
 across a full fight), not re-derived or second-guessed further - the sim's own model is trusted
 per the ground rules, this is just noted as an interesting result worth being aware of.
+
+## 2026-08-23 — Acquisition cost dropped; Wowhead item/recipe linking added instead
+
+Started building a per-item acquisition cost feature (§7's cost tables) - checked the sim's DB
+directly first and confirmed it has NO cost data at all (only `rep`/`drop`/`crafted` source
+*types*, no prices anywhere). Only 4 real-upgrade items in the current report are even non-drop
+(Vengeful Gladiator's Rifle - 1500 Arena Points; Ashtongue Talisman of Swiftness - 23g 5s 25c;
+Band of the Eternal Champion - no cost, pure quest reward; Bindings of Lightning Reflexes -
+Leatherworking, 5 real reagents pulled from Wowhead). User cancelled this mid-build and asked to
+skip acquisition cost entirely in favor of Wowhead linking instead - simpler, more broadly
+useful, and needs zero manual research per item since every report row already carries a real
+`item_id`.
+
+Implemented: every item name in the artifact links to `wowhead.com/tbc/item=<id>`. For crafted
+items specifically, also added a small 🔨 link to the real crafting recipe page
+(`wowhead.com/tbc/spell=<spellId>`) - found that `sources[].crafted.spellId` was already sitting
+in the DB, just discarded by `describe_source_and_tier()` (only the profession name was kept).
+Now threaded through as `craft_spell_id` on every report row.
