@@ -160,6 +160,29 @@ Still open from §8 (Outputs): `results.csv`/`winner.json` as literal files (cur
 by `data/cache/tiered_report.json` + the HTML ledger, not the spec'd files themselves). Package
 goals are effectively covered by Stage 5's interaction matrix now that it's built.
 
+**Stage 7 (new, added 2026-08-23, PRIORITY — confirmed by the user, not just idea-collection
+anymore): decompose the re-sweep so a weekly gear change doesn't force a full recompute.**
+Directly motivated by watching this session's Stage 5 sweep take 15-20+ minutes live, and the
+realization that this isn't a one-off cost - it's what would happen EVERY WEEK after a raid, every
+single time any gear changes. Root cause, confirmed by tracing the actual caching mechanism:
+`sim_cache.json`'s key is a hash of the FULL 17-slot gear config being evaluated, not per-candidate
+- so every trial config (baseline-with-one-slot-swapped) embeds the ENTIRE baseline, meaning a
+single changed slot (say Legs) changes the hash of literally every OTHER candidate's trial config
+too, even ones with zero real relationship to Legs. The cache isn't wrong, it's just far more
+conservative than necessary: most candidates' true MV doesn't actually depend on unrelated slots'
+specific contents, but the current architecture can't tell the difference between "genuinely
+coupled, must recompute" and "hash technically changed, but the real number provably didn't."
+
+This is the same problem already sketched under "Idea collection" below (decompose into
+independent single-slot evaluation + explicit joint search only over ACTUALLY-coupled subgroups -
+rings, trinkets, weapons, tier-set slots), now confirmed as a real, lived cost rather than a
+theoretical one, and made worse by Stage 5's interaction matrix (pairs multiply the same problem
+across two slots, and which slots even count as "active set slots" can shift week to week as she
+moves between set bonuses). Not yet scoped in detail - the open question from that idea-collection
+note still applies (the baseline `DPS*(P)` itself shifts every time P gains an item, so no caching
+scheme fully eliminates recompute proportional to remaining-candidate-count) - but this is now a
+real near-term priority to design properly, not a someday idea.
+
 **Dropped from §8, per the user (2026-08-23) — gold-based decisions are explicitly not something
 this tool should factor in.** This kills two §8 items outright, not just "not yet": per-currency
 spend sections (already moot once acquisition-cost tracking was dropped for Wowhead linking
