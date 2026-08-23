@@ -919,3 +919,49 @@ ambiguous, needs the user's call" carve-out - option 1 is my lean, but it's the 
 whether the Go-side work is worth it now vs. deferring the raid-column ground rule (with this
 now explicitly documented as a known, disclosed gap rather than a silent one) until it matters
 for an actual decision.
+
+## 2026-08-23 (overnight, autonomous) — ComputeStats wired into simserver.exe, verified correct
+
+Continuing last cycle's finding (raid AP contribution column needs a config's Agility, which
+`RaidSimResult` never carries). Ruled out the debug-log-parsing shortcut definitively this cycle
+first: grepped `sim/core/*.go` for where debug logging prints stats - only `pet.go` logs a pet's
+stats (`pet.Log(sim, "Pet stats: %s", pet.GetStats().FlatString())`); nothing logs the player's
+own stats anywhere, so there's no free text-log path to Agility. Also confirmed `wowsimcli`'s CLI
+(`cmd/wowsimcli/cmd/`) has no `stats`/`compute-stats` subcommand at all - `ComputeStats` is
+genuinely unreachable from anything this pipeline currently calls.
+
+**Checked `core.ComputeStats`'s actual implementation** (`sim/core/api.go:12`) - much simpler than
+`RunRaidSimConcurrentAsync`: a single synchronous function, `ComputeStats(csr *proto.ComputeStatsRequest) *proto.ComputeStatsResult`,
+no async/channel handling needed. `ComputeStatsRequest{raid, encounter}` is a strict subset of the
+fields already in every `RaidSimRequest` this pipeline builds via `bridge.exe` - no new Go-side
+request construction needed, just `{"raid": req["raid"], "encounter": req["encounter"]}` in Python.
+This narrowed my own "needs the user's call" flag from last cycle down to a single clearly-correct
+approach (log-parsing and Python reimplementation both ruled out/rejected), low complexity, and
+directly implements an already-mandated CLAUDE.md ground rule rather than new scope - built it.
+
+**`adapters/tbc/simserver/main.go`**: added `isRaidSimRequest()` (peeks for a `simOptions` key -
+present on every `RaidSimRequest`, absent on every `ComputeStatsRequest` - to route each stdin
+line without a wire-format change) and `runComputeStats()` (calls `core.ComputeStats` directly).
+Purely additive - `runOne`/the existing RaidSim path is untouched, zero regression risk to the
+DPS pipeline. Needed `google.golang.org/protobuf/proto.Message` for the shared return type, but
+had to alias it (`protoiface`) since the generated types package is already imported as `proto`.
+
+**Verified two ways**: (1) re-ran a normal 1000-iteration DPS eval through `valuation.py` after
+rebuilding - combined 2656.6, matching the existing baseline range, confirming the RaidSim path
+has zero regression. (2) Sent a `ComputeStatsRequest` built from her current real gear
+(`canonical_settings_survival.json` + `character.json`'s equipped items) - got **final
+(fully-buffed) Agility 1195**, `stats[1]` per `StatAgility = 1` in `common.proto`. This is very
+close to the independently-recorded **"298 stacks → Agility 1192 at first proc"** from the Stage 2
+ablation debug run earlier this session (same real gear, different measurement method entirely -
+aura stack count vs. direct ComputeStats query) - two independent methods landing within 3 Agility
+of each other is real cross-validation, not just a plausible-looking number.
+
+**Not done yet, deliberately left for the next firing**: this only proves the plumbing is correct
+and reachable - it is NOT yet wired into `valuation.py`/`marginal_value.py`/`run_full_sweep_mv.py`
+as an actual reported column. Next concrete step: add a Python helper (probably in
+`adapters/tbc/valuation.py` or a new small module) that calls this ComputeStats path, feeds the
+result plus `measured_ew_uptime()` (from the same RaidSimResult a normal MV eval already produces)
+and `physical_attacker_count=9` (§0's stated 8-10 raid comp, midpoint - already used once, see the
+Stage 2 entry above, not a new number) into `expose_weakness.raid_ap_contribution()`, and add the
+result as an explicit second column on `mv_single`'s/`mv_bundle`'s output dicts, threading it
+through to the tiered report's print/JSON output per CLAUDE.md's Stage 2 ground rule.
