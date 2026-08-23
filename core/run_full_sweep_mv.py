@@ -264,11 +264,22 @@ def main():
     for set_name in sorted(set_names):
         prog = set_bonus.set_progression(SETTINGS_TEMPLATE, set_name, candidates, baseline_config,
                                           baseline_screen, owned_items, SCREEN_ITERATIONS)
-        first_upgrade = next((p for p in prog.get("progression", []) if p["upgrade"]), None)
-        if not first_upgrade:
+        progression = prog.get("progression", [])
+        if not any(p["upgrade"] for p in progression):
             continue
-        note = (f"downgrade alone, but part of {set_name} - {first_upgrade['pieces_held']}pc combo "
-                f"is +{first_upgrade['mv_vs_current_gear']:.1f} vs current gear (screened)")
+        # Show the real, sim-measured MV at EVERY piece count, not just the
+        # first one that crosses into "upgrade" - per the user: the DB has
+        # no separate table saying which piece counts actually carry a
+        # bonus (setId/setName only, no threshold data), so rather than
+        # guess which counts are "real" bonuses, show all of them and let
+        # the reader see exactly where the value comes from. A jump
+        # between two counts IS the bonus; a flat line between them means
+        # that piece's value is just its own stats, no bonus at that count.
+        steps = " · ".join(
+            f"{p['pieces_held']}pc {p['mv_vs_current_gear']:+.1f}" + (" (upgrade)" if p["upgrade"] else "")
+            for p in progression
+        )
+        note = f"part of {set_name}, vs current gear (screened): {steps}"
         for _, cand in set_bonus.set_pieces_in_pool(set_name, candidates):
             set_notes_by_item[cand.item_id] = note
     if set_notes_by_item:
