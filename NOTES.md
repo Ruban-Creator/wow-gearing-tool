@@ -1335,3 +1335,20 @@ Stalker Hauberk is a free, real improvement she hadn't done yet), and every MV i
 shifts down correspondingly to compensate - this is the pipeline getting *more* correct, not the
 sim's model changing, so it doesn't violate the "assume the sim's model is correct" rule; it's a
 data-completeness/methodology fix on this tool's side of the boundary.
+
+## 2026-08-23 — Bank-clearing bug, second real cause: bag -1's slot COUNT is static, only item links go nil
+
+The first bank-loss fix (`if C_Container.GetContainerNumSlots(-1) == 0 then return end`) didn't
+actually fix it - user reported "The Save Button still clears the Bank" again. Root cause:
+`GetContainerNumSlots(-1)` returns the real, purchased slot count (e.g. 24) **whether or not the
+bank frame is open** - only the per-slot `GetContainerItemLink` calls go nil while closed. So the
+guard's condition (`== 0`) never actually triggered on a closed bank, `DumpContainers` proceeded
+to scan every slot, got nil links back, and happily saved an all-empty bank over the last good
+snapshot - exactly the reported symptom, just via a subtly wrong precondition check.
+
+Fixed properly this time by tracking real open/closed state via events instead of inferring it
+from container data at all: a module-level `bankIsOpen` flag, set `true` on `BANKFRAME_OPENED`
+(already handled) and `false` on the newly-registered `BANKFRAME_CLOSED`. `SaveBank()` now gates
+on that flag. This is the standard, reliable pattern other bank addons use - inferring "is the
+bank open" from any container-API side effect is fragile precisely because slot *counts* and
+slot *contents* are populated on different lifecycles that aren't obvious until tested live.
