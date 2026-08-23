@@ -1254,3 +1254,84 @@ is opened).
 Also swapped the minimap button's click mapping per user feedback - left-click now shows the
 status panel (the more discoverable, "look at it" action), right-click does the quick silent
 save. The reverse felt unintuitive.
+
+## 2026-08-23 — Reputation still 0, real root cause: `C_Reputation` doesn't exist on this client, and `hasRep` was misread
+
+The `OnShow` fix above didn't help either. Added temporary debug prints to `DumpReputation()` to
+stop guessing and just see what each API actually returns. The debug output was decisive:
+`C_Reputation` is **not present at all** on this client build (contrary to the previous entry's
+assumption) - it always falls through to the pre-11.0 `GetNumFactions`/`GetFactionInfo` globals,
+and those return real, correct data: `GetNumFactions() = 43`.
+
+Despite that, the counting loop still produced 0 real factions. The debug dump of row 2 showed
+why: `name=Darnassus isHeader=false isCollapsed=false hasRep=false standingId=7`. `standingId=7`
+is real (Revered) data, but `hasRep=false` on a completely normal, non-header faction. The
+counting condition was `not isHeader and hasRep and name` - it required `hasRep` to be true,
+but **`hasRep` is not "this row has valid reputation data"** at all; it only flags whether a
+*header* row itself additionally carries its own account-wide reputation bar (rare - most
+headers don't). It's false/nil on every ordinary leaf faction by design, which is exactly why
+all 43 real factions were silently skipped despite the count being right the whole time.
+
+Fixed by keying the count off `not isHeader and name and standingId` instead - `standingId`
+being present is what actually means "this is a real, trackable faction row." Removed all the
+temporary debug prints and the stale "matches the modern C_Reputation namespace" comment (this
+client genuinely doesn't have it) now that the real cause is confirmed and fixed, rather than
+inferred a third time.
+
+**Lesson**: don't trust an unfamiliar API return value's *name* to mean what it sounds like -
+`GetFactionInfo`'s field order/semantics needed a live raw dump to actually pin down, not the
+assumption a plausibly-named boolean does the obvious thing.
+
+## 2026-08-23 — Gem baseline fix: real-socketed gems for owned gear + meta gem requirement enforced
+
+Investigated a user-flagged edge case: Gloves of Dexterous Manipulation (Kara) + Ranger-General's
+Chestguard (SSC) are commonly cited P2 SV BiS but weren't showing as upgrades. Two real,
+compounding pipeline bugs found along the way (not the original question, but more consequential
+for every MV number the tool produces):
+
+1. `build_owned_config()` (baseline) was using her *literal currently-socketed* gems while
+   candidates always got the optimal default gem. Confirmed her actual gem in Rift Stalker
+   Hauberk was still Delicate Living Ruby (phase 1, Agi 8) instead of Delicate Crimson Spinel
+   (phase 3 default, Agi 10) - a real, un-re-gemmed socket she hadn't noticed. This silently
+   understated `DPS*(P)` (her baseline) and correspondingly overstated every single candidate's
+   MV, since MV = DPS*(P∪{i}) − DPS*(P). Fixed: baseline now fills the same optimal gem logic as
+   candidates (`core/gem_optimizer.py::best_gems_for_item`, wired into `optimizer.py`).
+
+2. Tried a "smarter" gem choice that color-matches an item's sockets to unlock its socket bonus
+   (hybrid AP/RAP/Crit gems) whenever `STAT_WEIGHTS` said the bonus + hybrid beat pure Agility.
+   User was skeptical ("i don't think its the socket bonus"). Direct sim A/B/C test at 30k
+   iterations against Ranger-General's Chestguard proved the heuristic actively harmful: pure
+   Agility scored 2701.4, her real (partly outdated) gems scored 2656.0, the "smart" hybrid
+   choice scored **2651.6 - worse than even her suboptimal real gems**. Root cause: Agility is a
+   Hunter multi-stat-conversion stat (→RAP/Crit/Armor) that a flat linear `STAT_WEIGHTS` entry
+   can't capture, so it's systematically undervalued relative to flat AP/RAP stacking. Reverted
+   to pure Agility (`DEFAULT_GEM`) in every socket; kept the color-matching/socket-bonus
+   infrastructure in `gem_optimizer.py` as real DB-grounded groundwork, unwired until a version
+   of it is actually verified per-candidate against the sim rather than a crude weight table -
+   this is CLAUDE.md's own "never shortcut to EP-only ranking" rule, just newly discovered to
+   also apply to gem choice, not only item choice.
+
+3. Pure-Agility-everywhere silently breaks her real meta gem: user caught it directly ("you are
+   deactivating my meta gem"). Confirmed via `sim/tbc-new/sim/core/item_effects.go` that the sim
+   does **not** model or check meta gem activation requirements at all -
+   `ApplyMetaGemCriticalDamageEffect` applies the 3% crit-damage bonus unconditionally, no
+   color-count check anywhere - so the sim's own reported DPS wouldn't reflect an invalid
+   real-world gem setup. Web research on her actual meta gem (Relentless Earthstorm Diamond,
+   id 32409) gave three conflicting answers across sources; correctly did not trust any blind and
+   asked the user to check her own in-game tooltip instead. Confirmed requirement (her
+   screenshot): "Requires at least 2 Red Gems / at least 2 Yellow Gems / at least 2 Blue Gems",
+   counted across her whole gear. No hunter-relevant (AP/RAP/Crit/Hit) pure Blue gem exists in
+   this DB at all - every quality-4 Blue gem is Stamina/Spirit/Intellect - so satisfying the
+   requirement always costs real stat value; a Green gem (Blue+Yellow hybrid) satisfies both
+   missing colors from one socket, making 2 Green gems the minimum-sacrifice fix (vs 3+ sockets
+   for any pure-color combination). Implemented `gem_optimizer.py::ensure_meta_requirement()` -
+   swaps the fewest pure-Agility sockets to the best Green gem needed to satisfy any shortfall,
+   no-op for any other meta gem or if already satisfied. Verified: swaps exactly 2 sockets
+   (Head + Shoulder → Sundered Chrysoprase), final valid baseline = 2685.5 (between the invalid
+   2701.4 meta-broken number and her real un-re-gemmed 2656.0).
+
+**Net effect**: the tool's own baseline DPS number changes (goes up, since re-gemming Rift
+Stalker Hauberk is a free, real improvement she hadn't done yet), and every MV in the pool
+shifts down correspondingly to compensate - this is the pipeline getting *more* correct, not the
+sim's model changing, so it doesn't violate the "assume the sim's model is correct" rule; it's a
+data-completeness/methodology fix on this tool's side of the boundary.
