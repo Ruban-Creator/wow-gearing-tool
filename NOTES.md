@@ -1485,3 +1485,30 @@ committing: non-fist configs produce a byte-identical fingerprint to before this
 mutation happens for them), so the existing cache stays valid for the vast majority of entries -
 only fist-weapon candidates (Blackhand Doomsaw, Darkspear, the Molten Fury pair, ~40 items total
 across the pool) get a genuinely different fingerprint and correctly recompute.
+
+## 2026-08-23 — Real regression: hand-restriction check silently zeroed every non-weapon slot
+
+User caught it immediately from the published artifact: "it seems we now didn't run p3 items at
+all? no upgrades?" Achieved BiS had grown from its real 3 slots (Neck/Back/Ring) to nearly every
+slot in the game (Head/Shoulder/Chest/Wrist/Hands/Waist/Legs/Feet/Ring/Trinket/Ranged) - as if
+her current gear now beat the entire Phase 3 pool everywhere, minutes after a run that correctly
+showed dozens of real upgrades in those exact slots. Root cause: `is_hand_restricted_conflict()`
+(added a few entries above, for the Molten Fury pair fix) computed
+`hand_type == _SLOT_TO_HAND_RESTRICTION.get(slot)` with no None-guard. A non-weapon item's
+`handType` is `None`; `_SLOT_TO_HAND_RESTRICTION.get(slot)` for any non-weapon slot (head, chest,
+trinket1, etc.) is ALSO `None` (key not in the dict). `None == None` is `True` in Python, so
+every single non-weapon candidate in every non-weapon slot was silently treated as a hand
+conflict and excluded from `mv_single`'s trial loop - `best` stayed `None`, and every candidate
+came back `{"excluded_reason": "unique conflict in every candidate slot"}` instead of a real MV.
+
+Confirmed directly: `mv_single()` on Cursed Vision of Sargeras (real +13.3 DPS Head upgrade,
+reported minutes earlier) returned the exclusion instead of a number. Fixed by returning `False`
+immediately when the slot isn't a real weapon slot (`mainhand`/`offhand`) or the item has no
+`handType` at all - the check only ever means something for an actual weapon in a weapon slot.
+Cache itself was never corrupted (the exclusion happened before any sim call, so no bad values
+were ever written) - a rerun after the fix reproduced the exact known-good numbers immediately.
+
+**Lesson**: a boolean comparison against two independently-computed "not applicable here" values
+(`None`/absent) is a real Python footgun - `x == y` doesn't distinguish "both real values happen
+to match" from "neither value applies at all." Should have guarded on "is this even a scenario
+where the check applies" first, not trusted equality to naturally handle the null case.
