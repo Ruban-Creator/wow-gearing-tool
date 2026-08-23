@@ -1449,3 +1449,39 @@ table, and the settings schema (`apiVersion 14`) has no weapon-applied-consumabl
 different schema version, not this one). Reported the raw comparison as real and correct, and
 explicitly flagged that Weightstone's real effect is outside what this sim can currently answer -
 not silently assumed to be zero, not guessed at a value either.
+
+## 2026-08-23 — Correction: Weightstone IS modeled, just not where I looked
+
+Above entry was wrong. Only checked `db.json`'s `items`/`enchants`/`consumables` tables (all
+empty for "weightstone") and concluded it wasn't modeled at all. User's own tooltip screenshot
+("Adamantite Weightstone... Increase blunt weapon damage by 12 and add 14 critical hit rating
+for 1 hour") prompted grepping the actual Go source instead of trusting a DB-table absence:
+`sim/core/consumes.go`'s `case 34340: // Addy Weightstone` matches the tooltip exactly
+(`MeleeCritRating +14`, `BaseDamageMin/Max +12` on the imbued hand). The mechanism is
+`ConsumesSpec.mhImbue_id`/`ohImbue_id` (proto fields 10/11, JSON `mhImbueId`/`ohImbueId`) - real,
+current fields our settings files simply never populated (the earlier "stale mhImbueId/ohImbueId,
+different schema" note was about an unrelated bug in a diagnostic script, not evidence the fields
+don't exist now). Also found 29453 ("Addy Sharpstone", same effect, bladed-weapon-gated) in the
+same switch. **Lesson**: absence from a DB export table doesn't mean absence from the sim's
+model - the Go source is the actual ground truth, the DB tables are just what got exported into
+JSON for item/gem lookups.
+
+User's scope: only Fist weapons get auto-imbued (Weightstone), not bladed weapons too - "they
+have a bigger benefit due to flat crit" (a flat +14 rating / +12 damage bonus is a bigger
+relative gain on a fist weapon's typically smaller stat/damage budget than on a bladed weapon's
+larger one). Implemented in `adapters/tbc/valuation.py`: `_apply_weapon_imbues()` checks
+mainhand/offhand's `weaponType` and sets `mhImbueId`/`ohImbueId` to 34340 only when it's
+`WeaponTypeFist` (3); every other weapon type is left exactly as the settings file specifies
+(currently unset). Wired in before cache-key fingerprinting (not after), since two configs that
+trigger different imbue outcomes must not collide on the same cache key -
+`_fingerprint_settings()` now takes the mutated dict directly rather than re-reading the file, so
+the fingerprint always reflects what's actually about to run.
+
+Real final number for the Molten Fury pair (superseding both earlier estimates - the first
+had no imbue on either side, the second wrongly gave the *baseline* bladed weapons a Sharpstone
+imbue the user never asked for): **-30.7 DPS vs current gear, no weave** - through the
+now-corrected, automatic pipeline. Still a real downgrade. Checked the cache blast radius before
+committing: non-fist configs produce a byte-identical fingerprint to before this change (no
+mutation happens for them), so the existing cache stays valid for the vast majority of entries -
+only fist-weapon candidates (Blackhand Doomsaw, Darkspear, the Molten Fury pair, ~40 items total
+across the pool) get a genuinely different fingerprint and correctly recompute.
