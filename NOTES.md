@@ -1710,3 +1710,23 @@ what's actually displayed as "top of this tier"). Verified against a real sweep 
 Shoulders' Shoulder group went from 1/5 to 2/5 resolved, with the same #1 ranking (resolving only
 tightens the number, doesn't change who's on top - as expected, since the margin check already
 guaranteed that).
+
+
+## 2026-08-23 - Published ledger went blank below "Achieved BiS"; missing build script found and fixed
+
+Republishing the artifact after the fix above broke it: everything past "Achieved BiS" rendered
+empty. Root cause - `tiered_report.json`'s "tiers" field is a dict-of-dicts
+(`{tier_name: {slot_name: [item_row, ...]}}`, convenient for the text report's nested loop) but
+the artifact's JS expects a list (`[{name, slots: [{slot, items, more}]}]`, matching how it
+actually iterates and renders). Some earlier session clearly did this transform before embedding
+the DATA blob, but only as an inline one-off - never saved anywhere in the repo - so this
+session's republish skipped it and spliced the raw dict straight in, which threw a JS exception
+partway through rendering.
+
+Fixed properly this time: `core/build_ledger_data.py` does the dict-of-dicts -> list-of-tiers
+transform as a real, reusable script (also folds in the sim commit SHA via a live `git rev-parse`
+in the submodule, rather than a value hand-copied into the DATA blob each time). Writes
+`data/cache/ledger_data.json`, which then gets spliced into the artifact's `const DATA = ...;`
+line. Lesson: any one-off transform between a data file and the artifact needs to be a checked-in
+script, not an ad-hoc snippet in that turn's Bash call - otherwise the next session has no way to
+know it was ever needed.
