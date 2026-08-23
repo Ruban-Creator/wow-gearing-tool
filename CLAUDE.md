@@ -71,10 +71,29 @@ core/                  MV optimizer, engine-agnostic, dict-based
 adapters/tbc/          SimAdapter impl: subprocess -> wowsimcli, dict in/out
 profiles/tbc/          spec profile data (survival-hunter.yaml)
 ingest/                addon SavedVariables reader (slpp Lua parser) -> character.json
-addons/BankExporter/   companion addon (<50 lines) for bank contents the exporter addon misses
+addons/GearingToolCompanion/  companion addon (bank/bags/reputation/arena export) - mirrored
+                               here so a fresh machine can install it without a live WoW client;
+                               source of truth is whichever copy was most recently edited in a
+                               session (see "Addon sync" below), not automatically kept in sync
 cli/                   `gear sync`, `gear best` entry points
 data/                  character.json, sim-result cache (keyed by gear-config hash), history
 ```
+
+## Addon sync
+
+`addons/GearingToolCompanion/` is a plain copy, not a symlink — WoW loads addons from
+`<WoW install>/Interface/AddOns/GearingToolCompanion/`, which lives outside this repo entirely
+and varies per machine. After any session that edits the live addon (usually the case, since
+addon changes need real in-game testing to verify), copy the edited files back into this repo
+and commit before ending the session:
+
+```
+cp "<WoW install>/Interface/AddOns/GearingToolCompanion/GearingToolCompanion.lua" addons/GearingToolCompanion/
+cp "<WoW install>/Interface/AddOns/GearingToolCompanion/GearingToolCompanion.toc" addons/GearingToolCompanion/
+```
+
+To install on another machine: copy `addons/GearingToolCompanion/` into that machine's
+`Interface/AddOns/` directory.
 
 ## Stack
 

@@ -1,0 +1,7 @@
+## Interface: 20506
+## Title: Gearing Tool Companion
+## Notes: Companion to WowSimsExporter. Dumps bank contents, bag contents, reputation standings, and arena team ratings (none of which WowSimsExporter covers) to SavedVariables, no clipboard needed. Minimap button (left-click: save, right-click: status panel) for less technical use.
+## SavedVariables: GTCompanionDB, GTCompanionMinimapDB
+## Author: gearing-tool
+
+GearingToolCompanion.lua
