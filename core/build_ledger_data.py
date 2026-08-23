@@ -52,6 +52,7 @@ def build():
         "tiers": tiers_list,
         "two_hand": report["two_hand"],
         "two_hand_meta": report["two_hand_meta"],
+        "interactions": report.get("interactions", []),
     }
 
 

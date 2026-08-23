@@ -32,6 +32,7 @@ import marginal_value as mv  # noqa: E402
 import set_bonus  # noqa: E402
 import acquisition_gate  # noqa: E402
 import time_horizon  # noqa: E402
+import interaction_matrix  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETTINGS_TEMPLATE = os.path.join(REPO_ROOT, "profiles", "tbc", "canonical_settings_survival.json")
@@ -641,13 +642,34 @@ def main():
     else:
         print("=== 2H Weapon Options (melee weave rotation) ===\n  No eligible 2H weapons in the pool.\n")
 
+    # --- Stage 5 (§7): interaction matrix - real complements/substitutes,
+    # not visible from any single item's MV alone ---
+    interactions = interaction_matrix.compute(
+        SETTINGS_TEMPLATE, candidates, baseline_config, tiered_out,
+        SCREEN_ITERATIONS, RESOLVE_ITERATIONS, opt.SEED)
+    print("=== Interaction Matrix (top-3-per-slot + Hit/Expertise candidates) ===")
+    if interactions:
+        for row in interactions:
+            a, b = row["item_a"], row["item_b"]
+            sign = "+" if row["interaction"] > 0 else ""
+            print(f"  {row['kind'].upper():<11} {a['name']} ({a['slot']}) + {b['name']} ({b['slot']}): "
+                  f"I={sign}{row['interaction']:.1f} DPS  "
+                  f"(alone: {a['name']} {row['mv_a']:+.1f}, {b['name']} {row['mv_b']:+.1f}, "
+                  f"together: {row['mv_joint']:+.1f})")
+            for note in row.get("set_notes", []):
+                print(f"      note: {note}")
+    else:
+        print("  No real (non-tied) interactions found among the tested pairs.")
+    print()
+
     elapsed = time.time() - start
     print(f"Elapsed: {elapsed:.1f}s")
 
     out_path = os.path.join(REPO_ROOT, "data", "cache", "tiered_report.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump({"baseline_screened": baseline_screen["combined"], "achieved_bis": achieved_bis,
-                   "tiers": tiered_out, "two_hand": two_hand_out, "two_hand_meta": two_hand_meta}, f, indent=2)
+                   "tiers": tiered_out, "two_hand": two_hand_out, "two_hand_meta": two_hand_meta,
+                   "interactions": interactions}, f, indent=2)
     print(f"Wrote {out_path}")
 
 
