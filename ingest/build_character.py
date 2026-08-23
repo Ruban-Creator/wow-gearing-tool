@@ -91,13 +91,18 @@ def find_gt_companion(name_realm: str) -> dict | None:
 
 
 def update_acquisition_status(reputation: dict, arena_teams: list) -> None:
-    """Merges fresh reputation standings into data/acquisition_status.json -
-    safe to overwrite, GetFactionInfo's standing is unambiguous. Arena
-    rating is NOT auto-applied to current_rating: GetArenaTeam's exact
-    field for "the personal rating that gates a gear purchase" isn't
-    confirmed against this client build (see the addon's own comment) -
-    the raw per-team dump is stored under raw_teams for a human to check
-    once, rather than the pipeline silently trusting a guessed field."""
+    """Merges fresh reputation standings and arena rating into
+    data/acquisition_status.json - safe to overwrite, both are now read
+    from confirmed, unambiguous sources: C_Reputation's `reaction` field
+    for standing, GetPersonalRatedInfo's `rating` per bracket for arena
+    (this client has no persistent "arena team" object at all - TBC
+    Anniversary uses the modern personal-rating system, confirmed by
+    testing: GetArenaTeam returned nothing despite real 2v2/3v3/5v5
+    ratings existing). current_rating is the max across brackets - TBC's
+    arena vendor gating is "reach X rating in ANY bracket", not tied to
+    one specific bracket, a stable, long-documented game mechanic (not
+    server-specific data), unlike the API-field question above which
+    genuinely needed confirming."""
     path = os.path.join(REPO_ROOT, "data", "acquisition_status.json")
     if not os.path.exists(path):
         return
@@ -106,7 +111,11 @@ def update_acquisition_status(reputation: dict, arena_teams: list) -> None:
     if reputation:
         status.setdefault("reputation", {}).update(reputation)
     if arena_teams:
-        status.setdefault("arena", {})["raw_teams"] = arena_teams
+        arena = status.setdefault("arena", {})
+        arena["brackets"] = arena_teams
+        ratings = [t["rating"] for t in arena_teams if t.get("rating")]
+        if ratings:
+            arena["current_rating"] = max(ratings)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(status, f, indent=2)
 
