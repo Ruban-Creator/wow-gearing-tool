@@ -189,11 +189,18 @@ it actually begins.
 User wants a GUI eventually: run a sim on demand, a phase toggle to switch reference/candidate
 data between phases, a character-select dropdown (this tool should support simming more than one
 character, not just Lerynia), a hit-target toggle (6% assuming a moonkin present vs 9% assuming
-not - both are real wowsims-provided presets, see NOTES.md's hit-cap entry) etc. Not part of any
-current stage — noted here so it isn't lost, but don't build toward it until the user actually
-asks. Keep `core/`/`adapters/` command-line-first and UI-agnostic in the meantime so a GUI can
-sit on top later without a rewrite. Until the toggle exists, keep assuming 6% (moonkin present)
-per the user's stated raid comp - never silently switch to 9% without being asked.
+not - both are real wowsims-provided presets, see NOTES.md's hit-cap entry), and a raid/zone scope
+filter (2026-08-23) - let the user directly limit which raids get scanned for upgrade candidates
+at all, not just which phase. Real motivating case: a fresh level 70 starting in Phase 5 wouldn't
+actually be raiding Sunwell Plateau day one even though it's technically "in phase" - without a
+way to say "I can currently get into Karazhan and Gruul's, not SWP," the candidate pool search
+space balloons with content that isn't really accessible yet, which is also a more practical fix
+for that scaling problem than pure compute optimization (see the three-tier funnel idea above -
+this filter shrinks the actual problem instead of just computing the huge version faster). etc.
+Not part of any current stage — noted here so it isn't lost, but don't build toward it until the
+user actually asks. Keep `core/`/`adapters/` command-line-first and UI-agnostic in the meantime so
+a GUI can sit on top later without a rewrite. Until the toggle exists, keep assuming 6% (moonkin
+present) per the user's stated raid comp - never silently switch to 9% without being asked.
 
 Tool rename to something including the user's gamertag "Ruban" (e.g. RubanAutoSim) is also
 planned, as a final rework once the product is otherwise done — not yet, folder path and
