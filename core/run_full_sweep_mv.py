@@ -363,6 +363,18 @@ def main():
         if items_here:
             achieved_bis.append({"slot": slot, "items": items_here})
 
+    # Legend printed once, up front: Player and Raid are two distinct,
+    # never-combined value dimensions (CLAUDE.md's Stage 2 ground rule).
+    # No "Overall" score is computed here on purpose - collapsing Player
+    # DPS (a real, sim-verified number) and Raid AP (an analytically
+    # estimated contribution to OTHER raid members whose classes/weapons
+    # aren't known to this tool) into one number would require inventing
+    # an AP->DPS conversion for those unknown attackers - decided against,
+    # per CLAUDE.md's "never invent data" rule. Sort/rank by Player.
+    print("Player = personal DPS gain (real sim number, what this item does for YOUR damage).")
+    print("Raid   = Attack Power granted to your raid's other physical attackers via Expose")
+    print("         Weakness (not DPS, not YOUR damage, never added into Player).\n")
+
     if achieved_bis:
         print("=== Achieved BiS (nothing in the Phase 3 pool beats these) ===")
         for entry in achieved_bis:
@@ -413,10 +425,10 @@ def main():
                 # items skip the extra ComputeStats call, same as they skip
                 # the 30k DPS resolve).
                 raid_ap = r.get("raid_ap_contribution")
-                raid_ap_str = f"{raid_ap:>+7.0f} raid AP" if raid_ap is not None else "    n/a raid AP"
+                raid_ap_str = f"Raid: {raid_ap:>+6.0f} AP" if raid_ap is not None else "Raid:    n/a AP"
                 gate = r.get("gate")
                 lock = "  [LOCKED]" if gate and not gate["satisfied"] else ""
-                print(f"    {r['name']:<36} {r['mv']:>+7.1f} DPS  {raid_ap_str}  {r['source']}{flag}{lock}")
+                print(f"    {r['name']:<36} Player: {r['mv']:>+7.1f} DPS  {raid_ap_str}  {r['source']}{flag}{lock}")
                 if rescued_by_set(r):
                     print(f"        note: {r['set_note']}")
                 if gate:
