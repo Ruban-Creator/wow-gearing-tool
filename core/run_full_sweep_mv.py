@@ -34,6 +34,12 @@ import acquisition_gate  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETTINGS_TEMPLATE = os.path.join(REPO_ROOT, "profiles", "tbc", "canonical_settings_survival.json")
+# Same buffs/debuffs/talents/encounter as SETTINGS_TEMPLATE - only the
+# "Melee weave" APL constant differs (see NOTES.md, 2026-08-23 melee weave
+# entry). 2H weapons are only ever evaluated under this variant since a 2H
+# weapon without weaving is a strict downgrade (loses the offhand item for
+# nothing) - there's no reason to test one under the non-weave settings.
+SETTINGS_2H = os.path.join(REPO_ROOT, "profiles", "tbc", "canonical_settings_survival_2h.json")
 POOL_PATH = os.path.join(REPO_ROOT, "profiles", "tbc", "candidate_pool_survival.json")
 DB_PATH = os.path.join(REPO_ROOT, "sim", "tbc-new", "assets", "database", "db.json")
 SWEEP_PATH = os.path.join(REPO_ROOT, "data", "cache", "full_sweep_candidates.json")
@@ -80,7 +86,7 @@ def slot_for_item(item: dict) -> str | None:
     t = item.get("type")
     if t == 13:
         if item.get("handType") == TWO_HAND:
-            return None  # needs the melee-weave rotation variant - not built, see NOTES.md
+            return "weapon_2h"  # own pool, own settings/baseline - see the 2H section below
         return "weapon_dual_wield"
     return TYPE_TO_SLOT.get(t)
 
@@ -152,6 +158,14 @@ def main():
     item_meta = {}  # item_id -> (source_text, tier)
     new_count = 0
 
+    # 2H weapons get their own pool, evaluated separately below (own
+    # settings variant - meleeWeave, own baseline with the offhand
+    # physically empty). They must NOT flow through the shared
+    # `candidates`/all_candidates machinery further down, which assumes one
+    # global SETTINGS_TEMPLATE and a normal DW offhand - exactly the "wrong
+    # number, not just worse" trap this was excluded from before.
+    weapon_2h_candidates: list[opt.Candidate] = []
+
     for item in sweep_items:
         if item["id"] in curated_ids:
             continue
@@ -160,6 +174,15 @@ def main():
             continue
         req_prof = idb.required_profession_name(item)
         if req_prof and req_prof not in ("Herbalism", "Mining"):
+            continue
+
+        if slot == "weapon_2h":
+            owned_here = owned_by_id.get(item["id"])
+            gems = owned_here.get("gems") if owned_here else opt.gems_for_item(item, meta_gem_id)
+            enchant = owned_here.get("enchant", 0) if owned_here else 0
+            weapon_2h_candidates.append(opt.Candidate(item["name"], item["id"], enchant, gems))
+            item_meta[item["id"]] = describe_source_and_tier(item, npc_by_id, zone_by_id)
+            new_count += 1
             continue
 
         target_slots = {
@@ -438,13 +461,80 @@ def main():
         print()
         tiered_out[tier] = tier_out
 
+    # --- 2H weapon options, own pool, own settings/baseline ---
+    # Compared against her CURRENT DW gear WITH weave enabled (not the
+    # no-weave baseline) - per the user, weave only happens "on bosses that
+    # allow for it", so on those specific bosses the real decision is
+    # "given I'm already weaving, does switching to a 2H weapon help
+    # further" - not "should I abandon DW entirely". The no-weave baseline
+    # is printed alongside for context, never silently dropped.
+    two_hand_out: dict[str, list[dict]] = {}
+    if weapon_2h_candidates:
+        weave_dw_result = mv.valuation.evaluate(SETTINGS_2H, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
+        no_weave_result = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
+        print(f"=== 2H Weapon Options (melee weave rotation) ===")
+        print(f"Baseline, current DW gear, weave OFF: {no_weave_result['combined']:.1f}")
+        print(f"Baseline, current DW gear, weave ON:  {weave_dw_result['combined']:.1f} "
+              f"(+{weave_dw_result['combined'] - no_weave_result['combined']:.1f} from weave alone)\n")
+
+        mh_idx = gc.SLOT_ORDER.index("mainhand")
+        oh_idx = gc.SLOT_ORDER.index("offhand")
+
+        def screen_2h(c: opt.Candidate):
+            trial = list(baseline_config)
+            trial[mh_idx] = c.as_entry()
+            trial[oh_idx] = {}
+            r = mv.valuation.evaluate(SETTINGS_2H, trial, SCREEN_ITERATIONS, opt.SEED)
+            return c, trial, r
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
+            screened_2h = list(ex.map(screen_2h, weapon_2h_candidates))
+
+        rows_2h = []
+        for c, trial, r in screened_2h:
+            delta = r["combined"] - weave_dw_result["combined"]
+            noise = mv.delta_noise(weave_dw_result, r, SCREEN_ITERATIONS)
+            source, tier = item_meta.get(c.item_id, ("Source unclear", "Other"))
+            rows_2h.append({"name": c.name, "item_id": c.item_id, "trial": trial,
+                             "mv": delta, "noise_stdev": noise,
+                             "tied_within_noise": abs(delta) < 2 * noise,
+                             "source": source, "tier": tier, "resolved": False})
+        rows_2h.sort(key=lambda r: r["mv"], reverse=True)
+
+        to_resolve_2h = [r for r in rows_2h[:LEADERBOARD_SIZE]
+                          if abs(r["mv"]) < mv.CLEAR_MARGIN_MULTIPLE * r["noise_stdev"]]
+        for r in to_resolve_2h:
+            resolved = mv.valuation.evaluate(SETTINGS_2H, r["trial"], RESOLVE_ITERATIONS, opt.SEED)
+            r["mv"] = resolved["combined"] - weave_dw_result["combined"]
+            r["noise_stdev"] = mv.delta_noise(weave_dw_result, resolved, RESOLVE_ITERATIONS)
+            r["tied_within_noise"] = abs(r["mv"]) < 2 * r["noise_stdev"]
+            r["resolved"] = True
+
+        for r in rows_2h:
+            r.pop("trial")
+        real_upgrades_2h = [r for r in rows_2h if not r["tied_within_noise"] and r["mv"] > 0]
+        for r in real_upgrades_2h:
+            two_hand_out.setdefault(r["tier"], []).append(r)
+
+        if real_upgrades_2h:
+            for tier in sorted(two_hand_out):
+                print(f"  -- {tier} ({len(two_hand_out[tier])} upgrade(s) vs weaving with current DW gear) --")
+                for r in sorted(two_hand_out[tier], key=lambda x: x["mv"], reverse=True)[:5]:
+                    flag = "" if r["resolved"] else "  (screened only)"
+                    print(f"    {r['name']:<36} Player: {r['mv']:>+7.1f} DPS  {r['source']}{flag}")
+        else:
+            print("  No 2H weapon beats weaving with her current DW gear.")
+        print()
+    else:
+        print("=== 2H Weapon Options (melee weave rotation) ===\n  No eligible 2H weapons in the pool.\n")
+
     elapsed = time.time() - start
     print(f"Elapsed: {elapsed:.1f}s")
 
     out_path = os.path.join(REPO_ROOT, "data", "cache", "tiered_report.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump({"baseline_screened": baseline_screen["combined"], "achieved_bis": achieved_bis,
-                   "tiers": tiered_out}, f, indent=2)
+                   "tiers": tiered_out, "two_hand": two_hand_out}, f, indent=2)
     print(f"Wrote {out_path}")
 
 
