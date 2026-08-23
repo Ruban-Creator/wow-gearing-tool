@@ -469,7 +469,7 @@ def main():
                 rescue_notes_by_item[c.item_id] = (
                     f"Not an upgrade today (breaks {set_name}'s bonus), but a real "
                     f"{check['mv_if_set_broken']:+.1f} DPS gain once that bonus is "
-                    f"already broken elsewhere (e.g. via {check['via_item']} in {phys_slot})."
+                    f"already broken elsewhere (e.g. via {check['via_item']} in {check['via_slot']})."
                 )
                 rescue_mv_by_item[c.item_id] = check["mv_if_set_broken"]
         if rescue_notes_by_item:
