@@ -1696,3 +1696,17 @@ scans phase 1..FINAL_PHASE instead of a fixed `(3,4,5)` tuple - picks up the alr
 Not a full phase-toggle (that's still a separate, later GUI feature per CLAUDE.md), just keeping
 the seam from being buried under a hardcoded assumption that would need finding and unpicking
 later.
+
+## 2026-08-23 — Screened #1 now always gets the real resolve
+
+User caught this from the report itself: Beast-tamer's Shoulders was ranked #1 for Shoulder but
+still printed "(screened only)" - correct under the old rule (its margin over noise already
+cleared `CLEAR_MARGIN_MULTIPLE`, so resolving couldn't flip the verdict) but wrong to show as the
+headline number, since the cheap 1k-iteration screen is noisier than the real 30k resolve. Per the
+user - "if a screened item ends up on top we should really sim that" - `run_full_sweep_mv.py` now
+always resolves the #1-ranked item within each `(tier, slot)` group regardless of margin, both in
+the main leaderboard and the 2H section (per-tier top, not just the single global #1, since that's
+what's actually displayed as "top of this tier"). Verified against a real sweep run: Beast-tamer's
+Shoulders' Shoulder group went from 1/5 to 2/5 resolved, with the same #1 ranking (resolving only
+tightens the number, doesn't change who's on top - as expected, since the margin check already
+guaranteed that).

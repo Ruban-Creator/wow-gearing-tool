@@ -163,7 +163,10 @@ per the user's stated raid comp - never silently switch to 9% without being aske
 
 Tool rename to something including the user's gamertag "Ruban" (e.g. RubanAutoSim) is also
 planned, as a final rework once the product is otherwise done — not yet, folder path and
-internal naming stay as-is until then.
+internal naming stay as-is until then. Fold in a general file-naming clarity pass at the same
+time (e.g. `core/run_full_sweep_mv.py` — "mv" = Marginal Value, the tool's core metric, but the
+name doesn't read as self-explanatory to someone new to the repo) — per the user, file names
+should be clear on their own, not just to someone who already knows the codebase.
 
 Publishing `addons/GearingToolCompanion/` to CurseForge is planned as one of the final steps too
 — account + project via console.curseforge.com, tagged for the Anniversary client flavor
