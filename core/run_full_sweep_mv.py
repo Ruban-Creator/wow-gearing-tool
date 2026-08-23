@@ -469,6 +469,7 @@ def main():
     # further" - not "should I abandon DW entirely". The no-weave baseline
     # is printed alongside for context, never silently dropped.
     two_hand_out: dict[str, list[dict]] = {}
+    two_hand_meta: dict = {}
     if weapon_2h_candidates:
         weave_dw_result = mv.valuation.evaluate(SETTINGS_2H, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
         no_weave_result = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
@@ -476,6 +477,7 @@ def main():
         print(f"Baseline, current DW gear, weave OFF: {no_weave_result['combined']:.1f}")
         print(f"Baseline, current DW gear, weave ON:  {weave_dw_result['combined']:.1f} "
               f"(+{weave_dw_result['combined'] - no_weave_result['combined']:.1f} from weave alone)\n")
+        two_hand_meta = {"no_weave_dw": no_weave_result["combined"], "weave_dw": weave_dw_result["combined"]}
 
         mh_idx = gc.SLOT_ORDER.index("mainhand")
         oh_idx = gc.SLOT_ORDER.index("offhand")
@@ -534,7 +536,7 @@ def main():
     out_path = os.path.join(REPO_ROOT, "data", "cache", "tiered_report.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump({"baseline_screened": baseline_screen["combined"], "achieved_bis": achieved_bis,
-                   "tiers": tiered_out, "two_hand": two_hand_out}, f, indent=2)
+                   "tiers": tiered_out, "two_hand": two_hand_out, "two_hand_meta": two_hand_meta}, f, indent=2)
     print(f"Wrote {out_path}")
 
 
