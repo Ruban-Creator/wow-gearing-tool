@@ -1555,3 +1555,37 @@ in the printed steps (e.g. "4pc" four times before "5pc") - added the swapped it
 step so repeated counts stay unambiguous. **Lesson**: never assume a loop counter tracks the real
 domain quantity it's named after - it only does when the starting state is known-zero, which
 wasn't checked here and silently wasn't true for a set she's already deep into.
+
+## 2026-08-23 — Isolated, stat-neutral set-bonus values via a bonusStats correction
+
+Replaced the flat 1pc..5pc progression display entirely, per the user's follow-up: most piece
+counts carry no bonus at all, and even at a real threshold the reported delta mixed the bonus's
+own effect with the raw stat difference of whichever piece happened to cross it. User's own
+suggested method: "we can manipulate stats for this test so baseline character stats stay the
+same but set bonus activates or deactivates."
+
+Implementation (`core/set_bonus.py`): `item_stat_vector(item_id, gems)` pulls the real 42-element
+stat vector (item's own `scalingOptions` stats + its socketed gems' stats, same indexing as
+`bonusStats.stats` and a gem's own `stats` array - confirmed all three use the identical 42-slot
+layout). `isolate_bonus_value(set_name, threshold, ...)` builds two configs that differ by exactly
+one real piece count (threshold-1 vs threshold - pieces removed from an already-owned set or added
+from pool candidates as needed to reach each), and applies a `bonusStats` correction to each so
+total character stats match TRUE baseline throughout - the delta between the two configs is then
+purely the bonus's own behavioral effect (a proc, a spell mod), not a stat difference.
+`valuation.evaluate()` gained a `bonus_stats_override` parameter for this, mutated before
+fingerprinting (same pattern as the fist-weapon-imbue fix) so it gets a distinct cache key, never
+colliding with a normal run.
+
+Real bonus thresholds come from `set_bonus_thresholds()`, which parses them directly out of
+`sim/hunter/item_sets.go`'s own `Bonuses: map[int32]core.ApplySetBonus{2: func(...){...}, 4:
+func(...){...}}` per set - never guessed, and generalizes automatically to every hunter tier set
+in the file (checked: Cryptstalker [2,4,6,8], Beast Lord [2,4], Demon Stalker [2,4], Rift Stalker
+[2,4], Gronnstalker's [2,4] - matches the real in-game tooltip for Rift Stalker exactly).
+
+Real isolated results from the first full run: **Gronnstalker's Armor** 2pc +0.0 (tied - not a
+damage effect), 4pc +70.3 (real). **Rift Stalker Armor** 2pc +51.1, 4pc +85.2. **Beast Lord
+Armor** 2pc tied, 4pc +73.4. The Rift Stalker 2pc value (pet healed for 15% of damage dealt) is
+larger than a pure heal effect would suggest at first glance - plausible explanation is sustained
+pet DPS uptime (a pet that doesn't die/go quiet from unhealed damage keeps dealing damage longer
+across a full fight), not re-derived or second-guessed further - the sim's own model is trusted
+per the ground rules, this is just noted as an interesting result worth being aware of.
