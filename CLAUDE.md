@@ -135,9 +135,12 @@ across 15 slots) are done. Next up: Stage 4 (§6, the valuation engine — actua
 
 User wants a GUI eventually: run a sim on demand, a phase toggle to switch reference/candidate
 data between phases, a character-select dropdown (this tool should support simming more than one
-character, not just Lerynia), etc. Not part of any current stage — noted here so it isn't lost,
-but don't build toward it until the user actually asks. Keep `core/`/`adapters/` command-line-first
-and UI-agnostic in the meantime so a GUI can sit on top later without a rewrite.
+character, not just Lerynia), a hit-target toggle (6% assuming a moonkin present vs 9% assuming
+not - both are real wowsims-provided presets, see NOTES.md's hit-cap entry) etc. Not part of any
+current stage — noted here so it isn't lost, but don't build toward it until the user actually
+asks. Keep `core/`/`adapters/` command-line-first and UI-agnostic in the meantime so a GUI can
+sit on top later without a rewrite. Until the toggle exists, keep assuming 6% (moonkin present)
+per the user's stated raid comp - never silently switch to 9% without being asked.
 
 Tool rename to something including the user's gamertag "Ruban" (e.g. RubanAutoSim) is also
 planned, as a final rework once the product is otherwise done — not yet, folder path and
