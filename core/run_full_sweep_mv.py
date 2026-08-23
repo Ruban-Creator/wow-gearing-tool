@@ -365,8 +365,15 @@ def main():
     to_resolve = []
     for key, rows in by_tier_slot.items():
         rows.sort(key=lambda cr: cr[1]["mv"], reverse=True)
-        for c, r in rows[:LEADERBOARD_SIZE]:
-            if abs(r["mv"]) < mv.CLEAR_MARGIN_MULTIPLE * r["noise_stdev"]:
+        for i, (c, r) in enumerate(rows[:LEADERBOARD_SIZE]):
+            # The #1-ranked item for a (tier, slot) always gets the real
+            # 30k resolve, regardless of the clear-margin check - per the
+            # user: if a screened item ends up on top, actually sim it.
+            # A wide screening margin means the VERDICT ("is this a real
+            # upgrade") isn't in question, but the top recommendation
+            # deserves the precise number, not just the noisier screened
+            # one, even when resolving it can't change what's shown as #1.
+            if i == 0 or abs(r["mv"]) < mv.CLEAR_MARGIN_MULTIPLE * r["noise_stdev"]:
                 to_resolve.append((c, r))
 
     # --- Pass 2: resolve only the leaderboard items still close enough to matter ---
@@ -589,20 +596,34 @@ def main():
                              "resolved": False, **time_horizon.lasts_until_phase(c.name, c.item_id)})
         rows_2h.sort(key=lambda r: r["mv"], reverse=True)
 
-        to_resolve_2h = [r for r in rows_2h[:LEADERBOARD_SIZE]
-                          if abs(r["mv"]) < mv.CLEAR_MARGIN_MULTIPLE * r["noise_stdev"]]
-        for r in to_resolve_2h:
+        def resolve_2h_row(r):
             resolved = mv.valuation.evaluate(SETTINGS_2H, r["trial"], RESOLVE_ITERATIONS, opt.SEED)
             r["mv"] = resolved["combined"] - weave_dw_result["combined"]
             r["noise_stdev"] = mv.delta_noise(weave_dw_result, resolved, RESOLVE_ITERATIONS)
             r["tied_within_noise"] = abs(r["mv"]) < 2 * r["noise_stdev"]
             r["resolved"] = True
 
-        for r in rows_2h:
-            r.pop("trial")
+        to_resolve_2h = [r for r in rows_2h[:LEADERBOARD_SIZE]
+                          if abs(r["mv"]) < mv.CLEAR_MARGIN_MULTIPLE * r["noise_stdev"]]
+        for r in to_resolve_2h:
+            resolve_2h_row(r)
+
         real_upgrades_2h = [r for r in rows_2h if not r["tied_within_noise"] and r["mv"] > 0]
         for r in real_upgrades_2h:
             two_hand_out.setdefault(r["tier"], []).append(r)
+
+        # Same rule as the main leaderboard: the #1-ranked item WITHIN EACH
+        # TIER (not just the single overall best) always gets resolved,
+        # regardless of margin - per the user, if a screened item ends up
+        # on top, actually sim it. Done after grouping by tier since that's
+        # what's actually displayed as "top of this tier".
+        for tier, tier_rows in two_hand_out.items():
+            top = max(tier_rows, key=lambda x: x["mv"])
+            if not top["resolved"]:
+                resolve_2h_row(top)
+
+        for r in rows_2h:
+            r.pop("trial")
 
         if real_upgrades_2h:
             for tier in sorted(two_hand_out):
