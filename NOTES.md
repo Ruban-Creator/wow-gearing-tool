@@ -868,3 +868,54 @@ oversubscription bug found while building all three (session continued).**
   `wowsimcli`'s engine has no GPU path to begin with. The real lever on
   this hardware is core count (Monte Carlo iterations parallelize cleanly
   across cores); RAM/storage/GPU upgrades wouldn't move this workload.
+
+## 2026-08-23 (overnight, autonomous) — Root cause found: raid AP contribution column still isn't wired in anywhere
+
+Checked CLAUDE.md's own Stage 2 ground rule against the actual pipeline: "every future MV/
+valuation output must report personal DPS and raid AP contribution as two separate columns —
+never collapse them into one number, and never silently drop the raid column." Grepped the whole
+codebase for any real (non-doc) use of `adapters/tbc/expose_weakness.py` - **zero hits**. It's
+never been called from `valuation.py`, `marginal_value.py`, `optimizer.py`, or
+`run_full_sweep_mv.py`. Every MV number this session (including tonight's tiered sweep report)
+has been reporting personal DPS only, silently missing the raid column the ground rule requires.
+Not a new problem introduced tonight - this gap has existed since Stage 4 began and was never
+caught because nothing was checking for it.
+
+**Why it was never wired in - traced to a real, structural blocker, not an oversight**:
+`expose_weakness.raid_ap_contribution(agility, uptime_fraction, physical_attacker_count)` needs
+her live buffed Agility per gear config. `measured_ew_uptime()` already works fine - it reads
+`encounterMetrics.targets[0].auras`, which IS part of the regular `RaidSimResult` this pipeline
+already gets back from every sim call. But **Agility is not available anywhere in `RaidSimResult`
+at all** - confirmed directly from `proto/api.proto`: `RaidSimResult` (line 384) only has
+`raid_metrics` (dps numbers), `encounter_metrics` (aura uptimes/procs), `logs`, timing, and
+`error`. The per-player stat breakdown (`PlayerStats.final_stats`, a `UnitStats` with an
+Agility entry) lives on `ComputeStatsResult` (line 511) - **a completely separate RPC**
+(`ComputeStats`, not `RaidSim`) that neither `bridge.exe`, `simserver.exe`, nor `wowsimcli`'s
+`sim` subcommand this pipeline uses ever calls.
+
+Physical-attacker-count itself is NOT the blocker (already real, already used once - 9, midpoint
+of §0's stated 8-10 raid comp, per the Stage 2 entry above) - the blocker is purely that this
+pipeline has no code path that ever asks the sim for a config's Agility.
+
+**Three real options to close this, none attempted tonight - this is a design call, not a bug
+fix, and touches the Go bridge/simserver boundary where mistakes are hard to self-verify without
+the user's wowsims.com cross-check**:
+1. Add `ComputeStats` RPC support to `bridge.exe` + `simserver.exe` (mirrors how `RaidSim` support
+   was added - real but bounded Go work, probably ~1-2 hours). Cleanest, most correct: gets
+   Agility the same way the sim itself computes it, no reimplementation risk.
+2. Reimplement Agility computation in Python from the gear config directly (base race Agility +
+   item stats + talents + buffs). Rejected as the default choice: talent/buff percentage
+   multipliers and stacking order would need to exactly replicate the sim's own math, which is
+   precisely what CLAUDE.md's "assume the latest sim's model is correct, don't second-guess or
+   reimplement it" rule warns against - a silent drift here would be very hard to notice.
+   Suggest 1 over this for the audit trail.
+   `debug_first_iteration` (`sim/tbc-new/proto/api.proto` line 133) turns on logging into the
+   `logs` string field of the normal RaidSimResult - worth a quick check whether the sim's debug
+   log conventionally prints a stat summary at combat start, which would give a fourth path with
+   no new RPC needed. Not checked yet.
+
+Flagging this as open rather than picking an approach and building it, per the "genuinely
+ambiguous, needs the user's call" carve-out - option 1 is my lean, but it's the user's call
+whether the Go-side work is worth it now vs. deferring the raid-column ground rule (with this
+now explicitly documented as a known, disclosed gap rather than a silent one) until it matters
+for an actual decision.
