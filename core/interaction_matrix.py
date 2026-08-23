@@ -355,13 +355,25 @@ def compute(settings_path: str, candidates_by_slot: dict, baseline_config: list[
         if tied:
             continue  # noise-honesty: not a real interaction, don't report it as one
         notes = _threshold_notes(baseline_config, single_trial[a["item_id"]], single_trial[b["item_id"]], joint_trial)
+        # "complement"/"substitute" imply an actionable recommendation
+        # ("pursue this pairing" / "don't"), which is exactly wrong for a
+        # set_notes row - per the user, a row explained by a shared
+        # set-bonus cost isn't item synergy at all, it's an accounting
+        # artifact, and calling it a "complement" reads as advice to chase
+        # a pairing that means nothing. Those get a neutral "artifact"
+        # kind instead; complement/substitute are reserved for pairs with
+        # no set-bonus explanation, i.e. the genuinely novel ones.
+        kind = "artifact" if notes else ("complement" if interaction > 0 else "substitute")
         rows.append({
             "item_a": a, "item_b": b,
             "mv_a": mv_a, "mv_b": mv_b, "mv_joint": mv_joint,
             "interaction": interaction, "noise_stdev": noise,
-            "kind": "complement" if interaction > 0 else "substitute",
+            "kind": kind,
             "set_notes": notes,
         })
 
-    rows.sort(key=lambda r: abs(r["interaction"]), reverse=True)
+    # Real (non-artifact) findings first, largest |interaction| within each
+    # group - per the user, set-bonus artifact rows are noise, not signal,
+    # and shouldn't bury the genuinely novel pairs at the bottom of the list.
+    rows.sort(key=lambda r: (r["kind"] == "artifact", -abs(r["interaction"])))
     return rows
