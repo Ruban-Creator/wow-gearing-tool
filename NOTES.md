@@ -1871,3 +1871,41 @@ Also generalized active_set_slot_labels() the same session: was hardcoded to the
 classic 5 tier-armor slots (head/shoulder/chest/hands/legs); per the user, Phase 5 has
 real sets on boots/belt/wrist too, so hardcoding to 5 slots would silently miss an
 active set bonus anywhere else. Now checks every single-occupancy slot dynamically.
+
+## 2026-08-24 - best_four_of_five's Rift Stalker Armor pick cross-validated against Wowhead
+
+The user questioned why the tool picks "leave hands non-tier" (4pc: head/shoulder/
+chest/legs) for Rift Stalker Armor, having seen the WoWSims web UI's own PRESET gear
+list use only 2pc (head/shoulder tier, chest/hands/legs all non-tier - the chest slot
+there is Ranger-General's Chestguard, not a Rift Stalker piece, easy to misread at a
+glance). Verified directly: real 30k-resolved DPS for the actual leave-one-out options
+(all via `set_bonus.best_four_of_five`'s own `all_options` field) -
+
+- leave hands non-tier (the tool's pick): 2709.1
+- leave shoulder non-tier: 2706.8 (close second)
+- leave legs non-tier: 2688.0
+- full 5pc: 2672.1
+- leave chest non-tier: 2645.9 (worst)
+- 3pc (both hands AND legs non-tier, matching the wowsims preset): 2695.85 - real,
+  computed on demand (not part of best_four_of_five's normal leave-ONE-out search,
+  which only ever compares 4-of-5 combos against the full 5, never 3-of-5 or fewer)
+
+The 3pc preset combo is real but ~13.3 DPS worse than the tool's 4pc pick - matches
+what the user found hand-testing "chest and gloves" themselves, AND matches Wowhead's
+separately-written guide (which recommends keeping Legs as tier and using a non-tier
+glove instead - the exact same combo, reached independently). The wowsims preset
+turned out to be a generic, non-optimized default, not a competing recommendation -
+good real-world validation that best_four_of_five's search is trustworthy.
+
+Real, not-yet-resolved gap flagged by the user in the same conversation: gem choice
+for `best_non_set_alt`'s picks is decided per-item independently (crude EP score
+only), with no awareness of whether the resulting sockets across the WHOLE build
+jointly satisfy the meta gem's color requirement - "I struggle to activate my meta
+gem with useful gem bonuses when going for that." The sim itself correctly reflects
+whatever the real activation state ends up being (a real mechanic, not something our
+Python code approximates), but a smarter, JOINTLY-optimized gem choice across the
+whole build could plausibly push the winning combo's DPS even higher than what's
+currently found. Not investigated yet - next real step if this becomes a priority is
+confirming whether the meta gem is actually active in the current winning ("leave
+hands non-tier") combo before deciding whether joint gem optimization is worth
+building.
