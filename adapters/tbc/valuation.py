@@ -156,17 +156,28 @@ def _build_raid_sim_request(settings: dict, iterations: int, seed: int) -> dict:
                 pass
 
 
-def evaluate(settings_path: str, items: list[dict], iterations: int, seed: int) -> dict:
+def evaluate(settings_path: str, items: list[dict], iterations: int, seed: int,
+             bonus_stats_override: list[float] | None = None) -> dict:
     """Returns {"player_dps": ..., "player_stdev": ..., "pets": [...],
     "combined": ...}. Cached by (gear hash, settings fingerprint,
-    iterations, seed) - never sims the same config twice."""
+    iterations, seed) - never sims the same config twice.
+
+    bonus_stats_override, when given, replaces player.bonusStats.stats
+    outright (42-element vector, same indexing as gem/item stats) - used
+    by set_bonus.isolate_bonus_value() to hold total character stats
+    constant while swapping which real items count toward a set, so a
+    delta reflects ONLY the set bonus's own behavioral effect (a proc, a
+    spell mod) and not any raw stat difference from the swap itself."""
     gear_hash = gear_config.config_hash(items)
     settings = _load_template(settings_path)
-    # Mutate (fist-weapon imbue selection) BEFORE fingerprinting - the
-    # fingerprint must reflect what's actually about to run, not the raw
-    # file, or two configs that differ only by triggering a different
-    # imbue would collide on the same cache key.
+    # Mutate (fist-weapon imbue selection, bonus stats override) BEFORE
+    # fingerprinting - the fingerprint must reflect what's actually about
+    # to run, not the raw file, or two configs that differ only by
+    # triggering a different imbue/stat override would collide on the
+    # same cache key.
     _apply_weapon_imbues(settings, items)
+    if bonus_stats_override is not None:
+        settings["player"]["bonusStats"]["stats"] = bonus_stats_override
     fp = _fingerprint_settings(settings)
     cache_key = sim_cache.key(gear_hash, fp, iterations, seed)
 

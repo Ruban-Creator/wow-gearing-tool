@@ -260,39 +260,39 @@ def main():
     set_names = {idb.by_id(c.item_id).get("setName")
                  for cands in candidates.values() for c in cands
                  if c.item_id is not None and idb.by_id(c.item_id) and idb.by_id(c.item_id).get("setName")}
+    # Per user's ask: don't show every 1pc..5pc step (most piece counts
+    # carry no bonus at all) - show the isolated value of each REAL bonus
+    # threshold instead, holding total character stats constant via a
+    # bonusStats correction so the number reflects the bonus's own
+    # behavioral effect (a proc, a spell mod), not the raw stat difference
+    # of whichever pieces happen to cross it. Thresholds come straight
+    # from the sim's own Go source (set_bonus_thresholds), never guessed.
     set_notes_by_item: dict[int, str] = {}
     for set_name in sorted(set_names):
-        prog = set_bonus.set_progression(SETTINGS_TEMPLATE, set_name, candidates, baseline_config,
-                                          baseline_screen, owned_items, SCREEN_ITERATIONS)
-        progression = prog.get("progression", [])
-        if not any(p["upgrade"] for p in progression):
+        thresholds = set_bonus.set_bonus_thresholds().get(set_name, [])
+        if not thresholds:
             continue
-        # Show the real, sim-measured MV at EVERY piece count, not just the
-        # first one that crosses into "upgrade" - per the user: the DB has
-        # no separate table saying which piece counts actually carry a
-        # bonus (setId/setName only, no threshold data), so rather than
-        # guess which counts are "real" bonuses, show all of them and let
-        # the reader see exactly where the value comes from. A jump
-        # between two counts IS the bonus; a flat line between them means
-        # that piece's value is just its own stats, no bonus at that count.
-        #
-        # pieces_held is the REAL total set-piece count in that trial
-        # config, not "how many swaps so far" - it can repeat (e.g. she
-        # already owns 4/5 Rift Stalker pieces, so testing 4 different
-        # alternate items one at a time all stay at "4pc" - the 4pc bonus
-        # was already active in her baseline, so no jump ever shows in the
-        # reported range for that set). Item name included per step since
-        # counts can repeat and wouldn't otherwise disambiguate.
-        steps = " · ".join(
-            f"{p['pieces_held']}pc ({p['added']}) {p['mv_vs_current_gear']:+.1f}"
-            + (" (upgrade)" if p["upgrade"] else "")
-            for p in progression
-        )
-        note = f"part of {set_name}, vs current gear (screened): {steps}"
+        parts = []
+        any_real = False
+        for threshold in thresholds:
+            iso = set_bonus.isolate_bonus_value(SETTINGS_TEMPLATE, set_name, threshold,
+                                                 candidates, baseline_config, SCREEN_ITERATIONS)
+            if iso is None:
+                continue
+            tag = "" if iso["real"] else " (tied)"
+            any_real = any_real or iso["real"]
+            parts.append(f"{threshold}pc bonus {iso['isolated_value']:+.1f}{tag}")
+        # Only flag items with this note if at least one threshold is a
+        # real (non-tied) bonus - matches the original gating intent (a
+        # set with no meaningful bonus anywhere shouldn't count as a
+        # "real upgrade" for achieved-BiS/report-inclusion purposes).
+        if not parts or not any_real:
+            continue
+        note = f"part of {set_name} - isolated bonus value (stats held constant, screened): " + " · ".join(parts)
         for _, cand in set_bonus.set_pieces_in_pool(set_name, candidates):
             set_notes_by_item[cand.item_id] = note
     if set_notes_by_item:
-        print(f"Set-bonus rescue check: {len(set_notes_by_item)} item(s) flagged across {len(set_names)} set(s).\n")
+        print(f"Set-bonus check: {len(set_notes_by_item)} item(s) flagged across {len(set_names)} set(s).\n")
 
     seen_ids = set()
     all_candidates = []
