@@ -394,6 +394,13 @@ def main():
             if i == 0 or abs(r["mv"]) < mv.CLEAR_MARGIN_MULTIPLE * r["noise_stdev"]:
                 to_resolve.append((c, r))
 
+    # Printed BEFORE resolving starts, not after - per the user (2026-08-24):
+    # the count is already known at this point (to_resolve is a fully-built
+    # list), so there's no reason a progress projection has to wait until
+    # the whole pass finishes to learn its own denominator. Real precursor
+    # to the progress-indicator GUI feature already noted in CLAUDE.md.
+    print(f"Resolving {len(to_resolve)} (tier, slot) leaderboard candidates @ {RESOLVE_ITERATIONS} iter...")
+
     # --- Pass 2: resolve only the leaderboard items still close enough to matter ---
     baseline_resolved = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
 
