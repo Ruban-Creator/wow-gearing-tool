@@ -23,6 +23,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
+	"sync/atomic"
 
 	"github.com/wowsims/tbc/sim"
 	"github.com/wowsims/tbc/sim/core"
@@ -33,6 +35,26 @@ import (
 
 func init() {
 	sim.RegisterAll()
+}
+
+// core.RunRaidSimConcurrentAsync registers requestId in a process-lifetime
+// map (simsignals.RegisterWithId) and only unregisters it via a deferred
+// call once its internal goroutine returns - fine for `wowsimcli sim`
+// (cmd/wowsimcli/cmd/basic_sim.go:50 hardcodes "cmd-raid-sim" too, but that
+// process only ever calls this once before exiting, so the map is always
+// empty going in). This process calls it hundreds of times over its
+// lifetime; a fixed id here means a later call can hit "id ... is not
+// unique" if an earlier call's deferred unregister hasn't run yet, or -
+// worse - if that earlier goroutine never returns at all, permanently
+// blocking every future call under the same id. Strong suspect for the
+// overnight hang investigation (see NOTES.md); each call gets its own
+// unique id here regardless, since a persistent process reusing one
+// requestId across hundreds of calls was never a safe assumption to
+// begin with, self-heal aside.
+var requestCounter atomic.Int64
+
+func nextRequestId() string {
+	return "simserver-" + strconv.FormatInt(requestCounter.Add(1), 10)
 }
 
 func main() {
@@ -102,7 +124,7 @@ func runOne(line string) *proto.RaidSimResult {
 	}
 
 	reporter := make(chan *proto.ProgressMetrics, 10)
-	core.RunRaidSimConcurrentAsync(input, reporter, "simserver")
+	core.RunRaidSimConcurrentAsync(input, reporter, nextRequestId())
 
 	for v := range reporter {
 		if v.FinalRaidResult != nil {

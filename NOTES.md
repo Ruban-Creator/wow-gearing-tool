@@ -1078,3 +1078,39 @@ fix can be targeted precisely instead of guessed at.
 No code changes this cycle - the current committed state (`USE_SIMSERVER=False`, self-healing
 pool, graceful `get_agility()` degradation) was already correct; this cycle's work confirms and
 sharpens that finding rather than changing it.
+
+## 2026-08-23 (overnight, autonomous) — simserver.exe hang: precisely characterized, not yet fixed
+
+Continued the crash/hang investigation with a targeted hypothesis: `simserver.exe`'s `runOne()`
+hardcodes the SAME `requestId` string ("simserver") for every single `RunRaidSimConcurrentAsync`
+call. That function registers the id in a process-lifetime map (`simsignals.RegisterWithId`) and
+only removes it via a `defer`'d `UnregisterId` once its internal goroutine returns - safe for
+`wowsimcli sim` (which hardcodes `"cmd-raid-sim"` the same way, in `basic_sim.go:50` - but that
+process only ever calls this once before exiting, so it never matters), unsafe for a persistent
+process making hundreds of calls with a reused id.
+
+**Fixed this real bug regardless of whether it's the hang's cause**: `simserver/main.go` now
+generates a genuinely unique requestId per call (`nextRequestId()`, an atomic counter). Verified
+both code paths still work correctly after rebuild (`get_agility` -> Agility 1195, `evaluate`
+file-based path -> combined 2655.4, matching known-good baselines).
+
+**This did NOT fix the hang** - re-ran the exact same stress test (real candidates, valid slot
+hints, 1000-iteration RaidSim calls) and it hung again. But precisely re-localizing it this time
+produced a much stronger finding: it hangs at **exactly request #34**, every time, and - critically
+- **completely independent of which candidates are involved**. Confirmed by skipping the first 30
+candidates entirely (so request #34 became a totally different item, a Back-slot cloak instead of
+the original neck item) - still hung at #34. This rules out anything item-specific and points
+directly at a **fixed-capacity resource exhaustion inside the Go sim engine itself** - something
+with a hard limit around 33 uses gets exhausted on the 34th call to `RunRaidSimConcurrentAsync`
+within one process's lifetime. Not yet identified which resource (worker pool? channel buffer?
+something GOMAXPROCS-sized, given `runtime.NumCPU()`=12 and this is close-ish to 3x that?) -
+would need actual Go-level debugging (goroutine dump via SIGQUIT, or reading `runSimConcurrent`'s
+internals directly for anything sized/counted around 32-34) to pin down further, not something to
+guess at blind.
+
+**Practical implication - this is a *tighter* threshold than previously known** (earlier
+estimates ranged 25-65 depending on call mix). `USE_SIMSERVER` should stay `False` for the DPS
+path until this is root-caused - a real production run easily exceeds 34 RaidSim calls. The
+`get_agility`/ComputeStats path remains unaffected (verified separately at 500/500 calls with
+zero issues - `ComputeStats` never goes through `RunRaidSimConcurrentAsync` at all, consistent
+with the resource being specific to that function).
