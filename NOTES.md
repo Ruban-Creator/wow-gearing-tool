@@ -1232,3 +1232,25 @@ assume "no data" - Classic/Anniversary realms run on a modern, shared client cod
 Blizzard has been deprecating classic-era globals in favor of C_-namespaced APIs project-wide
 (patch 11.0 reputation being one instance) - check whether the "old" API even still works on
 this specific client build before trusting a zero/empty result at face value.
+
+## 2026-08-23 — Reputation still 0 after the C_Reputation fix: a real, documented lazy-load quirk
+
+Arena rating confirmed working after the previous fix (screenshot: "Arena teams: 3"). Reputation
+still showed 0 despite the user's Reputation tab clearly showing many real standings. Verified
+via search rather than guessing again: **`C_Reputation.GetNumFactions()` can return 0 until the
+reputation panel has actually been shown at least once this session** - a known Blizzard API
+quirk (the backing list isn't populated until the panel itself initializes it), separate from
+the patch-11.0 API rename fixed last time. `UPDATE_FACTION` (a real standing change) doesn't
+help here since the panel may simply never have been opened yet.
+
+Fixed by hooking `ReputationFrame`'s `OnShow` to re-run `SaveReputationAndArena()` - exactly
+what the user originally suggested days ago ("autofire when the tab is opened"), which was
+wrongly deprioritized at the time in favor of pure data-change events on the assumption
+reputation was always freely readable. `ReputationFrame` may not exist yet at addon-load time
+(it belongs to a separately, lazily-loaded Blizzard UI addon) - hooked both immediately (in case
+it's already loaded) and again on `ADDON_LOADED` (in case it loads later, the first time the tab
+is opened).
+
+Also swapped the minimap button's click mapping per user feedback - left-click now shows the
+status panel (the more discoverable, "look at it" action), right-click does the quick silent
+save. The reverse felt unintuitive.
