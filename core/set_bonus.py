@@ -43,6 +43,24 @@ def owned_set_count(set_name: str, owned_items: list[dict]) -> int:
     return count
 
 
+def count_set_pieces_in_config(set_name: str, config: list[dict]) -> int:
+    """Real total pieces of set_name actually present in a gear config -
+    NOT how many pool candidates have been swapped in so far. These differ
+    whenever the baseline already owns some pieces of the set (the normal
+    case for a set she's already partway or fully into): swapping a pool
+    candidate into a slot that already held a same-set piece doesn't change
+    the total count at all, and set bonuses (2pc/4pc thresholds etc.) key
+    off this real total, not off "swaps performed"."""
+    count = 0
+    for entry in config:
+        if not entry or not entry.get("id"):
+            continue
+        item = idb.by_id(entry["id"])
+        if item and item.get("setName") == set_name:
+            count += 1
+    return count
+
+
 def set_progression(settings_path: str, set_name: str, candidates: dict[str, list["opt.Candidate"]],
                      baseline_config: list[dict], baseline_result: dict, owned_items: list[dict],
                      iterations: int) -> dict:
@@ -50,15 +68,26 @@ def set_progression(settings_path: str, set_name: str, candidates: dict[str, lis
     fixed (pool) order - NOT an exhaustive search over which specific
     pieces to add first, so this finds "how many pieces before it's worth
     it" but not necessarily the single best partial subset. Disclosed
-    simplification, not hidden."""
+    simplification, not hidden.
+
+    `pieces_held` reports the REAL total set-piece count in each trial
+    config (via count_set_pieces_in_config), not "how many pool candidates
+    have been swapped so far" - those differ whenever baseline_config
+    already owns some pieces of the set, which is the normal case, not an
+    edge case (caught from a real report: Rift Stalker Armor's actual 4pc
+    bonus - Steady Shot +5% crit, confirmed in sim/hunter/item_sets.go -
+    was already active throughout the ENTIRE reported progression because
+    she already owns all 4 pieces it needs, and the old count-based label
+    made every step look like a flat, bonus-free stat swap since the real
+    jump from 0->4 pieces happened before the reported range even starts)."""
     pieces = set_pieces_in_pool(set_name, candidates)
     if len(pieces) < 2:
         return {"set_name": set_name, "note": "fewer than 2 pieces found in the candidate pool - nothing to check"}
 
     progression = []
     config = list(baseline_config)
-    for count in range(1, len(pieces) + 1):
-        slot, cand = pieces[count - 1]
+    for swap_num in range(1, len(pieces) + 1):
+        slot, cand = pieces[swap_num - 1]
         slot_idx = gc.SLOT_ORDER.index(slot)
         config = list(config)
         config[slot_idx] = cand.as_entry()
@@ -66,7 +95,7 @@ def set_progression(settings_path: str, set_name: str, candidates: dict[str, lis
         delta = result["combined"] - baseline_result["combined"]
         noise = mv.delta_noise(baseline_result, result, iterations)
         progression.append({
-            "pieces_held": count,
+            "pieces_held": count_set_pieces_in_config(set_name, config),
             "added": cand.name,
             "mv_vs_current_gear": delta,
             "noise": noise,

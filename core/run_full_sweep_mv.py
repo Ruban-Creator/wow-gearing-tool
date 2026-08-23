@@ -275,8 +275,17 @@ def main():
         # the reader see exactly where the value comes from. A jump
         # between two counts IS the bonus; a flat line between them means
         # that piece's value is just its own stats, no bonus at that count.
+        #
+        # pieces_held is the REAL total set-piece count in that trial
+        # config, not "how many swaps so far" - it can repeat (e.g. she
+        # already owns 4/5 Rift Stalker pieces, so testing 4 different
+        # alternate items one at a time all stay at "4pc" - the 4pc bonus
+        # was already active in her baseline, so no jump ever shows in the
+        # reported range for that set). Item name included per step since
+        # counts can repeat and wouldn't otherwise disambiguate.
         steps = " · ".join(
-            f"{p['pieces_held']}pc {p['mv_vs_current_gear']:+.1f}" + (" (upgrade)" if p["upgrade"] else "")
+            f"{p['pieces_held']}pc ({p['added']}) {p['mv_vs_current_gear']:+.1f}"
+            + (" (upgrade)" if p["upgrade"] else "")
             for p in progression
         )
         note = f"part of {set_name}, vs current gear (screened): {steps}"
