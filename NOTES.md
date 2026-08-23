@@ -1199,3 +1199,36 @@ MinimapButtonButton's popout (right-click/tooltip work fine there, confirming co
 works) - suspected MBB click-forwarding quirk with hand-rolled buttons, not something fixable
 from this side without MBB's own source. `/gtexport` and the status panel's own "Save Now"
 button both work regardless and are the reliable fallbacks.
+
+## 2026-08-23 — Real fix: this client uses modern reputation/arena APIs, not the classic globals
+
+The status panel showed "Reputation: 0 factions tracked, Arena teams: 0" despite the character
+genuinely having reputation and three real arena bracket ratings (screenshot: 2v2 1484, 3v3 1494,
+5v5 1585, "This Week" games/rank columns). Not an offseason/no-data issue as first guessed -
+verified against WoW's actual API docs (warcraft.wiki.gg) rather than guessing twice:
+
+- **Arena**: `GetArenaTeam(1..3)` returned nothing because **this client has no persistent
+  "arena team" object at all** - TBC Anniversary uses the modern per-bracket PERSONAL rating
+  system instead (`GetPersonalRatedInfo(index)`, bracket 1=2v2/2=3v3/3=5v5 - confirmed field
+  order: `rating, seasonBest, weeklyBest, seasonPlayed, seasonWon, weeklyPlayed, weeklyWon, cap`).
+  The "38616"/"32793"/"36377" numbers in the user's PvP pane screenshot are ladder rank, not team
+  IDs, per the user - consistent with there being no team object to have an ID.
+- **Reputation**: `GetNumFactions()`/`GetFactionInfo()` were deprecated as of patch 11.0 in favor
+  of the `C_Reputation` namespace (`C_Reputation.GetNumFactions()`,
+  `C_Reputation.GetFactionDataByIndex(i)` returning a table with `name`/`isHeader`/`isCollapsed`/
+  `reaction` fields - `reaction` replaces the old `standingID`). The old globals didn't error,
+  just silently returned 0 - a much sneakier failure mode than a thrown error would have been.
+
+Fixed both in `GearingToolCompanion.lua` using the modern APIs, with a fallback to the old
+globals in case this ever runs on an actually older client. Since arena rating is now read from
+a confirmed, unambiguous field (not a guessed one), `ingest/build_character.py` now
+auto-populates `acquisition_status.json`'s `arena.current_rating` as the max across brackets
+(TBC's "reach X rating in ANY bracket" vendor-gating rule is a stable, well-documented game
+mechanic - not per-server data, safe to encode directly, unlike the API-field question that
+genuinely needed the confirm-before-trusting treatment it got last time).
+
+**Lesson for next time a WoW API call silently returns empty/zero instead of erroring**: don't
+assume "no data" - Classic/Anniversary realms run on a modern, shared client codebase, and
+Blizzard has been deprecating classic-era globals in favor of C_-namespaced APIs project-wide
+(patch 11.0 reputation being one instance) - check whether the "old" API even still works on
+this specific client build before trusting a zero/empty result at face value.
