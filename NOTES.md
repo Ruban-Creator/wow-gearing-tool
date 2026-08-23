@@ -1529,3 +1529,29 @@ reference constant, no longer driving the reported number.
 Also renamed the column from "Raid" to "Debuff" - a more literal, accurate name (it's reporting
 how strong Lerynia's OWN Expose Weakness debuff is, not some already-aggregated raid total) that
 reads less ambiguously than "Raid," which could be misread as already being a raid-wide sum.
+
+## 2026-08-23 — Real bug: set-progression piece count meant "swaps performed," not real total
+
+User's own tooltip screenshot showed Rift Stalker Armor's real bonuses (2pc: pet healed for 15%
+of damage dealt; 4pc: Steady Shot +5% crit) and asked why the tool's own "1pc..5pc" progression
+showed no visible jump anywhere. Confirmed both bonuses ARE modeled in the sim
+(`sim/hunter/item_sets.go`, setId 652) - not a coverage gap. Real cause: she already owns 4 of
+the 5 Rift Stalker pieces (Helm/Mantle/Hauberk/Gauntlets), so the 4pc bonus is already active in
+her baseline. `set_progression()`'s `pieces_held` was `count` - the loop index, i.e. "how many
+pool candidates have been swapped in so far" - not the real total set-piece count in the
+resulting config. Those only match when baseline starts at 0 pieces of the set (true for
+Gronnstalker's Armor, which she owns none of - hence its progression showed a real, clean 1-5
+climb with a visible 4pc jump). For Rift Stalker, every one of the first 4 reported "swaps" was
+actually replacing an already-owned Rift Stalker piece with a *different* Rift Stalker candidate
+in the same slot - real total stayed at 4 throughout, so the actual 0->4 transition (and the
+bonus activating) had already happened before the reported range even starts. Only the 5th step
+(Leggings, the one slot she's missing) was a genuine count change to 5 - correctly showing -16.0,
+since no 5pc bonus exists (confirmed by her tooltip) and Leggings just has worse raw stats than
+her current Void Reaver Greaves.
+
+Fixed with `set_bonus.count_set_pieces_in_config()` - scans the actual trial config for real
+`setName` matches instead of trusting the loop counter. Piece counts can now legitimately repeat
+in the printed steps (e.g. "4pc" four times before "5pc") - added the swapped item's name to each
+step so repeated counts stay unambiguous. **Lesson**: never assume a loop counter tracks the real
+domain quantity it's named after - it only does when the starting state is known-zero, which
+wasn't checked here and silently wasn't true for a set she's already deep into.
