@@ -145,10 +145,36 @@ columns** — never collapse them into one number, and never silently drop the r
 
 ## Staging
 
-See the user's full spec for §0–§9. Stage 1 (adapter + ingestion), Stage 2 (Survival mechanics
-blocker), and Stage 3 (candidate pool: `profiles/tbc/candidate_pool_survival.json`, 79 items
-across 15 slots) are done. Next up: Stage 4 (§6, the valuation engine — actually computing
-`DPS*(S)` for these candidates).
+See the user's full spec for §0–§9. Done: Stage 1 (adapter + ingestion), Stage 2 (Survival
+mechanics blocker), Stage 3 (candidate pool: `profiles/tbc/candidate_pool_survival.json`, 79
+items across 15 slots), and Stage 4 (§6, the valuation engine actually computing `DPS*(S)` for
+these candidates — `core/run_full_sweep_mv.py` + the Phase 3 Upgrade Ledger artifact; still gets
+real refinements as gaps are found, e.g. the top-1-always-resolves fix and the flat top-5 2H list,
+but the stage itself is built and in active use).
+
+Next up: **Stage 5** (§7, the strategy layer) — chiefly the interaction matrix
+`I(i,j) = MV(i,j) − MV(i) − MV(j)` for the top ~12 candidates (complements/substitutes as
+packages), the single largest unbuilt piece of the original spec. Also still open from §8
+(Outputs): `results.csv`/`winner.json` as literal files (currently substituted by
+`data/cache/tiered_report.json` + the HTML ledger, not the spec'd files themselves), package
+goals (ties to the interaction matrix), and the gems/enchants free-reshuffle-vs-requires-gold
+split. Per-currency spend sections from §8 are moot — acquisition-cost tracking was explicitly
+dropped in favor of Wowhead linking.
+
+**Stage 6 (new, added 2026-08-23): multi-class/multi-spec support** — extend beyond Lerynia's
+Survival Hunter to any class/spec `wowsims/tbc-new` itself supports. Per the user, this is a big
+piece of work but explicitly does **not** need to be done before Phase 3 launches — it can proceed
+in parallel with or after Stage 5, not gating it. The architecture's two day-one rules (proto types
+never cross the adapter boundary; item identity carries `variant`) were already written to make
+this possible without a rewrite, and the "no class/spec/talent/expansion names in `core/`" rule
+means `core/` itself shouldn't need changes. The real work is elsewhere and not yet scoped in
+detail - known coupling points found so far that will need to become profile-driven instead of
+hardcoded, from working on `adapters/tbc/` and `core/run_full_sweep_mv.py` this session: the
+Survival-specific melee-weave APL switch and its own settings variant, `STAT_WEIGHTS`, the
+Herbalism/Mining profession filter, `SLOT_ORDER`/weapon-type assumptions, and the Expose-Weakness
+raid-AP analytical model (§ above) being Survival Hunter-specific by construction. Not started -
+noted here so it isn't lost, and to be scoped properly (probably its own sub-stages) when work on
+it actually begins.
 
 ## Future scope (deferred to final implementation, not now)
 
