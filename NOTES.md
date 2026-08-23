@@ -1035,3 +1035,46 @@ Python) with a long loop of varied requests to reproduce without any pipeline co
 compare memory usage over the run's lifetime for a leak; check if `core.RunRaidSimConcurrentAsync`
 or `core.ComputeStats` have known one-shot-process assumptions baked in (global state that's
 supposed to reset at process exit).
+
+## 2026-08-23 (overnight, autonomous) — simserver.exe crash investigation, continued
+
+Stress-tested simserver.exe standalone (bypassing the whole pipeline) to narrow down last
+cycle's crash. First attempt (naive slot-cycling through all 17 slots regardless of item type)
+hung indefinitely - traced precisely (per-request logging) to placing **a ranged weapon
+(Vengeful Gladiator's Rifle) into the offhand slot**. Confirmed this is an artifact of the test
+script, not a real risk: the real pipeline's `marginal_value._SLOT_HINT` mechanism (populated by
+`set_slot_hints()` from the same candidate-building logic `run_full_sweep_mv.py` actually uses)
+only ever tries an item in slots matching its real type - ran the full 71-item curated pool
+through the real `mv.mv_single()` path (proper slot hints, `raid_ap_contribution` included) and
+it completed cleanly, 0.6s, no hang. Still a real Go-engine bug worth knowing about (equipping a
+ranged weapon in a melee slot apparently causes an infinite loop rather than a clean validation
+error) but not one the pipeline can ever trigger through its own candidate-building path.
+
+**Directly stress-tested `get_agility()` (the only code path still using simserver.exe now that
+`USE_SIMSERVER=False`) at full production scale**: all 500 real sweep+curated candidates, each
+in its own real (slot-hint-correct) trial config, one `get_agility()` call each - **500/500
+succeeded, 0 degraded, 25.0s total, no crash, no hang**. This is strong, direct evidence the
+current production configuration is solid: the DPS path never touches simserver.exe at all
+(file-based, proven reliable all session), and the one remaining simserver-dependent path
+(`get_agility`/ComputeStats) is now independently verified robust at real scale, with self-heal
+and graceful-None-degradation as a backstop even if some other combination of conditions still
+trips it.
+
+**Narrows the original crash hypothesis**: since `ComputeStats` (simple, synchronous, no Monte
+Carlo iterations at all) survives 500 real calls in a row with zero issues, but the earlier
+crash happened specifically during a long run of `evaluate()`-via-simserver calls (heavy
+`RunRaidSimConcurrentAsync`, up to 12 concurrent goroutines per call, repeated hundreds of times,
+iteration counts up to 30000) - the likely culprit is something specific to sustained heavy
+`RunRaidSimConcurrentAsync` usage within one long-lived process (goroutine/channel accumulation,
+a leak somewhere in the iteration-loop machinery), not a general "any repeated request" issue.
+This is now a much more specific, testable hypothesis for whoever picks this up next: stress-test
+`RunRaidSimConcurrentAsync` alone (not mixed with ComputeStats) at full iteration counts (30000,
+matching the resolve pass) for several hundred real requests in a row, the same way
+`get_agility()` was just verified - if THAT reproduces the crash cleanly, the bug is confirmed
+isolated to the RaidSim path specifically, and `USE_SIMSERVER` could potentially be re-enabled
+for `get_agility()`-style light calls while staying off for the heavy DPS path, or the actual Go
+fix can be targeted precisely instead of guessed at.
+
+No code changes this cycle - the current committed state (`USE_SIMSERVER=False`, self-healing
+pool, graceful `get_agility()` degradation) was already correct; this cycle's work confirms and
+sharpens that finding rather than changing it.
