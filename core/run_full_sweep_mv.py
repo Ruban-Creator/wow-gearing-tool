@@ -859,7 +859,8 @@ def main():
                              "mv": delta, "noise_stdev": noise,
                              "tied_within_noise": abs(delta) < 2 * noise,
                              "source": source, "tier": tier, "craft_spell_id": craft_spell_id,
-                             "resolved": False, **time_horizon.lasts_until_phase(c.name, c.item_id)})
+                             "resolved": False, "resolve_iterations": SCREEN_ITERATIONS,
+                             **time_horizon.lasts_until_phase(c.name, c.item_id)})
         rows_2h.sort(key=lambda r: r["mv"], reverse=True)
 
         def resolve_2h_row(r):
@@ -868,6 +869,7 @@ def main():
             r["noise_stdev"] = mv.delta_noise(weave_dw_result, resolved, RESOLVE_ITERATIONS)
             r["tied_within_noise"] = abs(r["mv"]) < 2 * r["noise_stdev"]
             r["resolved"] = True
+            r["resolve_iterations"] = RESOLVE_ITERATIONS
 
         to_resolve_2h = [r for r in rows_2h[:LEADERBOARD_SIZE]
                           if abs(r["mv"]) < mv.CLEAR_MARGIN_MULTIPLE * r["noise_stdev"]]
