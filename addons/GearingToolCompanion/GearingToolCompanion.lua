@@ -807,7 +807,13 @@ local function GetRow(index)
 
     row.wseLine = row:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     row.wseLine:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 8, -34)
+    -- Real bug from a live screenshot: this FontString had no right-edge
+    -- constraint (unlike row.subtext, which does), so a long line just ran
+    -- past the row/frame edge and got clipped mid-word ("WSE ex...")
+    -- instead of truncating cleanly with an ellipsis.
+    row.wseLine:SetPoint("RIGHT", row, "RIGHT", -6, 0)
     row.wseLine:SetJustifyH("LEFT")
+    row.wseLine:SetWordWrap(false)
 
     row:SetScript("OnClick", function(self)
         selectedRowKey = self.charKey
@@ -880,9 +886,18 @@ local function RefreshCharacterList()
                 table.insert(profParts, ("%s %d"):format(p.name, p.level or 0))
             end
             local profText = #profParts > 0 and table.concat(profParts, ", ") or "no professions captured"
-            local when = c.timestamp > 0 and date("%Y-%m-%d %H:%M", c.timestamp) or "never"
-            row.wseLine:SetText(("%s · saved %s · %s"):format(profText, when,
-                WSETriggerText({ wse_export_trigger = c.wse_export_trigger }, false)))
+            local when = c.timestamp > 0 and date("%H:%M", c.timestamp) or "never"
+            -- Ultra-compact here on purpose (no timestamp on the WSE part -
+            -- the row already has one via "saved %s") - the fuller
+            -- WSETriggerText() forms were still too long for this row
+            -- width even with the right-edge fix above, per a real
+            -- screenshot showing "WSE ex..." getting clipped.
+            local wseShort = "WSE: not tried"
+            local trig = c.wse_export_trigger
+            if trig then
+                wseShort = trig.ok and "WSE: OK" or "WSE: failed"
+            end
+            row.wseLine:SetText(("%s · saved %s · %s"):format(profText, when, wseShort))
         end
     end
 
