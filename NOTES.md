@@ -2590,3 +2590,47 @@ against the real cached pipeline output after the change. Still correctly a no-o
 today - nothing in this repo's TBC-only DB has a real variant-duplicate item_id yet, and
 nothing should invent one. The Absolute BiS Simulator plan (see the plan file referenced
 there) is where a real WotLK variant actually gets exercised, once that tool exists.
+
+**2026-08-24: gem choice broadened from "pure Agility everywhere" (N=1-verified) to
+real per-item verification (N=37).** The earlier disproof of the "smart" STAT_WEIGHTS-based
+hybrid heuristic (Ranger-General's Chestguard: pure Agility 2701.4 beat the hybrid's 2651.6,
+see the entry above this session) only ever tested ONE item - it never actually established
+that pure Agility beats a REAL socket-bonus match on every item, just that a crude linear
+score is a bad way to decide. `gem_optimizer.verify_gem_choice()` (new) does the real
+comparison instead - pure Agility vs the item's own socket-bonus-chased loadout
+(`chase_bonus_gems_for_item()`, real color-matching against each socket's actual declared
+color, not a STAT_WEIGHTS score), both sides evaluated by the actual sim with the item
+genuinely equipped. `core/verify_gem_choices.py` ran this across all 37 of her real
+candidates with sockets (out of 71 total candidates - more than half the pool has sockets,
+a bigger blast radius than expected), screened at 3k iterations then resolved any close call
+at 30k (same funnel discipline as `marginal_value.mv_single_tiered`).
+
+Real result: pure Agility does NOT generalize. 9 items have a real, resolved, outside-noise
+DPS gain from chasing their own bonus instead (noise_stdev ~0.5 at 30k, deltas +1.07 to
++3.03 DPS): Rift Stalker Mantle/Leggings, Gronnstalker's Leggings, Scaled Greaves of the
+Marksman, Demon Stalker Greathelm, Barrel-Blade Longrifle, Necklace of the Deep, Fel Leather
+Gloves, Gauntlets of the Dragonslayer. 21 items clearly still favor pure Agility (some by a
+lot - Star-Strider Boots -20.5, Belt of Deep Shadow -18.9) and 7 are genuinely tied within
+noise either way. Full real numbers: `data/cache/gem_choice_verification.json`.
+`gem_optimizer.best_gems_for_item()` now applies the 9 confirmed winners
+(`CHASE_BONUS_ITEM_IDS`) and keeps pure Agility as the default for every other item,
+including anything never checked - real per-item data, not a formula claimed to generalize
+past what was actually verified.
+
+One of the 9 (Rift Stalker Mantle, item 30143) is CURRENTLY EQUIPPED - `build_owned_config`
+already re-optimizes her own gems the same way candidates get treated (matching CLAUDE.md's
+MV(i) = DPS*(P∪{i}) - DPS*(P) formula: DPS*(P) is the best achievable from P, not "whatever's
+literally socketed"), so her own real baseline DPS was itself understated by ~1.6 DPS by the
+old pure-Agility-everywhere default before this fix - not just a candidate-ranking issue.
+Triggered a full re-sweep (`run_full_sweep_mv.py`) to refresh `tiered_report.json` under the
+corrected baseline and gem choices before republishing - every reported MV number in the
+ledger is downstream of `baseline_screened`, so a stale baseline after a gem-logic fix would
+be a real, not just cosmetic, error.
+
+Remaining known-crude edge, flagged rather than silently left: `_best_gem_of_color()` picks
+the representative gem for a color via the same crude STAT_WEIGHTS score used elsewhere
+(only to construct ONE real candidate loadout for the sim to judge, never as the final
+decision) - if a color ever has more than one real Hunter-relevant gem choice worth
+distinguishing, only the top-scored one ever gets sim-tested. Not hit in practice yet (each
+color's real Hunter-relevant gem pool is small), so left as-is rather than building out
+multi-candidate-per-color testing for a case that hasn't actually occurred.
