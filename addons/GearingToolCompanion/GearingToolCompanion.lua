@@ -834,7 +834,12 @@ local function GetRow(index)
 
     row = CreateFrame("Button", nil, charListBody)
     row:SetSize(300, ROW_HEIGHT)
-    row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+    -- No SetHighlightTexture here on purpose - a prominent quest-title-style
+    -- hover glow implies a rich, functional button, but clicking a row only
+    -- sets faint internal selection state right now (no detail view yet -
+    -- see the OnClick comment below). Real user feedback: the glow read as
+    -- "this does something" with no payoff. The subtle bg tint on click
+    -- stays, since that's real, working state, just without the loud cue.
 
     row.bg = row:CreateTexture(nil, "BACKGROUND")
     row.bg:SetAllPoints()
