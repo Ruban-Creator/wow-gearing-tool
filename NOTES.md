@@ -2479,3 +2479,33 @@ cleanup.
 
 Republished the ledger artifact (same URL) with both fixes, verified rendering correctly
 (no console errors, confirmed both changes took effect) before publishing.
+
+**Second, separate real bug caught right after, same session**: the user spotted
+"Shoulderpads of the Stranger" (-8.6 DPS) and "Mantle of the Tireless Tracker" (-21.9
+DPS) also showing up with no explanation - looked identical to the just-fixed Beast Lord
+bug, but the real cause was completely different this time. Checked the raw data first
+rather than assuming: both items DO have a legitimate `rescue_note` (the real, validated
+rescue-check mechanism - "breaks Rift Stalker Armor's bonus, but a real +19.8 DPS gain
+once broken elsewhere") - the Python-side inclusion (`... or r.get("rescue_note")` in the
+`upgrades` filter) was correct and working as designed. The actual bug: the ledger HTML's
+JS template only ever rendered a note panel for `it.set_note` - `it.rescue_note` was
+never wired into the template at all, going back to whenever the rescue-check feature was
+first built. Every rescue-flagged item in the ledger has been showing as an unexplained
+downgrade since rescue-check existed, not just Beast Lord Armor - this is a much bigger
+count than the first bug (grepping the current data: Fists of Mukoa, Grips of Damnation,
+Liar's Tongue Gloves, Gloves of Dexterous Manipulation, Gloves of the Unbound,
+Shoulderpads of Assassination, Mail of Fevered Pursuit, Razorfury Mantle, Shoulders of
+the Hidden Predator, and more, on top of the two the user actually spotted).
+
+**Fix**: added a `rescue_note` rendering block in the ledger HTML's JS, styled the same
+as the existing `set-note` panel (reusing the CSS class, just labeled "Rescue" instead of
+"Set bonus"), and included `rescue_note` in the `setRescue` row-highlight check alongside
+`set_note` (same "not a standalone upgrade, here's why it's still listed" treatment).
+Pure HTML/JS fix - no Python data-pipeline change needed, since the data was always
+correct. Verified directly: "Shoulderpads of the Stranger" now shows a "RESCUE" panel
+with the real explanation text. Republished (same URL) after confirming zero console
+errors.
+
+Real lesson: two genuinely different root causes produced the same visible symptom
+("unexplained downgrade in the upgrades list") back to back - worth actually checking the
+data before assuming a second occurrence of the first bug's cause.
