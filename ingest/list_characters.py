@@ -19,6 +19,16 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from build_character import find_savedvariables, parse_lua_savedvariables  # noqa: E402
 
+# TBC Anniversary's real, fixed level cap for the whole expansion (already
+# assumed throughout this codebase - every real character.json/profile is
+# built at 70) - the sim pipeline can't use a sub-max-level character at
+# all, so one shows up here as pointless clutter otherwise (real case:
+# a level 1 alt appeared in the GUI's character list next to real raid
+# characters, even after the companion addon's own /gtlist got the
+# equivalent filter - that one only affects the addon's own in-game
+# display/future saves, not this separate Python-side read path).
+MAX_LEVEL = 70
+
 
 def list_wse_characters() -> dict[str, dict]:
     """name_realm -> {"identity": {...same subset build_character.build() puts
@@ -106,6 +116,15 @@ def list_all_characters() -> list[dict]:
     for name_realm in sorted(set(wse) | set(gt)):
         w = wse.get(name_realm)
         g = gt.get(name_realm)
+
+        # Skip only when the level is DEFINITELY known and below max - a
+        # character with no captured level yet is shown as usual, never
+        # assumed sub-max. Checks both sources' raw identity (not yet
+        # merged/picked below) so a stale sub-70 GTCompanion entry can't
+        # slip through just because WSE's own data doesn't carry a level.
+        known_levels = [d["identity"].get("level") for d in (w, g) if d and d["identity"].get("level")]
+        if known_levels and max(known_levels) < MAX_LEVEL:
+            continue
         if w and g:
             w_empty, g_empty = _is_empty_identity(w["identity"]), _is_empty_identity(g["identity"])
             if w_empty and not g_empty:
