@@ -9,6 +9,25 @@ undone.
 
 <!-- New entries get appended below as they come up. -->
 
+## Try it out
+
+`dist/gearing-tool-gui.exe` is already built and sitting there (also runnable from source:
+`python gui/app.py`, both from the repo root). All 4 plan stages are done and committed. See
+`CLAUDE.md`'s "Future scope" section and `NOTES.md`'s 2026-08-24 overnight entry for the full
+summary - the entries below are just the specific judgment calls worth your eyes on.
+
+## Judgment call: an empty identity block never wins the "newer timestamp" tie-break
+
+Your confirmed decision was "whichever source has the newer timestamp wins entirely." Found via
+real live testing that GTCompanion's current saved entries for you and Lerynia both have a
+*newer* timestamp than WSE's but an *empty* identity block (they predate today's addon update -
+no login since I copied the new `.lua` in). Applying "newer wins" literally would've shown a
+blank character card for both of you. Added one narrow guard: an empty identity block never
+outranks a non-empty one, regardless of timestamp - still whole-block, not per-field, just not
+picking a strictly-worse empty option when a real one exists. Should self-resolve the moment you
+log in again (GTCompanion will save real identity data then) - flagging in case you'd rather the
+literal rule held even for this case.
+
 ## Heads-up, not really a question: `data/character.json` currently has 0 equipped items for Lerynia
 
 While testing the new `gear sync`/per-character write during Stage A, I ran a real `gear sync
