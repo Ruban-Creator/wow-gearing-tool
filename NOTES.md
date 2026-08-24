@@ -2327,3 +2327,106 @@ full root-cause writeup replacing the old "reverted, not root-caused" comment.
 two-thirds of the original runtime. Every single change validated against real ground
 truth or exact cross-checks before being kept; zero verdict changes and zero
 correctness regressions found anywhere across the entire session.
+
+## 2026-08-24 (user driving, ~20 min window) - phase breakdown + a real negative result
+
+Added `[+Ns]` elapsed-time markers at each phase boundary in `run_full_sweep_mv.py`
+(cheap, permanent, real precursor to the GUI progress feature) and re-ran clean to see
+where time goes now that simserver.exe actually works. Real breakdown (427s total):
+Screening 71.0s (17%), **Confirming 135.8s (32%, the new biggest phase)**, Resolving
+91.8s (21%), **Rescue check 83.9s (20%)**, 2H analysis 44.5s (10%).
+
+**Found rescue check running fully sequentially** - a plain `for` loop, never
+converted to the `run_with_progress` pattern every other pass in this file already
+uses. Parallelized it (and the small 2H-resolve loop alongside it) - mechanically
+safe, same proven helper, no new logic.
+
+**Real result: no measurable speedup (83.9s -> 91.8s, statistically flat/slightly
+worse), despite the code genuinely running concurrently** (confirmed via real
+progress-percentage output, not just trusting the diff). Worth understanding why
+rather than quietly reverting: a single 30k-iteration sim call already uses all 12
+logical threads internally (`runtime.NumCPU()`, same "Running N iterations on 12
+concurrent sims" line seen everywhere else). Running 2 such calls concurrently via
+an OUTER `ThreadPoolExecutor(max_workers=2)` doesn't add throughput - both calls
+split the same 12 real threads, so 2 "concurrent" expensive calls run at roughly
+half speed each, netting out close to the sequential total. This is the SAME
+oversubscription effect the `(4,4) -> 747ms vs (2,2) -> 101ms` finding from earlier
+in this file already established, just showing up at the individual-call level
+instead of the pool-size level: outer concurrency only pays off when the work items
+themselves are cheap enough that the per-call fixed floor (not raw CPU) dominates
+(screening/confirming - many calls, each already using less than the full CPU
+budget relative to its own cost) - it does NOT pay off for a small number of
+already-maximally-parallel expensive calls (resolve/rescue-check).
+
+**Kept the parallelization anyway** - correctness verified unchanged (zero diff
+across all 53 displayed values vs the pre-change run), and it's not a regression,
+just a wash on wall-clock time. The real, durable value is the progress-percentage
+output every other pass already gets (a real GUI-relevant improvement even without
+a speed win) and code consistency (one pattern for every concurrent pass in this
+file, not almost-every). Documented here so a future session doesn't re-attempt
+"parallelize the expensive passes more" as if it were untested - it's a genuine,
+now-confirmed negative result for this specific class of change, not an oversight.
+
+**Real remaining levers, not attempted this session (time-boxed to a ~20 minute
+window, flagged as suggestions rather than rushed)**:
+- Confirming (135.8s, now the single biggest phase) processes 163 items at 5000
+  iterations each - real compute, not obviously wasteful, but CONFIRM_ITERATIONS
+  itself was never re-tuned against the NEW (much cheaper) per-call cost profile
+  simserver provides. Worth a proper empirical pass (same methodology as today's
+  margin tuning - real paired data against 30k ground truth) to see if a lower
+  confirm-tier iteration count is now safe and worth it, given the per-call floor
+  that justified 5000 as a reasonable middle ground has partly changed shape.
+- The SCREEN-level `CLEAR_MARGIN_MULTIPLE` (still 8x, gates entry into `to_resolve`
+  at all - a categorically different, higher-stakes decision than the confirm-tier
+  margin) was never revisited even though `SCREEN_ITERATIONS` dropping to 500 changed
+  its noise floor the same way it changed the confirm-tier's. Not touched today on
+  purpose - this one risks silently dropping a real candidate from consideration
+  entirely, not just showing it at lower precision, so it deserves the same careful,
+  supervised empirical validation as everything else, not a rushed pass.
+- `SIMSERVER_POOL_SIZE`/`MAX_WORKERS` retested today at (2,3,4,6) with the FIXED
+  simserver - much flatter curve than the old (4,4)-vs-(2,2) finding (139.8-148.7ms/
+  call across the whole range), suggesting some of that earlier 7.4x oversubscription
+  measurement may itself have been confounded by the (now-fixed) stderr pipe-deadlock
+  bug. (2,2) still looks like a fine, safe choice - no action taken, just flagged as
+  worth knowing the old number may not be as solid as it looked.
+
+## 2026-08-24 (continued) - screen-level margin tuning: tried it, real regression, reverted
+
+Followed up on suggestion #2 from the list above (the screen-level `CLEAR_MARGIN_MULTIPLE`,
+still 8x, gates entry into `to_resolve` at all). Real, careful validation first: 296
+leaderboard-eligible items total, 134 excluded (screened-only) at the current 8x. Pulled
+real 30k ground truth for all 56 items in the ratio-3-to-8 band (the ones a lower
+multiplier would newly exclude) - zero sign flips, and the only 2 real upgrades in that
+band (the ones where precision actually matters for what's shown) agreed to within
+0.3-0.9 DPS. The margin choice itself was genuinely validated safe.
+
+**Found and closed a real correctness gap while doing this**: rescue-check only ever
+looks at items already in `to_resolve` - excluding more candidates via a lower margin
+would silently stop checking some of them for rescue potential (the exact "Attumen's
+Gloves" scenario the whole rescue mechanism exists for). Added a safety net: any real
+downgrade in a currently-active set-bonus slot always enters `to_resolve` regardless of
+margin, so rescue-check coverage can never regress no matter how the general margin is
+tuned.
+
+**Real result: a 97s net REGRESSION (430s -> 527s), despite every individual piece being
+individually correct.** The margin lowering itself worked (confirm phase: 163 items/
+135.8s -> 157 items/119.5s, ~16s saved). But the safety net, doing exactly what it was
+built to do, surfaced far more real active-set-slot downgrades than the OLD (accidental)
+limiting via the 8x margin had ever exposed the rescue-check pass to: 55 candidates
+instead of 23. `rescue_check()` is 2 real 30k calls per candidate - that phase alone went
+from 91.8s to 204.3s, swamping the confirm-phase savings several times over. **Reverted
+both changes together** rather than keep a net-negative result - `SCREEN_CLEAR_MARGIN_
+MULTIPLE` and the safety-net logic are gone, `to_resolve` is back to the original
+`mv.CLEAR_MARGIN_MULTIPLE=8`-only decision. Verified the revert restores the known-good
+~430s timing before considering this closed.
+
+**Real lesson, worth remembering before anyone re-touches this area**: the OLD 8x margin
+was accidentally doing double duty - as a screening-precision gate AND as an implicit cap
+on how much work the rescue-check pass could ever be asked to do. Decoupling those two
+purposes (which is the objectively "more correct" design) exposed a real cost that had
+been invisible specifically because the coverage gap was quietly limiting rescue-check's
+own workload. A future attempt at closing this gap should scope the safety net much more
+narrowly - e.g. only the single least-bad real downgrade per active-set slot (matching
+`best_non_set_alt`'s existing "one alternative per slot" pattern elsewhere in
+`set_bonus.py`) rather than every leaderboard-ranked downgrade in that slot - not attempted
+this session, flagged for whoever picks this up next.

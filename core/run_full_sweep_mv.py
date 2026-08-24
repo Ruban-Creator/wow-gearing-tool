@@ -424,7 +424,7 @@ def main():
         return c, mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_screen, SCREEN_ITERATIONS, opt.SEED)
 
     screened = run_with_progress(screen_one, all_candidates, "Screening")
-    print(f"Screened {len(screened)} candidates @ {SCREEN_ITERATIONS} iter in {time.time()-start:.1f}s")
+    print(f"[+{time.time()-start:.1f}s] Screened {len(screened)} candidates @ {SCREEN_ITERATIONS} iter")
 
     # --- Pick each (tier, slot) leaderboard from the screening results ---
     by_tier_slot: dict[tuple[str, str], list] = {}
@@ -449,6 +449,26 @@ def main():
     # Resolving something already 8+ screening-noise-widths from zero can
     # only sharpen a number that was never in question, so it's skipped
     # (kept at its screened value, flagged "(screened only)" in the report).
+    #
+    # 2026-08-24: tried lowering this specific decision to a separate, less
+    # conservative SCREEN_CLEAR_MARGIN_MULTIPLE=4 (validated safe on its own
+    # terms - real screen-vs-30k data, zero sign flips), paired with a
+    # correctness fix forcing every real-downgrade candidate in a currently-
+    # active set-bonus slot into to_resolve regardless of margin (closing a
+    # real gap: rescue-check only ever sees to_resolve items, so a candidate
+    # excluded by a tighter margin would silently stop being checked for
+    # rescue potential). The margin change alone would have saved ~16s on
+    # the confirm phase - but the safety net, working exactly as intended,
+    # surfaced far more real active-set-slot downgrades than expected (55
+    # rescue-check candidates vs the previous 23), and rescue_check() is 2
+    # real 30k calls each - that phase alone went from 91.8s to 204.3s,
+    # a net 97s REGRESSION overall despite the margin change genuinely
+    # working. Reverted both together rather than keep a net-negative
+    # change - the underlying coverage gap is real but this fix for it
+    # cost more than it was worth; a future attempt should scope the safety
+    # net more narrowly (e.g. only the single least-bad downgrade per active
+    # slot, not every leaderboard entry) rather than reopen this exact
+    # implementation. See NOTES.md's 2026-08-24 entry for the full numbers.
     to_resolve = []
     for key, rows in by_tier_slot.items():
         rows.sort(key=lambda cr: cr[1]["mv"], reverse=True)
@@ -463,7 +483,7 @@ def main():
             if i == 0 or abs(r["mv"]) < mv.CLEAR_MARGIN_MULTIPLE * r["noise_stdev"]:
                 to_resolve.append((c, r))
 
-    print(f"Confirming {len(to_resolve)} (tier, slot) leaderboard candidates @ {CONFIRM_ITERATIONS} iter...")
+    print(f"[+{time.time()-start:.1f}s] Confirming {len(to_resolve)} (tier, slot) leaderboard candidates @ {CONFIRM_ITERATIONS} iter...")
 
     # --- Pass 2a: confirm @ 5k - cheap sharpening pass, see CONFIRM_ITERATIONS ---
     baseline_confirm = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, CONFIRM_ITERATIONS, opt.SEED)
@@ -496,7 +516,7 @@ def main():
     # progress projection has to wait until the whole pass finishes to learn
     # its own denominator. Real precursor to the progress-indicator GUI
     # feature already noted in CLAUDE.md.
-    print(f"Resolving {len(need_full_resolve)}/{len(to_resolve)} (tier, slot) leaderboard candidates "
+    print(f"[+{time.time()-start:.1f}s] Resolving {len(need_full_resolve)}/{len(to_resolve)} (tier, slot) leaderboard candidates "
           f"@ {RESOLVE_ITERATIONS} iter ({len(to_resolve) - len(need_full_resolve)} confirmed @ "
           f"{CONFIRM_ITERATIONS} already clear)...")
 
@@ -539,7 +559,7 @@ def main():
                 r["resolved"] = False
                 r["resolve_iterations"] = SCREEN_ITERATIONS
 
-    print(f"Resolved {len(need_full_resolve)} @ {RESOLVE_ITERATIONS} iter, "
+    print(f"[+{time.time()-start:.1f}s] Resolved {len(need_full_resolve)} @ {RESOLVE_ITERATIONS} iter, "
           f"{len(to_resolve) - len(need_full_resolve)} confirmed @ {CONFIRM_ITERATIONS} iter.\n")
 
     # --- Pass 3: "rescue" check - is a real downgrade actually a strong
@@ -571,22 +591,36 @@ def main():
     rescue_notes_by_item: dict[int, str] = {}
     rescue_mv_by_item: dict[int, float] = {}
     if active_set_by_slot:
+        rescue_candidates = []
         for c, r in to_resolve:
             if r.get("tied_within_noise") or r["mv"] >= 0:
                 continue  # only real downgrades are candidates for a rescue note
             phys_slot = display_to_armor_slot.get(r["slot"])
             if phys_slot not in active_set_by_slot:
                 continue
-            set_name = active_set_by_slot[phys_slot]
+            rescue_candidates.append((c, phys_slot, active_set_by_slot[phys_slot]))
+
+        # Was a plain sequential loop - each rescue_check() is 2 real 30k
+        # sim calls, and this phase measured 20% of total sweep time on its
+        # own (2026-08-24) despite every other pass already using
+        # run_with_progress. Same helper, same MAX_WORKERS - no new
+        # concurrency pattern, just applying the one already proven
+        # elsewhere in this file to a pass that got missed.
+        def rescue_one(item):
+            c, phys_slot, set_name = item
             check = set_bonus.rescue_check(SETTINGS_TEMPLATE, c, phys_slot, set_name,
                                             baseline_config, candidates, RESOLVE_ITERATIONS, opt.SEED)
+            return c.item_id, set_name, check
+
+        rescue_results = run_with_progress(rescue_one, rescue_candidates, "Rescue-checking")
+        for item_id, set_name, check in rescue_results:
             if check and not check["tied_within_noise"] and check["mv_if_set_broken"] > 0:
-                rescue_notes_by_item[c.item_id] = (
+                rescue_notes_by_item[item_id] = (
                     f"Not an upgrade today (breaks {set_name}'s bonus), but a real "
                     f"{check['mv_if_set_broken']:+.1f} DPS gain once that bonus is "
                     f"already broken elsewhere (e.g. via {check['via_item']} in {check['via_slot']})."
                 )
-                rescue_mv_by_item[c.item_id] = check["mv_if_set_broken"]
+                rescue_mv_by_item[item_id] = check["mv_if_set_broken"]
         if rescue_notes_by_item:
             print(f"Rescue check: {len(rescue_notes_by_item)} item(s) found to be real upgrades "
                   f"once their set-bonus break is already priced in elsewhere.\n")
@@ -595,6 +629,8 @@ def main():
         for c, r in rows:
             r["rescue_note"] = rescue_notes_by_item.get(c.item_id)
             r["rescue_mv"] = rescue_mv_by_item.get(c.item_id)
+
+    print(f"[+{time.time()-start:.1f}s] Rescue check pass done ({len(rescue_notes_by_item)} flagged).")
 
     # A "screened only" real upgrade (MV so far past the noise floor that
     # CLEAR_MARGIN_MULTIPLE skipped its 30k DPS resolve) was still showing
@@ -625,6 +661,8 @@ def main():
 
     if screened_upgrades_needing_ap:
         print(f"Filled Raid AP for {len(screened_upgrades_needing_ap)} screened-only real upgrades.\n")
+
+    print(f"[+{time.time()-start:.1f}s] Raid-AP fill pass done. Building tiered report...")
 
     # --- Achieved BiS: slots where nothing in the whole P3 pool beats her
     # current gear (real upgrade = same filter every tier uses below) - a
@@ -766,6 +804,8 @@ def main():
     # "given I'm already weaving, does switching to a 2H weapon help
     # further" - not "should I abandon DW entirely". The no-weave baseline
     # is printed alongside for context, never silently dropped.
+    print(f"[+{time.time()-start:.1f}s] Tiered report built. Starting 2H weapon analysis...")
+
     two_hand_out: list[dict] = []
     two_hand_meta: dict = {}
     if weapon_2h_candidates:
@@ -810,8 +850,7 @@ def main():
 
         to_resolve_2h = [r for r in rows_2h[:LEADERBOARD_SIZE]
                           if abs(r["mv"]) < mv.CLEAR_MARGIN_MULTIPLE * r["noise_stdev"]]
-        for r in to_resolve_2h:
-            resolve_2h_row(r)
+        run_with_progress(resolve_2h_row, to_resolve_2h, "Resolving 2H")
 
         real_upgrades_2h = [r for r in rows_2h if not r["tied_within_noise"] and r["mv"] > 0]
         top_2h = real_upgrades_2h[:TOP_N_2H]
