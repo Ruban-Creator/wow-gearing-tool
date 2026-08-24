@@ -1,8 +1,10 @@
 """Entry point for the Gearing Tool GUI (picker + report viewer, v1 - see
 the approved plan). Run with `python gui/app.py` from the repo root, or as
 the packaged .exe's entry point (packaging/gearing_tool_gui.spec) - the exe
-is meant to be launched with the repo root as its working directory, e.g.
-"Start in: E:\\Claude\\Gearing-Tool" on a shortcut."""
+finds the real repo root itself by walking up from its own on-disk location
+(see api.py's _find_repo_root), so no working-directory/"Start in" setup is
+required; it can run from dist/ or wherever it's been copied to inside (or
+under) a real checkout."""
 import os
 import sys
 

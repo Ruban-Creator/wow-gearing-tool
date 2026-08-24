@@ -14,12 +14,36 @@ import webbrowser
 # directories - and ingest/*.py are real on-disk source files this deliberately
 # does NOT ask PyInstaller to bundle (its static import analysis doesn't
 # reliably catch the dynamic sys.path.insert()+bare-import pattern below).
-# Per the plan: the packaged exe is meant to be run from the repo root, so
-# REPO_ROOT becomes the real checkout's ingest/ and data/ directories via cwd
-# instead - not guessed, not made configurable, since this is a personal
-# single-repo tool, not something meant to run from an arbitrary location.
+#
+# REAL BUG, hit live 2026-08-24 (not a hypothetical): using os.getcwd() to
+# find the repo root crashed with "No module named 'list_characters'" the
+# first time the exe was actually double-clicked, because it was sitting in
+# dist/ (where the build puts it) rather than the repo root, and Windows'
+# double-click cwd didn't line up with either. Fixed by walking up from the
+# exe's own real on-disk location (sys.executable, not cwd - correct
+# regardless of what launched it or what the working directory happens to
+# be) looking for a directory that actually has ingest/list_characters.py -
+# works whether the exe stays in dist/ (repo root is one level up) or gets
+# copied to the repo root directly, with no "Start in" folder configuration
+# required from the user at all.
+def _find_repo_root(start: str) -> str:
+    d = start
+    for _ in range(6):  # a handful of parent levels is plenty; never walk to the disk root
+        if os.path.isfile(os.path.join(d, "ingest", "list_characters.py")):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            break
+        d = parent
+    raise RuntimeError(
+        f"Could not find the Gearing-Tool repo root by walking up from {start!r} - "
+        f"looked for ingest/list_characters.py. Make sure this exe is somewhere inside "
+        f"(or in dist/ inside) a real Gearing-Tool checkout."
+    )
+
+
 if getattr(sys, "frozen", False):
-    REPO_ROOT = os.getcwd()
+    REPO_ROOT = _find_repo_root(os.path.dirname(os.path.abspath(sys.executable)))
 else:
     REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(REPO_ROOT, "ingest"))
