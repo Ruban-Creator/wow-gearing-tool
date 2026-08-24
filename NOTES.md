@@ -2534,3 +2534,34 @@ math second. Internal code names (`rescue_check`, `rescue_note`, `rescue_mv`,
 unrenamed - user-facing copy changed, not the underlying API, lower risk. Re-ran the
 sweep (warm cache, 1.1s), rebuilt the ledger data, verified the new wording renders
 correctly (real text confirmed present, zero console errors), republished.
+
+**2026-08-24: automated ledger consistency checking built** (`core/check_ledger_consistency.py`),
+the item queued directly after the two bugs above and the Absolute BiS Simulator plan. Three
+real bug classes had already been caught by eye this project - Beast Lord false-positive
+upgrades (a filter-gating bug), rescue_note never rendered (a template bug), and the
+2026-08-23 raw-dict-of-dicts splice (a silent-blank-page bug) - and none of them had any
+automated check that would have caught them before a human spotted the symptom. The script
+re-derives `run_full_sweep_mv.py`'s own stated gating invariants (every shown item must be a
+real upgrade OR carry a set_note OR a rescue_note; `tied_within_noise` must match the real
+2-sigma rule; a rescue_note must carry a positive `rescue_mv`; a `resolved:true` row must
+carry a real `resolve_iterations`) and checks them against the real `tiered_report.json`,
+re-derives `build_ledger_data.py`'s transform and diffs it against the real
+`ledger_data.json`, and diffs the published HTML's embedded `DATA` blob against
+`ledger_data.json` byte-for-byte (the actual mechanism that would have caught 2026-08-23's
+bug immediately).
+
+**First real run found a genuine, previously-undetected bug**: the 2H weapon leaderboard's
+`resolve_2h_row()` sets `resolved = True` but never wrote `resolve_iterations` - unlike the
+main leaderboard's three-tier (resolve/confirm/screen) bookkeeping at the same file's
+`resolve_one()` callsite, which does. Fixed by writing `resolve_iterations = RESOLVE_ITERATIONS`
+on resolve and defaulting unresolved 2H rows to `SCREEN_ITERATIONS`, mirroring the main
+leaderboard's pattern exactly. Backfilled the one real, known-correct value (30000 - the only
+iteration count that code path ever resolves at) directly into the already-cached
+`tiered_report.json`, `ledger_data.json`, and the published HTML's DATA blob rather than
+re-running a 15-20 minute sweep for a field with zero display effect (grep-confirmed:
+`resolve_iterations` only appears in the DATA blob itself, no render template reads it).
+Committed as `57bc2d7`. Re-ran the checker clean afterward: 656 assertions, 0 failures.
+
+Run it with `python core/check_ledger_consistency.py` any time after a sweep, before
+republishing - it exits non-zero on a real failure, so it's suitable to run as a real gate,
+not just an optional spot-check.
