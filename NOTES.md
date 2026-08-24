@@ -2678,3 +2678,48 @@ than documented Blizzard API (the reputation `hasRep` bug, the arena team API), 
 `GetProfessions`/`GetProfessionInfo` being long-stable elsewhere is not itself a guarantee here.
 Per CLAUDE.md's addon-sync rule, this repo copy is now the most-recently-edited (source of
 truth) - needs copying into the live WoW AddOns folder to actually test.
+
+**2026-08-24 (overnight, autonomous - user asleep, "keep moving through stops, save questions
+for me" instruction): multi-character GUI built end to end**, all 4 stages of the approved plan
+(`C:\Users\Matthias\.claude\plans\staged-purring-lynx.md`). See `CLAUDE.md`'s "Future scope"
+section for the real, current summary of what exists now. Detail worth keeping here:
+
+- **Stage A**: `ingest/list_characters.py` real-tested against this machine's actual live
+  SavedVariables - found 3 real characters (Lerynia/Survival Hunter, Béarforceone/Balance Druid,
+  Rubán/Arms Warrior - genuinely useful future Stage 6 test data). Found and fixed a real edge
+  case the plan didn't anticipate: GTCompanion's newest entry for both Lerynia and Rubán had an
+  *empty* identity block (predates today's addon identity-capture update, no login since) but a
+  *newer timestamp* than WSE - the confirmed "newer wins" policy would have picked an empty
+  block over real data. Added a narrow guard (`_is_empty_identity`) so an empty block never wins
+  regardless of timestamp - still whole-block, not a per-field merge, just not choosing a
+  strictly-worse empty option when a real one exists.
+- **Real regression caught and disclosed, not hidden**: testing `gear sync` live against
+  Lerynia's actual current WSE export found it has 0 equipped items right now (a stale/ungeared
+  export, not a bug in anything built today) - this overwrote `data/character.json` with that
+  empty-equipped state. Nothing is actually lost (SavedVariables files were only ever read, never
+  written), fully recoverable by re-exporting in-game, but flagged clearly in `QUESTIONS.md`
+  rather than silently left for the user to discover.
+- **Stages B+C merged**: built real styling directly instead of a deliberately-plain pass first,
+  since "should look nice" was a confirmed requirement from the start. Picked `pywebview`
+  (local HTML/CSS/JS, no server/port) over customtkinter/Flet/Dear PyGui - full CSS control for
+  the least effort, given v1's whole surface is a list+detail view. Verified two ways since a
+  native window can't be screenshotted or clicked into directly by this session: a test-only
+  `gui/assets/preview.html`+`preview_mock.js` harness (fakes `window.pywebview.api` with real
+  captured data) driven in an actual browser via DOM/computed-style checks, and three separate
+  real `python`/packaged-exe launches confirmed via their actual OS window title through
+  PowerShell. No human has looked at the actual rendered window yet - flagged for when the user
+  is back.
+- **Stage D packaging - two real gotchas hit and fixed, not just anticipated**: (1) PyInstaller's
+  static import analysis can't see `ingest/list_characters.py`/`build_character.py` being loaded
+  via a dynamic `sys.path.insert()` + bare `import` (the same pattern already used everywhere
+  else in this repo) - solved by deliberately NOT bundling them, instead resolving `REPO_ROOT` via
+  `os.getcwd()` when frozen (`sys.frozen`) so they load as real on-disk source from the repo
+  checkout the exe is run from. (2) That same blind spot meant `slpp` (a REAL pip dependency of
+  `build_character.py`, several import-levels deeper) also got silently omitted - a genuine first
+  packaged build crashed with `ModuleNotFoundError: No module named 'slpp'` before
+  `hiddenimports=["slpp"]` was added to `packaging/gearing_tool_gui.spec`. Final windowed
+  `dist/gearing-tool-gui.exe` (~13MB) launches clean, confirmed via its real window title.
+- **`QUESTIONS.md`** (new, repo root) - a running log of every real judgment call made
+  autonomously overnight (empty-identity tie-break, the fixed phase2-5 grid UI choice, the
+  Lerynia data-staleness heads-up, the Stage B/C merge) for the user to review, not blocking
+  anything. Matches their explicit instruction rather than stopping at each plan checkpoint.

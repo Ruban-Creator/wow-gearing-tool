@@ -236,47 +236,36 @@ user actually asks. Keep `core/`/`adapters/` command-line-first and UI-agnostic 
 a GUI can sit on top later without a rewrite. Until the toggle exists, keep assuming 6% (moonkin
 present) per the user's stated raid comp - never silently switch to 9% without being asked.
 
-**Draft sketch (2026-08-24, requested by the user while driving — discuss and refine before
-building, not a committed plan): the character-select dropdown above, concretely, now that the
-addon side of multi-character support actually exists** (`addons/GearingToolCompanion`'s
-`GTCompanionDB`/`/gtlist`, added this session — see NOTES.md). Rough shape:
+**Built, 2026-08-24: the character-select dropdown above, as a real picker + report-viewer
+GUI** — the draft sketch from earlier the same day was planned properly (Plan Mode,
+`C:\Users\Matthias\.claude\plans\staged-purring-lynx.md`) and then implemented end to end
+overnight while the user slept, per their explicit "keep moving through stops, save questions
+for me" instruction. Real, verified pieces:
 
-- **Character listing**: `GTCompanionDB` is already keyed per character (name-realm) with a
-  timestamp and identity (class/race/faction/level/professions). WowSimsExporter separately
-  keeps its own multi-character `savedCharacters` list (own timestamp, own data) - confirmed by
-  reading `ingest/build_character.py`'s `find_wse_character()`. Neither is read as a *list*
-  today - `build_character.py` only ever targets one hardcoded/passed `name_realm`. A GUI's
-  character picker needs a new listing function (`ingest/list_characters.py`?) that enumerates
-  both sources, merges by name-realm, and surfaces per-character: identity, and each source's own
-  last-saved timestamp (so "GTCompanion data is 3 days stale, re-save in game" is visible before
-  running anything stale).
-- **Per-character data, not one flat file**: `data/character.json` is a single file today,
-  overwritten per run - fine for one character, actively wrong for several (whoever ran last
-  silently becomes "the" character). Needs to become `data/characters/<name-realm>/character.json`
-  (and similarly for that character's own cache/report state) before a character picker means
-  anything real.
-- **Cache correctness, checked (not assumed) this session**: `sim_cache`'s key is
-  `gear_hash:settings_fingerprint:iterations:seed`
-  (`core/sim_cache.py:key`), and `settings_fingerprint` hashes the *entire* settings template
-  except equipment (`adapters/tbc/valuation.py:settings_fingerprint`) - so it already includes
-  race/class/talents/consumables, meaning two different characters do NOT silently collide in the
-  shared cache as long as each gets their OWN real settings file. The actual requirement this
-  surfaces isn't a cache-key redesign - it's that `SETTINGS_TEMPLATE` needs to stop being one
-  hardcoded file (`profiles/tbc/canonical_settings_survival.json`, Lerynia's own) and become
-  per-character (or per class/spec/race), matching the Stage 6 profile-driven work already
-  planned above. A single shared `sim_cache.json` across all characters is otherwise fine to keep
-  - correctness comes from the fingerprint, not from separating the cache files.
-- **Report link**: once a character's sweep/valuation is published (per today's ledger-artifact
-  pattern), track that URL per (character, phase) - e.g.
-  `data/characters/<name-realm>/reports.json` mapping phase → artifact URL + generated-at
-  timestamp - so the GUI's picker can show "view last report" without re-running anything, and
-  "stale, re-run?" once gear/phase has moved on since that URL was generated.
+- `ingest/list_characters.py` — merges WowSimsExporter's and GearingToolCompanion's own
+  multi-character storage by name-realm ("newer source wins, whole identity block" per the
+  confirmed decision, with one refinement found via real live testing: an empty identity block
+  never wins over a non-empty one regardless of timestamp). Verified against this machine's real
+  data: three real characters found (Lerynia/Survival Hunter, a Balance Druid, an Arms Warrior).
+- `data/characters/<name-realm>/character.json` + `.../reports.json` (phase → artifact URL +
+  timestamp) — additive alongside the existing flat `data/character.json`; `run_full_sweep_mv.py`
+  and the rest of the sim pipeline's paths are deliberately untouched (real per-class simulation
+  is Stage 6, separate). New CLI: `gear character list`, `gear report register/list`.
+- `gui/` — a `pywebview`-based app (HTML/CSS/JS assets, no live server/port) with a character
+  sidebar and a per-phase report grid, opening report links in the real default browser.
+  Packaged via `packaging/gearing_tool_gui.spec` into a real, working, double-clickable single
+  `.exe` (see `packaging/README.md`) - confirmed launching cleanly (real OS window title checked
+  via PowerShell) across three separate builds, though not yet clicked through by a human.
+- **Cache correctness, checked (not assumed) while designing this**: `sim_cache`'s key already
+  includes the *entire* settings-template fingerprint except equipment
+  (`adapters/tbc/valuation.py:settings_fingerprint`) - so characters don't silently collide in
+  the shared cache as long as each eventually gets its own real settings file. That's the actual
+  Stage 6 requirement this surfaces, not a cache-key redesign.
 
-Genuinely open, not resolved: whether GTCompanion or WowSimsExporter is the source of truth when
-both have data for the same character (favor whichever has the newer timestamp? always prefer
-one?); whether the report-link tracking file becomes part of what `check_ledger_consistency.py`
-validates once it exists. Sketched only because the user asked for something to plan during a
-15-minute gap - needs real discussion before any of it gets built.
+v1 is explicitly picker + viewer only - no "run a sweep" button, since only Lerynia's profile
+works today. See `QUESTIONS.md` for the real judgment calls made autonomously while building
+this (source-of-truth tie-break refinement, the fixed phase-grid UI choice, a real data-staleness
+heads-up caught while testing) - flag anything you'd rather were different.
 
 Tool rename to something including the user's gamertag "Ruban" (e.g. RubanAutoSim) is also
 planned, as a final rework once the product is otherwise done — not yet, folder path and
