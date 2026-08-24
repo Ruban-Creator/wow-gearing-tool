@@ -23,6 +23,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/signal"
+	"runtime"
 	"strconv"
 	"sync/atomic"
 
@@ -32,6 +34,32 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	protoiface "google.golang.org/protobuf/proto"
 )
+
+// Diagnostic only - added 2026-08-24 to investigate the known "hangs at
+// exactly call #34" bug (see NOTES.md). Windows' default handling of
+// CTRL_BREAK_EVENT is an immediate STATUS_CONTROL_C_EXIT kill with no
+// goroutine dump - per `go doc os/signal`, registering os.Interrupt makes Go
+// intercept BOTH ^C and ^BREAK (delivered as syscall.SIGTERM on this
+// channel) instead of the default kill, so a stuck process can be inspected
+// live rather than just killed blind. Does NOT touch runOne/
+// RunRaidSimConcurrentAsync or any simulation logic - purely additive, zero
+// risk to DPS correctness.
+func installDiagnosticDumpHandler() {
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, os.Interrupt)
+	go func() {
+		for range ch {
+			buf := make([]byte, 4<<20) // 4MB, generous for ~dozens of goroutines
+			n := runtime.Stack(buf, true)
+			f, err := os.Create(`E:\Claude\Temp\Gearing-Tool\simserver_live_dump.txt`)
+			if err == nil {
+				f.Write(buf[:n])
+				f.Close()
+			}
+			fmt.Fprintf(os.Stderr, "simserver: dumped %d goroutines (%d bytes) on SIGBREAK\n", runtime.NumGoroutine(), n)
+		}
+	}()
+}
 
 func init() {
 	sim.RegisterAll()
@@ -58,6 +86,8 @@ func nextRequestId() string {
 }
 
 func main() {
+	installDiagnosticDumpHandler()
+
 	reader := bufio.NewReaderSize(os.Stdin, 1024*1024)
 	writer := bufio.NewWriter(os.Stdout)
 	defer writer.Flush()

@@ -7,6 +7,7 @@ of them, one per worker thread, not from pipelining one shared process.
 """
 from __future__ import annotations
 
+import collections
 import json
 import os
 import subprocess
@@ -30,6 +31,28 @@ class SimServerProcess:
         ready = self.proc.stderr.readline()
         if "ready" not in ready:
             raise RuntimeError(f"simserver failed to start: {ready!r}")
+        # Real root cause of the "dies/hangs at exactly call #34" bug (found
+        # 2026-08-24 via a live goroutine dump, not guessed - see NOTES.md):
+        # simserver.exe logs 2 lines per call ("Running N iterations...",
+        # "All N sims finished successfully.") to stderr via Go's log
+        # package. Nothing here ever read stderr after the startup line, so
+        # the Windows anonymous pipe's small buffer filled after ~33 calls'
+        # worth of log lines, and the child process blocked forever inside
+        # log.Printf's own blocking write once the buffer was full - NOT a
+        # resource exhaustion in the sim engine itself. This thread keeps
+        # the pipe drained for the process's whole lifetime; the last 200
+        # lines are kept (bounded, so a long-lived process's memory doesn't
+        # grow unbounded) in case a real crash still needs reporting.
+        self._stderr_tail = collections.deque(maxlen=200)
+        self._stderr_thread = threading.Thread(target=self._drain_stderr, daemon=True)
+        self._stderr_thread.start()
+
+    def _drain_stderr(self):
+        try:
+            for line in self.proc.stderr:
+                self._stderr_tail.append(line)
+        except (ValueError, OSError):
+            pass  # stream closed as the process exits - not an error here
 
     def run(self, raid_sim_request: dict) -> dict:
         line = json.dumps(raid_sim_request, separators=(",", ":"))
@@ -37,7 +60,7 @@ class SimServerProcess:
         self.proc.stdin.flush()
         out = self.proc.stdout.readline()
         if not out:
-            err = self.proc.stderr.read()
+            err = "".join(self._stderr_tail)
             raise RuntimeError(f"simserver produced no output (process died?): {err}")
         return json.loads(out)
 

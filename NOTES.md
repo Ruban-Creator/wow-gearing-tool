@@ -2250,3 +2250,80 @@ leaderboard candidates needed the full 30k pass (144 confirmed @5k), down from
 (+ SCREEN_ITERATIONS 500) -> **515.1s (+ uniform margin, no visible flag)** - a
 **51.6% reduction overall**. Every step validated against real 30k ground truth
 before being kept; zero verdict changes found anywhere across the whole session.
+
+## 2026-08-24 (with the user) - simserver.exe's "#34 crash" ROOT CAUSE FOUND AND FIXED
+
+The user asked directly whether I wanted to work on the simserver.exe crash next, now
+present to cross-check correctness (the precondition I'd set for even attempting this
+- see the earlier overnight entries' repeated "not something to guess at blind"
+caution). Took it on properly this time instead of more source-reading.
+
+**Real diagnostic approach, not more guessing**: reproduced the hang directly (bypassing
+the Python wrapper entirely - raw stdin/stdout to `simserver.exe`), confirmed it stalls
+at exactly call #33/34 as previously documented, and confirmed via `tasklist` the
+process was genuinely STUCK (alive, using memory) not crashed. First attempt at a live
+diagnostic - `CTRL_BREAK_EVENT` via `GenerateConsoleCtrlEvent` - just force-killed it
+(exit code `0xC000013A` = `STATUS_CONTROL_C_EXIT`, Windows' default handler, no dump).
+Root cause of THAT: `syscall.SIGBREAK` doesn't exist in Go's standard `syscall` package
+(`go doc` confirmed) - the real API is `signal.Notify(ch, os.Interrupt)`, which Go
+documents as catching BOTH ^C and ^BREAK on Windows. Added a small, purely diagnostic,
+zero-risk handler to `simserver/main.go` (`installDiagnosticDumpHandler()` - a few
+lines, does not touch `runOne`/`RunRaidSimConcurrentAsync`/anything simulation-related)
+that dumps all goroutine stacks to a file on this signal instead of letting Windows
+kill the process blind. Rebuilt, smoke-tested for correctness first (real DPS number,
+sane range), then reproduced the hang again and sent the break signal.
+
+**Got a real, conclusive goroutine dump this time.** The stuck goroutine
+(`goroutine 329`) was NOT anywhere in simulation logic at all - it was blocked inside
+Go's own `log.Printf` -> `syscall.WriteFile`, at `sim_concurrent.go:528` (the "All %d
+sims finished successfully." line), stuck in Windows' I/O completion port machinery
+trying to WRITE a log line to stderr. **This was never a resource exhaustion in the sim
+engine** - it's a **stderr pipe-buffer deadlock**: `simserver_client.py`'s
+`SimServerProcess` only ever read `stdout`; nothing drained `stderr` after the startup
+"ready" line. `simserver.exe` logs 2 lines per call ("Running N iterations...", "All N
+sims finished successfully.") via Go's `log` package - once ~33 calls' worth of log
+lines filled the small Windows anonymous pipe buffer, the child process blocked forever
+inside its own blocking write, waiting for buffer space nothing was ever going to free.
+This exactly explains the deterministic "always exactly #34" symptom that three
+previous overnight sessions investigated and left unresolved (checked
+`sim_concurrent.go`'s own channel/goroutine setup and the `simsignals` package for a
+fixed-size resource near 32-34 and found nothing there either - now clear why: the bug
+was never in either of those files, it was in the Python side never reading a pipe).
+
+**Real fix, Python-only, zero Go-engine risk**: `simserver_client.py`'s
+`SimServerProcess` now starts a daemon thread on construction that continuously drains
+`stderr` into a bounded (`maxlen=200`) `collections.deque` for the process's whole
+lifetime, so the pipe never fills. Error reporting (`run()`'s "process died?" path) now
+reads from that buffered tail instead of calling `.read()` directly on the stream
+(avoids a race with the draining thread). The diagnostic signal handler stays in
+`simserver/main.go` too - harmless, and useful if anything like this ever recurs.
+
+**Verified thoroughly before trusting it, given the stakes of re-enabling a path that
+feeds every reported DPS number**:
+- 150 sequential calls via the real `SimServerProcess` class (not the raw stdin/stdout
+  test) - sailed straight through the old #34 hang point to completion, no errors.
+- **Correctness cross-check**: same seed, same config, simserver path vs the
+  proven-reliable file-based `adapter.run()` path - DPS matched to 4 decimal places
+  (2249.0420 both times).
+- **200 concurrent, mixed-iteration (500/5000/30000) calls** through the real
+  production `SimServerPool` + `ThreadPoolExecutor` pattern (matching
+  `run_full_sweep_mv.py`'s actual usage) - 0 errors, 269.1s.
+- **A full real clean/uncached sweep** with `USE_SIMSERVER` flipped back to `True` -
+  completed cleanly, same resolve/confirm counts as the immediately-prior
+  simserver-disabled run (19/163 resolved, 144 confirmed @5k - deterministic, matches
+  exactly), and **all 53 displayed DPS values in the report matched the
+  simserver-disabled run's report exactly**, item for item (same seed => deterministic
+  regardless of which sim path computed it) - zero correctness impact, confirmed at
+  full production scale, not just synthetic stress-test scale.
+
+**`USE_SIMSERVER` flipped back to `True`** in `adapters/tbc/valuation.py`, with the
+full root-cause writeup replacing the old "reverted, not root-caused" comment.
+
+**Final clean/uncached timing, simserver re-enabled on top of everything else today**:
+418.0s (7.0 min) - down from 515.1s. Full progression today: 1063.8s (original) ->
+928.8s (sim_cache) -> 853.0s (confirm@5k, 8x) -> 782.5s (confirm@5k, tuned 3x) ->
+772.7s (+ SCREEN_ITERATIONS 500) -> 515.1s (+ uniform margin, no visible flag) ->
+**418.0s (+ simserver re-enabled)** - a **60.7% reduction overall**, essentially
+two-thirds of the original runtime. Every single change validated against real ground
+truth or exact cross-checks before being kept; zero verdict changes and zero
+correctness regressions found anywhere across the entire session.

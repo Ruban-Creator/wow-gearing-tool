@@ -57,21 +57,23 @@ def _apply_weapon_imbues(settings: dict, items: list[dict]) -> None:
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 CACHE_DIR = os.path.join(REPO_ROOT, "data", "cache")
 
-USE_SIMSERVER = False
-# Was True - reverted (overnight, autonomous) after finding simserver.exe
-# crashes ("process died?" RuntimeError) partway through a genuinely cold
-# (no cache hits) run of ~500 sequential requests. Confirmed NOT tied to a
-# specific bad item/candidate (isolated the exact failing item and it ran
-# fine standalone) and NOT a concurrency bug (reproduced serially, pool
-# size 1). Every previous "successful" run tonight had a warm sim_cache,
-# so most evaluate() calls never actually reached simserver.exe at all -
-# this is the first time it's been asked to handle sustained real load,
-# and it doesn't survive it. See NOTES.md for full details. Falling back
-# to the file-based adapter.run() path (fresh wowsimcli.exe per call, zero
-# accumulated state) since it's the one proven reliable across this whole
-# session, at the cost of losing tonight's speedup until this is properly
-# root-caused - correctness and not silently truncating results matters
-# more than speed here.
+USE_SIMSERVER = True
+# Real root cause found and fixed 2026-08-24 (with the user present to
+# cross-check correctness, not another blind attempt) - see NOTES.md for the
+# full investigation. The "dies/hangs at exactly call #34" bug was NEVER a
+# resource exhaustion in the sim engine: a live goroutine dump (Windows
+# CTRL_BREAK_EVENT, intercepted via a diagnostic os/signal handler added to
+# simserver/main.go) caught the stuck goroutine blocked inside Go's own
+# log.Printf -> syscall.WriteFile, at sim_concurrent.go's "All %d sims
+# finished successfully." line. simserver_client.py's SimServerProcess only
+# ever read stdout - nothing drained stderr after the startup line, so the
+# Windows anonymous pipe's small buffer filled after ~33 calls' worth of log
+# lines and the child process blocked forever writing its next one. Fixed
+# with a background stderr-draining thread in simserver_client.py (bounded
+# 200-line tail kept for real error reporting). Verified: correctness
+# (simserver vs file-based path, identical DPS to 4 decimal places, same
+# seed) and stability (200 concurrent mixed-iteration calls via the real
+# production pool pattern, zero errors, well past the old #34 hang point).
 # The Ryzen 5 5600X this runs on is 6C/12T, and wowsimcli/simserver already
 # use ALL logical threads internally per sim call ("Running N iterations on
 # 12 concurrent sims" - runtime.NumCPU()). A pool size of 4 means up to
