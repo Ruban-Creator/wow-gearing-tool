@@ -2634,3 +2634,14 @@ decision) - if a color ever has more than one real Hunter-relevant gem choice wo
 distinguishing, only the top-scored one ever gets sim-tested. Not hit in practice yet (each
 color's real Hunter-relevant gem pool is small), so left as-is rather than building out
 multi-candidate-per-color testing for a case that hasn't actually occurred.
+
+Re-ran the full sweep afterward (471.1s) to refresh `tiered_report.json` under the corrected
+baseline/gem logic, rebuilt `ledger_data.json`, verified the fresh render locally (local HTTP
+server, zero console errors, real DATA match, Sidegrade notes present - `text-transform:
+uppercase` makes them read "SIDEGRADE" in `innerText`, a case-sensitivity false alarm in my
+own verification script, not a real bug) and republished. New `baseline_screened` = 2689.3
+(vs the old 2689.8 - the ~0.5 DPS shift is well within screening noise, not a red flag; the
+real +1.61 DPS Rift Stalker Mantle gain is inside that noise band at this iteration count).
+`check_ledger_consistency.py` clean (671/0) both before and after the splice - it correctly
+caught the intermediate state (sweep done, HTML not yet re-spliced) as a real failure, exactly
+the class of bug it exists to catch.
