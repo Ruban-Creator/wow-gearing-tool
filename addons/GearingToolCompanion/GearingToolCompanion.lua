@@ -144,23 +144,36 @@ end
 -- signature (name, icon, skillLevel, maxSkillLevel, ...) is long-stable
 -- Blizzard API, not guessed - still unverified on THIS client, see the file
 -- header note.
-local function AddProfession(result, index)
-    if not index then return end
-    local name, _, skillLevel, maxSkillLevel = GetProfessionInfo(index)
-    if name then
-        table.insert(result, { name = name, level = skillLevel, maxLevel = maxSkillLevel })
-    end
-end
+-- Real, live-confirmed 2026-08-24: GetProfessions()/GetProfessionInfo()
+-- return nothing at all on this client (all-nil, even for a character with
+-- real Herbalism 375/375 + Mining 375/375, and even after opening the
+-- Skills panel this session - ruling out the lazy-load theory that fixed
+-- the analogous ReputationFrame quirk). The general skill-line API is what
+-- actually works here, confirmed via /gtprofdebug's real output: skills
+-- are a flat, ordered list of section HEADERS (isHeader=1, rank=0) each
+-- followed by their real child skill lines (isHeader=nil, real rank/
+-- maxRank) until the next header - "Professions" (index 5 in the real
+-- dump) was directly followed by Herbalism (375/375) and Mining (375/375),
+-- an exact match against her real in-game Skills panel. TRADE_SKILLS is
+-- the real Blizzard global for the localized "Professions" header string
+-- (avoids hardcoding the English word); falls back to the literal string
+-- if that global isn't present for some reason.
+local PROFESSIONS_HEADER = TRADE_SKILLS or "Professions"
 
 local function DumpProfessions()
     local result = {}
-    local prof1, prof2, archaeology, fishing, cooking, firstAid = GetProfessions()
-    AddProfession(result, prof1)
-    AddProfession(result, prof2)
-    AddProfession(result, archaeology)
-    AddProfession(result, fishing)
-    AddProfession(result, cooking)
-    AddProfession(result, firstAid)
+    if not GetNumSkillLines then
+        return result
+    end
+    local inProfessionsSection = false
+    for i = 1, GetNumSkillLines() do
+        local skillName, isHeader, _, skillRank, _, _, skillMaxRank = GetSkillLineInfo(i)
+        if isHeader then
+            inProfessionsSection = (skillName == PROFESSIONS_HEADER)
+        elseif inProfessionsSection and skillName then
+            table.insert(result, { name = skillName, level = skillRank, maxLevel = skillMaxRank })
+        end
+    end
     return result
 end
 
