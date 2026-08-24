@@ -59,17 +59,18 @@ RIFT_STALKER_SET_NAME = "Rift Stalker Armor"
 
 
 class Candidate:
-    __slots__ = ("name", "item_id", "enchant", "gems", "excluded_reason")
+    __slots__ = ("name", "item_id", "enchant", "gems", "excluded_reason", "variant")
 
-    def __init__(self, name, item_id, enchant=0, gems=None, excluded_reason=None):
+    def __init__(self, name, item_id, enchant=0, gems=None, excluded_reason=None, variant=None):
         self.name = name
         self.item_id = item_id
         self.enchant = enchant
         self.gems = gems or []
         self.excluded_reason = excluded_reason
+        self.variant = variant  # see gear_config.item_entry's docstring - always None for TBC today
 
     def as_entry(self):
-        return gc.item_entry(self.item_id, self.enchant, self.gems)
+        return gc.item_entry(self.item_id, self.enchant, self.gems, self.variant)
 
 
 # Reference-list slot keys -> the 17 equipped-array slot names that draw

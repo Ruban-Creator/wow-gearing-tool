@@ -19,12 +19,20 @@ DEFAULT_GEM = 32194  # Delicate Crimson Spinel (+10 Agility, red, phase 3) - was
 # an invented EP-based pick - same color, same stat, strictly better, no downside.
 
 
-def item_entry(item_id: int, enchant: int = 0, gems: list[int] | None = None) -> dict:
+def item_entry(item_id: int, enchant: int = 0, gems: list[int] | None = None,
+               variant: str | None = None) -> dict:
+    """`variant` distinguishes same-item_id itemization variants (e.g. WotLK's
+    10/25/heroic versions of one item) that TBC's own DB doesn't produce today -
+    see CLAUDE.md's "day one" architecture rule. Always None/omitted for real TBC
+    data right now; carried here so identity doesn't need retrofitting later.
+    """
     entry = {"id": item_id}
     if enchant:
         entry["enchant"] = enchant
     if gems:
         entry["gems"] = gems
+    if variant:
+        entry["variant"] = variant
     return entry
 
 

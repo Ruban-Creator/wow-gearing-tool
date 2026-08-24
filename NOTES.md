@@ -2565,3 +2565,28 @@ Committed as `57bc2d7`. Re-ran the checker clean afterward: 656 assertions, 0 fa
 Run it with `python core/check_ledger_consistency.py` any time after a sweep, before
 republishing - it exits non-zero on a real failure, so it's suitable to run as a real gate,
 not just an optional spot-check.
+
+**2026-08-24: `variant` field retrofitted into `core/gear_config.py`/`optimizer.py`'s
+`Candidate`** - closing a real, confirmed gap the Absolute BiS Simulator planning session's
+Explore agent found: CLAUDE.md's own "day one" architecture rule ("item identity carries a
+`variant` field from day one... retrofitting identity through a cache, state file, and
+history log later is genuinely painful - do it now while it's free") was stated as decided
+but never actually implemented anywhere in this repo's shipped code, despite the vendored DB
+already carrying 82 real WotLK-tagged (`expansion: 3`) items today. Fixed here rather than
+only in the new tool, since it's this repo's own `item_entry()`/`Candidate` that stated the
+rule and never followed it, and the fix is genuinely free while nothing depends on the old
+shape.
+
+`gear_config.item_entry()` gained an optional `variant: str | None = None` fourth parameter,
+included in the returned dict only when truthy (same pattern as `enchant`/`gems`) -
+`config_hash()` already hashes the full entry dict, so a future variant-bearing entry
+correctly gets its own cache key with zero further changes needed there.
+`optimizer.Candidate` gained a matching `variant` slot/param, threaded through
+`as_entry()`. Both call sites (`optimizer.py` lines ~72 and ~193) call positionally without
+the new arg, so real TBC configs are provably unaffected - verified directly: the no-variant
+entry is byte-identical to before, a with-variant entry produces a different `config_hash`
+than the same item without one, and `check_ledger_consistency.py` still passes clean (656/0)
+against the real cached pipeline output after the change. Still correctly a no-op for TBC
+today - nothing in this repo's TBC-only DB has a real variant-duplicate item_id yet, and
+nothing should invent one. The Absolute BiS Simulator plan (see the plan file referenced
+there) is where a real WotLK variant actually gets exercised, once that tool exists.
