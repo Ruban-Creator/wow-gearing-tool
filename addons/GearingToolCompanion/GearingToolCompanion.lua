@@ -247,12 +247,22 @@ end
 -- timestamps" view. Reads whatever's already in GTCompanionDB; doesn't touch
 -- other accounts' SavedVariables (out of reach from in-game Lua anyway).
 local function AllCharacters()
+    -- Already-saved sub-70 entries (from before the Save*-function level
+    -- gate below existed - e.g. a real level 1 alt that showed up in
+    -- /gtlist next to real raid characters) are filtered from display
+    -- here too, not just blocked from future saves. Only skips entries
+    -- where the level is DEFINITELY known and below max - an entry with
+    -- no captured identity/level yet is shown as usual, not assumed sub-70.
+    local maxLevel = GetMaxPlayerLevel and GetMaxPlayerLevel() or 70
     local list = {}
     for key, entry in pairs(GTCompanionDB) do
-        table.insert(list, {
-            key = key, identity = entry.identity or {}, timestamp = entry.timestamp or 0,
-            wse_export_trigger = entry.wse_export_trigger,
-        })
+        local level = entry.identity and entry.identity.level
+        if not (level and level < maxLevel) then
+            table.insert(list, {
+                key = key, identity = entry.identity or {}, timestamp = entry.timestamp or 0,
+                wse_export_trigger = entry.wse_export_trigger,
+            })
+        end
     end
     table.sort(list, function(a, b) return a.timestamp > b.timestamp end)
     return list
@@ -283,10 +293,25 @@ end
 -- declaration is in the right place.
 local bankIsOpen = false
 
+-- The sim pipeline only supports max-level (70) characters - saving/
+-- tracking data for a leveling character is real, pointless clutter (a
+-- level 1 alt showed up in /gtlist next to real raid characters). Every
+-- Save* function below is gated on this. GetMaxPlayerLevel() (not a
+-- hardcoded 70) matches the exact real check WowSimsExporter's own
+-- SavedDataManager.lua:OnCharacterChanged already uses internally
+-- ("if character.level < GetMaxPlayerLevel() then return end") - staying
+-- correct automatically if the level cap ever changes, not duplicating a
+-- number that could drift out of sync with WSE's own real behavior.
+local function IsMaxLevel()
+    local maxLevel = GetMaxPlayerLevel and GetMaxPlayerLevel() or 70
+    return UnitLevel("player") >= maxLevel
+end
+
 -- Bank containers only read valid data while the bank frame is open, so
 -- bank is only ever re-scanned on BANKFRAME_OPENED; bags update on their
 -- own event and must not overwrite the last-known bank snapshot.
 local function SaveBags()
+    if not IsMaxLevel() then return end
     local entry = Entry()
     entry.bags = DumpContainers(BagContainers())
     entry.timestamp = time()
@@ -303,7 +328,7 @@ end
 -- read, in which case this leaves entry.bank untouched instead of
 -- clobbering it.
 local function SaveBank()
-    if not bankIsOpen then
+    if not bankIsOpen or not IsMaxLevel() then
         return
     end
     local entry = Entry()
@@ -312,6 +337,7 @@ local function SaveBank()
 end
 
 local function SaveReputationAndArena()
+    if not IsMaxLevel() then return end
     local entry = Entry()
     entry.reputation = DumpReputation()
     entry.arena = DumpArena()
@@ -319,6 +345,7 @@ local function SaveReputationAndArena()
 end
 
 local function SaveIdentity()
+    if not IsMaxLevel() then return end
     local entry = Entry()
     entry.identity = DumpIdentity()
     entry.timestamp = time()
@@ -369,6 +396,7 @@ end
 -- same reasoning already used for reputation - gives the client a moment to
 -- finish warming up before asking WSE to read talent data.
 local function TriggerWSEExport()
+    if not IsMaxLevel() then return end
     local entry = Entry()
     if not LibStub then
         entry.wse_export_trigger = { ok = false, reason = "LibStub not found", at = time() }
