@@ -390,10 +390,6 @@ def main():
         # "real upgrade" for achieved-BiS/report-inclusion purposes).
         if not parts or not any_real:
             continue
-        note = f"part of {set_name}: " + " · ".join(parts)
-        for _, cand in set_bonus.set_pieces_in_pool(set_name, candidates):
-            set_notes_by_item[cand.item_id] = note
-
         # Which 4 of the 5 armor slots should actually hold the set piece,
         # per the user: guides almost always recommend 4pc, occasionally
         # all 5 (rare) or fewer (weak bonuses) - determined by real sim
@@ -407,6 +403,27 @@ def main():
                       f"full 5pc is {combo['full_five_dps'] - combo['combined_dps']:+.1f} vs this (screened)")
             else:
                 print(f"  Best combo for {set_name}: all 5 pieces ({combo['combined_dps']:.1f})")
+
+        # Real bug, caught by the user (2026-08-24): the note used to get
+        # attached to every piece of a set with ANY real bonus threshold
+        # SOMEWHERE, regardless of whether that set is remotely competitive
+        # with what she's already wearing - Beast Lord Armor's own 4pc bonus
+        # is real in isolation, but her actual Rift Stalker Armor pieces
+        # already strictly beat every Beast Lord combo (best_four_of_five
+        # confirms this directly), so Beast Lord pieces (each -26 to -73 DPS
+        # alone) were showing up in the "upgrades" list purely because they
+        # carried a set_note, with no real case for switching to that set at
+        # all. Gate on the SET's own best achievable DPS actually beating her
+        # current baseline, not just "this bonus exists somewhere" - a set
+        # `best_four_of_five` couldn't evaluate (fewer than 5 real tier
+        # pieces available) still gets the note, since there's no real
+        # transition number to compare against baseline in that case.
+        if combo is not None and combo["combined_dps"] <= baseline_screen["combined"]:
+            continue
+
+        note = f"part of {set_name}: " + " · ".join(parts)
+        for _, cand in set_bonus.set_pieces_in_pool(set_name, candidates):
+            set_notes_by_item[cand.item_id] = note
 
     if set_notes_by_item:
         print(f"Set-bonus check: {len(set_notes_by_item)} item(s) flagged across {len(set_names)} set(s).\n")

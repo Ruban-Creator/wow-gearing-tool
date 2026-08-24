@@ -2430,3 +2430,52 @@ narrowly - e.g. only the single least-bad real downgrade per active-set slot (ma
 `best_non_set_alt`'s existing "one alternative per slot" pattern elsewhere in
 `set_bonus.py`) rather than every leaderboard-ranked downgrade in that slot - not attempted
 this session, flagged for whoever picks this up next.
+
+## 2026-08-24 (continued) - real ledger bug: Beast Lord Armor showing as "upgrades"
+
+User caught this looking at the published ledger: Beast Lord Armor pieces (Helm -50.4,
+Mantle -36.8, Cuirass -72.9, Handguards -35.7, Leggings -60.4 - all clear, deep
+downgrades vs. her real Rift Stalker gear) were showing up in the "upgrades" list for
+several slots. Real root cause, not a display bug: the `upgrades` filter in
+`run_full_sweep_mv.py` was `(not tied and mv > 0) or set_note or rescue_note` - ANY item
+carrying a `set_note` got included regardless of its own mv sign. `set_note` itself gets
+attached to every piece of a set the moment that set has ANY real (non-tied) bonus
+threshold ANYWHERE (checked via `isolate_bonus_value`, which only asks "is this bonus
+real in isolation," never "is this set worth switching to at all"). Beast Lord Armor's
+4pc bonus (+73.4) IS real in isolation - so every Beast Lord piece got the note and
+therefore got shown, even though her actual Rift Stalker Armor already strictly beats
+every Beast Lord combination (`best_four_of_five` was already printing "full 5pc is
+-54.6 vs this" for Beast Lord, right there in the log, just never checked against
+anything).
+
+**This was never really about Beast Lord Armor specifically - it's a general gap**: the
+set_note mechanism was designed for the real, validated Gronnstalker's-style case (an
+individual piece looks bad alone, but the FULL transition to that set is genuinely worth
+considering) - but it never checked whether the full transition actually clears the bar
+of "better than what she has now" before deciding to flag every piece of that set.
+Any tracked set with a real bonus, however unrelated to her current gear, would trigger
+this - not a Beast-Lord-only issue.
+
+**Fix**: gate the whole `set_notes_by_item` population per set_name on whether
+`best_four_of_five`'s own `combined_dps` for that set actually beats her real baseline
+DPS (`baseline_screen["combined"]`) - reusing a comparison the code already had all the
+inputs for, just never made. A set `best_four_of_five` can't evaluate (fewer than 5 real
+tier pieces available anywhere) still gets the note, since there's no real transition
+number to compare in that case - conservative fallback, not a full fix for that narrower
+edge case. Verified directly: Beast Lord Armor items dropped from the report entirely (0
+occurrences, confirmed via `tiered_report.json`); `Set-bonus check` went from 15 flagged
+items across 18 sets to 10 flagged items across the same 18 sets - the 5 removed are
+exactly the 5 Beast Lord Armor pieces. Re-verified in the browser (zero JS console
+errors, "Beast Lord" no longer appears anywhere in the rendered page).
+
+**Also stripped the dead Interaction Matrix section from the ledger HTML** (per the
+user, already flagged as a known cleanup item from the Stage 5 pivot) - the CSS
+(`kind-complement`/`kind-substitute`/`kind-artifact` styles), the legend rows
+referencing it, the `<section id="interactions-section">` HTML block, and the JS
+rendering code that reads `DATA.interactions` are all gone. `build_ledger_data.py` still
+writes an empty `"interactions":[]` key into the data blob (harmless - nothing reads it
+anymore) - left as-is rather than touching the data pipeline for a purely cosmetic
+cleanup.
+
+Republished the ledger artifact (same URL) with both fixes, verified rendering correctly
+(no console errors, confirmed both changes took effect) before publishing.
