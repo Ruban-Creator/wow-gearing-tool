@@ -9,7 +9,19 @@ import os
 import sys
 import webbrowser
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# When frozen (PyInstaller --onefile), __file__ resolves inside the temp
+# extraction dir (sys._MEIPASS), not next to the real data/ or ingest/
+# directories - and ingest/*.py are real on-disk source files this deliberately
+# does NOT ask PyInstaller to bundle (its static import analysis doesn't
+# reliably catch the dynamic sys.path.insert()+bare-import pattern below).
+# Per the plan: the packaged exe is meant to be run from the repo root, so
+# REPO_ROOT becomes the real checkout's ingest/ and data/ directories via cwd
+# instead - not guessed, not made configurable, since this is a personal
+# single-repo tool, not something meant to run from an arbitrary location.
+if getattr(sys, "frozen", False):
+    REPO_ROOT = os.getcwd()
+else:
+    REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(REPO_ROOT, "ingest"))
 import list_characters  # noqa: E402
 
