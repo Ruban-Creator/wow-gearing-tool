@@ -503,6 +503,33 @@ SlashCmdList["GTEXPORT"] = function()
     Announce("Saved.")
 end
 
+-- Real diagnostic, not another guess: a live screenshot showed
+-- "Professions: none captured" for a character with real, confirmed
+-- Herbalism 375/375 and Mining 375/375 (visible in her own Skills panel),
+-- meaning GetProfessions()/GetProfessionInfo() aren't behaving as
+-- documented on this client - the same class of surprise this addon has
+-- already hit twice (C_Reputation not existing, the arena team API).
+-- Rather than guess a third fix blind, this prints the real raw return
+-- values to chat so the actual shape can be seen and DumpProfessions()
+-- fixed against real data.
+SLASH_GTPROFDEBUG1 = "/gtprofdebug"
+SlashCmdList["GTPROFDEBUG"] = function()
+    local prof1, prof2, archaeology, fishing, cooking, firstAid = GetProfessions()
+    print(("[GTDebug] GetProfessions() -> prof1=%s prof2=%s archaeology=%s fishing=%s cooking=%s firstAid=%s"):format(
+        tostring(prof1), tostring(prof2), tostring(archaeology), tostring(fishing), tostring(cooking), tostring(firstAid)))
+    for _, index in ipairs({ prof1, prof2, archaeology, fishing, cooking, firstAid }) do
+        if index then
+            local name, icon, skillLevel, maxSkillLevel, numAbilities, spelloffset, skillLine,
+                  rank, modifier = GetProfessionInfo(index)
+            print(("[GTDebug] GetProfessionInfo(%d) -> name=%s icon=%s skillLevel=%s maxSkillLevel=%s "
+                .. "numAbilities=%s spelloffset=%s skillLine=%s rank=%s modifier=%s"):format(
+                index, tostring(name), tostring(icon), tostring(skillLevel), tostring(maxSkillLevel),
+                tostring(numAbilities), tostring(spelloffset), tostring(skillLine), tostring(rank), tostring(modifier)))
+        end
+    end
+    print("[GTDebug] Done - copy the lines above and share them so DumpProfessions() can be fixed against the real data.")
+end
+
 -- ============================================================
 -- Minimap button + status panel - for less technical users who
 -- won't remember or want to type a slash command. Both just call
@@ -585,7 +612,11 @@ end)
 -- TBC Anniversary client build.
 local statusFrame = CreateFrame("Frame", "GTCompanionStatusFrame", UIParent,
     BackdropTemplateMixin and "BackdropTemplate" or nil)
-statusFrame:SetSize(260, 230)
+-- Grown from 230 - real screenshot showed the WSE-trigger line (added
+-- after this size was last tuned) overlapping the buttons at the bottom,
+-- since the body FontString has no fixed height and just grows downward
+-- with nothing to push the buttons out of the way.
+statusFrame:SetSize(260, 290)
 statusFrame:SetPoint("CENTER")
 statusFrame:SetFrameStrata("DIALOG")
 statusFrame:SetBackdrop({
@@ -615,16 +646,22 @@ body:SetWidth(220)
 
 -- Shared by the status panel and the all-characters list - one line
 -- summarizing whether/when we last tried to trigger WowSimsExporter's own
--- export on this character's behalf, and why it didn't fire if it didn't
--- (WSE not installed, its own auto-save disabled, etc - see
--- TriggerWSEExport's real reasons above).
-local function WSETriggerText(entry)
+-- export on this character's behalf. `full` (default true) includes the
+-- real failure reason (used in /gtlist, which has room); the compact
+-- status panel passes full=false - a real failure reason can be a long
+-- sentence that wraps to multiple lines at this panel's fixed width,
+-- which is exactly what pushed this text down into the buttons in a real
+-- screenshot before this was split out.
+local function WSETriggerText(entry, full)
     local t = entry.wse_export_trigger
     if not t then
-        return "WSE export trigger: not attempted yet"
+        return "WSE export: not attempted yet"
     end
     if t.ok then
-        return ("WSE export triggered: %s"):format(date("%H:%M:%S", t.at))
+        return ("WSE export: OK (%s)"):format(date("%H:%M:%S", t.at))
+    end
+    if full == false then
+        return ("WSE export: failed (%s)"):format(date("%H:%M:%S", t.at))
     end
     return ("WSE export trigger failed (%s): %s"):format(t.reason or "?", date("%H:%M:%S", t.at))
 end
@@ -648,7 +685,7 @@ local function RefreshStatusFrame()
             id.race or "?", id.class or "?", tostring(id.level or "?"),
             profText,
             #entry.bags, #entry.bank, repCount, #(entry.arena or {}), lastSaved,
-            WSETriggerText(entry)
+            WSETriggerText(entry, false)
         )
     )
 end
