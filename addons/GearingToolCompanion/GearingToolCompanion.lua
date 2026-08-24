@@ -426,6 +426,25 @@ local function HookReputationFrame()
     end
 end
 
+-- Real diagnostic confirmed 2026-08-24: GetProfessions() returned all-nil
+-- for a character with real, confirmed Herbalism 375/375 + Mining 375/375
+-- (verified via /gtprofdebug against her own real Skills panel) - not a
+-- signature mismatch, the function returned nothing at all. Same shape as
+-- the ReputationFrame quirk above (backing data not populated until the
+-- relevant panel has actually been shown this session), applied here on
+-- the same reasoning, not re-verified independently yet - SkillFrame is
+-- this client's real Classic-era skills panel name by convention (same
+-- uncertainty flagged as ReputationFrame's own name above - not confirmed
+-- on this specific client, hooked defensively so a wrong name just no-ops
+-- rather than erroring).
+local skillFrameHooked = false
+local function HookSkillsFrame()
+    if not skillFrameHooked and SkillFrame then
+        skillFrameHooked = true
+        SkillFrame:HookScript("OnShow", SaveIdentity)
+    end
+end
+
 local f = CreateFrame("Frame")
 f:RegisterEvent("BANKFRAME_OPENED")
 f:RegisterEvent("BANKFRAME_CLOSED")
@@ -492,10 +511,12 @@ f:SetScript("OnEvent", function(_, event)
         SaveIdentity()
     elseif event == "ADDON_LOADED" then
         HookReputationFrame()
+        HookSkillsFrame()
     end
 end)
 
 HookReputationFrame()  -- covers a session where the reputation panel was already loaded/shown
+HookSkillsFrame()      -- same, for professions - see HookSkillsFrame's own comment
 
 SLASH_GTEXPORT1 = "/gtexport"
 SlashCmdList["GTEXPORT"] = function()
@@ -526,6 +547,21 @@ SlashCmdList["GTPROFDEBUG"] = function()
                 index, tostring(name), tostring(icon), tostring(skillLevel), tostring(maxSkillLevel),
                 tostring(numAbilities), tostring(spelloffset), tostring(skillLine), tostring(rank), tostring(modifier)))
         end
+    end
+    -- Fallback data source, added after GetProfessions() came back all-nil
+    -- for a character with real, confirmed professions - GetNumSkillLines/
+    -- GetSkillLineInfo is the more general skill API professions are
+    -- technically a subset of; useful cross-reference if the
+    -- SkillFrame-hook fix (see HookSkillsFrame) doesn't resolve this.
+    if GetNumSkillLines then
+        print(("[GTDebug] GetNumSkillLines() -> %d"):format(GetNumSkillLines()))
+        for i = 1, GetNumSkillLines() do
+            local skillName, isHeader, isExpanded, skillRank, _, _, skillMaxRank = GetSkillLineInfo(i)
+            print(("[GTDebug] GetSkillLineInfo(%d) -> name=%s isHeader=%s rank=%s maxRank=%s"):format(
+                i, tostring(skillName), tostring(isHeader), tostring(skillRank), tostring(skillMaxRank)))
+        end
+    else
+        print("[GTDebug] GetNumSkillLines does not exist on this client either.")
     end
     print("[GTDebug] Done - copy the lines above and share them so DumpProfessions() can be fixed against the real data.")
 end
