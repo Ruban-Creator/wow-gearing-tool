@@ -1909,3 +1909,344 @@ currently found. Not investigated yet - next real step if this becomes a priorit
 confirming whether the meta gem is actually active in the current winning ("leave
 hands non-tier") combo before deciding whether joint gem optimization is worth
 building.
+
+## 2026-08-24 - Overnight: 4-week gearing progression + runtime optimization pass
+
+Two standing overnight tasks, run autonomously while the user slept (explicit
+instruction: keep going until told to stop or the 9:00 window closes).
+
+**4-week gearing progression** (`E:\Claude\Temp\Gearing-Tool\weekly_progression.py`,
+not committed - a scratch driver, not a permanent core/ tool yet): simulates a fresh
+level-70's gearing path starting from a deliberately WORSE baseline - the item list
+from a pasted wowsims "Pre-Raid BiS" reference build (17 items only; race/professions/
+talents stay Lerynia's real Nightelf/Herbalism-Mining identity throughout, per the
+user's explicit choice). Each week: swap `data/character.json`'s `equipped.items` to
+that week's gear, run the real unmodified `core/run_full_sweep_mv.py`, find the single
+highest real (non-tied) MV upgrade across the whole tiered report (rescue_mv when
+flagged, else mv - same selection rule the ledger itself uses), "acquire" it with its
+real enchant/gems via `opt.load_candidates()`, repeat. **Safety**: `character.json` is
+backed up once at the very start and restored in a `finally` block no matter what -
+verified this actually fires correctly on a real early failure (see below), so a crash
+mid-run doesn't leave her real file in a modified state.
+
+Real bug caught before the real run: the pasted reference build's raw items (id/
+enchant/gems only) don't carry the `"name"` field real `character.json` entries always
+have - `optimizer.load_candidates()` indexes owned items by name and crashed with
+`KeyError: 'name'` on the very first week. Fixed by resolving each id's name via
+`item_db.by_id()` before writing week-0 gear (and again for each week's newly-acquired
+item, same reason).
+
+**Runtime optimization pass** - investigated the standing `project-bridge-exe-overhead`
+memory's claim (fresh `bridge.exe` spawn costing ~0.3s/call) directly rather than
+trusting it, since a good chunk of tonight's time budget was explicitly for this.
+**The claim was wrong** - real instrumented breakdown of `valuation.evaluate()`
+(config_hash / load_template / apply_imbues / fingerprint / sim_cache.get / build_
+raid_sim_request / pool.run / player_and_pet_dps, timed separately):
+- `bridge.exe` itself: ~0.022s/call in isolation (8 calls, tight variance) - cheap,
+  not the bottleneck. Memory file corrected in place rather than left stale.
+- `_load_template()`'s per-call deep copy (JSON round-trip, not `copy.deepcopy` -
+  actually FASTER for this dict: 0.58ms vs 1.19ms/call, measured, so left as-is)
+  is negligible either way.
+- `sim_cache.get()`/`put()` were doing a full-file `json.load()`/full-file
+  `json.dump()` on EVERY call, including cache HITS - real, unnecessary disk I/O
+  (only ~5-20ms at today's ~1782-entry/450KB cache, but grows without bound as the
+  cache accumulates across sweeps, and this session's overnight run + every future
+  sweep only adds to it). **Fixed**: `core/sim_cache.py` now keeps one in-memory
+  copy per process (safe - `run_full_sweep_mv.py`'s worker pool is
+  `ThreadPoolExecutor`, same process/module, already guarded by the existing
+  `threading.Lock`), loaded once lazily, still write-through to disk on every
+  `put()` (same crash-safety/cross-process visibility as before - a concurrent
+  second process's own new writes just aren't visible to this process's copy until
+  restart, which costs a missed cache-hit, never a wrong answer). Verified correct
+  with an isolated round-trip test against a throwaway cache file before trusting
+  it (get-miss, put, get-hit, disk-matches, fresh-process-reload-matches - all
+  passed) - deliberately NOT tested against the real `sim_cache.json` while the
+  overnight progression was actively using it.
+- Re-confirmed `MAX_WORKERS=2`/`SIMSERVER_POOL_SIZE=2` (the documented fix for the
+  6C/12T Ryzen 5 5600X's "747ms/call at (4,4) vs 101ms/call at (2,2), 7.4x slower
+  from oversubscription" finding, already in place from earlier this session) is
+  still the active, correct setting - `core/optimizer.py`'s own separate
+  `MAX_WORKERS=4` ThreadPoolExecutor functions (`greedy_sweep`, `trinket_pairs`,
+  `set_bonus_branch`, `ranged_exhaustive`) are dead code relative to the CURRENT
+  pipeline - confirmed `run_full_sweep_mv.py` never calls any of them (grep, zero
+  matches) - they're leftover from the superseded Stage 4 greedy-sweep approach,
+  only reachable via the old `core/run_optimizer.py` entry point. Not a live risk,
+  left untouched.
+- Isolated `pool.run()` timing (warm pool, single process, no competing load)
+  showed genuinely near-linear scaling with iteration count (1 iter ~0.02-0.03s,
+  1000 iter ~0.15-0.22s, 30000 iter ~5.1-5.2s) - real Monte Carlo compute time, not
+  hidden fixed overhead. A separate same-process test run WHILE the overnight
+  progression's sweep subprocess was also active showed much noisier, higher
+  numbers (0.14-0.35s at 1000 iter) - almost certainly the same oversubscription
+  effect above, self-inflicted by running a competing foreground test during an
+  active sweep (exactly the confound this file already warned about once before -
+  stopped running more competing sim calls once recognized, rather than chasing a
+  second false lead).
+
+**Not attempted tonight, on purpose**: Stage 7's real decomposition idea (avoid a
+full re-screen when only one slot's gear actually changed) is the one lever that
+would have mattered most FOR THIS SPECIFIC overnight task specifically - each week's
+`sim_cache` key hashes the FULL 17-slot config, so a one-slot gear change this week
+means next week's screen/resolve passes get essentially zero cache reuse from this
+week's run, even for candidates in completely unrelated slots. Confirmed real by
+watching it happen live across the progression's weeks, not just theorized. Left
+alone deliberately - it's a genuine architecture change (already scoped as its own
+priority stage in CLAUDE.md), not something to redesign unsupervised overnight while
+the user was asleep and unable to review the direction, per this file's own "work in
+stages, stop at checkpoints" rule.
+
+**Correction to the above, found by actually reading this file's own history before
+more testing**: my own "isolated pool.run() timing" experiment earlier tonight was a
+mistake I didn't catch until writing it up - it called `simserver_client.get_pool()`/
+`pool.run()` DIRECTLY, bypassing the `USE_SIMSERVER` flag entirely. `USE_SIMSERVER=
+False` is the current, deliberate, hard-won production state (see this file's own
+earlier `simserver.exe` crash investigation - hangs at exactly request #34 of
+`RunRaidSimConcurrentAsync`, root cause not found, explicitly flagged there as "not
+something to guess at blind"). I was unknowingly exercising that same known-buggy
+path in my "safe" investigation - got lucky (well under 34 calls), but it was a real
+risk taken unknowingly, because I hadn't read this file's history first. The REAL
+active path when `USE_SIMSERVER=False` is `adapter.run()` - a fresh `wowsimcli.exe`
+per call, which per this file's own much earlier entry "reloads and unmarshals the
+whole embedded item DB (~2.3MB protobuf) fresh on every invocation" - almost
+certainly the real, correctly-identified-in-spirit-but-wrong-subprocess source of the
+original `bridge.exe` memory's ~0.3s/call finding. Have NOT re-measured `adapter.run()`
+directly tonight - the honest next step for a real fixed-cost win is there, not
+simserver.exe (stays off until the #34 crash is Go-level root-caused).
+
+**Lesson for future overnight cycles, including future me**: read this file's own
+recent history before re-investigating something that sounds unclaimed - "no code
+changes this cycle" a few entries up was there for a reason, and a plausible-sounding
+independent finding can just be re-discovering (or in this case, accidentally
+bypassing) a decision that already cost real effort to reach.
+
+**User guidance, received mid-run, for the NEXT optimization cycle (not acted on
+tonight - correctness-risking pipeline changes don't get made unsupervised
+overnight)**:
+1. Lowering `RESOLVE_ITERATIONS` from 30k to 5k is still explicitly on the table per
+   the user, possibly paired with an additional cheap "elimination phase" (a low-
+   iteration pre-filter before the expensive pass) - revisits the already-reverted 5k
+   experiment above and the 4-tier funnel idea (pre-screen/screen/confirm@5k/
+   resolve@30k) already sketched in CLAUDE.md's idea-collection section. Right shape
+   is probably an ADDITIVE opt-in confirm-tier, not silently replacing 30k as the
+   reported number again - noise-honesty still applies.
+2. "Build a memory for the sim, not just a cache" - a different architecture than
+   today's flat gear-hash-keyed `sim_cache.json`, closer in spirit to Stage 7's
+   already-scoped decomposition idea. Not scoped yet - needs real design discussion
+   with the user, not an overnight guess.
+
+**Real bug found and fixed mid-run, overnight**: the first progression attempt
+crashed at week 3 with `ValueError: item_id 32235 not found in candidate pool for
+slots ['head']`. Root cause: the driver's acquisition step only knew about the
+curated 71-item pool (`opt.load_candidates()`), but the tiered report it reads
+winners FROM also includes ~500 additional full-DB-sweep candidates
+(`data/cache/full_sweep_candidates.json`, merged in by `run_full_sweep_mv.py`'s own
+`main()`) - weeks 1-2's winners (Claw of the Phoenix, Bristleblitz Striker) happened
+to be in the curated pool, week 3's winner (Cursed Vision of Sargeras, a real T6
+Black Temple head drop) wasn't. Fixed by replicating the exact same curated+sweep
+merge logic (`load_full_candidate_pool()` in the driver script, mirroring
+`run_full_sweep_mv.py` lines ~177-243) rather than guessing at a narrower patch.
+Resumed from the known-good week 1-2 state (replayed, not recomputed) rather than
+restarting from week 0 - saved ~27 minutes of already-correct compute. **Result: all
+4 weeks completed successfully** - Claw of the Phoenix -> offhand (+96.9), Bristleblitz
+Striker -> ranged (+74.2), Cursed Vision of Sargeras -> head (+66.7), Bow-stitched
+Leggings -> legs (+62.0). Real `character.json` verified restored correctly afterward
+(head back to Rift Stalker Helm, offhand back to Blade of the Unrequited - her real
+gear, not the trial progression's).
+
+**Runtime investigation, continued after the progression finished (exclusive machine
+access, no more competing load)** - cleanly re-measured the REAL active path
+(`adapter.run()`, confirmed `USE_SIMSERVER=False`) this time:
+- `wowsimcli.exe --help` (bare process spawn + Go runtime init, zero DB/sim work):
+  ~0.075-0.085s, tight across 5 calls.
+- A real 1-iteration sim call via `adapter.run()`: ~0.165s.
+- So process-spawn/Go-startup and DB-load-plus-sim-setup are roughly EQUAL
+  contributors (~0.08s each) to the ~0.16s/call floor - refines the earlier "DB
+  reload dominates" hypothesis (an even earlier NOTES.md entry) to "roughly 50/50."
+  At ~500-700 screening calls per sweep, that floor alone is ~80-115s of a run's
+  total time.
+- Read (not modified) `sim_concurrent.go` and the `simsignals` package directly,
+  hunting for a fixed-size resource near the documented "#34 crash" threshold -
+  found nothing obvious in either (a plain Go map + mutex in `simsignals`, no
+  fixed-capacity anything in `runSimConcurrent`'s own channel/goroutine setup
+  beyond `threads = runtime.NumCPU()` = 12, nowhere near 32-34). The actual resource
+  exhausted is somewhere deeper, still not found.
+- **Conclusion: the ~0.16s/call floor is real and not fixable without a persistent
+  process** (both halves are one-shot-CLI-inherent) - `simserver.exe` already exists
+  and already solves this (measured ~30% faster end-to-end when it worked, an
+  earlier entry above), it's just disabled by the unresolved #34-crash bug. That bug
+  is the actual highest-value remaining lever, but fixing it needs real Go-level
+  debugging (goroutine dump via SIGQUIT, or profiling deeper into `RunSim`'s
+  internals) by a session with the time AND the user's presence to cross-verify
+  correctness against wowsims.com - not another blind attempt. Deliberately stopped
+  the investigation here rather than guessing at a fix in vendored, DPS-correctness-
+  critical concurrent Go code unsupervised.
+
+## 2026-08-24 (morning, with the user) - progress-percentage logging + confirm@5k tier
+
+Two real features built and validated this morning, with the user awake to review
+(unlike the overnight work above, which deliberately stayed conservative).
+
+**Progress-percentage logging** (`run_with_progress()` in `run_full_sweep_mv.py`):
+every concurrent pass (screening, confirming, resolving, raid-AP lookups, 2H
+screening) now prints "Label: done/total (pct%)" at ~5% intervals via
+`as_completed()` instead of a blocking `ThreadPoolExecutor.map()`. Order of
+results is completion order, not submission order - verified both call sites only
+ever build a dict/set from the results (order-independent) before making the
+change. Unit-tested standalone (37 dummy items, concurrent, results verified
+complete and correct) before trusting it in the real pipeline. Real precursor to
+the GUI progress indicator already noted in this file's future-scope section.
+
+**Confirm@5k tier, added between the existing screen(1k) and resolve(30k) passes**:
+every leaderboard candidate (`to_resolve`) now gets a cheap 5k confirm pass first;
+only items still borderline at 5k (by `CONFIRM_CLEAR_MARGIN_MULTIPLE`, see below),
+plus the #1 pick per (tier,slot) (always full precision, unchanged existing
+policy), escalate to the real 30k pass. Every report row gets a `resolve_iterations`
+field so the shown number's actual precision is always disclosed ("(confirmed
+@5000)" vs full vs "(screened only)") - noise-honesty via disclosure, not by
+pretending 5k is 30k-precise.
+
+**Real timing, three clean/uncached full sweeps against her real current gear,
+same seed, same day**:
+| version | time | notes |
+|---|---|---|
+| baseline (sim_cache in-memory fix only, no confirm tier) | 928.8s (15.5 min) | this morning's first clean run, already down from last night's ~1064s baseline |
+| confirm@5k added, still using the reused 8x margin | 853.0s (14.2 min) | 36/140 leaderboard items skipped 30k |
+| confirm@5k, tuned margin (see below) | pending - about to re-run | |
+
+**The 8x margin (reused from `mv.CLEAR_MARGIN_MULTIPLE`, calibrated for the 1k
+screen -> 30k jump) was too conservative for the 5k confirm tier specifically** -
+the user caught this directly ("seems to be tuned very harsh") before I'd even
+finished reporting the first confirm-tier timing. Real reasoning: 8x was sized for
+1k's noise, which is ~5.5x worse than 30k's; 5k's noise is only ~2.45x worse than
+30k's, so the SAME multiplier applied to the tighter 5k noise produces a much
+higher absolute DPS bar than necessary (~11-12 DPS here, vs the on-file A/B
+evidence that 5k already reliably matches 30k down to ~7 DPS).
+
+**Empirically re-tuned rather than guessed**: wrote a one-off analysis script
+(`E:\Claude\Temp\Gearing-Tool\tune_confirm_multiplier.py`) that reconstructs the
+same `to_resolve` leaderboard the real pipeline built and pulls BOTH the confirm@5k
+and resolve@30k value for all 140 candidates from that morning's real run (mostly
+cache hits - a real, if imperfect, near-free reuse of already-spent compute; ~14
+items came back as cache misses for reasons not yet root-caused, flagged but not
+blocking since the resulting decision-count cross-check against the real run's
+"104/140 escalated" figure landed close enough (~105) to trust the paired data).
+Swept `CONFIRM_CLEAR_MARGIN_MULTIPLE` from 2 (the tied-within-noise boundary itself)
+to 8 (the old reused value) against this real data:
+
+| multiplier | non-top items skipping 30k (of 60) | worst-case drift among skipped |
+|---|---|---|
+| 8 (old) | 35 | 1.37 DPS |
+| 5 | 46 | 1.37 DPS |
+| **3 (chosen)** | **48** | **1.37 DPS** |
+| 2 (tie boundary) | 51 | 1.37 DPS |
+
+**Zero sign flips or verdict changes among skipped items at ANY tested multiplier**
+- the only 3 real 5k/30k sign disagreements in the whole 140-item set (Swiftstrike
+Bracers, Shadow-walker's Cord, Gronnstalker's Leggings) all had ratio (|mv5k|/
+noise5k) between 0.19 and 0.79 - nowhere near even the loosest 2x threshold, and
+both tiers already correctly flagged them "tied within noise" regardless of which
+number gets shown. The drift ceiling among skipped items stays flat at 1.37 DPS
+across the whole 2-8 range - loosening the multiplier doesn't trade safety for
+speed here, it just reclaims efficiency 8x was leaving unused. Set
+`CONFIRM_CLEAR_MARGIN_MULTIPLE = 3` - a full step above the 2x tie-check boundary
+(so a "confirmed" item is never just barely outside "tied"), not the theoretical
+minimum-risk value, as a deliberate small safety margin beyond what this one
+dataset alone would strictly justify.
+
+**Real structural ceiling on how much this tier can help, worth being honest
+about**: of the 140 leaderboard candidates, 80 were #1 picks per (tier,slot) -
+these ALWAYS escalate to 30k regardless of multiplier tuning (existing, unchanged
+policy). The confirm tier's savings are bounded by the ~60 non-#1 items, not the
+full 140 - the real ceiling on this lever is the number of (tier,slot) buckets a
+sweep produces, not the margin multiplier.
+
+**Final clean/uncached timing, tuned margin (3x), same real gear/seed as the two
+runs above**: 782.5s (13.1 min) - 51/140 leaderboard candidates confirmed @5k
+already clear (vs 36/140 at the old reused 8x margin). Three-run progression today:
+928.8s (sim_cache fix only) -> 853.0s (confirm tier, 8x margin) -> 782.5s (confirm
+tier, tuned 3x margin) - a 15.8% reduction from this morning's own baseline, ~26%
+from last night's original ~1063.8s.
+
+**SCREEN_ITERATIONS lowered 1000 -> 500, also empirically validated before
+changing it** - the user invited trying a 5th tier; investigated whether a cheap
+prescreen pass would help first and concluded it wouldn't (see below), so tested
+lowering the existing screen pass instead. Screened the full real ~650-candidate
+pool at BOTH 500 and 1000 iterations and compared every (tier,slot) bucket's
+**top-8 SET**, not just per-item mv agreement (the actual decision this constant
+drives - which items even reach the confirm/resolve tiers at all, a categorically
+different risk than the confirm-tier's "how precise" decision). 77/80 buckets
+matched exactly. The 3 that didn't were all old-content/vanilla-carryover weapon
+buckets (Frostguard, Annihilator, Heartstriker, etc.) where every swapped item sat
+at mv ~= -61.3 DPS - deep downgrades clustered within a fraction of a DPS of each
+other, nowhere near a real upgrade, reordering noise among items that could never
+surface in the report regardless. Safe to lower.
+
+**Real per-call cost precisely measured across the iteration range this decision
+spans** (single process, exclusive machine): 100->0.204s, 250->0.219s, 500->0.249s,
+1000->0.305s, 2000->0.415s. Confirms the fixed per-call floor (~0.19-0.20s) already
+found the previous night dominates even at 1000 iterations - only about a third of
+the 1000-iter cost is real iteration-dependent compute. This directly explains (and
+quantifies, rather than just re-confirms) an EARLIER session's finding already on
+file in this document ("prescreen at 10... i don't think this is faster"):
+**recommended against building a prescreen tier** - for an extra low-iteration pass
+over all ~650 candidates to pay for itself against the floor, it would need to
+filter the pool by more than 3x before the real screen pass even starts, and unlike
+every other change made today, a prescreen tier could silently DROP a real upgrade
+from consideration based on a noisy low-iteration estimate rather than just report
+it less precisely - a categorically different, higher-stakes kind of risk. Declined
+to build it for concrete, quantified reasons instead of just citing the old result.
+
+**Final clean/uncached timing, all changes stacked**: 772.7s (12.9 min) - down
+from 782.5s (confirm tier alone). Full progression today: 1063.8s (original) ->
+928.8s (sim_cache fix) -> 853.0s (confirm@5k, 8x) -> 782.5s (confirm@5k, tuned 3x)
+-> **772.7s (+ SCREEN_ITERATIONS 500)** - a 27.4% reduction overall, every step
+validated against real ground truth before being kept, none of it guessed.
+
+**Dropped the "#1 pick always gets 30k" special case, and removed the visible
+per-item precision-tier flag** - the user asked to squeeze the resolve count
+toward 60 or below. Real structural finding first: this run has 80 distinct
+(tier,slot) buckets, and the #1 item in EVERY bucket was unconditionally
+escalating to 30k regardless of margin (an explicit policy from earlier in this
+project - "if a screened item ends up on top, actually sim it"). That's a hard
+floor of 80 resolve calls on its own - no amount of margin tuning could ever get
+below it. Tightening `CONFIRM_CLEAR_MARGIN_MULTIPLE` toward the 2x tie boundary
+only found 9-12 more non-#1 items to spare (89 -> ~89 across the whole 2-8
+range) - the real lever was the #1-always-escalates rule itself.
+
+Presented this tradeoff plainly rather than silently overriding an explicit past
+decision: applying the SAME margin check to #1 picks (dropping the special case)
+would cut resolve count to ~15-20, but meant most #1 recommendations would show
+as "(confirmed @5k)" instead of a full 30k number. The user's actual answer
+clarified the REAL constraint wasn't the precision tier itself, it was "no
+visible flag that could make the user unsure about the sim... no need to flag the
+item if you are sure 5k and 30k are almost the same." That reframes the problem
+entirely: noise-honesty via disclosure was never required to mean "show the
+implementation detail of which pass produced a number" - it means "don't hide
+real uncertainty." An item that clears `CONFIRM_CLEAR_MARGIN_MULTIPLE` has
+ALREADY been verified (empirically, this session) to carry no more real
+uncertainty than a 30k number would - the flag was disclosing an implementation
+detail, not a real risk.
+
+**Validated the #1-pick group specifically before making the change** (same
+rigor as every other change today, not assumed to transfer from the non-#1
+validation): pulled real 5k-vs-30k pairs for all 80 #1-pick items from the
+just-completed real run. Zero sign flips, max drift 1.38 DPS - identical safety
+margin to the non-#1 group (1.37 DPS). Confirmed safe to extend.
+
+**Two changes made together**: (1) the escalation decision (`need_full_resolve`
+in `run_full_sweep_mv.py`) now applies `CONFIRM_CLEAR_MARGIN_MULTIPLE` uniformly
+to every `to_resolve` item, #1 picks included - no more automatic escalation. (2)
+The per-item display flag now only distinguishes "resolved" (confirmed @5k OR
+resolved @30k, shown identically) from "(screened only)" (never passed ANY
+confirm-precision check - this is real, undisclosed-otherwise uncertainty, so it
+still gets flagged). `resolve_iterations` stays in the underlying tiered_report
+JSON for anyone who wants the detail; it's just not surfaced in the printed
+report anymore.
+
+**Final clean/uncached timing, all changes stacked**: 515.1s (8.6 min) - 19/163
+leaderboard candidates needed the full 30k pass (144 confirmed @5k), down from
+89/163 before this change. Full progression today: 1063.8s (original) -> 928.8s
+(sim_cache) -> 853.0s (confirm@5k, 8x) -> 782.5s (confirm@5k, tuned 3x) -> 772.7s
+(+ SCREEN_ITERATIONS 500) -> **515.1s (+ uniform margin, no visible flag)** - a
+**51.6% reduction overall**. Every step validated against real 30k ground truth
+before being kept; zero verdict changes found anywhere across the whole session.

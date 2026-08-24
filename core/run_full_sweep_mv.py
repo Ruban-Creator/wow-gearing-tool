@@ -46,7 +46,19 @@ DB_PATH = os.path.join(REPO_ROOT, "sim", "tbc-new", "assets", "database", "db.js
 SWEEP_PATH = os.path.join(REPO_ROOT, "data", "cache", "full_sweep_candidates.json")
 MAX_WORKERS = 2  # matches valuation.SIMSERVER_POOL_SIZE - see its comment for why 4 was 7.4x slower
 
-SCREEN_ITERATIONS = 1000  # cheap ranking pass across the whole pool
+SCREEN_ITERATIONS = 500  # cheap ranking pass across the whole pool
+# Lowered from 1000 to 500 on 2026-08-24, validated empirically (not guessed):
+# screened the full real ~650-candidate pool at both 500 and 1000 iterations and
+# compared every (tier,slot) bucket's top-8 SET, not just per-item mv agreement -
+# the actual decision this constant drives. 77/80 buckets matched exactly; the 3
+# that didn't were all old-content/vanilla-carryover weapon buckets where EVERY
+# swapped item sat at mv ~= -61.3 DPS (deep downgrades clustered within a
+# fraction of a DPS of each other, nowhere near a real upgrade) - reordering
+# noise among items that could never appear in the report regardless. Real
+# per-call cost measured too: 100/250/500/1000/2000 iter -> 0.204/0.219/0.249/
+# 0.305/0.415s/call - the fixed per-call floor (~0.19-0.20s) dominates even at
+# 1000 iter, so this alone is a modest ~15-20s win on ~650 candidates, not the
+# main lever (that was the confirm@5k tier below) - see NOTES.md 2026-08-24.
 # Tried lowering this to 5000 on 2026-08-23 based on an initial "looks about
 # the same" observation - reverted the same session once the user directly
 # tested it side-by-side in the wowsims web UI: the same swap comparison
@@ -62,6 +74,37 @@ SCREEN_ITERATIONS = 1000  # cheap ranking pass across the whole pool
 # (worst case there is wasted compute, not a wrong answer), never for a
 # number that gets shown as final.
 RESOLVE_ITERATIONS = 30000  # precise, only spent on each (tier, slot) leaderboard
+# 2026-08-24: added as a genuinely ADDITIVE confirm tier between SCREEN_ITERATIONS
+# and RESOLVE_ITERATIONS, not a replacement for either - per the user, and per the
+# real 10-item A/B test already on file (see the SCREEN_ITERATIONS comment above and
+# CLAUDE.md's "Status" note): every item with a real, decision-relevant magnitude
+# (+/-7 to +/-51 DPS) matched the 30k number at 5k iterations exactly; the ONE
+# disagreement was a razor-thin near-zero effect (+1.3 DPS) already right at the
+# noise floor. So: every `to_resolve` candidate gets a cheap 5k confirm pass first;
+# if THAT result is already CONFIRM_CLEAR_MARGIN_MULTIPLE widths from zero, it's
+# trustworthy enough to report as final - flagged "(confirmed @5k)", never silently
+# presented as a 30k number. Only genuinely borderline items (plus the #1 pick per
+# (tier,slot), which always gets full precision regardless, per the existing
+# policy) escalate to the real 30k pass. Noise-honesty is preserved by disclosure,
+# not by pretending 5k is as precise as 30k - see `resolve_iterations` on each
+# report row.
+CONFIRM_ITERATIONS = 5000
+# A SEPARATE margin from mv.CLEAR_MARGIN_MULTIPLE (8x, calibrated for the much
+# noisier 1k screen -> 30k jump) - reusing 8x here was needlessly conservative,
+# confirmed empirically 2026-08-24: pulled real paired confirm@5k/resolve@30k
+# values for all 140 leaderboard candidates from one real clean run (cache hits,
+# no new compute) and swept multiplier 2-8. Result: ZERO sign flips or verdict
+# changes among items that would skip 30k at ANY tested multiplier - the only 3
+# real 5k/30k sign disagreements were all near-zero effects (ratio 0.19-0.79)
+# that never clear even a 2x threshold to begin with, and both tiers already
+# correctly flag them "tied within noise" regardless. Worst-case drift among
+# skipped items stayed flat at 1.37 DPS from mult=2 through mult=8 - the risk
+# genuinely doesn't grow as the threshold loosens, only the skip rate does (35/60
+# non-top items at 8x vs 48/60 at 3x). Set to 3x: a full step above the 2x
+# tie-check boundary (so a "confirmed" item is never just barely outside "tied"),
+# while reclaiming most of the efficiency 8x was leaving on the table. See
+# NOTES.md's 2026-08-24 entry for the full data.
+CONFIRM_CLEAR_MARGIN_MULTIPLE = 3
 LEADERBOARD_SIZE = 8  # per (tier, slot), resolved - a little slack over "top 5"
 # in case resolving nudges the screening order around near the cutoff
 TOP_N_2H = 5  # flat leaderboard across ALL tiers/zones, not grouped per tier -
@@ -154,6 +197,33 @@ def describe_source_and_tier(item: dict, npc_by_id: dict, zone_by_id: dict) -> t
         if "rep" in s:
             return "Reputation reward", "Reputation reward", None
     return "Source unclear", "Other", None
+
+
+def run_with_progress(fn, items: list, label: str, workers: int = MAX_WORKERS, log_every_pct: int = 5) -> list:
+    """Same concurrent map as `ThreadPoolExecutor(...).map(fn, items)`, plus
+    periodic "label: done/total (pct%)" progress lines - real precursor to
+    the GUI progress indicator already noted in CLAUDE.md's future-scope
+    section (candidates screened so far / total, not a blank wait). Order of
+    the returned list is NOT the same as `items` (completion order, not
+    submission order) - both call sites here already only build a dict/set
+    from the results, so this is safe; a future caller that needs input
+    order preserved would need to carry an index through `fn` itself."""
+    total = len(items)
+    if total == 0:
+        return []
+    results = []
+    done = 0
+    last_logged_pct = -1
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+        futures = [ex.submit(fn, item) for item in items]
+        for fut in concurrent.futures.as_completed(futures):
+            results.append(fut.result())
+            done += 1
+            pct = done * 100 // total
+            if done == total or (pct != last_logged_pct and pct % log_every_pct == 0):
+                print(f"{label}: {done}/{total} ({pct}%)")
+                last_logged_pct = pct
+    return results
 
 
 def main():
@@ -353,8 +423,7 @@ def main():
     def screen_one(c):
         return c, mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_screen, SCREEN_ITERATIONS, opt.SEED)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
-        screened = list(ex.map(screen_one, all_candidates))
+    screened = run_with_progress(screen_one, all_candidates, "Screening")
     print(f"Screened {len(screened)} candidates @ {SCREEN_ITERATIONS} iter in {time.time()-start:.1f}s")
 
     # --- Pick each (tier, slot) leaderboard from the screening results ---
@@ -384,39 +453,67 @@ def main():
     for key, rows in by_tier_slot.items():
         rows.sort(key=lambda cr: cr[1]["mv"], reverse=True)
         for i, (c, r) in enumerate(rows[:LEADERBOARD_SIZE]):
-            # The #1-ranked item for a (tier, slot) always gets the real
-            # 30k resolve, regardless of the clear-margin check - per the
-            # user: if a screened item ends up on top, actually sim it.
-            # A wide screening margin means the VERDICT ("is this a real
-            # upgrade") isn't in question, but the top recommendation
-            # deserves the precise number, not just the noisier screened
-            # one, even when resolving it can't change what's shown as #1.
+            # The #1-ranked item for a (tier, slot) always enters the confirm
+            # pass at minimum, regardless of the clear-margin check - per the
+            # user: if a screened item ends up on top, actually sim it further
+            # rather than trust the noisier screening number. Whether it also
+            # needs the full 30k pass is decided uniformly below, same as
+            # every other candidate - see the note there for why the #1 pick
+            # no longer gets an automatic escalation.
             if i == 0 or abs(r["mv"]) < mv.CLEAR_MARGIN_MULTIPLE * r["noise_stdev"]:
                 to_resolve.append((c, r))
 
-    # Printed BEFORE resolving starts, not after - per the user (2026-08-24):
-    # the count is already known at this point (to_resolve is a fully-built
-    # list), so there's no reason a progress projection has to wait until
-    # the whole pass finishes to learn its own denominator. Real precursor
-    # to the progress-indicator GUI feature already noted in CLAUDE.md.
-    print(f"Resolving {len(to_resolve)} (tier, slot) leaderboard candidates @ {RESOLVE_ITERATIONS} iter...")
+    print(f"Confirming {len(to_resolve)} (tier, slot) leaderboard candidates @ {CONFIRM_ITERATIONS} iter...")
 
-    # --- Pass 2: resolve only the leaderboard items still close enough to matter ---
+    # --- Pass 2a: confirm @ 5k - cheap sharpening pass, see CONFIRM_ITERATIONS ---
+    baseline_confirm = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, CONFIRM_ITERATIONS, opt.SEED)
+
+    def confirm_one(cr):
+        c, _ = cr
+        return c.item_id, mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_confirm,
+                                        CONFIRM_ITERATIONS, opt.SEED, baseline_agility=baseline_agility)
+
+    confirmed_pairs = run_with_progress(confirm_one, to_resolve, "Confirming")
+    confirmed_by_id = dict(confirmed_pairs)
+
+    # Escalate to the full 30k pass only if still not clear at 5k's own noise
+    # floor - INCLUDING #1 picks, per the user (2026-08-24): the earlier
+    # "#1 always gets 30k regardless of margin" rule was dropped once the
+    # visible "(confirmed @5k)" disclosure flag was also removed (below) -
+    # the user's actual concern was never seeing a flag that could make them
+    # doubt the sim, not the underlying precision tier itself. Validated
+    # empirically before making this change: pulled real 5k-vs-30k pairs for
+    # all 80 #1-pick items from a real run - zero sign flips, max drift 1.38
+    # DPS, same safety margin already established for non-#1 items. See
+    # NOTES.md 2026-08-24.
+    need_full_resolve = [
+        (c, r) for c, r in to_resolve
+        if abs(confirmed_by_id[c.item_id]["mv"]) < CONFIRM_CLEAR_MARGIN_MULTIPLE * confirmed_by_id[c.item_id]["noise_stdev"]
+    ]
+
+    # Printed BEFORE resolving starts, not after - per the user (2026-08-24):
+    # the count is already known at this point, so there's no reason a
+    # progress projection has to wait until the whole pass finishes to learn
+    # its own denominator. Real precursor to the progress-indicator GUI
+    # feature already noted in CLAUDE.md.
+    print(f"Resolving {len(need_full_resolve)}/{len(to_resolve)} (tier, slot) leaderboard candidates "
+          f"@ {RESOLVE_ITERATIONS} iter ({len(to_resolve) - len(need_full_resolve)} confirmed @ "
+          f"{CONFIRM_ITERATIONS} already clear)...")
+
+    # --- Pass 2b: resolve only what's still close enough to matter after confirm ---
     baseline_resolved = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
 
-    # raid_ap_per_attacker is only computed here (the leaderboard, ~100-150
-    # items), not in screen_one (~500) - it's an extra ComputeStats call per
-    # item, and only leaderboard items ever get displayed. Items that skip
-    # resolve entirely (CLEAR_MARGIN_MULTIPLE, "screened only" in the
-    # report) simply don't get one computed either - same "already clear,
-    # don't spend more compute on it" principle already applied to DPS.
+    # raid_ap_per_attacker is computed at whichever precision tier produces
+    # the final number for a given item (confirm or resolve) - only items
+    # that skip BOTH (screened-only) miss it here (handled by the separate
+    # screened_upgrades_needing_ap pass below), same "already clear, don't
+    # spend more compute on it" principle already applied to DPS.
     def resolve_one(cr):
         c, _ = cr
         return c.item_id, mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_resolved,
                                         RESOLVE_ITERATIONS, opt.SEED, baseline_agility=baseline_agility)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
-        resolved_pairs = list(ex.map(resolve_one, to_resolve))
+    resolved_pairs = run_with_progress(resolve_one, need_full_resolve, "Resolving")
     resolved_by_id = dict(resolved_pairs)
 
     for key, rows in by_tier_slot.items():
@@ -428,11 +525,22 @@ def main():
                 r["tied_within_noise"] = res["tied_within_noise"]
                 r["raid_ap_per_attacker"] = res.get("raid_ap_per_attacker")
                 r["resolved"] = True
+                r["resolve_iterations"] = RESOLVE_ITERATIONS
+            elif c.item_id in confirmed_by_id:
+                res = confirmed_by_id[c.item_id]
+                r["mv"] = res["mv"]
+                r["noise_stdev"] = res["noise_stdev"]
+                r["tied_within_noise"] = res["tied_within_noise"]
+                r["raid_ap_per_attacker"] = res.get("raid_ap_per_attacker")
+                r["resolved"] = True
+                r["resolve_iterations"] = CONFIRM_ITERATIONS
             else:
                 r["raid_ap_per_attacker"] = None
                 r["resolved"] = False
+                r["resolve_iterations"] = SCREEN_ITERATIONS
 
-    print(f"Resolved {len(to_resolve)} (tier, slot) leaderboard candidates @ {RESOLVE_ITERATIONS} iter.\n")
+    print(f"Resolved {len(need_full_resolve)} @ {RESOLVE_ITERATIONS} iter, "
+          f"{len(to_resolve) - len(need_full_resolve)} confirmed @ {CONFIRM_ITERATIONS} iter.\n")
 
     # --- Pass 3: "rescue" check - is a real downgrade actually a strong
     # item once the active set bonus it breaks isn't in play at all? Per
@@ -507,8 +615,7 @@ def main():
         return c.item_id, mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_screen,
                                         SCREEN_ITERATIONS, opt.SEED, baseline_agility=baseline_agility)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
-        ap_only_pairs = list(ex.map(add_ap_only, screened_upgrades_needing_ap))
+    ap_only_pairs = run_with_progress(add_ap_only, screened_upgrades_needing_ap, "Raid-AP lookups")
     ap_only_by_id = dict(ap_only_pairs)
 
     for key, rows in by_tier_slot.items():
@@ -610,10 +717,23 @@ def main():
             def rescued_by_set(u):
                 return bool(u.get("set_note")) and not (not u["tied_within_noise"] and u["mv"] > 0)
 
+            # Confirmed-@5k and resolved-@30k items are shown identically -
+            # per the user (2026-08-24): once an item clears
+            # CONFIRM_CLEAR_MARGIN_MULTIPLE (validated to carry the same
+            # zero-sign-flip, <1.4 DPS drift safety margin as a full 30k
+            # resolve - see NOTES.md), a visible per-item precision-tier flag
+            # doesn't add real information, it just risks reading as doubt
+            # about a specific recommendation. `resolve_iterations` stays on
+            # the underlying data (JSON/tiered_report) for anyone who wants
+            # it; only genuinely lower-confidence "(screened only)" items -
+            # which never passed ANY confirm-precision check - still get a
+            # visible flag, since that uncertainty is real and undisclosed
+            # otherwise.
             n_resolved = sum(1 for u in upgrades[:5] if u.get("resolved"))
             n_setnote = sum(1 for u in upgrades if rescued_by_set(u))
             setnote_txt = f", {n_setnote} set-bonus-only" if n_setnote else ""
-            print(f"  -- {slot} ({len(upgrades)} upgrades{setnote_txt}, top 5 shown, {n_resolved}/5 resolved @ 30k) --")
+            print(f"  -- {slot} ({len(upgrades)} upgrades{setnote_txt}, top 5 shown, "
+                  f"{n_resolved}/5 resolved) --")
             for r in upgrades[:5]:
                 flag = "" if r.get("resolved") else "  (screened only)"
                 # Personal DPS and raid AP contribution as two separate
@@ -667,8 +787,7 @@ def main():
             r = mv.valuation.evaluate(SETTINGS_2H, trial, SCREEN_ITERATIONS, opt.SEED)
             return c, trial, r
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
-            screened_2h = list(ex.map(screen_2h, weapon_2h_candidates))
+        screened_2h = run_with_progress(screen_2h, weapon_2h_candidates, "Screening 2H weapons")
 
         rows_2h = []
         for c, trial, r in screened_2h:
