@@ -2723,3 +2723,25 @@ section for the real, current summary of what exists now. Detail worth keeping h
   autonomously overnight (empty-identity tie-break, the fixed phase2-5 grid UI choice, the
   Lerynia data-staleness heads-up, the Stage B/C merge) for the user to review, not blocking
   anything. Matches their explicit instruction rather than stopping at each plan checkpoint.
+
+**2026-08-24: addon now tries to trigger WowSimsExporter's own export directly on login**,
+per the user's ask. Real finding from reading WSE's actual installed source
+(`WowSimsExporter.lua`/`SavedDataManager.lua`): WSE only registers its gear/talent/enchant/
+glyph CHANGE listeners on initial login - it never calls its own save function just from
+logging in. A character who logs in and changes nothing that session never gets freshly
+exported at all, confirmed as the real cause of the earlier Lerynia stale-export incident
+(0 gear items in her most recent WSE data). New `TriggerWSEExport()` (called right after
+`SaveIdentity()` in the `PLAYER_ENTERING_WORLD` handler) reuses WSE's own real save path
+instead of faking a UI interaction: WSE is an AceAddon-3.0 addon
+(`LibStub("AceAddon-3.0"):NewAddon("WowSimsExporter", ...)`, confirmed in its source), and
+AceAddon-3.0's own documented `GetAddon(name)` is the standard way another addon retrieves
+it (`LibStub` itself is a real shared global once any Ace3-based addon has loaded, which WSE
+will have by `PLAYER_ENTERING_WORLD` regardless of load order). Calling the real
+`WowSimsExporter:OnCharacterChanged("GearingToolCompanionLogin")` correctly respects the
+user's own real WSE settings (`autoSaveEnabled`, `supportedClasses`, max-level gating) rather
+than forcing a save WSE itself wouldn't have made. Records the attempt (`ok`/`reason`/`at`)
+into `GTCompanionDB[key].wse_export_trigger`, surfaced in both the status panel and `/gtlist`
+per "record that as well in our list." **NOT live-tested** - written from reading WSE's real
+source, not guessed, but never actually run in-game. Verify: log in, check `/gtlist` shows a
+recent trigger result, and confirm WSE's own SavedVariables timestamp for the character
+actually advanced (or just re-run `gear sync` and see equipped items are no longer stale).

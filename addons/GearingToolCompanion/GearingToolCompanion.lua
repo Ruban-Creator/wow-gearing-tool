@@ -236,7 +236,10 @@ end
 local function AllCharacters()
     local list = {}
     for key, entry in pairs(GTCompanionDB) do
-        table.insert(list, { key = key, identity = entry.identity or {}, timestamp = entry.timestamp or 0 })
+        table.insert(list, {
+            key = key, identity = entry.identity or {}, timestamp = entry.timestamp or 0,
+            wse_export_trigger = entry.wse_export_trigger,
+        })
     end
     table.sort(list, function(a, b) return a.timestamp > b.timestamp end)
     return list
@@ -306,6 +309,54 @@ local function SaveIdentity()
     local entry = Entry()
     entry.identity = DumpIdentity()
     entry.timestamp = time()
+end
+
+-- Triggers WowSimsExporter's own real auto-save path directly, instead of
+-- faking a UI interaction - WSE (confirmed by reading its real installed
+-- source this session, WowSimsExporter.lua/SavedDataManager.lua) only
+-- registers its gear/talent/enchant/glyph CHANGE listeners on initial
+-- login; it never actually calls its own save function just from logging
+-- in. A character who logs in and changes nothing that session never gets
+-- freshly exported at all - confirmed as the real cause of a stale export
+-- hit earlier this session (Lerynia's most recent WSE data had 0 gear).
+--
+-- WowSimsExporter is an AceAddon-3.0 addon (`LibStub("AceAddon-3.0"):
+-- NewAddon("WowSimsExporter", ...)`, confirmed in its own source) - its
+-- addon object is a `local` in WSE's own file, NOT a plain global, but
+-- AceAddon-3.0's own documented `GetAddon(name)` is the real, standard way
+-- any other addon retrieves it (LibStub itself IS a real shared global
+-- once any Ace3-based addon has loaded, which WSE will have by the time
+-- PLAYER_ENTERING_WORLD fires regardless of load order). Calling its real
+-- `OnCharacterChanged("...")` method reuses WSE's own already-tested save
+-- logic - which itself respects the user's real WSE settings
+-- (autoSaveEnabled, supportedClasses, max-level gating - see
+-- SavedDataManager.lua:OnCharacterChanged) rather than forcing a save WSE
+-- itself wouldn't have made.
+--
+-- NOT LIVE-TESTED - written from reading WSE's real source, not guessed,
+-- but never actually run in-game. Verify: log in, check /gtlist shows a
+-- recent wse_export_trigger, and confirm WSE's OWN SavedVariables
+-- timestamp for this character actually advanced too (open WowSimsExporter.lua
+-- SavedVariables and check savedCharacters' timestamp, or just re-run
+-- `gear sync` and see equipped items are no longer stale).
+local function TriggerWSEExport()
+    local entry = Entry()
+    if not LibStub then
+        entry.wse_export_trigger = { ok = false, reason = "LibStub not found", at = time() }
+        return
+    end
+    local ok, aceAddon = pcall(LibStub, "AceAddon-3.0", true)
+    if not ok or not aceAddon then
+        entry.wse_export_trigger = { ok = false, reason = "AceAddon-3.0 not found", at = time() }
+        return
+    end
+    local wse = aceAddon:GetAddon("WowSimsExporter", true)
+    if not wse or not wse.OnCharacterChanged then
+        entry.wse_export_trigger = { ok = false, reason = "WowSimsExporter addon not found/loaded", at = time() }
+        return
+    end
+    wse:OnCharacterChanged("GearingToolCompanionLogin")
+    entry.wse_export_trigger = { ok = true, at = time() }
 end
 
 local function SaveAll()
@@ -397,6 +448,7 @@ f:SetScript("OnEvent", function(_, event)
         SaveBags()
         SaveReputationAndArena()
         SaveIdentity()
+        TriggerWSEExport()
         C_Timer.After(5, SaveReputationAndArena)
     elseif event == "BAG_UPDATE_DELAYED" then
         local now = time()
@@ -536,6 +588,22 @@ body:SetPoint("TOPLEFT", 20, -44)
 body:SetJustifyH("LEFT")
 body:SetWidth(220)
 
+-- Shared by the status panel and the all-characters list - one line
+-- summarizing whether/when we last tried to trigger WowSimsExporter's own
+-- export on this character's behalf, and why it didn't fire if it didn't
+-- (WSE not installed, its own auto-save disabled, etc - see
+-- TriggerWSEExport's real reasons above).
+local function WSETriggerText(entry)
+    local t = entry.wse_export_trigger
+    if not t then
+        return "WSE export trigger: not attempted yet"
+    end
+    if t.ok then
+        return ("WSE export triggered: %s"):format(date("%H:%M:%S", t.at))
+    end
+    return ("WSE export trigger failed (%s): %s"):format(t.reason or "?", date("%H:%M:%S", t.at))
+end
+
 local function RefreshStatusFrame()
     local entry = Entry()
     local id = entry.identity or {}
@@ -550,11 +618,12 @@ local function RefreshStatusFrame()
     end
     local profText = #profParts > 0 and table.concat(profParts, ", ") or "none captured"
     body:SetText(
-        ("%s\n%s %s, Lv %s\nProfessions: %s\n\nBags: %d items\nBank: %d items\nReputation: %d factions tracked\nArena teams: %d\n\nLast saved: %s"):format(
+        ("%s\n%s %s, Lv %s\nProfessions: %s\n\nBags: %d items\nBank: %d items\nReputation: %d factions tracked\nArena teams: %d\n\nLast saved: %s\n%s"):format(
             id.name and (id.name .. "-" .. (id.realm or "?")) or CharKey(),
             id.race or "?", id.class or "?", tostring(id.level or "?"),
             profText,
-            #entry.bags, #entry.bank, repCount, #(entry.arena or {}), lastSaved
+            #entry.bags, #entry.bank, repCount, #(entry.arena or {}), lastSaved,
+            WSETriggerText(entry)
         )
     )
 end
@@ -633,8 +702,9 @@ local function RefreshCharacterList()
             table.insert(profParts, ("%s %d"):format(p.name, p.level or 0))
         end
         local profText = #profParts > 0 and table.concat(profParts, ", ") or "no professions captured"
-        table.insert(lines, ("|cffffcc00%s|r  (%s, Lv %s)\n%s\nLast saved: %s"):format(
-            label, classRace, tostring(id.level or "?"), profText, when))
+        table.insert(lines, ("|cffffcc00%s|r  (%s, Lv %s)\n%s\nLast saved: %s\n%s"):format(
+            label, classRace, tostring(id.level or "?"), profText, when,
+            WSETriggerText({ wse_export_trigger = c.wse_export_trigger })))
     end
     if #lines == 0 then
         lines = { "No characters saved yet." }
