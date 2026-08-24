@@ -841,9 +841,14 @@ local function GetRow(index)
     -- "this does something" with no payoff. The subtle bg tint on click
     -- stays, since that's real, working state, just without the loud cue.
 
+    -- Transparent by default (0 alpha) - real user feedback: a faint tint
+    -- on EVERY row, stacked across the whole scrollable list, read as an
+    -- unwanted gray background wash rather than a subtle per-row effect.
+    -- Only shown (see the two SetColorTexture call sites below) when a row
+    -- is actually the selected one.
     row.bg = row:CreateTexture(nil, "BACKGROUND")
     row.bg:SetAllPoints()
-    row.bg:SetColorTexture(1, 1, 1, 0.04)
+    row.bg:SetColorTexture(1, 1, 1, 0)
 
     row.icon = row:CreateTexture(nil, "ARTWORK")
     row.icon:SetSize(36, 36)
@@ -887,7 +892,7 @@ local function GetRow(index)
     row:SetScript("OnClick", function(self)
         selectedRowKey = self.charKey
         for _, r in ipairs(charListRows) do
-            r.bg:SetColorTexture(1, 1, 1, r.charKey == selectedRowKey and 0.10 or 0.04)
+            r.bg:SetColorTexture(1, 1, 1, r.charKey == selectedRowKey and 0.10 or 0)
         end
         -- No detail view yet (character-list polish only, per plan) - the
         -- per-row selection state above is kept so a future "show this
@@ -921,7 +926,7 @@ local function RefreshCharacterList()
             row.charKey = c.key
             row:SetPoint("TOPLEFT", 0, -(shown - 1) * ROW_HEIGHT)
             row:Show()
-            row.bg:SetColorTexture(1, 1, 1, c.key == selectedRowKey and 0.10 or 0.04)
+            row.bg:SetColorTexture(1, 1, 1, c.key == selectedRowKey and 0.10 or 0)
 
             local classToken = id.class and id.class:upper()
             local classColor = classToken and RAID_CLASS_COLORS[classToken]
