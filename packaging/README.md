@@ -19,21 +19,21 @@ since the GUI itself doesn't import it at runtime.
 
 ## Running the built exe
 
-**Must be launched with the repo root as its working directory** - it reads
-`data/characters/<name-realm>/` from a real on-disk checkout, and imports
-`ingest/list_characters.py`/`ingest/build_character.py` as real source files
-rather than bundling them (see `gui/api.py`'s `REPO_ROOT`/`sys.frozen`
-handling for why). Either:
+Just double-click it - no working-directory setup needed. It finds the real
+repo root itself by walking up from its own on-disk location
+(`sys.executable`, not `os.getcwd()`) looking for `ingest/list_characters.py`,
+so it works whether it's sitting in `dist/` or copied to the repo root
+directly (real bug hit and fixed 2026-08-24: the original `os.getcwd()`-based
+version crashed with `ModuleNotFoundError: No module named 'list_characters'`
+on the very first real double-click, since Windows' double-click cwd didn't
+line up with either location - see `gui/api.py`'s `_find_repo_root()`).
 
-- Run it from a terminal already `cd`'d into the repo root, or
-- Drop the exe directly in the repo root and double-click it there, or
-- Make a shortcut with **Start in:** set to the repo root.
-
-Running it from anywhere else will fail to find your character data - this
-is a deliberate v1 scope decision (a personal single-repo tool doesn't need
-to run from an arbitrary location), not an oversight. See the plan for the
-more portable alternative (a first-run config pointing at the repo root) if
-this ever actually becomes a problem.
+It does still need to be *somewhere inside* (or in `dist/` directly under) a
+real Gearing-Tool checkout - it reads `data/characters/<name-realm>/` and
+imports `ingest/list_characters.py`/`ingest/build_character.py` as real
+source files rather than bundling them into the exe. Moving just the `.exe`
+file out to somewhere with no repo around it won't work; that's a real,
+deliberate v1 scope decision (a personal single-repo tool), not an oversight.
 
 ## Known real gotcha already resolved here, not guessed
 
@@ -46,13 +46,15 @@ before `hiddenimports=["slpp"]` was added to the spec file. If a future
 change adds another dependency reached the same indirect way, expect the
 same failure mode and the same fix.
 
-## Verification done so far (2026-08-24, no user present to click through it)
+## Verification done so far
 
 - Console build (`console=True` variant) launched clean, no traceback.
-- Final windowed build (`dist/gearing-tool-gui.exe`, this spec's actual
-  output) launched clean three times in a row across rebuilds - confirmed via
-  its real OS-level window title ("Gearing Tool", checked with PowerShell's
-  `Get-Process`), not just "the process didn't immediately exit."
-- **Not yet done**: an actual human double-click + look at the window. Please
-  do that for real once you're back - I can confirm the process starts and
-  the window exists, but not that it looks/behaves right without eyes on it.
+- First windowed build launched clean in automated testing (process + window
+  title only) but crashed on the user's real first double-click - the
+  `os.getcwd()` bug above. Fixed, rebuilt.
+- Rebuilt exe verified launching clean from a working directory with no
+  relation to the repo at all (`C:\Users\Matthias`, not inside the repo
+  tree), confirming the fix isn't coincidental.
+- **Still not done by a human**: actually clicking through the character
+  list / report links in the real rendered window. Automated checks confirm
+  it starts and has the right title, not that it looks/behaves right.
