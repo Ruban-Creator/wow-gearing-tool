@@ -706,11 +706,25 @@ end)
 -- EVERY character this addon has saved on this account, not just the one
 -- currently logged in - the multi-character view the status panel above
 -- can't show since it only ever reads the current character's own Entry().
+--
+-- Rebuilt 2026-08-24 from a plain text blob into real per-character rows
+-- (icon/class-colored name/realm/search), matching the user's own bag
+-- addon's character-picker style shown as a reference. Uses real, standard
+-- Blizzard globals for class color/icon (RAID_CLASS_COLORS,
+-- CLASS_ICON_TCOORDS, SearchBoxTemplate/SEARCH_BOX_TEMPLATE_INSTRUCTIONS) -
+-- the same ones the default character/guild UI and search boxes use, not
+-- hand-rolled. NOT LIVE-TESTED - written from documented Blizzard API, but
+-- this file has real precedent for this exact client behaving differently
+-- than documented (C_Reputation, the profession API just found not to
+-- match either) - verify for real in-game: open /gtlist, confirm class
+-- icons/colors render (not the raw unmasked icon sheet), confirm typing in
+-- the search box actually filters rows, confirm clicking a row highlights
+-- it without error.
 -- ============================================================
 
 local charListFrame = CreateFrame("Frame", "GTCompanionCharacterListFrame", UIParent,
     BackdropTemplateMixin and "BackdropTemplate" or nil)
-charListFrame:SetSize(380, 320)
+charListFrame:SetSize(420, 420)
 charListFrame:SetPoint("CENTER")
 charListFrame:SetFrameStrata("DIALOG")
 charListFrame:SetBackdrop({
@@ -733,47 +747,169 @@ local charListTitle = charListFrame:CreateFontString(nil, "OVERLAY", "GameFontNo
 charListTitle:SetPoint("TOP", 0, -16)
 charListTitle:SetText("Saved Characters")
 
+-- SearchBoxTemplate is a real, standard Blizzard template (used by the
+-- default UI's own bag/auction/etc search fields) - filters the row list
+-- by name/realm as you type, matching the reference addon's own search box.
+local charSearchBox = CreateFrame("EditBox", "GTCompanionCharSearchBox", charListFrame, "SearchBoxTemplate")
+charSearchBox:SetSize(360, 20)
+charSearchBox:SetPoint("TOP", 0, -42)
+
 -- Standard Blizzard scroll template (same stability reasoning as
 -- UIPanelButtonTemplate/UIPanelCloseButton elsewhere in this file) - the
 -- character count here is expected to stay small (a handful of alts), but a
 -- real scrollbar costs nothing and means this never silently clips.
 local charScroll = CreateFrame("ScrollFrame", "GTCompanionCharListScroll", charListFrame, "UIPanelScrollFrameTemplate")
-charScroll:SetPoint("TOPLEFT", 16, -44)
+charScroll:SetPoint("TOPLEFT", 16, -70)
 charScroll:SetPoint("BOTTOMRIGHT", -34, 16)
 
 local charListBody = CreateFrame("Frame", nil, charScroll)
 charListBody:SetSize(300, 1)
 charScroll:SetScrollChild(charListBody)
 
-local charListText = charListBody:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-charListText:SetPoint("TOPLEFT", 0, 0)
-charListText:SetJustifyH("LEFT")
-charListText:SetJustifyV("TOP")
-charListText:SetWidth(300)
+-- englishClass is stored lowercase (WSE's own convention, e.g. "hunter") -
+-- RAID_CLASS_COLORS/CLASS_ICON_TCOORDS (real, standard Blizzard globals,
+-- the same ones the default character/guild UI uses - not a hand-rolled
+-- color table) are keyed by the UPPERCASE English token.
+local ROW_HEIGHT = 54
+local selectedRowKey = nil
+local charListRows = {}  -- reusable frame pool, indexed 1..N - never recreated per refresh
+
+local function GetRow(index)
+    local row = charListRows[index]
+    if row then return row end
+
+    row = CreateFrame("Button", nil, charListBody)
+    row:SetSize(300, ROW_HEIGHT)
+    row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+
+    row.bg = row:CreateTexture(nil, "BACKGROUND")
+    row.bg:SetAllPoints()
+    row.bg:SetColorTexture(1, 1, 1, 0.04)
+
+    row.icon = row:CreateTexture(nil, "ARTWORK")
+    row.icon:SetSize(36, 36)
+    row.icon:SetPoint("LEFT", 6, 0)
+    row.icon:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles")
+
+    row.name = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    row.name:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 8, -2)
+    row.name:SetJustifyH("LEFT")
+
+    row.realm = row:CreateFontString(nil, "OVERLAY", "GameFontDisable")
+    row.realm:SetPoint("LEFT", row.name, "RIGHT", 4, 0)
+    row.realm:SetJustifyH("LEFT")
+
+    row.subtext = row:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    row.subtext:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 8, -18)
+    row.subtext:SetPoint("RIGHT", row, "RIGHT", -6, 0)
+    row.subtext:SetJustifyH("LEFT")
+    row.subtext:SetWordWrap(false)
+
+    row.wseLine = row:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    row.wseLine:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 8, -34)
+    row.wseLine:SetJustifyH("LEFT")
+
+    row:SetScript("OnClick", function(self)
+        selectedRowKey = self.charKey
+        for _, r in ipairs(charListRows) do
+            r.bg:SetColorTexture(1, 1, 1, r.charKey == selectedRowKey and 0.10 or 0.04)
+        end
+        -- No detail view yet (character-list polish only, per plan) - the
+        -- per-row selection state above is kept so a future "show this
+        -- character's bags/bank" panel has a real hook to build on top of.
+    end)
+
+    charListRows[index] = row
+    return row
+end
 
 local function RefreshCharacterList()
+    -- SearchBoxTemplate's placeholder/instructions text is a separate
+    -- overlay FontString, not real EditBox content - :GetText() reliably
+    -- returns "" when nothing's been typed, no need to also compare
+    -- against SEARCH_BOX_TEMPLATE_INSTRUCTIONS (removed: comparing it
+    -- against a lowercased filter would never match anyway, a real bug
+    -- caught in review before this shipped).
+    local filter = charSearchBox:GetText():lower()
+    if filter == "" then
+        filter = nil
+    end
+
     local chars = AllCharacters()
-    local lines = {}
+    local shown = 0
     for _, c in ipairs(chars) do
         local id = c.identity or {}
         local label = id.name and (id.name .. "-" .. (id.realm or "?")) or c.key
-        local classRace = ("%s %s"):format(id.race or "?", id.class or "?")
-        local when = c.timestamp > 0 and date("%Y-%m-%d %H:%M:%S", c.timestamp) or "never"
-        local profParts = {}
-        for _, p in ipairs(id.professions or {}) do
-            table.insert(profParts, ("%s %d"):format(p.name, p.level or 0))
+        if not filter or label:lower():find(filter, 1, true) then
+            shown = shown + 1
+            local row = GetRow(shown)
+            row.charKey = c.key
+            row:SetPoint("TOPLEFT", 0, -(shown - 1) * ROW_HEIGHT)
+            row:Show()
+            row.bg:SetColorTexture(1, 1, 1, c.key == selectedRowKey and 0.10 or 0.04)
+
+            local classToken = id.class and id.class:upper()
+            local classColor = classToken and RAID_CLASS_COLORS[classToken]
+            local coords = classToken and CLASS_ICON_TCOORDS[classToken]
+            if coords then
+                -- unpack (not table.unpack) - this client's Lua runtime is
+                -- 5.1-based, unpack is the correct global there.
+                row.icon:SetTexCoord(unpack(coords))
+                row.icon:Show()
+            else
+                -- Unknown class (identity not captured yet) - hide rather
+                -- than show the full unmasked class-icon sheet, which
+                -- looks like a rendering bug, not a real "no icon" state.
+                row.icon:Hide()
+            end
+
+            row.name:SetText(id.name or c.key)
+            if classColor then
+                row.name:SetTextColor(classColor.r, classColor.g, classColor.b)
+            else
+                row.name:SetTextColor(1, 1, 1)
+            end
+            row.realm:SetText(id.realm and ("- " .. id.realm) or "")
+
+            local raceClass = (id.race or id.class) and ("%s %s"):format(id.race or "?", id.class or "?") or "identity not captured yet"
+            local levelText = id.level and (" · Lv " .. id.level) or ""
+            row.subtext:SetText(raceClass .. levelText)
+
+            local profParts = {}
+            for _, p in ipairs(id.professions or {}) do
+                table.insert(profParts, ("%s %d"):format(p.name, p.level or 0))
+            end
+            local profText = #profParts > 0 and table.concat(profParts, ", ") or "no professions captured"
+            local when = c.timestamp > 0 and date("%Y-%m-%d %H:%M", c.timestamp) or "never"
+            row.wseLine:SetText(("%s · saved %s · %s"):format(profText, when,
+                WSETriggerText({ wse_export_trigger = c.wse_export_trigger }, false)))
         end
-        local profText = #profParts > 0 and table.concat(profParts, ", ") or "no professions captured"
-        table.insert(lines, ("|cffffcc00%s|r  (%s, Lv %s)\n%s\nLast saved: %s\n%s"):format(
-            label, classRace, tostring(id.level or "?"), profText, when,
-            WSETriggerText({ wse_export_trigger = c.wse_export_trigger })))
     end
-    if #lines == 0 then
-        lines = { "No characters saved yet." }
+
+    for i = shown + 1, #charListRows do
+        charListRows[i]:Hide()
     end
-    charListText:SetText(table.concat(lines, "\n\n"))
-    charListBody:SetHeight(math.max(charListText:GetStringHeight() + 10, 1))
+
+    if shown == 0 then
+        local row = GetRow(1)
+        row.charKey = nil
+        row:SetPoint("TOPLEFT", 0, 0)
+        row:Show()
+        row.icon:Hide()
+        row.name:SetText(#chars == 0 and "No characters saved yet." or "No characters match your search.")
+        row.name:SetTextColor(0.6, 0.6, 0.6)
+        row.realm:SetText("")
+        row.subtext:SetText("")
+        row.wseLine:SetText("")
+        shown = 1
+    end
+
+    charListBody:SetHeight(math.max(shown * ROW_HEIGHT, 1))
 end
+charSearchBox:SetScript("OnTextChanged", function(self)
+    SearchBoxTemplate_OnTextChanged(self)
+    RefreshCharacterList()
+end)
 charListFrame:SetScript("OnShow", RefreshCharacterList)
 
 SLASH_GTLIST1 = "/gtlist"
