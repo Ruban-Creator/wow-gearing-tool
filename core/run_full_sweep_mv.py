@@ -629,18 +629,22 @@ def main():
                                             baseline_config, candidates, RESOLVE_ITERATIONS, opt.SEED)
             return c.item_id, set_name, check
 
-        rescue_results = run_with_progress(rescue_one, rescue_candidates, "Rescue-checking")
+        rescue_results = run_with_progress(rescue_one, rescue_candidates, "Sidegrade-checking")
         for item_id, set_name, check in rescue_results:
             if check and not check["tied_within_noise"] and check["mv_if_set_broken"] > 0:
                 rescue_notes_by_item[item_id] = (
-                    f"Not an upgrade today (breaks {set_name}'s bonus), but a real "
-                    f"{check['mv_if_set_broken']:+.1f} DPS gain once that bonus is "
-                    f"already broken elsewhere (e.g. via {check['via_item']} in {check['via_slot']})."
+                    f"Don't compete for this - it's a downgrade with your current gear, "
+                    f"so it's not worth outbidding someone with a real use for it. Worth "
+                    f"banking if it's going free, though: paired with {check['via_item']} "
+                    f"in {check['via_slot']}, it's a real {check['mv_if_set_broken']:+.1f} "
+                    f"DPS sidegrade for later (breaks {set_name}'s bonus alone, but that "
+                    f"bonus is already gone once you've made that other swap too)."
                 )
                 rescue_mv_by_item[item_id] = check["mv_if_set_broken"]
         if rescue_notes_by_item:
-            print(f"Rescue check: {len(rescue_notes_by_item)} item(s) found to be real upgrades "
-                  f"once their set-bonus break is already priced in elsewhere.\n")
+            print(f"Sidegrade check: {len(rescue_notes_by_item)} item(s) found to be real "
+                  f"future sidegrades once their set-bonus break is already priced in elsewhere "
+                  f"- not worth competing for now, but worth banking.\n")
 
     for key, rows in by_tier_slot.items():
         for c, r in rows:

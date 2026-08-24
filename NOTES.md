@@ -2509,3 +2509,28 @@ errors.
 Real lesson: two genuinely different root causes produced the same visible symptom
 ("unexplained downgrade in the upgrades list") back to back - worth actually checking the
 data before assuming a second occurrence of the first bug's cause.
+
+**Rescue -> Sidegrade rename, with a real verified number behind it first**: the user
+asked directly whether "Mantle of the Tireless Tracker + Cursed Vision in head" is
+actually better than her real current T5 shoulder - checked with a fresh sim rather than
+reasoning about it. Real, verified numbers: baseline (current Rift Stalker Helm +
+Mantle, full 4pc intact) 2685.5 DPS; +Cursed Vision alone 2698.7 (+13.3); +Cursed Vision
+AND Mantle of the Tireless Tracker together 2707.1 (+21.7 total) - confirms the paired
+combo genuinely beats her current setup, while Mantle of the Tireless Tracker ALONE
+(current head kept) is a real -21.7 DPS downgrade, matching its own row. The rescue
+note's "+8.4 DPS gain once broken elsewhere" is the INCREMENTAL value of adding the
+shoulder swap on top of an already-taken head swap - not a standalone claim - and the
+old wording didn't make that "package deal" dependency clear.
+
+User's real point, though, wasn't really about the wording precision - it was the
+practical loot-council framing: this class of item should read as "don't compete for
+it if someone else has a genuine solo use, but grab it for the bank if it's going free
+anyway - it becomes a real sidegrade once you've also made the other swap." Renamed
+"Rescue" -> "Sidegrade" throughout (the note text in `run_full_sweep_mv.py`, the
+"Sidegrade check"/"Sidegrade-checking" print/progress labels, and the ledger HTML's
+label) and rewrote the note text to lead with the loot-priority guidance first, DPS
+math second. Internal code names (`rescue_check`, `rescue_note`, `rescue_mv`,
+`rescue_candidates` in `set_bonus.py`/`run_full_sweep_mv.py`) intentionally left
+unrenamed - user-facing copy changed, not the underlying API, lower risk. Re-ran the
+sweep (warm cache, 1.1s), rebuilt the ledger data, verified the new wording renders
+correctly (real text confirmed present, zero console errors), republished.
