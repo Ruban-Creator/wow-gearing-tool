@@ -339,14 +339,30 @@ end
 -- timestamp for this character actually advanced too (open WowSimsExporter.lua
 -- SavedVariables and check savedCharacters' timestamp, or just re-run
 -- `gear sync` and see equipped items are no longer stale).
+-- REAL BUG hit live 2026-08-24, fixed here: calling this at PLAYER_ENTERING_WORLD
+-- reached WowSimsExporter's real OnCharacterChanged -> FillForExport ->
+-- CreateTalentString -> GetNumTalents exactly as intended (confirmed by the
+-- user's own in-game error frame trace matching this call chain precisely) -
+-- but crashed INSIDE WSE's own extras.lua:49 ("attempt to get length of field
+-- '?' (a nil value)"), the same "some Blizzard API isn't populated yet this
+-- early after login" class of bug this addon has already hit itself with the
+-- reputation panel. Two real fixes, not just one: (1) wse:OnCharacterChanged()
+-- is now pcall-wrapped - without this, an uncaught error INSIDE WSE's code
+-- would abort the rest of THIS function's caller too, silently skipping the
+-- C_Timer.After(5, SaveReputationAndArena) call that follows it in the
+-- PLAYER_ENTERING_WORLD handler - a real, separate consequence of the crash,
+-- not just a cosmetic error message. (2) The call itself moves behind a
+-- C_Timer.After delay at the call site (see PLAYER_ENTERING_WORLD below),
+-- same reasoning already used for reputation - gives the client a moment to
+-- finish warming up before asking WSE to read talent data.
 local function TriggerWSEExport()
     local entry = Entry()
     if not LibStub then
         entry.wse_export_trigger = { ok = false, reason = "LibStub not found", at = time() }
         return
     end
-    local ok, aceAddon = pcall(LibStub, "AceAddon-3.0", true)
-    if not ok or not aceAddon then
+    local libOk, aceAddon = pcall(LibStub, "AceAddon-3.0", true)
+    if not libOk or not aceAddon then
         entry.wse_export_trigger = { ok = false, reason = "AceAddon-3.0 not found", at = time() }
         return
     end
@@ -355,7 +371,11 @@ local function TriggerWSEExport()
         entry.wse_export_trigger = { ok = false, reason = "WowSimsExporter addon not found/loaded", at = time() }
         return
     end
-    wse:OnCharacterChanged("GearingToolCompanionLogin")
+    local callOk, err = pcall(wse.OnCharacterChanged, wse, "GearingToolCompanionLogin")
+    if not callOk then
+        entry.wse_export_trigger = { ok = false, reason = "WSE internal error: " .. tostring(err), at = time() }
+        return
+    end
     entry.wse_export_trigger = { ok = true, at = time() }
 end
 
@@ -448,8 +468,13 @@ f:SetScript("OnEvent", function(_, event)
         SaveBags()
         SaveReputationAndArena()
         SaveIdentity()
-        TriggerWSEExport()
         C_Timer.After(5, SaveReputationAndArena)
+        -- Delayed, not called immediately here - real crash hit live inside
+        -- WSE's own talent-reading code when triggered at this exact moment
+        -- (see TriggerWSEExport's own comment for the full story and the
+        -- pcall fix that's the actual safety net; this delay is the second,
+        -- complementary fix - give WSE's own data more time to be ready).
+        C_Timer.After(5, TriggerWSEExport)
     elseif event == "BAG_UPDATE_DELAYED" then
         local now = time()
         if now - lastBagSave < BAG_SAVE_THROTTLE then return end
