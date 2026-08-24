@@ -819,7 +819,12 @@ charScroll:SetScrollChild(charListBody)
 -- RAID_CLASS_COLORS/CLASS_ICON_TCOORDS (real, standard Blizzard globals,
 -- the same ones the default character/guild UI uses - not a hand-rolled
 -- color table) are keyed by the UPPERCASE English token.
-local ROW_HEIGHT = 54
+-- Grown from 54 - real screenshot showed profession text genuinely
+-- populating (the GetSkillLineInfo fix working) but then running out of
+-- room sharing one line with the timestamp and WSE status. Split into its
+-- own line below instead of continuing to shrink text onto one line that
+-- was always going to overflow for any character with several professions.
+local ROW_HEIGHT = 70
 local selectedRowKey = nil
 local charListRows = {}  -- reusable frame pool, indexed 1..N - never recreated per refresh
 
@@ -854,12 +859,22 @@ local function GetRow(index)
     row.subtext:SetJustifyH("LEFT")
     row.subtext:SetWordWrap(false)
 
+    -- Professions on their own line now - a real screenshot showed this
+    -- crowded onto the same line as the timestamp/WSE status overflowing
+    -- once professions actually had real content (a character can have
+    -- several, e.g. "Herbalism 375, Mining 375" already fills most of a
+    -- line on its own).
+    row.professions = row:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    row.professions:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 8, -34)
+    row.professions:SetPoint("RIGHT", row, "RIGHT", -6, 0)
+    row.professions:SetJustifyH("LEFT")
+    row.professions:SetWordWrap(false)
+
     row.wseLine = row:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    row.wseLine:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 8, -34)
-    -- Real bug from a live screenshot: this FontString had no right-edge
-    -- constraint (unlike row.subtext, which does), so a long line just ran
-    -- past the row/frame edge and got clipped mid-word ("WSE ex...")
-    -- instead of truncating cleanly with an ellipsis.
+    row.wseLine:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 8, -50)
+    -- Right-edge constraint + no-wrap so a long line truncates cleanly
+    -- with an ellipsis instead of running past the frame edge and getting
+    -- clipped mid-word (a real bug caught from an earlier screenshot).
     row.wseLine:SetPoint("RIGHT", row, "RIGHT", -6, 0)
     row.wseLine:SetJustifyH("LEFT")
     row.wseLine:SetWordWrap(false)
@@ -935,18 +950,15 @@ local function RefreshCharacterList()
                 table.insert(profParts, ("%s %d"):format(p.name, p.level or 0))
             end
             local profText = #profParts > 0 and table.concat(profParts, ", ") or "no professions captured"
+            row.professions:SetText(profText)
+
             local when = c.timestamp > 0 and date("%H:%M", c.timestamp) or "never"
-            -- Ultra-compact here on purpose (no timestamp on the WSE part -
-            -- the row already has one via "saved %s") - the fuller
-            -- WSETriggerText() forms were still too long for this row
-            -- width even with the right-edge fix above, per a real
-            -- screenshot showing "WSE ex..." getting clipped.
             local wseShort = "WSE: not tried"
             local trig = c.wse_export_trigger
             if trig then
                 wseShort = trig.ok and "WSE: OK" or "WSE: failed"
             end
-            row.wseLine:SetText(("%s · saved %s · %s"):format(profText, when, wseShort))
+            row.wseLine:SetText(("saved %s · %s"):format(when, wseShort))
         end
     end
 
@@ -964,6 +976,7 @@ local function RefreshCharacterList()
         row.name:SetTextColor(0.6, 0.6, 0.6)
         row.realm:SetText("")
         row.subtext:SetText("")
+        row.professions:SetText("")
         row.wseLine:SetText("")
         shown = 1
     end
