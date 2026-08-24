@@ -27,9 +27,11 @@ import gear_config as gc  # noqa: E402
 import item_db as idb  # noqa: E402
 import gem_optimizer as gopt  # noqa: E402
 import marginal_value as mv  # noqa: E402
+import stat_weights  # noqa: E402
 
-SETTINGS_TEMPLATE = os.path.join(REPO_ROOT, "profiles", "tbc", "canonical_settings_survival.json")
-POOL_PATH = os.path.join(REPO_ROOT, "profiles", "tbc", "candidate_pool_survival.json")
+PROFILE_DIR = os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter")
+SETTINGS_TEMPLATE = os.path.join(PROFILE_DIR, "settings_template.json")
+POOL_PATH = os.path.join(PROFILE_DIR, "candidate_pool.json")
 SCREEN_ITERATIONS = 3000
 RESOLVE_ITERATIONS = 30000
 CLEAR_MARGIN_MULTIPLE = 8
@@ -37,6 +39,16 @@ CLEAR_MARGIN_MULTIPLE = 8
 
 def main():
     start = time.time()
+    # Stage 6 (multi-class support): this active-profile setup wasn't
+    # needed before core/stat_weights.py + core/gear_config.py's
+    # DEFAULT_GEM + gem_optimizer.CHASE_BONUS_ITEM_IDS all became
+    # per-profile settable state - keeps this script runnable for Hunter.
+    stat_weights.set_active(stat_weights.load(PROFILE_DIR))
+    profile = json.load(open(os.path.join(PROFILE_DIR, "profile.json"), encoding="utf-8"))
+    gc.set_active_default_gem(profile["primary_gem_id"])
+    chase_bonus = json.load(open(os.path.join(PROFILE_DIR, "chase_bonus_gems.json"), encoding="utf-8"))
+    gopt.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
+
     char = json.load(open(os.path.join(REPO_ROOT, "data", "character.json"), encoding="utf-8"))
     owned_items = char["equipped"]["items"]
     meta_gem_id = opt.find_owned_meta_gem(owned_items)

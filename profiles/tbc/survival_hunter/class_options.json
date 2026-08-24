@@ -1,0 +1,12 @@
+{
+  "hunter": {
+    "options": {
+      "classOptions": {
+        "quiverBonus": "Speed15",
+        "ammo": "TimelessArrow",
+        "petType": "Owl",
+        "petUptime": 1
+      }
+    }
+  }
+}

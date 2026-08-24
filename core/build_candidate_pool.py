@@ -9,7 +9,14 @@ import json
 import os
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REF_DIR = os.path.join(REPO_ROOT, "profiles", "tbc", "reference_bis")
+# Kept as the default for Survival Hunter (this script's original real
+# usage); Stage 6 (multi-class support) generalized build_pool() itself to
+# take ref_dir/phase_files as real parameters instead of module constants,
+# so a new profile calls it with its own reference_bis/ directory and phase
+# filenames rather than needing its own copy of this file.
+PROFILE_DIR = os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter")
+REF_DIR = os.path.join(PROFILE_DIR, "reference_bis")
+DEFAULT_PHASE_FILES = ["phase2.json", "phase3.json"]
 
 RANK_ORDER = ["Best", "Best x2", "Best MH/OH", "Best - Weaving", "Best - Hit", "Best 6% and 9%",
               "Best - Dwarf", "Best Until Tier 6", "Best Until Tier 5", "Best Raid Wide Increase",
@@ -24,15 +31,20 @@ def rank_weight(rank: str) -> int:
         return len(RANK_ORDER)
 
 
-def build_pool():
-    p2 = json.load(open(os.path.join(REF_DIR, "phase2_survival.json"), encoding="utf-8"))
-    p3 = json.load(open(os.path.join(REF_DIR, "phase3_survival.json"), encoding="utf-8"))
+def build_pool(ref_dir: str = REF_DIR, phase_files: list[str] = DEFAULT_PHASE_FILES) -> dict:
+    # Phase label derived from the filename itself ("phase3.json" -> "P3"),
+    # not positional index - robust regardless of which phases are actually
+    # passed (a future profile isn't guaranteed to start at phase 2).
+    refs = []
+    for fname in phase_files:
+        label = "P" + os.path.splitext(fname)[0].removeprefix("phase")
+        refs.append((label, json.load(open(os.path.join(ref_dir, fname), encoding="utf-8"))))
 
-    slots = sorted(set(p2["slots"]) | set(p3["slots"]))
+    slots = sorted(set().union(*(set(ref["slots"]) for _, ref in refs)))
     pool = {}
     for slot in slots:
         by_name = {}
-        for phase_label, ref in [("P2", p2), ("P3", p3)]:
+        for phase_label, ref in refs:
             for entry in ref["slots"].get(slot, []):
                 name = entry["item"]
                 if name not in by_name:
@@ -51,7 +63,7 @@ def build_pool():
 
 def main():
     pool = build_pool()
-    out_path = os.path.join(REPO_ROOT, "profiles", "tbc", "candidate_pool_survival.json")
+    out_path = os.path.join(PROFILE_DIR, "candidate_pool.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(pool, f, indent=2)
 

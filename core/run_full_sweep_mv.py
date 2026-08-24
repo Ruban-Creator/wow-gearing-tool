@@ -32,16 +32,26 @@ import marginal_value as mv  # noqa: E402
 import set_bonus  # noqa: E402
 import acquisition_gate  # noqa: E402
 import time_horizon  # noqa: E402
+import stat_weights  # noqa: E402
+import gem_optimizer  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SETTINGS_TEMPLATE = os.path.join(REPO_ROOT, "profiles", "tbc", "canonical_settings_survival.json")
+# This file is still Survival Hunter's own sweep script (Stage 6.1+ gives
+# Warrior/Druid their own equivalent entry points) - paths point at the
+# migrated profiles/tbc/survival_hunter/ layout, but PROFILE_DIR/PROFILE
+# below (loaded in main()) are what actually drive the new per-profile
+# subsystems (stat weights, gem defaults, professions, weapon topology,
+# raid-AP gating, set-bonus Go source) - see the plan for the full Stage 6
+# architecture.
+PROFILE_DIR = os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter")
+SETTINGS_TEMPLATE = os.path.join(PROFILE_DIR, "settings_template.json")
 # Same buffs/debuffs/talents/encounter as SETTINGS_TEMPLATE - only the
 # "Melee weave" APL constant differs (see NOTES.md, 2026-08-23 melee weave
 # entry). 2H weapons are only ever evaluated under this variant since a 2H
 # weapon without weaving is a strict downgrade (loses the offhand item for
 # nothing) - there's no reason to test one under the non-weave settings.
-SETTINGS_2H = os.path.join(REPO_ROOT, "profiles", "tbc", "canonical_settings_survival_2h.json")
-POOL_PATH = os.path.join(REPO_ROOT, "profiles", "tbc", "candidate_pool_survival.json")
+SETTINGS_2H = os.path.join(PROFILE_DIR, "settings_template_2h.json")
+POOL_PATH = os.path.join(PROFILE_DIR, "candidate_pool.json")
 DB_PATH = os.path.join(REPO_ROOT, "sim", "tbc-new", "assets", "database", "db.json")
 SWEEP_PATH = os.path.join(REPO_ROOT, "data", "cache", "full_sweep_candidates.json")
 MAX_WORKERS = 2  # matches valuation.SIMSERVER_POOL_SIZE - see its comment for why 4 was 7.4x slower
@@ -233,6 +243,23 @@ def main():
     zone_by_id = {z["id"]: z["name"] for z in db.get("zones", [])}
 
     char = json.load(open(os.path.join(REPO_ROOT, "data", "character.json"), encoding="utf-8"))
+
+    # Stage 6 (multi-class support): load this profile's real manifest and
+    # wire every per-profile subsystem's active state from it, once, here -
+    # everything downstream (gem_optimizer, set_bonus, stat_weights) reads
+    # this active state rather than a hardcoded Hunter constant. For
+    # Survival Hunter specifically this must reproduce today's exact
+    # existing values (Stage 6.0's regression check) - see profile.json.
+    profile = json.load(open(os.path.join(PROFILE_DIR, "profile.json"), encoding="utf-8"))
+    stat_weights.set_active(stat_weights.load(PROFILE_DIR))
+    gc.set_active_default_gem(profile["primary_gem_id"])
+    chase_bonus = json.load(open(os.path.join(PROFILE_DIR, "chase_bonus_gems.json"), encoding="utf-8"))
+    gem_optimizer.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
+    set_bonus.set_active_item_sets_go(os.path.join(REPO_ROOT, "sim", "tbc-new", profile["set_bonus_go_source"]))
+    mv.set_shared_slot_groups(profile["weapon_topology"])
+    known_professions = {p["name"] for p in char["character"]["professions"]}
+    pool_key_to_slots = opt.build_pool_key_to_slots(profile["weapon_topology"])
+
     owned_items = char["equipped"]["items"]
     # Everything she already possesses - equipped AND sitting in bags/bank -
     # isn't something to go acquire, so it's excluded from every tier below
@@ -244,12 +271,12 @@ def main():
 
     acquisition_status = acquisition_gate.load_status()
 
-    candidates = opt.load_candidates(POOL_PATH, owned_items)
+    candidates = opt.load_candidates(POOL_PATH, owned_items, known_professions, pool_key_to_slots)
     curated_ids = {c.item_id for cands in candidates.values() for c in cands if c.item_id}
     # Curated-pool items' real Wowhead source text/tier, so they show up in
     # the right tier bucket too, not just the sweep additions.
     curated_source_text = {}
-    p3_ref = json.load(open(os.path.join(REPO_ROOT, "profiles", "tbc", "reference_bis", "phase3_survival.json"), encoding="utf-8"))
+    p3_ref = json.load(open(os.path.join(PROFILE_DIR, "reference_bis", "phase3.json"), encoding="utf-8"))
     for entries in p3_ref["slots"].values():
         for e in entries:
             curated_source_text[e["item"]] = e["source"]
@@ -275,7 +302,7 @@ def main():
         if slot is None:
             continue
         req_prof = idb.required_profession_name(item)
-        if req_prof and req_prof not in ("Herbalism", "Mining"):
+        if req_prof and req_prof not in known_professions:
             continue
 
         if slot == "weapon_2h":

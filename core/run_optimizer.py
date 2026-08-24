@@ -7,14 +7,27 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import optimizer as opt  # noqa: E402
 import gear_config as gc  # noqa: E402
 import item_db as idb  # noqa: E402
+import gem_optimizer as gopt  # noqa: E402
+import stat_weights  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SETTINGS_TEMPLATE = os.path.join(REPO_ROOT, "profiles", "tbc", "canonical_settings_survival.json")
-POOL_PATH = os.path.join(REPO_ROOT, "profiles", "tbc", "candidate_pool_survival.json")
-REFERENCE_P3_PATH = os.path.join(REPO_ROOT, "profiles", "tbc", "reference_bis", "phase3_survival.json")
+PROFILE_DIR = os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter")
+SETTINGS_TEMPLATE = os.path.join(PROFILE_DIR, "settings_template.json")
+POOL_PATH = os.path.join(PROFILE_DIR, "candidate_pool.json")
+REFERENCE_P3_PATH = os.path.join(PROFILE_DIR, "reference_bis", "phase3.json")
 
 
 def main():
+    # Stage 6 (multi-class support): required active-profile setup - see
+    # verify_gem_choices.py's identical block for why. This whole file is
+    # flagged elsewhere (CLAUDE.md) as the superseded design not to build
+    # on further - kept runnable, not otherwise invested in.
+    stat_weights.set_active(stat_weights.load(PROFILE_DIR))
+    profile = json.load(open(os.path.join(PROFILE_DIR, "profile.json"), encoding="utf-8"))
+    gc.set_active_default_gem(profile["primary_gem_id"])
+    chase_bonus = json.load(open(os.path.join(PROFILE_DIR, "chase_bonus_gems.json"), encoding="utf-8"))
+    gopt.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
+
     char = json.load(open(os.path.join(REPO_ROOT, "data", "character.json"), encoding="utf-8"))
     owned_items = char["equipped"]["items"]
 

@@ -192,20 +192,64 @@ isn't a factor the tool should weigh at all, that distinction has no use). Every
 should keep assuming the fully-optimal gem/enchant loadout, same as it already does, with no
 "free vs. gold-gated" breakdown.
 
-**Stage 6 (new, added 2026-08-23): multi-class/multi-spec support** — extend beyond Lerynia's
-Survival Hunter to any class/spec `wowsims/tbc-new` itself supports. Per the user, this is a big
-piece of work but explicitly does **not** need to be done before Phase 3 launches — it can proceed
-in parallel with or after Stage 5, not gating it. The architecture's two day-one rules (proto types
-never cross the adapter boundary; item identity carries `variant`) were already written to make
-this possible without a rewrite, and the "no class/spec/talent/expansion names in `core/`" rule
-means `core/` itself shouldn't need changes. The real work is elsewhere and not yet scoped in
-detail - known coupling points found so far that will need to become profile-driven instead of
-hardcoded, from working on `adapters/tbc/` and `core/run_full_sweep_mv.py` this session: the
-Survival-specific melee-weave APL switch and its own settings variant, `STAT_WEIGHTS`, the
-Herbalism/Mining profession filter, `SLOT_ORDER`/weapon-type assumptions, and the Expose-Weakness
-raid-AP analytical model (§ above) being Survival Hunter-specific by construction. Not started -
-noted here so it isn't lost, and to be scoped properly (probably its own sub-stages) when work on
-it actually begins.
+**Stage 6 (added 2026-08-23, Stage 6.0 done 2026-08-24): multi-class/multi-spec support** — extend
+beyond Lerynia's Survival Hunter to any class/spec `wowsims/tbc-new` itself supports, starting
+with Arms Warrior (Rubán-Thunderstrike) and Balance Druid (Béarforceone-Thunderstrike), for whom
+real character data already exists. Full design:
+`C:\Users\Matthias\.claude\plans\staged-purring-lynx.md` (Plan Mode, approved 2026-08-24).
+
+Key finding that reframed the scope: the user's own concern ("most classes have no debuff like
+Expose Armor") turned out to need almost no new code - every ally-affecting debuff examined besides
+Hunter's Expose Weakness (Warrior's Sunder Armor, Druid's Faerie Fire, Warlock's curses, Paladin's
+Judgement of the Crusader) is an enemy-side effect a solo sim already benefits from directly. Only
+Hunter's Expose Weakness/Hunter's Mark have the "grants OTHER attackers AP, invisible to a solo
+sim" problem the existing `adapters/tbc/expose_weakness.py` model exists to solve - so the real fix
+is gating that one model behind a per-profile flag (default off), not building N per-class models.
+
+**Stage 6.0 (architecture layer) is done, real-verified, not just designed**:
+- `profiles/tbc/survival_hunter/` - migrated (git history preserved) from the old flat
+  `canonical_settings_survival*.json`/`candidate_pool_survival.json`/`reference_bis/*_survival.json`
+  naming into one directory: `profile.json` (new manifest), `settings_template.json[_2h]`,
+  `candidate_pool.json`, `stat_weights.json`, `class_options.json`, `consumables.json`,
+  `raid_buffs_overlay.json`, `chase_bonus_gems.json`, `reference_bis/phaseN.json`.
+  `profiles/tbc/_shared/raid_buffs_received.json` for role-agnostic base buffs (empty for now -
+  real content once a second profile's own overlay exists to compare against, Stage 6.1/6.2).
+- 8 coupling-point fixes landed as real parameterized/settable code (not hardcoded constants):
+  `STAT_WEIGHTS` → `core/stat_weights.py`'s `load()`/`set_active()`/`get_active()`; the Hunter-only
+  petType write in `adapters/tbc/valuation.py:_normalize()` guarded by a presence check (a real,
+  independently-confirmed `KeyError` blocker for any non-Hunter settings file); Herbalism/Mining →
+  `core/optimizer.py:load_candidates()`'s `known_professions` parameter, sourced from
+  `character.json`; weapon topology → `core/optimizer.py:build_pool_key_to_slots()` +
+  `core/marginal_value.py:set_shared_slot_groups()`; `set_bonus.py`'s hardcoded
+  `sim/hunter/item_sets.go` path → `set_active_item_sets_go()` (real per-class verification found
+  Warrior's own set bonuses live in `sim/warrior/items.go` instead - not the same convention);
+  `gear_config.DEFAULT_GEM`/`gem_optimizer.CHASE_BONUS_ITEM_IDS` (Hunter-Agility-specific verified
+  data) → `set_active_default_gem()`/`set_active_chase_bonus_ids()`, a new profile starts with an
+  empty chase-bonus set rather than inheriting Hunter's.
+- New `core/settings_builder.py` assembles a full settings dict from character.json + profile.json
+  + real buffs/APL/class-options/consumables inputs - **proven, not just written**: 
+  `core/prove_settings_builder.py` regenerates Hunter's own `settings_template.json` and diffs
+  byte-for-byte against the real hand-maintained file. Passed clean after two real transcription
+  bugs were found and fixed this way (a missing `pseudoStats`/`apiVersion` on `bonusStats`, an
+  off-by-one in the encounter target's 42-element stats array) - exactly the kind of bug a
+  "looks right" review would have missed and a byte-diff caught immediately.
+- **Real regression checkpoint, not skipped**: re-ran `run_full_sweep_mv.py` for Lerynia after all
+  of the above landed - output is byte-for-byte identical to the pre-Stage-6.0 cached report (full
+  cache hit too, ~2.7s vs the usual ~8min, confirming the settings fingerprint is genuinely
+  unchanged). `check_ledger_consistency.py` clean (667/0) afterward.
+- Real, incidental find during this checkpoint: `data/character.json`'s equipped items were
+  temporarily reconstructed from `settings_template.json`'s own real equipment block (item IDs/
+  enchants only, gems recomputed as usual) to run this comparison, since the file itself was
+  already known-stale (0 equipped items, flagged earlier in `QUESTIONS.md`) - not a new problem,
+  just worth noting the regression check used a reconstructed-but-real gear set, not fabricated
+  data, and a genuine fresh in-game re-export/re-sync is still the real fix needed before trusting
+  `data/character.json` for anything beyond this test.
+
+**Stage 6.1 (Arms Warrior) is next, not started** - real prerequisite: `Rubán-Thunderstrike` needs
+a fresh `gear sync` (only identity-level data confirmed so far) before his real gear can be simmed.
+See the plan file for the full per-stage design (class_options/stat_weights/raid-buffs-overlay
+sourced from wowsims' own shipped `warrior/dps/presets.ts`, real APL from
+`warrior/dps/apls/arms.apl.json`, hand-curated `reference_bis/` from Wowhead).
 
 ## Future scope (deferred to final implementation, not now)
 

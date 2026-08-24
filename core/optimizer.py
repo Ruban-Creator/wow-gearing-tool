@@ -74,9 +74,13 @@ class Candidate:
 
 
 # Reference-list slot keys -> the 17 equipped-array slot names that draw
-# from them. Rings and trinkets share one pool each across two slots;
-# mainhand/offhand share the dual-wield pool (she's confirmed dual-wielding
-# in her real, validated export - two-handed is not explored this pass).
+# from them. Rings and trinkets share one pool each across two slots
+# regardless of class/spec. The weapon pool(s) genuinely differ by real
+# weapon topology (Stage 6, multi-class support) - see
+# build_pool_key_to_slots() below. POOL_KEY_TO_SLOTS itself stays as
+# Survival Hunter's real, confirmed dual-wield shape (unchanged, still used
+# by every current call site that doesn't pass an explicit topology) so
+# existing behavior is provably untouched.
 POOL_KEY_TO_SLOTS = {
     "head": ["head"], "neck": ["neck"], "shoulder": ["shoulder"], "back": ["back"],
     "chest": ["chest"], "wrist": ["wrist"], "hands": ["hands"], "waist": ["waist"],
@@ -84,6 +88,34 @@ POOL_KEY_TO_SLOTS = {
     "trinket": ["trinket1", "trinket2"], "weapon_dual_wield": ["mainhand", "offhand"],
     "ranged": ["ranged"],
 }
+
+_NON_WEAPON_POOL_KEYS = {
+    "head": ["head"], "neck": ["neck"], "shoulder": ["shoulder"], "back": ["back"],
+    "chest": ["chest"], "wrist": ["wrist"], "hands": ["hands"], "waist": ["waist"],
+    "legs": ["legs"], "feet": ["feet"], "ring": ["ring1", "ring2"],
+    "trinket": ["trinket1", "trinket2"], "ranged": ["ranged"],
+}
+
+# Real weapon topologies found this session (sim/tbc-new/ui/*/presets.ts +
+# real gear_sets/*.gear.json, not assumed from class name alone - Balance
+# Druid's real topology still needs verification against its own gear set,
+# see Stage 6.2 in the plan). Each maps to the weapon-slot portion of
+# POOL_KEY_TO_SLOTS only; non-weapon slots are always _NON_WEAPON_POOL_KEYS.
+_WEAPON_TOPOLOGY_POOLS = {
+    "dual_wield": {"weapon_dual_wield": ["mainhand", "offhand"]},
+    "two_hand": {"weapon_2h": ["mainhand"]},
+    "one_hand_plus_offhand_item": {"mainhand": ["mainhand"], "offhand": ["offhand"]},
+}
+
+
+def build_pool_key_to_slots(weapon_topology: str) -> dict[str, list[str]]:
+    """POOL_KEY_TO_SLOTS, generalized per-profile (Stage 6). Real weapon
+    topology decides the weapon-slot portion; every other slot is the same
+    regardless of class/spec."""
+    if weapon_topology not in _WEAPON_TOPOLOGY_POOLS:
+        raise ValueError(f"Unknown weapon_topology {weapon_topology!r} - expected one of "
+                          f"{sorted(_WEAPON_TOPOLOGY_POOLS)}")
+    return {**_NON_WEAPON_POOL_KEYS, **_WEAPON_TOPOLOGY_POOLS[weapon_topology]}
 
 
 def find_owned_meta_gem(owned_items: list[dict]) -> int | None:
@@ -113,19 +145,33 @@ def gems_for_item(item: dict, meta_gem_id: int | None) -> list[int]:
     return gem_optimizer.best_gems_for_item(item, meta_gem_id)
 
 
-def load_candidates(pool_path: str, owned_items: list[dict]) -> dict[str, list[Candidate]]:
+def load_candidates(pool_path: str, owned_items: list[dict],
+                     known_professions: set[str] | None = None,
+                     pool_key_to_slots: dict[str, list[str]] | None = None,
+                     ) -> dict[str, list[Candidate]]:
     """Resolves each candidate name to an id (preferring the id she already
     owns for that name, since a plain name lookup can hit multiple ids -
     see NOTES.md's "Band of Eternity" bug), applies profession gating, and
     reuses her real enchant/gems when the candidate IS what she already has
-    equipped (never invents an enchant for an item she doesn't own)."""
+    equipped (never invents an enchant for an item she doesn't own).
+
+    known_professions/pool_key_to_slots default to Survival Hunter's exact
+    real values (Herbalism/Mining, dual-wield) when omitted, so every
+    existing caller's behavior is provably unchanged (Stage 6.0's regression
+    check) - a new profile passes its own real character.json professions
+    and build_pool_key_to_slots(profile["weapon_topology"]) explicitly."""
+    if known_professions is None:
+        known_professions = {"Herbalism", "Mining"}
+    if pool_key_to_slots is None:
+        pool_key_to_slots = POOL_KEY_TO_SLOTS
+
     pool = json.load(open(pool_path, encoding="utf-8"))
     owned_by_name = {it["name"]: it for it in owned_items if it}
     meta_gem_id = find_owned_meta_gem(owned_items)
 
     result = {slot: [] for slot in gc.SLOT_ORDER}
     for pool_key, entries in pool.items():
-        target_slots = POOL_KEY_TO_SLOTS.get(pool_key, [])
+        target_slots = pool_key_to_slots.get(pool_key, [])
         if not target_slots:
             continue
         # Enchants attach to the SLOT via the profession UI, not to a
@@ -156,8 +202,7 @@ def load_candidates(pool_path: str, owned_items: list[dict]) -> dict[str, list[C
             item_id = owned["id"] if owned else ids[0]
             item = idb.by_id(item_id)
             req_prof = idb.required_profession_name(item) if item else None
-            # Only Herbalism/Mining known professions for this character (character.json).
-            if req_prof and req_prof not in ("Herbalism", "Mining"):
+            if req_prof and req_prof not in known_professions:
                 cands.append(Candidate(name, item_id, excluded_reason=f"requires {req_prof}"))
                 continue
             if owned:

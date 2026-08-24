@@ -1,0 +1,4 @@
+{
+  "item_ids": [25685, 28827, 29081, 30142, 30143, 30724, 30739, 31005, 32508],
+  "source": "core/verify_gem_choices.py, 2026-08-24 - real 30k-iteration sim comparisons, see NOTES.md"
+}

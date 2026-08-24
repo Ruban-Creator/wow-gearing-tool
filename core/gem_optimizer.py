@@ -42,7 +42,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import item_db as idb  # noqa: E402
 import gear_config as gc  # noqa: E402
-from stat_weights import STAT_WEIGHTS  # noqa: E402
+import stat_weights  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(REPO_ROOT, "sim", "tbc-new", "assets", "database", "db.json")
@@ -74,7 +74,7 @@ def _all_gems() -> list[dict]:
 
 
 def _crude_score(stats: list[float]) -> float:
-    return sum(STAT_WEIGHTS.get(str(i), 0) * v for i, v in enumerate(stats) if v)
+    return sum(stat_weights.get_active().get(str(i), 0) * v for i, v in enumerate(stats) if v)
 
 
 def _best_gem(candidates: list[dict]) -> tuple[int, float] | None:
@@ -87,8 +87,9 @@ def _best_gem(candidates: list[dict]) -> tuple[int, float] | None:
 
 
 def _default_gem_score() -> float:
+    default_gem = gc.get_active_default_gem()
     for g in _all_gems():
-        if g["id"] == gc.DEFAULT_GEM:
+        if g["id"] == default_gem:
             return _crude_score(g["stats"])
     return 0.0
 
@@ -166,7 +167,7 @@ def ensure_meta_requirement(config: list[dict], equipped_items: list, meta_gem_i
         for socket_idx, color in enumerate(sockets):
             if swapped >= swaps_needed:
                 break
-            if socket_idx < len(gems) and gems[socket_idx] == gc.DEFAULT_GEM:
+            if socket_idx < len(gems) and gems[socket_idx] == gc.get_active_default_gem():
                 gems[socket_idx] = green_gem
                 swapped += 1
         if gems:
@@ -205,7 +206,7 @@ def chase_bonus_gems_for_item(item: dict, meta_gem_id: int | None) -> list[int]:
         if color == idb.META_GEM_COLOR:
             gems.append(meta_gem)
         else:
-            gems.append(_best_gem_of_color(color) or gc.DEFAULT_GEM)
+            gems.append(_best_gem_of_color(color) or gc.get_active_default_gem())
     return gems
 
 
@@ -262,30 +263,32 @@ def verify_gem_choice(item: dict, meta_gem_id: int | None, settings_path: str,
 
 
 # Real, resolved (30k-iteration) sim results from core/verify_gem_choices.py,
-# 2026-08-24: pure Agility vs each item's own socket-bonus-chased loadout,
-# broadened from the single earlier Ranger-General's Chestguard spot check
-# (which only showed pure Agility beating one crude STAT_WEIGHTS-based
-# hybrid, not that pure Agility beats a REAL socket-bonus match everywhere).
-# 37 of her real candidates with sockets were checked; these 9 are the ones
-# where chasing the item's own bonus genuinely beat pure Agility outside
-# noise (all >= 1.0 DPS at 30k iterations, noise_stdev ~0.5). The other 28
-# either clearly favored pure Agility or were tied within noise - pure
-# Agility is kept as the default for everything not in this set, matching
-# "never a claim broader than what was actually verified." Re-run
-# verify_gem_choices.py and refresh this set whenever the candidate pool
-# changes materially (new phase, new items) - this is real per-item data,
-# not a formula that generalizes to items never checked.
-CHASE_BONUS_ITEM_IDS = {
-    30143,  # Rift Stalker Mantle (shoulder)      +1.61 DPS
-    30142,  # Rift Stalker Leggings (legs)          +1.14 DPS
-    31005,  # Gronnstalker's Leggings (legs)         +1.27 DPS
-    30739,  # Scaled Greaves of the Marksman (legs)  +3.03 DPS
-    29081,  # Demon Stalker Greathelm (head)         +2.30 DPS
-    30724,  # Barrel-Blade Longrifle (ranged)        +2.09 DPS
-    32508,  # Necklace of the Deep (neck)            +1.92 DPS
-    25685,  # Fel Leather Gloves (hands)             +1.14 DPS
-    28827,  # Gauntlets of the Dragonslayer (hands)  +1.07 DPS
-}
+# 2026-08-24: pure-stat gem vs each item's own socket-bonus-chased loadout.
+# Per-profile since Stage 6 (multi-class support) - this was Hunter/Agility-
+# specific verified data (Survival Hunter's 37 real candidates with sockets;
+# 9 had a real, resolved DPS gain from chasing their own bonus instead) and
+# must never be silently assumed to apply to another class's candidate pool.
+# Loaded from profiles/tbc/<class>_<spec>/chase_bonus_gems.json via
+# set_active_chase_bonus_ids() (same "set once at startup" pattern as
+# stat_weights.py/gear_config.py) - a new profile starts with an EMPTY set
+# until verify_gem_choices.py is actually re-run against its own real
+# candidate pool, never inheriting another profile's verified items.
+_active_chase_bonus_ids: set[int] | None = None
+
+
+def set_active_chase_bonus_ids(item_ids: set[int]) -> None:
+    global _active_chase_bonus_ids
+    _active_chase_bonus_ids = item_ids
+
+
+def get_active_chase_bonus_ids() -> set[int]:
+    if _active_chase_bonus_ids is None:
+        raise RuntimeError(
+            "gem_optimizer.set_active_chase_bonus_ids() was never called - a pipeline "
+            "entry point must load a profile's chase_bonus_gems.json and call "
+            "set_active_chase_bonus_ids() before any gem-choice code runs."
+        )
+    return _active_chase_bonus_ids
 
 
 def best_gems_for_item(item: dict, meta_gem_id: int | None) -> list[int]:
@@ -321,7 +324,7 @@ def best_gems_for_item(item: dict, meta_gem_id: int | None) -> list[int]:
     sockets = item.get("gemSockets") or []
     if not sockets:
         return []
-    if item.get("id") in CHASE_BONUS_ITEM_IDS:
+    if item.get("id") in get_active_chase_bonus_ids():
         return chase_bonus_gems_for_item(item, meta_gem_id)
     meta_gem = meta_gem_id if meta_gem_id is not None else 0
-    return [meta_gem if color == idb.META_GEM_COLOR else gc.DEFAULT_GEM for color in sockets]
+    return [meta_gem if color == idb.META_GEM_COLOR else gc.get_active_default_gem() for color in sockets]

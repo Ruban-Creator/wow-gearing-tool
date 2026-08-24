@@ -36,7 +36,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import item_db as idb  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REF_DIR = os.path.join(REPO_ROOT, "profiles", "tbc", "reference_bis")
+# Still Survival Hunter's own reference_bis - Stage 6 (multi-class support)
+# hasn't generalized this file yet (bis_until_phase is Hunter-only tagging
+# for now); update to a profile-driven REF_DIR when a second profile needs it.
+REF_DIR = os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter", "reference_bis")
 
 # The user's own real character is currently in Phase 3 - CLAUDE.md's
 # planned GUI phase toggle will need to change this (and the candidate
@@ -82,8 +85,8 @@ def _is_true_bis(rank: str) -> bool:
 
 
 def _load_phase_item_ranks() -> dict[int, dict[str, str]]:
-    """Loads whatever phase{N}_survival.json files actually exist, N from 1
-    up to FINAL_PHASE - not hardcoded to (3,4,5). phase2_survival.json
+    """Loads whatever phase{N}.json files actually exist, N from 1
+    up to FINAL_PHASE - not hardcoded to (3,4,5). phase2.json
     already exists (built earlier for Stage 3's candidate pool) and is
     picked up here for free; a future phase1 file would be too, with no
     code change needed, since CURRENT_PHASE won't always be 3 - per the
@@ -94,7 +97,7 @@ def _load_phase_item_ranks() -> dict[int, dict[str, str]]:
         return _phase_item_ranks_cache
     result = {}
     for phase in range(1, FINAL_PHASE + 1):
-        path = os.path.join(REF_DIR, f"phase{phase}_survival.json")
+        path = os.path.join(REF_DIR, f"phase{phase}.json")
         if not os.path.exists(path):
             continue
         data = json.load(open(path, encoding="utf-8"))

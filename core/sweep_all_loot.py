@@ -24,7 +24,7 @@ import sys
 from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from stat_weights import STAT_WEIGHTS  # noqa: E402
+import stat_weights  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(REPO_ROOT, "sim", "tbc-new", "assets", "database", "db.json")
@@ -49,7 +49,7 @@ TOP_N_PER_TYPE = 15  # cheap pre-filter per §5: EP decides what's worth SIMMING
 def crude_score(item: dict) -> float:
     scaling = item.get("scalingOptions", {}).get("0", {})
     stats = scaling.get("stats", {})
-    score = sum(STAT_WEIGHTS.get(k, 0) * v for k, v in stats.items())
+    score = sum(stat_weights.get_active().get(k, 0) * v for k, v in stats.items())
     dmg_min = scaling.get("weaponDamageMin")
     dmg_max = scaling.get("weaponDamageMax")
     speed = item.get("weaponSpeed")
@@ -124,6 +124,13 @@ def eligible(item: dict) -> bool:
 
 
 def main():
+    # This whole file is Hunter-specific by design (see module docstring -
+    # class/weapon-type eligibility filters), not one of Stage 6's
+    # generalized coupling points - still needs the active-profile state set
+    # since core/stat_weights.py's API changed under it.
+    profile_dir = os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter")
+    stat_weights.set_active(stat_weights.load(profile_dir))
+
     db = json.load(open(DB_PATH, encoding="utf-8"))
     items = db["items"]
 

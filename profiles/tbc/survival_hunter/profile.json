@@ -1,0 +1,14 @@
+{
+  "class": "hunter",
+  "spec": "survival",
+  "weapon_topology": "dual_wield",
+  "primary_gem_stat_id": "1",
+  "primary_gem_id": 32194,
+  "raid_ap_contribution": {
+    "enabled": true,
+    "note": "Expose Weakness - see adapters/tbc/expose_weakness.py. The one profile this is actually true for; every other profile defaults enabled=false."
+  },
+  "set_bonus_go_source": "sim/hunter/item_sets.go",
+  "apl_source": null,
+  "apl_note": "Hunter's real APL is hand-embedded in settings_template.json/settings_template_2h.json's player.rotation, not loaded from a separate wowsims apls/*.apl.json file - predates the Stage 6 settings_builder.py convention. Left as-is; new profiles load a real apl_source file instead."
+}

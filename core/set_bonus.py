@@ -15,27 +15,45 @@ import item_db as idb  # noqa: E402
 import gear_config as gc  # noqa: E402
 import optimizer as opt  # noqa: E402
 import marginal_value as mv  # noqa: E402
-from stat_weights import STAT_WEIGHTS  # noqa: E402
+import stat_weights  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ITEM_SETS_GO = os.path.join(REPO_ROOT, "sim", "tbc-new", "sim", "hunter", "item_sets.go")
 STAT_VECTOR_LEN = 42
 
+# Per-profile since Stage 6 (multi-class support) - real source path VERIFIED
+# per class, never templated (Hunter and Druid both have sim/<class>/
+# item_sets.go, but Warrior's set bonuses live in sim/warrior/items.go
+# instead - confirmed by direct check, not assumed from either convention).
+# Same "set once at startup" pattern as stat_weights.py/gear_config.py.
+_active_item_sets_go: str | None = None
 _thresholds_cache: dict[str, list[int]] | None = None
+
+
+def set_active_item_sets_go(path: str) -> None:
+    global _active_item_sets_go, _thresholds_cache
+    _active_item_sets_go = path
+    _thresholds_cache = None  # a different profile's source invalidates the cache
 
 
 def set_bonus_thresholds() -> dict[str, list[int]]:
     """Real bonus threshold piece counts per set name, parsed directly from
     the vendored sim's own Go source - never guessed. db.json has no
-    separate table for this (setId/setName only on each item), so the Go
-    source (sim/hunter/item_sets.go's `Bonuses: map[int32]core.ApplySetBonus{
+    separate table for this (setId/setName only on each item), so the
+    active profile's real Go source (set via set_active_item_sets_go(),
+    e.g. sim/hunter/item_sets.go's `Bonuses: map[int32]core.ApplySetBonus{
     2: func(...){...}, 4: func(...){...} }` per set) is the only real
     source. Verified against a live in-game tooltip once (Rift Stalker
     Armor: 2/4, matching exactly)."""
     global _thresholds_cache
     if _thresholds_cache is not None:
         return _thresholds_cache
-    text = open(ITEM_SETS_GO, encoding="utf-8").read()
+    if _active_item_sets_go is None:
+        raise RuntimeError(
+            "set_bonus.set_active_item_sets_go() was never called - a pipeline entry "
+            "point must load a profile's profile.json (set_bonus_go_source) and call "
+            "set_active_item_sets_go() before any set-bonus code runs."
+        )
+    text = open(_active_item_sets_go, encoding="utf-8").read()
     result = {}
     for m in re.finditer(r'Name:\s*"([^"]+)".*?Bonuses:\s*map\[int32\]core\.ApplySetBonus\{(.*?)\n\t\},',
                           text, re.DOTALL):
@@ -137,7 +155,7 @@ def best_non_set_alt(slot: str, set_name: str,
         if not item or item.get("setName") == set_name:
             continue
         stats = item.get("scalingOptions", {}).get("0", {}).get("stats", {})
-        score = sum(STAT_WEIGHTS.get(k, 0) * v for k, v in stats.items())
+        score = sum(stat_weights.get_active().get(k, 0) * v for k, v in stats.items())
         if best_score is None or score > best_score:
             best, best_score = cand, score
     return best

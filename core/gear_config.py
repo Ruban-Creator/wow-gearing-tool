@@ -12,11 +12,29 @@ SLOT_ORDER = [
     "mainhand", "offhand", "ranged",
 ]
 
-DEFAULT_GEM = 32194  # Delicate Crimson Spinel (+10 Agility, red, phase 3) - was 24028
-# (Delicate Living Ruby, +8 Agility, phase 1) until NOTES.md's "screening conclusion was
-# wrong" correction: the phase-1 gem was quietly handicapping every non-owned candidate.
-# This is the gem actually used in the reference BiS set she verified on wowsims.com, not
-# an invented EP-based pick - same color, same stat, strictly better, no downside.
+# Per-profile since Stage 6 (multi-class support) - a pure-Agility Hunter gem is
+# meaningless for a Strength Warrior or an Intellect/Spell Damage Druid. Was a flat
+# module constant (32194, Delicate Crimson Spinel, +10 Agility - the gem actually
+# used in Lerynia's reference BiS set, not an invented EP-based pick); now loaded
+# once per pipeline run via set_active_default_gem(), same "set once at startup,
+# read by many functions" pattern as stat_weights.py - get_active_default_gem()
+# raises if unset rather than silently reusing whatever profile ran last.
+_active_default_gem: int | None = None
+
+
+def set_active_default_gem(gem_id: int) -> None:
+    global _active_default_gem
+    _active_default_gem = gem_id
+
+
+def get_active_default_gem() -> int:
+    if _active_default_gem is None:
+        raise RuntimeError(
+            "gear_config.set_active_default_gem() was never called - a pipeline entry "
+            "point must load a profile's profile.json (primary_gem_id) and call "
+            "set_active_default_gem() before any gem-choice code runs."
+        )
+    return _active_default_gem
 
 
 def item_entry(item_id: int, enchant: int = 0, gems: list[int] | None = None,

@@ -29,11 +29,27 @@ PHYSICAL_ATTACKER_COUNT = 9
 
 # Populated by set_slot_hints() from the optimizer's own pool structure, so
 # mv_single only tries the slot(s) a candidate could actually occupy
-# (ring1/ring2 share one pool, trinket1/trinket2 share one, mainhand/offhand
-# share one) instead of guessing from item metadata.
+# (ring1/ring2 share one pool, trinket1/trinket2 share one; mainhand/offhand
+# sharing one pool is real for a dual-wield profile only - see
+# set_shared_slot_groups(), Stage 6) instead of guessing from item metadata.
 _SLOT_HINT: dict[int, list[str]] = {}
 
-_SHARED_SLOT_GROUPS = [("ring1", "ring2"), ("trinket1", "trinket2"), ("mainhand", "offhand")]
+# Ring/trinket pairing is universal (every class has 2 ring + 2 trinket
+# slots); mainhand/offhand is NOT (a two_hand profile has no real offhand
+# weapon pool at all - see optimizer.build_pool_key_to_slots). Defaults to
+# Survival Hunter's real dual-wield shape so every existing caller's
+# behavior is unchanged (Stage 6.0 regression check); a new profile calls
+# set_shared_slot_groups() with its own real topology-appropriate pairs.
+_BASE_SHARED_SLOT_GROUPS = [("ring1", "ring2"), ("trinket1", "trinket2")]
+_SHARED_SLOT_GROUPS = _BASE_SHARED_SLOT_GROUPS + [("mainhand", "offhand")]
+
+
+def set_shared_slot_groups(weapon_topology: str) -> None:
+    global _SHARED_SLOT_GROUPS
+    weapon_pairs = {"dual_wield": [("mainhand", "offhand")], "two_hand": [], "one_hand_plus_offhand_item": []}
+    if weapon_topology not in weapon_pairs:
+        raise ValueError(f"Unknown weapon_topology {weapon_topology!r}")
+    _SHARED_SLOT_GROUPS = _BASE_SHARED_SLOT_GROUPS + weapon_pairs[weapon_topology]
 
 
 def set_slot_hints(candidates_by_slot: dict[str, list]):

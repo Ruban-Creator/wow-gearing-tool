@@ -8,11 +8,11 @@ import gap_analysis as ga  # noqa: E402
 
 char = json.load(open(os.path.join(REPO_ROOT, "data", "character.json"), encoding="utf-8"))
 ref_p3 = json.load(open(
-    os.path.join(REPO_ROOT, "profiles", "tbc", "reference_bis", "phase3_survival.json"),
+    os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter", "reference_bis", "phase3.json"),
     encoding="utf-8",
 ))
 ref_p2 = json.load(open(
-    os.path.join(REPO_ROOT, "profiles", "tbc", "reference_bis", "phase2_survival.json"),
+    os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter", "reference_bis", "phase2.json"),
     encoding="utf-8",
 ))
 db = json.load(open(

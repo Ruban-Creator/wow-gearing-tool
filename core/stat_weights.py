@@ -1,18 +1,40 @@
 """Crude, disclosed stat-weight heuristic - for RANKING/PRUNING and gem-
 choice tradeoffs only, never treated as the final answer (real value
-always comes from the sim afterward, per CLAUDE.md's core mandate). One
-shared copy so sweep_all_loot.py's candidate pre-filter and
-gem_optimizer.py's per-socket gem choice can't drift into two different
-numbers for the same stats.
+always comes from the sim afterward, per CLAUDE.md's core mandate).
+
+Per-profile since Stage 6 (multi-class support) - Hunter's Agility-heavy
+weights are meaningless for a caster. Loaded once per pipeline run via
+`set_active()` (matching the existing `marginal_value._SLOT_HINT` pattern:
+one real "current profile" set at startup, read by many functions,
+avoiding threading a weights dict through every call signature in
+gem_optimizer.py/set_bonus.py/sweep_all_loot.py) rather than a module-level
+constant - `get_active()` raises if nothing was ever set, so a
+forgotten set_active() call fails loud instead of silently reusing
+whatever profile happened to run last.
 """
-STAT_WEIGHTS = {
-    "0": 0.5,   # Strength
-    "1": 2.0,   # Agility
-    "17": 1.0,  # AttackPower
-    "18": 1.0,  # RangedAttackPower
-    "20": 0.8,  # MeleeHitRating
-    "21": 1.2,  # MeleeCritRating
-    "22": 0.8,  # MeleeHasteRating
-    "23": 0.9,  # ArmorPenetration
-    "24": 0.3,  # ExpertiseRating
-}
+import json
+import os
+
+_active: dict[str, float] | None = None
+
+
+def load(profile_dir: str) -> dict[str, float]:
+    """Reads profiles/tbc/<class>_<spec>/stat_weights.json."""
+    path = os.path.join(profile_dir, "stat_weights.json")
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def set_active(weights: dict[str, float]) -> None:
+    global _active
+    _active = weights
+
+
+def get_active() -> dict[str, float]:
+    if _active is None:
+        raise RuntimeError(
+            "stat_weights.set_active() was never called - a pipeline entry point "
+            "must load a profile's stat_weights.json and call set_active() before "
+            "any gem/set-bonus scoring code runs."
+        )
+    return _active

@@ -93,9 +93,16 @@ def _normalize(settings: dict) -> dict:
     Wowsims.com test exports have shown Owl/Ravager/Bat across different
     sessions - none of that was a deliberate choice, just whatever the UI
     happened to have loaded. Owl is the confirmed standing choice; every
-    settings file that flows through this pipeline gets normalized to it
-    so a stray future paste can't silently change the baseline again."""
-    settings["player"]["hunter"]["options"]["classOptions"]["petType"] = "Owl"
+    Hunter settings file that flows through this pipeline gets normalized
+    to it so a stray future paste can't silently change the baseline again.
+
+    Guarded by presence of a "hunter" block (added for Stage 6, multi-class
+    support): every other class's settings file has no player.hunter key at
+    all, and this used to write it unconditionally - a guaranteed KeyError
+    on the very first non-Hunter settings file, confirmed by direct testing
+    before this guard existed."""
+    if settings["player"].get("hunter"):
+        settings["player"]["hunter"]["options"]["classOptions"]["petType"] = "Owl"
     return settings
 
 

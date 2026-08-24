@@ -7,8 +7,8 @@ import os
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 mv = json.load(open(os.path.join(REPO_ROOT, "data", "cache", "mv_report.json"), encoding="utf-8"))
-pool = json.load(open(os.path.join(REPO_ROOT, "profiles", "tbc", "candidate_pool_survival.json"), encoding="utf-8"))
-p3 = json.load(open(os.path.join(REPO_ROOT, "profiles", "tbc", "reference_bis", "phase3_survival.json"), encoding="utf-8"))
+pool = json.load(open(os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter", "candidate_pool.json"), encoding="utf-8"))
+p3 = json.load(open(os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter", "reference_bis", "phase3.json"), encoding="utf-8"))
 char = json.load(open(os.path.join(REPO_ROOT, "data", "character.json"), encoding="utf-8"))
 
 mv_by_name = {it["name"]: it for it in mv["items"]}
