@@ -204,7 +204,14 @@ html, body {
   padding: 32px 40px;
 }
 
-.detail-empty {
+/* :not([hidden]) matters here, not just style - an author-stylesheet
+   `display` declaration always overrides the UA stylesheet's `[hidden] {
+   display: none }` regardless of selector specificity (author origin beats
+   user-agent origin outright), so a bare `.detail-empty { display: flex }`
+   would keep this visible even with the hidden attribute set - a real bug
+   caught from a live screenshot showing both this and the selected
+   character's detail pane rendered at once. */
+.detail-empty:not([hidden]) {
   height: 100%;
   display: flex;
   align-items: center;
