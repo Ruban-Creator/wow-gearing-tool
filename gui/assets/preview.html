@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Gearing Tool (preview)</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <div class="brand">
+          <span class="brand-mark">R</span>
+          <span class="brand-name">Gearing Tool</span>
+        </div>
+        <button id="refresh-btn" class="icon-btn" title="Refresh">&#8635;</button>
+      </div>
+      <div id="char-list" class="char-list">
+        <div class="empty-state">Loading...</div>
+      </div>
+    </aside>
+    <main class="detail">
+      <div id="detail-empty" class="detail-empty">
+        <p>Select a character to view their reports.</p>
+      </div>
+      <div id="detail-content" class="detail-content" hidden>
+        <header class="detail-header">
+          <h1 id="detail-name"></h1>
+          <div id="detail-meta" class="detail-meta"></div>
+        </header>
+        <div id="profile-banner" class="profile-banner" hidden>
+          No sim profile yet for this character - multi-class support is still being built.
+        </div>
+        <div id="reports-grid" class="reports-grid"></div>
+      </div>
+    </main>
+  </div>
+  <script src="preview_mock.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
