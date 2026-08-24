@@ -2645,3 +2645,36 @@ real +1.61 DPS Rift Stalker Mantle gain is inside that noise band at this iterat
 `check_ledger_consistency.py` clean (671/0) both before and after the splice - it correctly
 caught the intermediate state (sweep done, HTML not yet re-spliced) as a real failure, exactly
 the class of bug it exists to catch.
+
+**2026-08-24: GearingToolCompanion rewritten to capture character identity + a multi-
+character list**, groundwork for CLAUDE.md's Stage 6 (multi-class/spec support) requested
+directly by the user ("collects everything we need name, class, race, professions... store
+multiple characters and have a list showing all saved data with timestamps"), done while away
+from the game client since the real multi-class simulation work itself needs the user present
+with real alt characters to test against. `GTCompanionDB` was already keyed per-character
+(`CharKey()`/`Entry()`), so multi-character storage was already structurally true - what was
+actually missing was capturing identity at all (name/realm/class/race/faction/level/
+professions, via `DumpIdentity()`/`DumpProfessions()`) and a UI to see it. New `/gtlist` slash
+command + panel lists every saved character, most-recent first, with a real timestamp per
+character - the actual "list ... with timestamps" ask. The existing `/gtexport` status panel
+now also shows identity/professions for the current character, not just bag/bank/rep counts.
+
+Also found and fixed a real, pre-existing, unrelated bug while reviewing the file:
+`local bankIsOpen = false` was declared ~60 lines AFTER `SaveBank()` already referenced it -
+Lua has no hoisting, so a `local` declared later in a chunk is invisible to code written
+earlier, meaning `SaveBank()` was compiled against a plain global `bankIsOpen` (always nil,
+since every real assignment targeted the local declared afterward). `if not bankIsOpen then
+return end` was therefore always true, so `SaveBank()` could never actually save anything
+regardless of whether the bank was genuinely open - silently undoing the exact fix its own
+surrounding comment describes. Moved the declaration before `SaveBags()`/`SaveBank()`.
+
+**NOT live-tested** - written without game client access, and no local Lua interpreter was
+available to verify syntax either (checked statically: parens/braces balance only). Real
+in-game verification is a next-session task: `/gtlist` for the character list, `/gtexport` +
+opening the bank to confirm the `bankIsOpen` fix actually works now, and eyeballing
+`DumpIdentity()`'s output against the character sheet and profession windows directly - this
+file has already been burned twice by this exact client (Interface 20506) behaving differently
+than documented Blizzard API (the reputation `hasRep` bug, the arena team API), so
+`GetProfessions`/`GetProfessionInfo` being long-stable elsewhere is not itself a guarantee here.
+Per CLAUDE.md's addon-sync rule, this repo copy is now the most-recently-edited (source of
+truth) - needs copying into the live WoW AddOns folder to actually test.
