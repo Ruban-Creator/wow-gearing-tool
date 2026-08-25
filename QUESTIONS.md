@@ -555,3 +555,14 @@ messiest stage yet - two genuinely sim-breaking bugs, both silent - so a few cal
   (121/0, confirms the embedded DATA blob byte-matches `ledger_data_phase3.json`) rather than an
   actual look at the rendered page. Same structural bar used for every prior stage's report, but
   flagging since "looks right when opened" was never actually confirmed for this one specifically.
+
+## Stage 6.7 (Combat Rogue): done, real-verified, no open judgment calls to flag
+
+`profiles/tbc/combat_rogue/` is done and real-verified (full writeup in NOTES.md). Cleanest stage
+so far - no sim-breaking bugs, no wrong initial assumptions to correct. The one real, worth-noting
+finding was informational rather than a judgment call: the apl's real finisher is Rupture, not
+Eviscerate (the plan's own STOP wording had assumed Eviscerate) - caught via the same real
+combat-log technique used for every other profile, not a guess. Following on from you asking me to
+keep going stage-to-stage without stopping (2026-08-25): per your same message, this file and
+NOTES.md are being kept current every stage for tomorrow's review, and I'll also prepare the
+"what's untested" reminder and the overview document you asked for once the remaining stages land.

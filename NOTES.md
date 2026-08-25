@@ -3428,3 +3428,44 @@ already verifies the embedded data byte-for-byte, matching the bar used for prio
 report verification. Regression: Balance Druid's own Phase 3 sweep re-run fresh - baseline
 byte-identical (1100.271068998754, full cache hit, 0.7s), `check_ledger_consistency.py` 1209/0
 clean (same familiar achieved-BiS-empty warning as before, not new).
+
+**Stage 6.7 (2026-08-25): Combat Rogue, real-verified.** `profiles/tbc/combat_rogue/` built from
+`sim/tbc-new/ui/rogue/dps/` - the first Rogue profile, `dual_wield` (real handType=2 OneHand
+confirmed on both p1.gear.json weapons, weaponType=9 Sword). Clean bootstrap, no sim-breaking bugs
+this time (unlike Feral). `RogueOptions`/`Rogue.Rotation` are both real, empty `{}` proto messages
+- confirmed no per-spec rotation config exists for Rogue at all, everything is APL-driven
+(`swords.apl.json`, "SS/Hemo/Shiv"). Real, non-obvious finisher finding: the apl's real finisher is
+**Rupture** (spell 26867, 166 casts in a 100-iteration combat log), not Eviscerate as the plan's
+own STOP wording assumed - Sinister Strike (26862, the builder, 331 casts) + Slice and Dice (6774,
+63 casts) round out the combo-point rotation. Cross-checked directly against
+`sim/rogue/rupture.go`/`slice_and_dice.go`, not assumed.
+
+Real EP weights from `rogue/dps/presets.ts`'s own `P1_EP_PRESET` ("Combat Swords") - PseudoStat
+MainHand/OffHandDps weights present in the source preset omitted from `stat_weights.json`, matching
+the established convention (this tool's prefilter only scores core Stat indices). Real, distinct
+consumables shape: `battleElixirId`+`guardianElixirId` (no flask) and only an off-hand weapon imbue
+(`ohImbueId`, no `mhImbueId`) - used exactly as `presets.ts`'s own `DefaultConsumables` specifies,
+nothing invented (no drums/scrolls/explosives, none appear in Rogue's own real preset). Only P1-P3
+(+ a separate, non-phase-indexed `preraid.gear.json`) real gear_sets exist - no P4/P5, a real,
+confirmed data gap matching the pattern already found for other newer classes.
+
+`default_enchants.json`: 10/10 verified clean on the first pass (both weapon slots real, `2673`
+"Enchant Weapon - Mongoose" on each). Gem verification: 19 real socketed candidates tested fresh;
+2 real, non-tied winners found (`Edgewalker Longboots` +11.09, `Shadowmaster's Boots` +9.04) -
+`settings_template.json` rebuilt after adding them since her own equipped boots (Shadowmaster's)
+were one of the two, meaning the pre-update settings had baked in a stale, suboptimal gem choice
+for that slot. `set_bonus.py` parses Rogue's real `sim/rogue/items.go` cleanly (5 sets - Gladiator's
+Vestments, Assassination Armor, Netherblade, Deathmantle, Slayer's Armor - all standard 2/4-piece
+inline-map form, no new Go-source form needed).
+
+New `Test-CombatRogue-Synthetic` character (Human, Engineering/Enchanting, seeded from
+`p3.gear.json`, real Combat Swords talents string `0053201252-023305200005015002321151` from
+`presets.ts` directly). Full sweep ran clean (real Achieved BiS across 9 slots, real Deathmantle
+set-bonus math correctly flagging 4 individually-negative pieces offset by their own 2pc/4pc
+bonuses, real T5/T6 ring upgrades found, real 2H-weapon side-analysis correctly ran since Rogue is
+`dual_wield` - "No 2H weapon beats current gear" - unlike Feral's `two_hand` profile where that
+section is skipped entirely), `check_ledger_consistency.py` 130/0 clean (121/0 -> 130/0 with HTML,
+no achieved-BiS-empty warning). Regression: zero `core/` files were modified for this stage besides
+the purely-additive `character_profiles.py` entry, so no shared-code regression risk existed; spot-
+checked Arms Warrior's cached baseline (1770.0316931322793) against the last known-good value
+recorded in Stage 6.5's own regression check - unchanged.

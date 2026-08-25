@@ -1,0 +1,117 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Cursed Vision of Sargeras",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Choker of Endless Nightmares",
+        "rank": "Best",
+        "source": "Drop: Supremus (Black Temple)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Slayer's Shoulderpads",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Combat Swords preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Shadowmoon Destroyer's Drape",
+        "rank": "Best",
+        "source": "Drop: Teron Gorefiend (Black Temple)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Slayer's Chestguard",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Combat Swords preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Insidious Bands",
+        "rank": "Best",
+        "source": "Drop: Teron Gorefiend (Black Temple)"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Slayer's Handguards",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Combat Swords preset"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of One-Hundred Deaths",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Slayer's Legguards",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Combat Swords preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Shadowmaster's Boots",
+        "rank": "Best",
+        "source": "Drop: Mother Shahraz (Black Temple)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Stormrage Signet Ring",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      },
+      {
+        "item": "Band of the Eternal Champion",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Combat Swords preset"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Dragonspine Trophy",
+        "rank": "Best",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      },
+      {
+        "item": "Warp-Spring Coil",
+        "rank": "Best",
+        "source": "Drop: Void Reaver (Tempest Keep)"
+      }
+    ],
+    "weapon_dual_wield": [
+      {
+        "item": "Warglaive of Azzinoth",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      },
+      {
+        "item": "Warglaive of Azzinoth",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Arcanite Steam-Pistol",
+        "rank": "Best",
+        "source": "Drop: Al'ar (Tempest Keep)"
+      }
+    ]
+  }
+}

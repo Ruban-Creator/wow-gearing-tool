@@ -40,4 +40,7 @@ SUPPORTED_CHARACTERS = {
     "Test-Beastmastery-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "beastmastery_hunter"),
     "Test-Fury-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "fury_warrior"),
     "Test-FeralCat-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "feral_cat_druid"),
+    "Test-CombatRogue-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "combat_rogue"),
+    "Test-ShadowPriest-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "shadow_priest"),
+    "Test-ArcaneMage-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "arcane_mage"),
 }

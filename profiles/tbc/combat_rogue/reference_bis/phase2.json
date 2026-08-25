@@ -1,0 +1,117 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Deathmantle Helm",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Combat Swords preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Choker of Vile Intent",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Combat Swords preset"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Deathmantle Shoulderpads",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Combat Swords preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Drape of the Dark Reavers",
+        "rank": "Best",
+        "source": "Drop: Shade of Aran (Karazhan)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Bloodsea Brigand's Vest",
+        "rank": "Best",
+        "source": "Drop: Fathom-Lord Karathress (Serpentshrine Cavern)"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Vambraces of Ending",
+        "rank": "Best",
+        "source": "Drop: High Astromancer Solarian (Tempest Keep)"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Deathmantle Handguards",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Combat Swords preset"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of One-Hundred Deaths",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Deathmantle Legguards",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Combat Swords preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Edgewalker Longboots",
+        "rank": "Best",
+        "source": "Drop: Moroes (Karazhan)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Ring of Lethality",
+        "rank": "Best",
+        "source": "Drop: Hydross the Unstable (Serpentshrine Cavern)"
+      },
+      {
+        "item": "Band of the Ranger-General",
+        "rank": "Best",
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Dragonspine Trophy",
+        "rank": "Best",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      },
+      {
+        "item": "Warp-Spring Coil",
+        "rank": "Best",
+        "source": "Drop: Void Reaver (Tempest Keep)"
+      }
+    ],
+    "weapon_dual_wield": [
+      {
+        "item": "Talon of Azshara",
+        "rank": "Best",
+        "source": "Drop: Morogrim Tidewalker (Serpentshrine Cavern)"
+      },
+      {
+        "item": "Merciless Gladiator's Quickblade",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Combat Swords preset"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Arcanite Steam-Pistol",
+        "rank": "Best",
+        "source": "Drop: Al'ar (Tempest Keep)"
+      }
+    ]
+  }
+}

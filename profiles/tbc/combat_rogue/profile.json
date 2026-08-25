@@ -1,0 +1,21 @@
+{
+  "class": "rogue",
+  "spec": "combat",
+  "weapon_topology": "dual_wield",
+  "primary_gem_stat_id": "1",
+  "primary_gem_id": 32194,
+  "distance_from_target": 5,
+  "raid_ap_contribution": {
+    "enabled": false,
+    "note": "Rogue's own real ally-affecting debuff (Expose Armor, sim/rogue/expose_armor.go) is an enemy-side armor reduction, not a 'grants OTHER attackers a stat, invisible to a solo sim' mechanic like Hunter's Expose Weakness - a solo sim already benefits from it directly, same finding as every other non-Hunter class checked so far."
+  },
+  "set_bonus_go_source": "sim/rogue/items.go",
+  "apl_source": "ui/rogue/dps/apls/swords.apl.json",
+  "apl_note": "Only one real apl exists for Rogue (swords.apl.json, 'SS/Hemo/Shiv') - no dev-fixture apl file found alongside it, so no ambiguity to resolve there.",
+  "weapon_topology_note": "dual_wield confirmed via real handType data on the p1.gear.json weapon items (Gladiator's Slicer + Latro's Shifting Sword, both handType=2 OneHand, weaponType=9 Sword).",
+  "stat_weights_note": "Real EP weights from rogue/dps/presets.ts's own P1_EP_PRESET ('Combat Swords') - PseudoStatMainHandDps/OffHandDps weights (9.34/3.4) present in the source preset are omitted here, matching the established convention (Fury Warrior's own stat_weights.json omits the same kind of PseudoStat entries) since this tool's prefilter only scores core Stat indices.",
+  "gear_variant_note": "Only P1-P3 (+ a separate preraid.gear.json, not phase-indexed like every other profile's own data) real gear_sets exist for Rogue in this sim version - no P4/P5 data. A real, confirmed data gap, not an oversight - reference_bis/candidate_pool only cover phases 1-3 as a result, matching every other profile's own convention of not building a pre-phase-1 entry.",
+  "consumables_note": "Real DefaultConsumables from presets.ts uses battleElixirId+guardianElixirId (not a flask) and only an off-hand weapon imbue (ohImbueId, no mhImbueId) - used exactly as specified, nothing invented or added (no drums, no scrolls, no explosives - none appear in Rogue's own real preset).",
+  "synthetic_character": true,
+  "synthetic_character_note": "No real Combat Rogue alt exists - built via ingest/build_synthetic_character.py from the real wowsims p3.gear.json preset, same convention as the other synthetic test characters."
+}

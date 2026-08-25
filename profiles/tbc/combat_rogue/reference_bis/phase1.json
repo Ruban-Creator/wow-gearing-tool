@@ -1,0 +1,117 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Netherblade Facemask",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Combat Swords preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Braided Eternium Chain",
+        "rank": "Best",
+        "source": "Crafted: Jewelcrafting"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Wastewalker Shoulderpads",
+        "rank": "Best",
+        "source": "Drop: Avatar of the Martyred (Auchenai Crypts)"
+      }
+    ],
+    "back": [
+      {
+        "item": "Drape of the Dark Reavers",
+        "rank": "Best",
+        "source": "Drop: Shade of Aran (Karazhan)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Netherblade Chestpiece",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Combat Swords preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Nightfall Wristguards",
+        "rank": "Best",
+        "source": "Drop: Epoch Hunter (Old Hillsbrad Foothills)"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Wastewalker Gloves",
+        "rank": "Best",
+        "source": "Drop: Warchief Kargath Bladefist (The Shattered Halls)"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Girdle of the Deathdealer",
+        "rank": "Best",
+        "source": "Drop: Aeonus (The Black Morass)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Skulker's Greaves",
+        "rank": "Best",
+        "source": "Drop: Netherspite (Karazhan)"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Edgewalker Longboots",
+        "rank": "Best",
+        "source": "Drop: Moroes (Karazhan)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Ring of a Thousand Marks",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      },
+      {
+        "item": "Garona's Signet Ring",
+        "rank": "Best",
+        "source": "Drop: The Curator (Karazhan)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Dragonspine Trophy",
+        "rank": "Best",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      },
+      {
+        "item": "Bloodlust Brooch",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Combat Swords preset"
+      }
+    ],
+    "weapon_dual_wield": [
+      {
+        "item": "Gladiator's Slicer",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Combat Swords preset"
+      },
+      {
+        "item": "Latro's Shifting Sword",
+        "rank": "Best",
+        "source": "Drop: Aeonus (The Black Morass)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Sunfury Bow of the Phoenix",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      }
+    ]
+  }
+}
