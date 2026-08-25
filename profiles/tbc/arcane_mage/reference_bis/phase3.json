@@ -1,0 +1,112 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Cowl of Tirisfal",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arcane preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "The Sun King's Talisman",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arcane preset"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Mantle of Tirisfal",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arcane preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Cloak of the Illidari Council",
+        "rank": "Best",
+        "source": "Drop: The Illidari Council (Black Temple)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Robes of Tirisfal",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arcane preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Cuffs of Devastation",
+        "rank": "Best",
+        "source": "Drop: Rage Winterchill (Hyjal Summit)"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Gloves of Tirisfal",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arcane preset"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Anetheron's Noose",
+        "rank": "Best",
+        "source": "Drop: Anetheron (Hyjal Summit)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Leggings of the Tempest",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arcane preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Slippers of the Seacaller",
+        "rank": "Best",
+        "source": "Drop: High Warlord Naj'entus (Black Temple)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Band of the Eternal Sage",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arcane preset"
+      },
+      {
+        "item": "Ring of Ancient Knowledge",
+        "rank": "Best",
+        "source": "Drop: (Black Temple)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Serpent-Coil Braid",
+        "rank": "Best",
+        "source": "Drop: Morogrim Tidewalker (Serpentshrine Cavern)"
+      },
+      {
+        "item": "The Skull of Gul'dan",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "weapon_2h": [
+      {
+        "item": "Zhar'doom, Greatstaff of the Devourer",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Naaru-Blessed Life Rod",
+        "rank": "Best",
+        "source": "Drop: Reliquary of the Lost (Black Temple)"
+      }
+    ]
+  }
+}

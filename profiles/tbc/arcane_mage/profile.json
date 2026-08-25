@@ -1,0 +1,20 @@
+{
+  "class": "mage",
+  "spec": "arcane",
+  "weapon_topology": "one_hand_plus_offhand_item",
+  "primary_gem_stat_id": "5",
+  "primary_gem_id": 32196,
+  "distance_from_target": 20,
+  "raid_ap_contribution": {
+    "enabled": false,
+    "note": "No real Arcane Mage mechanic grants OTHER raid attackers a stat invisible to a solo sim - Improved Scorch/Winter's Chill are enemy-side effects a solo sim already benefits from directly, same finding as every other non-Hunter class."
+  },
+  "set_bonus_go_source": "sim/mage/items.go",
+  "apl_source": "ui/mage/dps/apls/arcane.apl.json",
+  "apl_note": "Real, non-obvious finding, corrected after a real 0-DPS failure: wowsims' own canonical P2/P3 preset builds (presets.ts) wire up ROTATION_PRESET_ARCANEBRAID (arcaneBraid.apl.json), whose raw content is a TypeSimple rotation object (Mage.Rotation's conserveStart/conserveEnd/delayMajorCDs, wrapped as {\"type\":\"TypeSimple\",\"simple\":{\"specRotationJson\":...}}). Tried that first - real, confirmed 0 DPS with 'No available actions! Pausing rotation' from t=0.00 in the combat log. Root cause, confirmed by grepping the vendored Go engine: no sim/mage/*.go file consumes ConserveStart/ConserveEnd/DelayMajorCDs (proto-generated mage.pb.go is the ONLY hit) - the current engine has NO real TypeSimple execution path for Mage (unlike Hunter's own BM/SV TypeSimple builds, which DO work, because sim/hunter has real Go code consuming its own simple-rotation fields like timeToWeave/useMulti). This is real, version-specific engine incompleteness, not a universal 'TypeSimple never works' rule - verify per-class via a real grep for the spec's own Simple-rotation proto field names inside sim/<class>/*.go before trusting either path. Switched to arcane.apl.json (real TypeAPL, confirmed non-dead despite never being wired into any makePresetBuild call) - real, confirmed nonzero DPS and correct Arcane Blast stacking (see NOTES.md).",
+  "weapon_topology_note": "Confirmed via real handType data across all 5 real gear files: preraid/P1 use handType=1 (MainHand) + a real offhand item; P2 switches to a real handType=4 (TwoHand) weapon; P3 forks into two real, meaningfully different full builds (not just a weapon swap - back/legs/trinket2 also differ) - 'Arcane - Staff' (handType=4, Zhar'doom) and 'Arcane - Sword' (handType=1 Tempest of Chaos + a real offhand, Chronicle of Dark Secrets). Used Staff as the canonical phase3 reference_bis (listed first in presets.ts, no stated wowsims preference between the two) - see QUESTIONS.md for this real judgment call. Sword's own rotation was still real-verified via a direct sim/combat-log check per the plan's own STOP requirement, just not folded into candidate_pool.json as a full alternate item set.",
+  "stat_weights_note": "Real EP weights from mage/dps/presets.ts's own P3_EP_PRESET ('P3 - Arcane') - P1/P2 presets are real but distinct (P1's own SpellHitRating weight 2.36 vs P3's 2.4, MP5 0.56 vs 0.35) and not used here, matching this tool's phase3-primary convention (same call already made for Shadow Priest).",
+  "gear_variant_note": "Only P1-P3 (+ preBisArcane.gear.json) real gear_sets exist - no P4/P5 data, same real gap already found for Rogue/Priest. A real blank.apl.json/blank.gear.json/test.apl.json dev-fixture trio also exists (never referenced by any real preset build), confirmed not a second real rotation/gear option.",
+  "synthetic_character": true,
+  "synthetic_character_note": "No real Arcane Mage alt exists - built via ingest/build_synthetic_character.py from the real wowsims p3ArcaneStaff.gear.json preset, same convention as the other synthetic test characters."
+}

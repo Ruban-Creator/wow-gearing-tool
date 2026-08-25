@@ -43,4 +43,5 @@ SUPPORTED_CHARACTERS = {
     "Test-CombatRogue-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "combat_rogue"),
     "Test-ShadowPriest-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "shadow_priest"),
     "Test-ArcaneMage-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "arcane_mage"),
+    "Test-RetPaladin-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "retribution_paladin"),
 }

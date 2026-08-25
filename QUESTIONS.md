@@ -556,6 +556,21 @@ messiest stage yet - two genuinely sim-breaking bugs, both silent - so a few cal
   actual look at the rendered page. Same structural bar used for every prior stage's report, but
   flagging since "looks right when opened" was never actually confirmed for this one specifically.
 
+## Stage 6.9 (Arcane Mage): real judgment call worth your eyes
+
+`profiles/tbc/arcane_mage/` is done and real-verified (full writeup in NOTES.md). One real call:
+
+- **P3's real Sword variant (Tempest of Chaos + Chronicle of Dark Secrets) was verified to work via
+  a real direct sim call, but its own unique items were NOT added to `candidate_pool.json`** -
+  Staff (Zhar'doom) is the sole canonical phase3 build, chosen because it's listed first in
+  `presets.ts` with no stated wowsims preference between the two. This means a real MV/upgrade
+  search for Arcane Mage today can't recommend swapping TO the Sword build even if it would be
+  better with different loot - it can only ever evaluate 2H-staff-topology candidates. If you'd
+  rather have both P3 variants' items in the pool (closer to how Balance Druid/Priest's own
+  phase-varying topology is already handled generically), this is a real, scoped follow-up, not a
+  full rebuild - the reference-BiS builder already supports multi-handType resolution per phase,
+  it would just need a second real build call merged into the same pool.
+
 ## Stage 6.8 (Shadow Priest): real judgment call worth your eyes
 
 `profiles/tbc/shadow_priest/` is done and real-verified (full writeup in NOTES.md). One real call:

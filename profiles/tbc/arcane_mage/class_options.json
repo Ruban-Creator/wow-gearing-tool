@@ -1,0 +1,9 @@
+{
+  "mage": {
+    "options": {
+      "classOptions": {
+        "defaultMageArmor": "MageArmorMageArmor"
+      }
+    }
+  }
+}

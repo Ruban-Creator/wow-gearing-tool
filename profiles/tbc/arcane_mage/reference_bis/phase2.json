@@ -1,0 +1,112 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Cowl of Tirisfal",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arcane preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "The Sun King's Talisman",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arcane preset"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Mantle of Tirisfal",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arcane preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Royal Cloak of the Sunstriders",
+        "rank": "Best",
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Robes of Tirisfal",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arcane preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Mindstorm Wristbands",
+        "rank": "Best",
+        "source": "Drop: Al'ar (Tempest Keep)"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Gauntlets of the Sun King",
+        "rank": "Best",
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of Blasting",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Leggings of Tirisfal",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arcane preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Velvet Boots of the Guardian",
+        "rank": "Best",
+        "source": "Drop: The Lurker Below (Serpentshrine Cavern)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Violet Signet of the Archmage",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arcane preset"
+      },
+      {
+        "item": "Band of Eternity",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arcane preset"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Serpent-Coil Braid",
+        "rank": "Best",
+        "source": "Drop: Morogrim Tidewalker (Serpentshrine Cavern)"
+      },
+      {
+        "item": "Icon of the Silver Crescent",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arcane preset"
+      }
+    ],
+    "weapon_2h": [
+      {
+        "item": "The Nexus Key",
+        "rank": "Best",
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Eredar Wand of Obliteration",
+        "rank": "Best",
+        "source": "Drop: Magtheridon (Magtheridon's Lair)"
+      }
+    ]
+  }
+}

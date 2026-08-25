@@ -1,0 +1,119 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Collar of the Aldor",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Arcane preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Adornment of Stolen Souls",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Pauldrons of the Aldor",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Arcane preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Ruby Drape of the Mysticant",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Spellfire Robe",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "General's Silk Cuffs",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Arcane preset"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Spellfire Gloves",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Spellfire Belt",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Legwraps of the Aldor",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Arcane preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Boots of Foretelling",
+        "rank": "Best",
+        "source": "Drop: Maiden of Virtue (Karazhan)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Violet Signet of the Archmage",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Arcane preset"
+      },
+      {
+        "item": "Band of Crimson Fury",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Arcane preset"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Icon of the Silver Crescent",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Arcane preset"
+      },
+      {
+        "item": "The Lightning Capacitor",
+        "rank": "Best",
+        "source": "Drop: Terestian Illhoof (Karazhan)"
+      }
+    ],
+    "mainhand": [
+      {
+        "item": "Nathrezim Mindblade",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      }
+    ],
+    "offhand": [
+      {
+        "item": "Talisman of Kalecgos",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Arcane preset"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Eredar Wand of Obliteration",
+        "rank": "Best",
+        "source": "Drop: Magtheridon (Magtheridon's Lair)"
+      }
+    ]
+  }
+}

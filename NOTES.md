@@ -3513,3 +3513,44 @@ pass flagged 3 real "don't compete now, but bank it" combos (e.g. Cowl of the Il
 Blood-cursed Shoulderpads, a real +5.9 DPS sidegrade once Absolution Regalia's 2pc bonus is already
 broken by another swap). `check_ledger_consistency.py` 143/0 clean. Zero `core/` files modified
 besides the additive `character_profiles.py` entry - no regression risk.
+
+**Stage 6.9 (2026-08-26): Arcane Mage, real-verified.** `profiles/tbc/arcane_mage/` built from
+`sim/tbc-new/ui/mage/dps/` - the profile that surfaced this session's big new engine-version gotcha
+(now in CLASSES.md): wowsims' own real canonical P2/P3 preset builds all select `arcaneBraid.apl.json`
+(`ROTATION_PRESET_ARCANEBRAID`), whose raw content is a `TypeSimple` rotation encoding `Mage.Rotation`'s
+own `conserveStart`/`conserveEnd`/`delayMajorCDs` fields. Using it verbatim produced a real, silent 0
+DPS ("No available actions! Pausing rotation" from t=0.00). Root cause, confirmed by grep: no real Go
+code in `sim/mage/*.go` consumes those field names - only the proto-generated file does. Cross-checked
+against Hunter's own real `TypeSimple` builds (`bm/dw_6p.build.json`), which DO produce real nonzero
+DPS via a live `cli/gear.py preset` call - proving this isn't "TypeSimple never works," just that THIS
+class's engine-side wiring for it is dead in the current sim version. Switched to `arcane.apl.json`
+(real `TypeAPL`, defined in `presets.ts` but never wired into any `makePresetBuild` call - "unreferenced
+by a preset build" turned out not to mean "non-functional") - real, confirmed nonzero DPS (2013.2) and
+**Arcane Blast firing 332 times** in a 100-iteration combat log.
+
+`one_hand_plus_offhand_item` topology confirmed via real `handType` across 5 gear files - genuinely
+the most complex fork found yet: preraid/P1 use 1H+offhand, P2 switches to a 2H staff, and P3 forks
+into two real, meaningfully different FULL builds (not just a weapon swap - back/legs/trinket2 also
+differ): "Arcane - Staff" (Zhar'doom, the same real item Priest's own P3 BiS uses) and "Arcane - Sword"
+(Tempest of Chaos + a real offhand). Used Staff as canonical (listed first in `presets.ts`, no stated
+wowsims preference) - both real-verified via direct sim (Staff 2013.2 DPS, Sword 2005.6 DPS, both with
+real confirmed Arcane Blast casts), satisfying the plan's "both P3 variants" STOP requirement, but
+Sword's own unique items were NOT folded into `candidate_pool.json` as a full alternate set - see
+QUESTIONS.md for this real judgment call.
+
+Real EP weights from `mage/dps/presets.ts`'s own `P3_EP_PRESET` (two other real, distinct presets -
+P1/P2 - exist but weren't used, matching the phase3-primary convention). `default_enchants.json`:
+7/9 verified, 2 legitimate drops (same real zero-DPS utility enchants already found for Priest -
+Cloak Subtlety threat reduction, Boar's Speed movement). Gem verification produced a real, genuinely
+different result from every prior caster profile: 12 of 16 real socketed candidates were non-tied
+POSITIVE winners (Priest and Feral both found zero) - Arcane's own real Hit/Haste/Crit-heavy EP
+weights (2.4/0.77/0.76) make chasing a socket bonus beat pure Spell Damage far more often than for a
+flatter-weighted caster. `settings_template.json` rebuilt after adding the winners since 5 of them
+overlapped her own equipped gear.
+
+New `Test-ArcaneMage-Synthetic` character (Gnome, Engineering/Tailoring, seeded from
+`p3ArcaneStaff.gear.json`, real Arcane talents string `2500052300030150330125--053500031003001`
+from `ARCANE_TALENTS` directly). Full sweep ran clean, real Tirisfal Regalia set-bonus math
+correctly flagged (Leggings of Tirisfal -40.1 DPS alone, +144.6/+118.1 2pc/4pc bonuses), a second
+real sidegrade-banking case (2 flagged). `check_ledger_consistency.py` 199/0 clean. Zero `core/`
+files modified besides the additive `character_profiles.py` entry - no regression risk.
