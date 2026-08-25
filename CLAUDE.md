@@ -342,14 +342,36 @@ Every one of these was re-verified against Hunter's *and* Warrior's full pipelin
 byte-identical after the change - real regression checks, not assumed safe because they're
 "just a new branch." See `QUESTIONS.md` for the full session log.
 
-Stage 6.3 (a fourth class/spec) is not scoped. The reusable infrastructure is now genuinely
-broad: any real `weapon_topology` a profile needs (`dual_wield`/`two_hand`/
-`one_hand_plus_offhand_item`) is handled, `set_bonus.py` handles inline/variable/function-call
-Go source forms, and `loot_eligibility.json`/`REF_DIR` are fully profile-driven. What's NOT
-reusable, confirmed twice now: hand-transcribing class_options/consumables/stat_weights, the
-per-class set-bonus source path, and the reference-BiS sourcing all have to be redone from that
-class's own real `sim/tbc-new/ui/<class>/...`/`sim/tbc-new/sim/<class>/...` sources every time -
-no shortcut found for that part yet.
+**Stages 6.3–6.13 (2026-08-25/26): all done, real-verified — the full staged plan at
+`C:\Users\Matthias\.claude\plans\staged-purring-lynx.md` is now fully executed.** 15 total DPS
+profiles exist: the original 5 (Survival Hunter, Arms Warrior, Balance Druid, Elemental Shaman,
+Enhancement Shaman) plus 10 new ones built this arc — Beastmastery Hunter (6.4), Fury Warrior
+(6.5), Feral Cat Druid (6.6), Combat Rogue (6.7), Shadow Priest (6.8), Arcane Mage (6.9),
+Retribution Paladin (6.10), Affliction/Demonology/Destruction Warlock (6.11–6.13). Stage 6.3 (the
+2H-without-weave comparison) also shipped, applying automatically to every `is_weave_profile`
+(currently Survival and Beastmastery Hunter). Every stage's own STOP checkpoint was met (real sim
+call proving the rotation fires, `check_ledger_consistency.py` clean, prior profiles regression-
+checked byte-identical) — full detail in NOTES.md's own per-stage entries and QUESTIONS.md's real
+judgment calls. Two genuinely new, non-obvious engine-version gotchas surfaced and are now in
+CLASSES.md for any future profile: a `distanceFromTarget` hidden default trap for melee specs with
+no gap-closer (Feral Cat Druid), and a wowsims preset's own canonical `TypeSimple` rotation choice
+being non-functional in this engine version unless the class's own Go code actually consumes those
+fields (Arcane Mage, Retribution Paladin) — always grep before trusting either.
+
+The reusable infrastructure is now genuinely broad: any real `weapon_topology` a profile needs
+(`dual_wield`/`two_hand`/`one_hand_plus_offhand_item`, including a phase-varying fork between two
+of them) is handled, `set_bonus.py` handles inline/variable/function-call Go source forms, and
+`loot_eligibility.json`/`REF_DIR` are fully profile-driven. What's NOT reusable, confirmed
+repeatedly: hand-transcribing class_options/consumables/stat_weights, the per-class set-bonus
+source path, and the reference-BiS sourcing all have to be redone from that class's own real
+`sim/tbc-new/ui/<class>/...`/`sim/tbc-new/sim/<class>/...` sources every time - no shortcut found
+for that part yet. A real, class-level bootstrap (stat weights, loot eligibility, consumables,
+gear-tier data) CAN be shared across sibling specs in the same class dir (proven for the Warlock
+triad) - but gem-choice verification should NOT be blindly reused even when EP weights are
+byte-identical, since a real difference in pet DPS share (confirmed between Demonology and
+Affliction/Destruction) can flip which items are worth chasing a socket bonus on.
+
+A 16th class/spec beyond this session's 15 is not scoped.
 
 ## Future scope (deferred to final implementation, not now)
 
