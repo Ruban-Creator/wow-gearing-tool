@@ -1,4 +1,4 @@
-<title>__REPORT_TITLE__</title>
+<title>__REPORT_PAGE_TITLE__</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Overpass:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Overpass+Mono:wght@400;500;600;700&display=swap');
 
@@ -217,6 +217,11 @@
   .bis-text .name{font-size:13.5px; font-weight:600; line-height:1.3;}
 
   .empty-tier{color:var(--ink-faint); font-size:13px; padding:6px 2px; font-style:italic;}
+  .bis-empty{
+    color:var(--ink-faint); font-size:13px; font-style:italic;
+    background:var(--surface-2); border:1px solid var(--border-soft); border-radius:9px;
+    padding:14px 16px;
+  }
 
   footer{
     margin-top:46px; padding-top:16px; border-top:1px solid var(--border-soft);
@@ -270,13 +275,14 @@
     </div>
   </div>
 
-  <section class="bis" id="bis-section" hidden>
+  <section class="bis" id="bis-section">
     <div class="bis-head">
       <h2>Achieved BiS</h2>
       <span class="count" id="bis-count"></span>
     </div>
     <div class="bis-sub" id="bis-sub"></div>
     <div class="bis-grid" id="bis-grid"></div>
+    <div class="bis-empty" id="bis-empty" hidden>No real BiS achieved yet - every slot still has a real upgrade somewhere in the pool.</div>
   </section>
 
   <nav class="tiernav" id="tiernav"></nav>
@@ -336,7 +342,6 @@ document.getElementById('footer-methodology').textContent =
 
 const bisList = DATA.achieved_bis || [];
 if (bisList.length > 0) {
-  document.getElementById('bis-section').hidden = false;
   document.getElementById('bis-count').textContent = bisList.length + ' slot' + (bisList.length === 1 ? '' : 's') + ' locked in';
   document.getElementById('bis-sub').textContent =
     'Nothing in the full Phase ' + DATA.current_phase + ' pool — every tier below, curated and swept — beats these. ' +
@@ -358,6 +363,13 @@ if (bisList.length > 0) {
       bisGrid.appendChild(card);
     });
   });
+} else {
+  // Real, harmless state for a character whose gearing isn't fully chased
+  // yet - every slot still has a real upgrade somewhere in the pool, so
+  // none is "done". Not an error, not hidden - shown plainly so it doesn't
+  // read as a missing/broken section.
+  document.getElementById('bis-count').textContent = '0 slots locked in';
+  document.getElementById('bis-empty').hidden = false;
 }
 
 const tiersEl = document.getElementById('tiers');

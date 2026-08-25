@@ -112,8 +112,16 @@ def check_tiered_report(report: dict, rep: Report) -> None:
                                       f"in tier {seen_ids[key].get('tier')!r}")
                 seen_ids[key] = r
 
+    # A real, harmless state for a character whose gearing hasn't been
+    # chased/optimized yet (every slot still has real upgrades available,
+    # so none is "done") - not a bug. Was a hard failure (rep.check) until
+    # it fired for two different real, less-progressed characters in a
+    # row (Rubán, Béarforceone) - the assumption "everyone has at least one
+    # finished slot" turned out to just be a Lerynia-specific artifact of
+    # how much attention her gear has had, not a real invariant. Softened
+    # to a warning per the user's own call.
     achieved = report.get("achieved_bis", [])
-    rep.check(len(achieved) > 0, "tiered_report.json: achieved_bis is empty")
+    rep.warn(len(achieved) > 0, "tiered_report.json: achieved_bis is empty (harmless if this character's gear isn't fully optimized yet)")
     for entry in achieved:
         rep.check("slot" in entry and "items" in entry, f"tiered_report.json: malformed achieved_bis entry {entry!r}")
 

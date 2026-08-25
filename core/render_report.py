@@ -32,10 +32,17 @@ def render(ledger_data: dict, character: dict, phase: str) -> str:
     phase_num = int(phase.removeprefix("phase"))
     title = f"Phase {phase_num} Upgrade Ledger"
     subtitle = _format_subtitle(character, phase_num)
+    # Separate from the on-page <h1> (which already gets the real name via
+    # the subtitle right below it) - the browser tab / bookmark / gallery
+    # title needs the name too, or every character's report is
+    # indistinguishable from any other open tab showing "Phase 3 Upgrade
+    # Ledger".
+    page_title = f"{character['character']['name']} — Phase {phase_num} Ledger"
 
     with open(TEMPLATE_PATH, encoding="utf-8") as f:
         html = f.read()
 
+    html = html.replace("__REPORT_PAGE_TITLE__", page_title)
     html = html.replace("__REPORT_TITLE__", title)
     html = html.replace("__REPORT_SUBTITLE__", subtitle)
     html = html.replace("__REPORT_DATA_JSON__", json.dumps(ledger_data))
