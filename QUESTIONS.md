@@ -556,6 +556,18 @@ messiest stage yet - two genuinely sim-breaking bugs, both silent - so a few cal
   actual look at the rendered page. Same structural bar used for every prior stage's report, but
   flagging since "looks right when opened" was never actually confirmed for this one specifically.
 
+## Stage 6.10 (Retribution Paladin): done, real-verified, one cosmetic data bug to flag
+
+`profiles/tbc/retribution_paladin/` is done and real-verified (full writeup in NOTES.md). No real
+judgment calls needed this stage (P3Bulwark turned out to be a single-item variant, not a build
+fork) - but a real, upstream, cosmetic-only data bug surfaced worth your awareness, not action:
+`sim/tbc-new/assets/database/db.json`'s own NPC id 16097 has a garbled `name` field (leaked
+Lua/AceLocale source text instead of a clean name - almost certainly meant to be "Isalien", a real
+Dire Maul vendor). Shows up as a garbled "Drop:" source label on the Libram of Hope upgrade
+candidate. Doesn't affect any DPS number, just that one item's displayed source text. Not fixed -
+touching vendored DB data felt out of scope for a display-only issue, but flagging in case you'd
+rather patch it or report it upstream to the wowsims project.
+
 ## Stage 6.9 (Arcane Mage): real judgment call worth your eyes
 
 `profiles/tbc/arcane_mage/` is done and real-verified (full writeup in NOTES.md). One real call:

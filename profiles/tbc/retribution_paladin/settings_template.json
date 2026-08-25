@@ -1,0 +1,863 @@
+{
+  "apiVersion": 14,
+  "raidBuffs": {
+    "arcaneBrilliance": true,
+    "powerWordFortitude": "TristateEffectImproved",
+    "shadowProtection": true,
+    "divineSpirit": "TristateEffectImproved",
+    "giftOfTheWild": "TristateEffectImproved",
+    "bloodlust": true
+  },
+  "debuffs": {
+    "judgementOfWisdom": true,
+    "judgementOfLight": true,
+    "improvedSealOfTheCrusader": "TristateEffectImproved",
+    "misery": true,
+    "curseOfElements": "TristateEffectImproved",
+    "bloodFrenzy": true,
+    "giftOfArthas": true,
+    "mangle": true,
+    "exposeArmor": "TristateEffectImproved",
+    "faerieFire": "TristateEffectImproved",
+    "sunderArmor": true,
+    "curseOfRecklessness": true,
+    "huntersMark": "TristateEffectImproved",
+    "exposeWeaknessUptime": 0.9,
+    "exposeWeaknessHunterAgility": 1080,
+    "insectSwarm": true
+  },
+  "partyBuffs": {
+    "ferociousInspiration": 1,
+    "leaderOfThePack": "TristateEffectImproved",
+    "drums": "LesserDrumsOfBattle",
+    "graceOfAirTotem": "TristateEffectImproved",
+    "strengthOfEarthTotem": "TristateEffectImproved",
+    "windfuryTotem": "TristateEffectRegular",
+    "totemTwisting": true,
+    "battleShout": "TristateEffectImproved"
+  },
+  "player": {
+    "apiVersion": 14,
+    "name": "Player",
+    "race": "RaceBloodElf",
+    "class": "ClassPaladin",
+    "equipment": {
+      "items": [
+        {
+          "id": 32235,
+          "enchant": 3003,
+          "gems": [
+            32409,
+            30550
+          ]
+        },
+        {
+          "id": 30022
+        },
+        {
+          "id": 30055,
+          "enchant": 2986,
+          "gems": [
+            30550
+          ]
+        },
+        {
+          "id": 33122,
+          "enchant": 368,
+          "gems": [
+            32193
+          ]
+        },
+        {
+          "id": 30905,
+          "enchant": 2661,
+          "gems": [
+            32193,
+            32193,
+            32193
+          ]
+        },
+        {
+          "id": 32574,
+          "enchant": 2647
+        },
+        {
+          "id": 29947,
+          "enchant": 684
+        },
+        {
+          "id": 30106,
+          "gems": [
+            32193,
+            32193
+          ]
+        },
+        {
+          "id": 30900,
+          "enchant": 3012,
+          "gems": [
+            32193,
+            32193,
+            32193
+          ]
+        },
+        {
+          "id": 32366,
+          "enchant": 2657,
+          "gems": [
+            32193,
+            32193
+          ]
+        },
+        {
+          "id": 30834
+        },
+        {
+          "id": 32526
+        },
+        {
+          "id": 29383
+        },
+        {
+          "id": 28830
+        },
+        {
+          "id": 32332,
+          "enchant": 2673
+        },
+        {},
+        {
+          "id": 27484
+        }
+      ]
+    },
+    "consumables": {
+      "potId": 22838,
+      "flaskId": 22854,
+      "foodId": 27658,
+      "conjuredId": 12662,
+      "explosiveId": 30217,
+      "superSapper": true,
+      "goblinSapper": true,
+      "scrollAgi": true,
+      "scrollStr": true
+    },
+    "bonusStats": {
+      "apiVersion": 14,
+      "stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pseudoStats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "itemSwap": {
+      "items": [
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {}
+      ],
+      "prepullBonusStats": {
+        "apiVersion": 14,
+        "stats": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "pseudoStats": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "buffs": {
+      "blessingOfKings": true,
+      "blessingOfSalvation": true,
+      "blessingOfWisdom": "TristateEffectImproved",
+      "blessingOfMight": "TristateEffectImproved",
+      "unleashedRage": true
+    },
+    "retributionPaladin": {
+      "options": {
+        "classOptions": {}
+      }
+    },
+    "talentsString": "5-053201-0523005120033125331051",
+    "profession1": "Engineering",
+    "profession2": "Blacksmithing",
+    "cooldowns": {},
+    "rotation": {
+      "type": "TypeAPL",
+      "prepullActions": [
+        {
+          "action": {
+            "castSpell": {
+              "spellId": {
+                "spellId": 20218
+              }
+            }
+          },
+          "doAtValue": {
+            "const": {
+              "val": "-18.5s"
+            }
+          }
+        },
+        {
+          "action": {
+            "groupReference": {
+              "groupName": "PrepullSeal"
+            }
+          },
+          "doAtValue": {
+            "const": {
+              "val": "-1.5s"
+            }
+          }
+        },
+        {
+          "action": {
+            "groupReference": {
+              "groupName": "PrepullJudge"
+            }
+          },
+          "doAtValue": {
+            "const": {
+              "val": "0s"
+            }
+          }
+        },
+        {
+          "action": {
+            "groupReference": {
+              "groupName": "PullSeal"
+            }
+          },
+          "doAtValue": {
+            "const": {
+              "val": "0s"
+            }
+          }
+        }
+      ],
+      "priorityList": [
+        {
+          "action": {
+            "condition": {
+              "cmp": {
+                "op": "OpGe",
+                "lhs": {
+                  "currentTime": {}
+                },
+                "rhs": {
+                  "variableRef": {
+                    "name": "Delay Major CDs"
+                  }
+                }
+              }
+            },
+            "autocastOtherCooldowns": {}
+          }
+        },
+        {
+          "action": {
+            "condition": {
+              "and": {
+                "vals": [
+                  {
+                    "auraIsActive": {
+                      "auraId": {
+                        "spellId": 20375,
+                        "rank": 1
+                      }
+                    }
+                  },
+                  {
+                    "cmp": {
+                      "op": "OpLe",
+                      "lhs": {
+                        "autoTimeToNext": {
+                          "autoType": "MeleeAuto"
+                        }
+                      },
+                      "rhs": {
+                        "const": {
+                          "val": ".4s"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "castSpell": {
+              "spellId": {
+                "spellId": 31892,
+                "rank": 1
+              }
+            }
+          }
+        },
+        {
+          "action": {
+            "condition": {
+              "auraIsActive": {
+                "auraId": {
+                  "spellId": 31892,
+                  "rank": 1
+                }
+              }
+            },
+            "castSpell": {
+              "spellId": {
+                "spellId": 35395
+              }
+            }
+          }
+        },
+        {
+          "action": {
+            "condition": {
+              "and": {
+                "vals": [
+                  {
+                    "auraIsActive": {
+                      "auraId": {
+                        "spellId": 31892,
+                        "rank": 1
+                      }
+                    }
+                  },
+                  {
+                    "gcdIsReady": {}
+                  },
+                  {
+                    "cmp": {
+                      "op": "OpLe",
+                      "lhs": {
+                        "autoTimeSinceLast": {
+                          "autoType": "AnyAuto"
+                        }
+                      },
+                      "rhs": {
+                        "const": {
+                          "val": ".8s"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "castSpell": {
+              "spellId": {
+                "spellId": 20271
+              }
+            }
+          }
+        },
+        {
+          "action": {
+            "condition": {
+              "auraIsActive": {
+                "auraId": {
+                  "spellId": 31892,
+                  "rank": 1
+                }
+              }
+            },
+            "groupReference": {
+              "groupName": "ExoOrConsec",
+              "variables": [
+                {
+                  "name": "TargetDemonOrUndead",
+                  "value": {
+                    "variableRef": {
+                      "name": "No"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "action": {
+            "condition": {
+              "and": {
+                "vals": [
+                  {
+                    "auraIsInactive": {
+                      "auraId": {
+                        "spellId": 20375,
+                        "rank": 1
+                      }
+                    }
+                  },
+                  {
+                    "not": {
+                      "val": {
+                        "spellIsReady": {
+                          "spellId": {
+                            "spellId": 20271
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "cmp": {
+                      "op": "OpLe",
+                      "lhs": {
+                        "spellGcdHastedDuration": {
+                          "spellId": {
+                            "spellId": 20375,
+                            "rank": 1
+                          }
+                        }
+                      },
+                      "rhs": {
+                        "math": {
+                          "op": "OpAdd",
+                          "lhs": {
+                            "const": {
+                              "val": ".4s"
+                            }
+                          },
+                          "rhs": {
+                            "autoTimeToNext": {
+                              "autoType": "MeleeAuto"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "cmp": {
+                      "op": "OpGe",
+                      "lhs": {
+                        "autoTimeSinceLast": {
+                          "autoType": "MeleeAuto"
+                        }
+                      },
+                      "rhs": {
+                        "const": {
+                          "val": ".5s"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "castSpell": {
+              "spellId": {
+                "spellId": 20375,
+                "rank": 1
+              }
+            }
+          }
+        }
+      ],
+      "groups": [
+        {
+          "name": "ExoOrConsec",
+          "actions": [
+            {
+              "action": {
+                "condition": {
+                  "variableRef": {
+                    "name": "Use Exorcism"
+                  }
+                },
+                "castSpell": {
+                  "spellId": {
+                    "spellId": 27138,
+                    "rank": 7
+                  }
+                }
+              }
+            },
+            {
+              "action": {
+                "condition": {
+                  "variableRef": {
+                    "name": "Use Consecrate"
+                  }
+                },
+                "castSpell": {
+                  "spellId": {
+                    "spellId": 27173,
+                    "rank": 6
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "PrepullSeal",
+          "actions": [
+            {
+              "action": {
+                "condition": {
+                  "variableRef": {
+                    "name": "Prepull Seal Of the Crusader"
+                  }
+                },
+                "castSpell": {
+                  "spellId": {
+                    "spellId": 27158,
+                    "rank": 7
+                  }
+                }
+              }
+            },
+            {
+              "action": {
+                "condition": {
+                  "not": {
+                    "val": {
+                      "variableRef": {
+                        "name": "Prepull Seal Of the Crusader"
+                      }
+                    }
+                  }
+                },
+                "castSpell": {
+                  "spellId": {
+                    "spellId": 20375,
+                    "rank": 1
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "PrepullJudge",
+          "actions": [
+            {
+              "action": {
+                "condition": {
+                  "variableRef": {
+                    "name": "Prepull Seal Of the Crusader"
+                  }
+                },
+                "castSpell": {
+                  "spellId": {
+                    "spellId": 20271
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "PullSeal",
+          "actions": [
+            {
+              "action": {
+                "condition": {
+                  "not": {
+                    "val": {
+                      "variableRef": {
+                        "name": "Prepull Seal Of the Crusader"
+                      }
+                    }
+                  }
+                },
+                "castSpell": {
+                  "spellId": {
+                    "spellId": 31892,
+                    "rank": 1
+                  }
+                }
+              }
+            },
+            {
+              "action": {
+                "condition": {
+                  "variableRef": {
+                    "name": "Prepull Seal Of the Crusader"
+                  }
+                },
+                "castSpell": {
+                  "spellId": {
+                    "spellId": 20375,
+                    "rank": 1
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "valueVariables": [
+        {
+          "name": "Yes",
+          "value": {
+            "const": {
+              "val": "true"
+            }
+          }
+        },
+        {
+          "name": "No",
+          "value": {
+            "const": {
+              "val": "false"
+            }
+          }
+        },
+        {
+          "name": "Use Exorcism",
+          "value": {
+            "const": {
+              "val": "false"
+            }
+          }
+        },
+        {
+          "name": "Use Consecrate",
+          "value": {
+            "const": {
+              "val": "false"
+            }
+          }
+        },
+        {
+          "name": "Delay Major CDs",
+          "value": {
+            "const": {
+              "val": "11s"
+            }
+          }
+        },
+        {
+          "name": "Prepull Seal Of the Crusader",
+          "value": {
+            "const": {
+              "val": "true"
+            }
+          }
+        }
+      ]
+    },
+    "reactionTimeMs": 100,
+    "distanceFromTarget": 5,
+    "healingModel": {}
+  },
+  "encounter": {
+    "apiVersion": 14,
+    "duration": 180,
+    "durationVariation": 5,
+    "executeProportion20": 0.2,
+    "executeProportion25": 0.25,
+    "executeProportion35": 0.35,
+    "executeProportion45": 0.45,
+    "executeProportion90": 0.9,
+    "targets": [
+      {
+        "id": 31146,
+        "name": "Raid Target",
+        "level": 73,
+        "mobType": "MobTypeMechanical",
+        "stats": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          320,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          54,
+          0,
+          0,
+          0,
+          7685,
+          0,
+          6070400,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "minBaseDamage": 15113,
+        "damageSpread": 0.5,
+        "swingSpeed": 2,
+        "parryHaste": true
+      }
+    ]
+  }
+}

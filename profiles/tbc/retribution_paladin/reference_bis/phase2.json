@@ -1,0 +1,112 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Furious Gizmatic Goggles",
+        "rank": "Best",
+        "source": "Crafted: Engineering"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Pendant of the Perilous",
+        "rank": "Best",
+        "source": "Drop: (Serpentshrine Cavern)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Shoulderpads of the Stranger",
+        "rank": "Best",
+        "source": "Drop: Hydross the Unstable (Serpentshrine Cavern)"
+      }
+    ],
+    "back": [
+      {
+        "item": "Razor-Scale Battlecloak",
+        "rank": "Best",
+        "source": "Drop: Morogrim Tidewalker (Serpentshrine Cavern)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Crystalforge Breastplate",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Retribution preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Bladespire Warbands",
+        "rank": "Best",
+        "source": "Drop: High King Maulgar (Gruul's Lair)"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Gloves of the Searing Grip",
+        "rank": "Best",
+        "source": "Drop: Al'ar (Tempest Keep)"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of One-Hundred Deaths",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Shattrath Leggings",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Retribution preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Cobra-Lash Boots",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Ancestral Ring of Conquest",
+        "rank": "Best",
+        "source": "Drop: The Lurker Below (Serpentshrine Cavern)"
+      },
+      {
+        "item": "Shapeshifter's Signet",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Retribution preset"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Bloodlust Brooch",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Retribution preset"
+      },
+      {
+        "item": "Dragonspine Trophy",
+        "rank": "Best",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      }
+    ],
+    "weapon_2h": [
+      {
+        "item": "Lionheart Executioner",
+        "rank": "Best",
+        "source": "Crafted: Blacksmithing"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Libram of Avengement",
+        "rank": "Best",
+        "source": "Drop: The Maker (The Blood Furnace)"
+      }
+    ]
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Justicar Crown",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Retribution preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Mithril Chain of Heroism",
+        "rank": "Best",
+        "source": "Drop: (Karazhan)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Justicar Shoulderplates",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Retribution preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Vengeance Wrap",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Justicar Breastplate",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Retribution preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Bladespire Warbands",
+        "rank": "Best",
+        "source": "Drop: High King Maulgar (Gruul's Lair)"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Grips of Deftness",
+        "rank": "Best",
+        "source": "Drop: (Karazhan)"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Girdle of the Endless Pit",
+        "rank": "Best",
+        "source": "Drop: Magtheridon (Magtheridon's Lair)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Shattrath Leggings",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Retribution preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Ironstriders of Urgency",
+        "rank": "Best",
+        "source": "Drop: Nightbane (Karazhan)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Ring of a Thousand Marks",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      },
+      {
+        "item": "Shapeshifter's Signet",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Retribution preset"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Bloodlust Brooch",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Retribution preset"
+      },
+      {
+        "item": "Dragonspine Trophy",
+        "rank": "Best",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      }
+    ],
+    "weapon_2h": [
+      {
+        "item": "Lionheart Champion",
+        "rank": "Best",
+        "source": "Crafted: Blacksmithing"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Libram of Avengement",
+        "rank": "Best",
+        "source": "Drop: The Maker (The Blood Furnace)"
+      }
+    ]
+  }
+}

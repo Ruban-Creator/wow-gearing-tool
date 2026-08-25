@@ -3554,3 +3554,48 @@ from `ARCANE_TALENTS` directly). Full sweep ran clean, real Tirisfal Regalia set
 correctly flagged (Leggings of Tirisfal -40.1 DPS alone, +144.6/+118.1 2pc/4pc bonuses), a second
 real sidegrade-banking case (2 flagged). `check_ledger_consistency.py` 199/0 clean. Zero `core/`
 files modified besides the additive `character_profiles.py` entry - no regression risk.
+
+**Stage 6.10 (2026-08-26): Retribution Paladin, real-verified.** `profiles/tbc/retribution_paladin/`
+built from `sim/tbc-new/ui/paladin/retribution/` - hit the SAME real TypeSimple-is-dead-in-this-
+engine-version gotcha just found for Arcane Mage: `presets.ts`'s own canonical P1/P2/P3 preset
+builds all select `rotationType: TypeSimple` + `APL_SIMPLE` (`RetributionPaladin.Rotation`'s
+`useExorcism`/`consecrationRank`/`delayMajorCDs`/`prepullSotC`/`aura` fields), but grepping
+`sim/paladin/*.go`/`sim/paladin/retribution/*.go` for those exact field names finds only the
+proto-generated file - confirmed dead, same as Mage. Switched to `default.apl.json` (real
+`TypeAPL`) - real, confirmed nonzero DPS (2108.6) and **Seal of Command procs firing 292/140 times
+plus Crusader Strike 125 times** in a 100-iteration combat log, matching the plan's own STOP
+wording exactly.
+
+`weapon_topology: two_hand` confirmed consistently via real `handType=4` across ALL 5 gear files
+(preraid/P1/P2/P3/P3Bulwark) - unlike Priest/Mage's own phase-varying cases, no fork here. Per the
+plan's own explicit caution to verify rather than assume, checked what "P3Bulwark" actually differs
+by: real diff against plain P3 is exactly ONE slot (chest - Bulwark of the Ancient Kings vs
+Midnight Chestguard), not a second full build - plain P3 used as canonical, Bulwark's own chest
+item not specially added to the pool (it surfaced anyway in the real sweep, as a real "Crafted"
+upgrade candidate sourced independently - see below). Real, distinct armor/weapon eligibility from
+every other profile: Plate-capable (`armor_ok: [3,4]`, mirroring Arms/Fury Warrior's own Mail+Plate
+convention) and Mace/Polearm/Sword only (no Axe/Dagger/Fist), Libram-only ranged slot (not a wand or
+physical ranged weapon - Paladins have no ranged weapon skill in TBC).
+
+`default_enchants.json`: 9/9 verified clean on the first pass. Gem verification: 17 real socketed
+candidates tested, all negative/tied - `chase_bonus_gems.json` correctly stays empty.
+
+New `Test-RetPaladin-Synthetic` character (Blood Elf, Engineering/Blacksmithing - real race AND
+professions sourced directly from `presets.ts`'s own `OtherDefaults`, not guessed, seeded from
+`p3.gear.json`, real Retribution talents string `5-053201-0523005120033125331051` from
+`DefaultTalents` directly). Full sweep ran clean - real T5/T6 upgrades found, "Bulwark of the
+Ancient Kings" (the P3Bulwark variant's own chest item) surfaced independently as a real +12.0 DPS
+Crafted-tier candidate anyway, confirming the earlier judgment call not to special-case it was
+sound. `check_ledger_consistency.py` 195/0 clean.
+
+**Real, disclosed upstream DB data-quality bug found (not fixed - cosmetic only, doesn't affect any
+computed DPS number):** the "Vanilla carryover" tier's "Libram of Hope" upgrade candidate showed a
+garbled source description - `Drop: Isalien"].." - "..format(AL["Tier %s Sets (Dire Maul)`. Traced
+to the vendored sim's own `db.json`: NPC id 16097's real `name` field literally contains leaked
+Lua/AceLocale source text (`'Isalien"].." - "..format(AL["Tier %s Sets'`) instead of a clean name -
+almost certainly meant to be "Isalien" (a real Dire Maul vendor who sells this exact item in live
+WoW), corrupted by whatever upstream tool wowsims used to scrape NPC names. Per CLAUDE.md's own
+ground-rule distinction, this is a DB *data-completeness* issue, not a sim *model* issue - the
+computed DPS value (+35.8) is real and correct, only the display label is garbled. Not patched -
+touching vendored DB data is out of scope and risks masking a future real upstream fix; flagged in
+QUESTIONS.md for awareness instead.

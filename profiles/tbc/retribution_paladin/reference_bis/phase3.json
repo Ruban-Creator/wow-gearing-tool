@@ -1,0 +1,112 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Cursed Vision of Sargeras",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Pendant of the Perilous",
+        "rank": "Best",
+        "source": "Drop: (Serpentshrine Cavern)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Shoulderpads of the Stranger",
+        "rank": "Best",
+        "source": "Drop: Hydross the Unstable (Serpentshrine Cavern)"
+      }
+    ],
+    "back": [
+      {
+        "item": "Cloak of Darkness",
+        "rank": "Best",
+        "source": "Crafted: Leatherworking"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Midnight Chestguard",
+        "rank": "Best",
+        "source": "Drop: Archimonde (Hyjal Summit)"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Bindings of Lightning Reflexes",
+        "rank": "Best",
+        "source": "Crafted: Leatherworking"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Gloves of the Searing Grip",
+        "rank": "Best",
+        "source": "Drop: Al'ar (Tempest Keep)"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of One-Hundred Deaths",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Bow-stitched Leggings",
+        "rank": "Best",
+        "source": "Drop: Azgalor (Hyjal Summit)"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Shadowmaster's Boots",
+        "rank": "Best",
+        "source": "Drop: Mother Shahraz (Black Temple)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Shapeshifter's Signet",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Retribution preset"
+      },
+      {
+        "item": "Band of Devastation",
+        "rank": "Best",
+        "source": "Drop: (Black Temple)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Bloodlust Brooch",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Retribution preset"
+      },
+      {
+        "item": "Dragonspine Trophy",
+        "rank": "Best",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      }
+    ],
+    "weapon_2h": [
+      {
+        "item": "Torch of the Damned",
+        "rank": "Best",
+        "source": "Drop: Reliquary of the Lost (Black Temple)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Libram of Avengement",
+        "rank": "Best",
+        "source": "Drop: The Maker (The Blood Furnace)"
+      }
+    ]
+  }
+}

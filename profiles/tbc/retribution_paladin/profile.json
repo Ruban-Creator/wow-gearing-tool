@@ -1,0 +1,20 @@
+{
+  "class": "paladin",
+  "spec": "retribution",
+  "weapon_topology": "two_hand",
+  "primary_gem_stat_id": "0",
+  "primary_gem_id": 32193,
+  "distance_from_target": 5,
+  "raid_ap_contribution": {
+    "enabled": false,
+    "note": "Judgement of the Crusader is a real enemy-side debuff a solo sim already benefits from directly, same finding CLAUDE.md's own Stage 6 note already established for this exact debuff."
+  },
+  "set_bonus_go_source": "sim/paladin/item_sets.go",
+  "apl_source": "ui/paladin/retribution/apls/default.apl.json",
+  "apl_note": "Real, same finding as Arcane Mage's own Stage 6.9: presets.ts's own canonical P1/P2/P3 preset builds all select rotationType TypeSimple + APL_SIMPLE (RetributionPaladin.Rotation's useExorcism/consecrationRank/delayMajorCDs/prepullSotC/aura fields) - but grepping the vendored Go engine (sim/paladin/*.go, sim/paladin/retribution/*.go) for these exact field names (case-sensitive: UseExorcism/DelayMajorCDs/PrepullSotC) finds ONLY the proto-generated file, confirming the same dead-TypeSimple-path pattern already found for Mage, not wired up in this engine version. Used default.apl.json (real TypeAPL, confirmed non-dead) instead - no separate player.retributionPaladin.rotation block needed since a TypeAPL rotation doesn't consume those spec-Rotation fields at all (same reasoning as Arcane Mage).",
+  "weapon_topology_note": "Confirmed via real handType=4 (TwoHand) on the actual mainhand item across ALL 5 real gear files (preraid/P1/P2/P3/P3Bulwark) - consistently two_hand at every phase, unlike Priest/Balance Druid/Arcane Mage's own phase-varying cases. 'P3Bulwark' is NOT a full alternate build or weapon-topology fork despite the plan's own caution to check - real diff against plain p3.gear.json is exactly ONE slot (chest: Bulwark of the Ancient Kings vs Midnight Chestguard), not a second full gear path. Not folded into candidate_pool.json as a distinct build; plain P3 used as canonical, Bulwark's own chest item is a real single-item variant not separately added as a candidate - see QUESTIONS.md.",
+  "stat_weights_note": "Real EP weights from paladin/retribution/presets.ts's own P3_EP_PRESET.",
+  "gear_variant_note": "Only P1-P3 (+ preraid.gear.json) real gear_sets exist - no P4/P5 data, same real gap already found for Rogue/Priest/Mage.",
+  "synthetic_character": true,
+  "synthetic_character_note": "No real Retribution Paladin alt exists - built via ingest/build_synthetic_character.py from the real wowsims p3.gear.json preset, real race (Blood Elf) and professions (Engineering/Blacksmithing) sourced from presets.ts's own OtherDefaults rather than guessed."
+}
