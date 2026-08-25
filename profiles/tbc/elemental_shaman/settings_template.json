@@ -1,0 +1,784 @@
+{
+  "apiVersion": 14,
+  "raidBuffs": {
+    "arcaneBrilliance": true,
+    "powerWordFortitude": "TristateEffectImproved",
+    "shadowProtection": true,
+    "divineSpirit": "TristateEffectImproved",
+    "giftOfTheWild": "TristateEffectImproved",
+    "bloodlust": true
+  },
+  "debuffs": {
+    "judgementOfWisdom": true,
+    "judgementOfLight": true,
+    "improvedSealOfTheCrusader": "TristateEffectImproved",
+    "misery": true,
+    "curseOfElements": "TristateEffectImproved",
+    "bloodFrenzy": true,
+    "giftOfArthas": true,
+    "mangle": true,
+    "exposeArmor": "TristateEffectImproved",
+    "faerieFire": "TristateEffectImproved",
+    "sunderArmor": true,
+    "curseOfRecklessness": true,
+    "huntersMark": "TristateEffectImproved",
+    "exposeWeaknessUptime": 0.9,
+    "exposeWeaknessHunterAgility": 1080,
+    "insectSwarm": true
+  },
+  "partyBuffs": {
+    "ferociousInspiration": 1,
+    "leaderOfThePack": "TristateEffectImproved",
+    "drums": "LesserDrumsOfBattle",
+    "graceOfAirTotem": "TristateEffectImproved",
+    "strengthOfEarthTotem": "TristateEffectImproved",
+    "windfuryTotem": "TristateEffectRegular",
+    "totemTwisting": true,
+    "battleShout": "TristateEffectImproved"
+  },
+  "player": {
+    "apiVersion": 14,
+    "name": "Player",
+    "race": "RaceDraenei",
+    "class": "ClassShaman",
+    "equipment": {
+      "items": [
+        {
+          "id": 31014,
+          "enchant": 3002,
+          "gems": [
+            34220,
+            32196
+          ]
+        },
+        {
+          "id": 30015
+        },
+        {
+          "id": 31023,
+          "enchant": 2982,
+          "gems": [
+            32196,
+            32196
+          ]
+        },
+        {
+          "id": 32331,
+          "enchant": 2621
+        },
+        {
+          "id": 31017,
+          "enchant": 2661,
+          "gems": [
+            32196,
+            32196,
+            32196
+          ]
+        },
+        {
+          "id": 32586,
+          "enchant": 2650
+        },
+        {
+          "id": 31008,
+          "enchant": 2937,
+          "gems": [
+            32196
+          ]
+        },
+        {
+          "id": 32276
+        },
+        {
+          "id": 30916,
+          "enchant": 2748,
+          "gems": [
+            32196,
+            32196,
+            32196
+          ]
+        },
+        {
+          "id": 32352,
+          "enchant": 2940,
+          "gems": [
+            32196,
+            32196
+          ]
+        },
+        {
+          "id": 32527,
+          "enchant": 2928
+        },
+        {
+          "id": 29305,
+          "enchant": 2928
+        },
+        {
+          "id": 32483
+        },
+        {
+          "id": 28785
+        },
+        {
+          "id": 32374,
+          "enchant": 2669
+        },
+        {},
+        {
+          "id": 32330
+        }
+      ]
+    },
+    "consumables": {
+      "potId": 22839,
+      "flaskId": 22861,
+      "foodId": 27657,
+      "conjuredId": 12662,
+      "mhImbueId": 25122,
+      "drumsId": "LesserDrumsOfBattle"
+    },
+    "bonusStats": {
+      "apiVersion": 14,
+      "stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pseudoStats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "itemSwap": {
+      "items": [
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {}
+      ],
+      "prepullBonusStats": {
+        "apiVersion": 14,
+        "stats": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "pseudoStats": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "buffs": {
+      "blessingOfKings": true,
+      "blessingOfSalvation": true,
+      "blessingOfWisdom": "TristateEffectImproved",
+      "blessingOfMight": "TristateEffectImproved",
+      "unleashedRage": true
+    },
+    "elementalShaman": {
+      "options": {
+        "classOptions": {
+          "shieldProcrate": 0
+        }
+      }
+    },
+    "talentsString": "55003105100213351051--05105301005",
+    "profession1": "Leatherworking",
+    "profession2": "Enchanting",
+    "cooldowns": {},
+    "rotation": {
+      "type": "TypeAPL",
+      "prepullActions": [
+        {
+          "action": {
+            "castSpell": {
+              "spellId": {
+                "spellId": 33736
+              }
+            }
+          },
+          "doAtValue": {
+            "const": {
+              "val": "-8s"
+            }
+          }
+        },
+        {
+          "action": {
+            "castSpell": {
+              "spellId": {
+                "spellId": 25528
+              }
+            }
+          },
+          "doAtValue": {
+            "const": {
+              "val": "-5s"
+            }
+          }
+        },
+        {
+          "action": {
+            "castSpell": {
+              "spellId": {
+                "spellId": 25570
+              }
+            }
+          },
+          "doAtValue": {
+            "const": {
+              "val": "-4s"
+            }
+          }
+        },
+        {
+          "action": {
+            "castSpell": {
+              "spellId": {
+                "spellId": 30706,
+                "rank": 1
+              }
+            }
+          },
+          "doAtValue": {
+            "const": {
+              "val": "-3s"
+            }
+          }
+        },
+        {
+          "action": {
+            "castSpell": {
+              "spellId": {
+                "spellId": 3738,
+                "rank": 1
+              }
+            }
+          },
+          "doAtValue": {
+            "const": {
+              "val": "-2s"
+            }
+          }
+        }
+      ],
+      "priorityList": [
+        {
+          "action": {
+            "groupReference": {
+              "groupName": "Totems"
+            }
+          }
+        },
+        {
+          "action": {
+            "condition": {
+              "variableRef": {
+                "name": "Use Earth Elemental"
+              }
+            },
+            "castSpell": {
+              "spellId": {
+                "spellId": 2062,
+                "rank": 1
+              }
+            }
+          }
+        },
+        {
+          "action": {
+            "condition": {
+              "variableRef": {
+                "name": "Use Fire Elemental"
+              }
+            },
+            "strictSequence": {
+              "actions": [
+                {
+                  "castAllStatBuffCooldowns": {
+                    "statType1": 5,
+                    "statType2": -1,
+                    "statType3": -1
+                  }
+                },
+                {
+                  "castSpell": {
+                    "spellId": {
+                      "spellId": 2894,
+                      "rank": 1
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "action": {
+            "castAllStatBuffCooldowns": {
+              "statType1": 5,
+              "statType2": 10,
+              "statType3": -1
+            }
+          }
+        },
+        {
+          "action": {
+            "autocastOtherCooldowns": {}
+          }
+        },
+        {
+          "action": {
+            "condition": {
+              "and": {
+                "vals": [
+                  {
+                    "cmp": {
+                      "op": "OpGe",
+                      "lhs": {
+                        "currentManaPercent": {}
+                      },
+                      "rhs": {
+                        "const": {
+                          "val": "30%"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "cmp": {
+                      "op": "OpGe",
+                      "lhs": {
+                        "spellCastTime": {
+                          "spellId": {
+                            "spellId": 25442,
+                            "rank": 6
+                          }
+                        }
+                      },
+                      "rhs": {
+                        "const": {
+                          "val": "1s"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "castSpell": {
+              "spellId": {
+                "spellId": 25442
+              }
+            }
+          }
+        },
+        {
+          "action": {
+            "castSpell": {
+              "spellId": {
+                "spellId": 25449
+              }
+            }
+          }
+        }
+      ],
+      "groups": [
+        {
+          "name": "Totems",
+          "actions": [
+            {
+              "action": {
+                "condition": {
+                  "and": {
+                    "vals": [
+                      {
+                        "auraIsKnown": {
+                          "auraId": {
+                            "spellId": 38437
+                          }
+                        }
+                      },
+                      {
+                        "cmp": {
+                          "op": "OpLe",
+                          "lhs": {
+                            "totemRemainingTime": {
+                              "totemType": "Earth",
+                              "includeReactionTime": true
+                            }
+                          },
+                          "rhs": {
+                            "const": {
+                              "val": "5s"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "not": {
+                          "val": {
+                            "auraIsActive": {
+                              "auraId": {
+                                "spellId": 2062,
+                                "rank": 1
+                              },
+                              "includeReactionTime": true
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                "castSpell": {
+                  "spellId": {
+                    "spellId": 25528
+                  }
+                }
+              }
+            },
+            {
+              "action": {
+                "condition": {
+                  "and": {
+                    "vals": [
+                      {
+                        "auraIsKnown": {
+                          "auraId": {
+                            "spellId": 38437
+                          }
+                        }
+                      },
+                      {
+                        "cmp": {
+                          "op": "OpLe",
+                          "lhs": {
+                            "totemRemainingTime": {
+                              "totemType": "Water",
+                              "includeReactionTime": true
+                            }
+                          },
+                          "rhs": {
+                            "const": {
+                              "val": "5s"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                "castSpell": {
+                  "spellId": {
+                    "spellId": 25570
+                  }
+                }
+              }
+            },
+            {
+              "action": {
+                "condition": {
+                  "and": {
+                    "vals": [
+                      {
+                        "cmp": {
+                          "op": "OpLe",
+                          "lhs": {
+                            "totemRemainingTime": {
+                              "totemType": "Fire",
+                              "includeReactionTime": true
+                            }
+                          },
+                          "rhs": {
+                            "const": {
+                              "val": "5s"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "not": {
+                          "val": {
+                            "auraIsActive": {
+                              "auraId": {
+                                "spellId": 2894
+                              },
+                              "includeReactionTime": true
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                "castSpell": {
+                  "spellId": {
+                    "spellId": 30706,
+                    "rank": 1
+                  }
+                }
+              }
+            },
+            {
+              "action": {
+                "condition": {
+                  "cmp": {
+                    "op": "OpLe",
+                    "lhs": {
+                      "totemRemainingTime": {
+                        "totemType": "Air",
+                        "includeReactionTime": true
+                      }
+                    },
+                    "rhs": {
+                      "const": {
+                        "val": "5s"
+                      }
+                    }
+                  }
+                },
+                "castSpell": {
+                  "spellId": {
+                    "spellId": 3738,
+                    "rank": 1
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "valueVariables": [
+        {
+          "name": "Use Earth Elemental",
+          "value": {
+            "const": {
+              "val": "false"
+            }
+          }
+        },
+        {
+          "name": "Use Fire Elemental",
+          "value": {
+            "const": {
+              "val": "false"
+            }
+          }
+        }
+      ]
+    },
+    "reactionTimeMs": 100,
+    "distanceFromTarget": 7,
+    "healingModel": {}
+  },
+  "encounter": {
+    "apiVersion": 14,
+    "duration": 180,
+    "durationVariation": 5,
+    "executeProportion20": 0.2,
+    "executeProportion25": 0.25,
+    "executeProportion35": 0.35,
+    "executeProportion45": 0.45,
+    "executeProportion90": 0.9,
+    "targets": [
+      {
+        "id": 31146,
+        "name": "Raid Target",
+        "level": 73,
+        "mobType": "MobTypeMechanical",
+        "stats": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          320,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          54,
+          0,
+          0,
+          0,
+          7685,
+          0,
+          6070400,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "minBaseDamage": 15113,
+        "damageSpread": 0.5,
+        "swingSpeed": 2,
+        "parryHaste": true
+      }
+    ]
+  }
+}

@@ -2900,3 +2900,23 @@ Regression check: diffed Lerynia's new tiered_report.json against the known-good
 item NAME ORDER specifically (not deep dict equality, which now differs harmlessly due to the
 new `arp_rating`/`set_bonus_credit` keys being present on every row) - zero real reordering,
 confirming `rank_value()` is a true no-op whenever credit is 0, exactly as designed.
+
+**Stage 6.3 (Elemental Shaman): a fourth profile with no real character to export from.**
+`ingest/build_synthetic_character.py` (new) builds a character.json-shaped dict directly from a
+wowsims preset `gear_sets/*.gear.json` file, reusing `build_character.resolve_items()` unchanged
+(the wowsims gear-set format already matches `resolve_items()`'s expected `{id, enchant, gems}`
+raw-item shape, confirmed by inspecting `p3.gear.json` directly rather than assuming). Real
+race/professions come from the spec's own `presets.ts` `OtherDefaults` - not fabricated - only
+the character name/realm itself (`Test-Elemental-Synthetic`) is a deliberate placeholder.
+`profile.json` gets a `synthetic_character: true` flag.
+
+Real bug this surfaced, only found by testing through the actual GUI layer (`Api.run_report()`)
+instead of stopping at the CLI/pipeline-function level like earlier stages' checkpoints did:
+`gui/api.py`'s `_run_report_job()` unconditionally re-syncs `character.json` from a real
+WowSimsExporter export before every single report run (correct for a real character - keeps
+data fresh - but `build_character.build()` raises `SystemExit` when no real export exists at
+all). Fixed by checking the new `synthetic_character` flag and loading the already-built
+character.json from disk instead of re-syncing in that case. Worth remembering for Stage 6.4
+(Enhancement) and any future profile built the same way: **a synthetic profile needs this same
+`synthetic_character` flag from the start**, or its very first `Api.run_report()` call fails with
+a real, confusing `SystemExit` error that has nothing to do with the profile itself.

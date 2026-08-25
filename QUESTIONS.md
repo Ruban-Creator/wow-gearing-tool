@@ -339,6 +339,43 @@ something I changed unilaterally this session.
 real, working report sitting in `data/characters/<name>/reports/phase3.html`. Nothing committed
 yet - same as after Stage 6.1, left for you to review first.
 
+## Stage 6.3 (Elemental Shaman) done, real-verified
+
+`profiles/tbc/elemental_shaman/` built end to end, per the approved plan
+(`C:\Users\Matthias\.claude\plans\staged-purring-lynx.md`). Real, not assumed: only Elemental and
+Enhancement are real DPS specs (Restoration's own `ui/shaman/restoration/sim.ts` has a literal
+no-op rotation and no APL file at all). A real, new architectural piece this stage needed that
+Warrior/Druid never did: **no real Shaman character exists yet**, so `Test-Elemental-Synthetic`
+is a synthetic test character (`ingest/build_synthetic_character.py`, new) seeded from the real
+wowsims `p3.gear.json` preset - race/professions are the spec's own real `presets.ts`
+`OtherDefaults` (Draenei, Leatherworking/Enchanting), not invented. `profile.json` carries a real
+`synthetic_character: true` flag so nothing downstream mistakes this for a trustworthy personal
+report.
+
+Real bug found and fixed by actually running it through the GUI layer (not just the CLI): `gui/
+api.py`'s `_run_report_job()` unconditionally called the real `build_character.build()` (which
+requires a real WowSimsExporter export) before every sweep, to keep a real character's data
+fresh - this raises `SystemExit` for a synthetic character every time, since there's no real
+export to sync from. Fixed by checking `profile.json`'s `synthetic_character` flag and reusing
+the already-built `character.json` on disk instead of re-syncing. Confirmed working end to end
+through `Api.run_report()` itself (not just the underlying pipeline functions) after the fix -
+real Achieved-BiS section (6 slots), real set-bonus check flagged 4 items across 14 sets, report
+rendered and opened. `check_ledger_consistency.py` clean (523 assertions, 0 failures/warnings -
+the first profile to have a non-empty achieved_bis from its very first run). Re-ran Hunter's,
+Warrior's, and Druid's full pipelines afterward - all three byte-identical (by item order,
+0 mismatches for Hunter checked directly against the known-good baseline).
+
+Real, phase-varying weapon topology confirmed for Elemental (same shape as Balance Druid, not
+assumed from the P1 gear set alone): 2H staff (Zhar'doom) for P2-P4, 1H mainhand + real offhand
+item for P5 - `_weapon_pool_key()`'s existing per-item handType logic routed this correctly with
+zero new code, matching the plan's prediction.
+
+**Stage 6.4 (Enhancement Shaman) is next, not yet started** - expected to reuse the exact same
+synthetic-character pattern and GUI fix with no new architecture, per the plan's own stated
+expectation. Real per-spec differences already known from research (dual_wield topology, P3 EP
+weights favoring Strength, real `imbueMh`/`imbueOh: WindfuryWeapon` + `syncType:
+DelayOffhandSwings` Options fields) - see the plan file for the full real values.
+
 ## TODO for you: manually verify "Teeth of Gruul" as a real DPS upgrade for Béarforceone
 
 You flagged confusion (2026-08-25) that a "healing" neck, Teeth of Gruul, shows as a +20.4 DPS

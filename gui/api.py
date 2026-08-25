@@ -73,6 +73,10 @@ SUPPORTED_CHARACTERS = {
     "Lerynia-Thunderstrike": os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter"),
     "Rubán-Thunderstrike": os.path.join(REPO_ROOT, "profiles", "tbc", "arms_warrior"),
     "Béarforceone-Thunderstrike": os.path.join(REPO_ROOT, "profiles", "tbc", "balance_druid"),
+    # Synthetic test character (Stage 6.3) - no real Shaman export exists yet,
+    # see profile.json's synthetic_character_note. Real, proven pipeline run
+    # (full sweep, real report), just not a real personal character.
+    "Test-Elemental-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "elemental_shaman"),
 }
 
 # reference_bis/phase1.json doesn't exist yet (a real data-curation gap, not
@@ -112,12 +116,23 @@ def _run_report_job(name_realm: str, phase: str) -> None:
     .build() raises it when no WSE export exists) is caught and surfaced
     through _run_status instead of hanging the GUI's polling forever."""
     try:
-        _set_status(stage="Syncing character data", detail=None, error=None)
-        char_data = build_character.build(name_realm)
         char_dir = os.path.join(REPO_ROOT, "data", "characters", name_realm)
-        os.makedirs(char_dir, exist_ok=True)
-        with open(os.path.join(char_dir, "character.json"), "w", encoding="utf-8") as f:
-            json.dump(char_data, f, indent=2)
+        profile = json.load(open(os.path.join(SUPPORTED_CHARACTERS[name_realm], "profile.json"), encoding="utf-8"))
+        if profile.get("synthetic_character"):
+            # Real gap found and fixed (Stage 6.3, Shaman): a synthetic test
+            # character (see ingest/build_synthetic_character.py) has no real
+            # WowSimsExporter export to sync from at all - the normal
+            # unconditional build_character.build() call below raises
+            # SystemExit for it every time. Reuse the already-built
+            # character.json on disk instead of re-syncing.
+            _set_status(stage="Loading synthetic test character", detail=None, error=None)
+            char_data = json.load(open(os.path.join(char_dir, "character.json"), encoding="utf-8"))
+        else:
+            _set_status(stage="Syncing character data", detail=None, error=None)
+            char_data = build_character.build(name_realm)
+            os.makedirs(char_dir, exist_ok=True)
+            with open(os.path.join(char_dir, "character.json"), "w", encoding="utf-8") as f:
+                json.dump(char_data, f, indent=2)
 
         def progress_cb(evt: dict) -> None:
             detail = f"{evt['done']}/{evt['total']} ({evt['pct']}%)" if evt.get("done") is not None else None

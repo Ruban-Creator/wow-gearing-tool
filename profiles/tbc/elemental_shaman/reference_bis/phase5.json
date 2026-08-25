@@ -1,0 +1,119 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Cowl of Gul'dan",
+        "rank": "Best",
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Amulet of Unfettered Magics",
+        "rank": "Best",
+        "source": "Drop: Eredar Twins (Sunwell Plateau)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Skyshatter Mantle",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Elemental preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Tattered Cape of Antonidas",
+        "rank": "Best",
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Garments of Crashing Shores",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Elemental preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Skyshatter Bands",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Elemental preset"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Gauntlets of the Ancient Shadowmoon",
+        "rank": "Best",
+        "source": "Drop: (Sunwell Plateau)"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Skyshatter Cord",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Elemental preset"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Chain Links of the Tumultuous Storm",
+        "rank": "Best",
+        "source": "Drop: Felmyst (Sunwell Plateau)"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Skyshatter Treads",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Elemental preset"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Ring of Omnipotence",
+        "rank": "Best",
+        "source": "Drop: M'uru (Sunwell Plateau)"
+      },
+      {
+        "item": "Ring of Ancient Knowledge",
+        "rank": "Best",
+        "source": "Drop: (Black Temple)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "The Skull of Gul'dan",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      },
+      {
+        "item": "Shifting Naaru Sliver",
+        "rank": "Best",
+        "source": "Drop: M'uru (Sunwell Plateau)"
+      }
+    ],
+    "mainhand": [
+      {
+        "item": "Sunflare",
+        "rank": "Best",
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
+      }
+    ],
+    "offhand": [
+      {
+        "item": "Heart of the Pit",
+        "rank": "Best",
+        "source": "Drop: Brutallus (Sunwell Plateau)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Totem of Ancestral Guidance",
+        "rank": "Best",
+        "source": "Drop: Teron Gorefiend (Black Temple)"
+      }
+    ]
+  }
+}

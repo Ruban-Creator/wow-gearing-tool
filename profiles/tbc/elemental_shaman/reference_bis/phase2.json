@@ -1,0 +1,112 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Cyclone Faceguard",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Elemental preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "The Sun King's Talisman",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Elemental preset"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Cyclone Shoulderguards",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Elemental preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Brute Cloak of the Ogre-Magi",
+        "rank": "Best",
+        "source": "Drop: High King Maulgar (Gruul's Lair)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Cataclysm Chestpiece",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Elemental preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Mindstorm Wristbands",
+        "rank": "Best",
+        "source": "Drop: Al'ar (Tempest Keep)"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Soul-Eater's Handwraps",
+        "rank": "Best",
+        "source": "Drop: Magtheridon (Magtheridon's Lair)"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of Blasting",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Cataclysm Leggings",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Elemental preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Velvet Boots of the Guardian",
+        "rank": "Best",
+        "source": "Drop: The Lurker Below (Serpentshrine Cavern)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Ring of Unrelenting Storms",
+        "rank": "Best",
+        "source": "Drop: (Karazhan)"
+      },
+      {
+        "item": "Ring of Endless Coils",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Icon of the Silver Crescent",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Elemental preset"
+      },
+      {
+        "item": "The Lightning Capacitor",
+        "rank": "Best",
+        "source": "Drop: Terestian Illhoof (Karazhan)"
+      }
+    ],
+    "weapon_2h": [
+      {
+        "item": "The Nexus Key",
+        "rank": "Best",
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Totem of the Void",
+        "rank": "Best",
+        "source": "Drop: (The Mechanar)"
+      }
+    ]
+  }
+}

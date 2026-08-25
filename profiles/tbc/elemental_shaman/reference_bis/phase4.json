@@ -1,0 +1,112 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Skyshatter Headguard",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Elemental preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Brooch of Nature's Mercy",
+        "rank": "Best",
+        "source": "Drop: Akil'zon (Zul'Aman)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Skyshatter Mantle",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Elemental preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Cloak of the Illidari Council",
+        "rank": "Best",
+        "source": "Drop: The Illidari Council (Black Temple)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Skyshatter Breastplate",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Elemental preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Bracers of Nimble Thought",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Skyshatter Gauntlets",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Elemental preset"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Flashfire Girdle",
+        "rank": "Best",
+        "source": "Drop: Shade of Akama (Black Temple)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Leggings of Channeled Elements",
+        "rank": "Best",
+        "source": "Drop: Kaz'rogal (Hyjal Summit)"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Naturewarden's Treads",
+        "rank": "Best",
+        "source": "Drop: Reliquary of the Lost (Black Temple)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Ring of Ancient Knowledge",
+        "rank": "Best",
+        "source": "Drop: (Black Temple)"
+      },
+      {
+        "item": "Ring of Ancient Knowledge",
+        "rank": "Best",
+        "source": "Drop: (Black Temple)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "The Skull of Gul'dan",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      },
+      {
+        "item": "Hex Shrunken Head",
+        "rank": "Best",
+        "source": "Drop: Hex Lord Malacrass (Zul'Aman)"
+      }
+    ],
+    "weapon_2h": [
+      {
+        "item": "Zhar'doom, Greatstaff of the Devourer",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Totem of Ancestral Guidance",
+        "rank": "Best",
+        "source": "Drop: Teron Gorefiend (Black Temple)"
+      }
+    ]
+  }
+}
