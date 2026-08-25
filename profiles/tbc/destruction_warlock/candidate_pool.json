@@ -1,0 +1,683 @@
+{
+  "head": [
+    {
+      "item": "Voidheart Crown",
+      "source": "wowsims Phase 1 Destruction preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Hood of the Corruptor",
+      "source": "wowsims Phase 2 Destruction preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Hood of the Malefic",
+      "source": "wowsims Phase 3 Destruction preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Dark Conjuror's Collar",
+      "source": "Drop: Kil'jaeden (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "neck": [
+    {
+      "item": "Brooch of Unquenchable Fury",
+      "source": "Drop: Moroes (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "The Sun King's Talisman",
+      "source": "wowsims Phase 2 Destruction preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Translucent Spellthread Necklace",
+      "source": "Drop: Reliquary of the Lost (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Amulet of Unfettered Magics",
+      "source": "Drop: Eredar Twins (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "shoulder": [
+    {
+      "item": "Voidheart Mantle",
+      "source": "wowsims Phase 1 Destruction preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Mantle of the Malefic",
+      "source": "wowsims Phase 3 Destruction preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "back": [
+    {
+      "item": "Ruby Drape of the Mysticant",
+      "source": "Drop: Prince Malchezaar (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Shroud of the Highborne",
+      "source": "Drop: Illidan Stormrage (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Tattered Cape of Antonidas",
+      "source": "Drop: Kil'jaeden (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "chest": [
+    {
+      "item": "Voidheart Robe",
+      "source": "wowsims Phase 1 Destruction preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Vestments of the Sea-Witch",
+      "source": "Drop: Lady Vashj (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Sunfire Robe",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "wrist": [
+    {
+      "item": "Bracers of Havok",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Mindstorm Wristbands",
+      "source": "Drop: Al'ar (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Bracers of Nimble Thought",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Bracers of the Malefic",
+      "source": "wowsims Phase 5 Destruction preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "hands": [
+    {
+      "item": "Voidheart Gloves",
+      "source": "wowsims Phase 1 Destruction preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Gloves of the Malefic",
+      "source": "wowsims Phase 3 Destruction preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Handguards of Defiled Worlds",
+      "source": "Drop: Kil'jaeden (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "waist": [
+    {
+      "item": "Girdle of Ruination",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Belt of Blasting",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Belt of the Malefic",
+      "source": "wowsims Phase 5 Destruction preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "legs": [
+    {
+      "item": "Spellstrike Pants",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Leggings of the Corruptor",
+      "source": "wowsims Phase 2 Destruction preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Leggings of the Malefic",
+      "source": "wowsims Phase 3 Destruction preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Leggings of Calamity",
+      "source": "Drop: Brutallus (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "feet": [
+    {
+      "item": "Frozen Shadoweave Boots",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Boots of Blasting",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Slippers of the Seacaller",
+      "source": "Drop: High Warlord Naj'entus (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Boots of the Malefic",
+      "source": "wowsims Phase 5 Destruction preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "ring": [
+    {
+      "item": "Band of Crimson Fury",
+      "source": "wowsims Phase 1 Destruction preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Ring of Recurrence",
+      "source": "Drop: (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Ring of Endless Coils",
+      "source": "Drop: Lady Vashj (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Band of Eternity",
+      "source": "wowsims Phase 2 Destruction preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Ring of Ancient Knowledge",
+      "source": "Drop: (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Loop of Forged Power",
+      "source": "Crafted: Jewelcrafting",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Ring of Omnipotence",
+      "source": "Drop: M'uru (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "trinket": [
+    {
+      "item": "Quagmirran's Eye",
+      "source": "Drop: Quagmirran (The Slave Pens)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Icon of the Silver Crescent",
+      "source": "wowsims Phase 1 Destruction preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "The Skull of Gul'dan",
+      "source": "Drop: Illidan Stormrage (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Shifting Naaru Sliver",
+      "source": "Drop: M'uru (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "mainhand": [
+    {
+      "item": "Bloodmaw Magus-Blade",
+      "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Fang of the Leviathan",
+      "source": "Drop: Leotheras the Blind (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Sunflare",
+      "source": "Drop: Kil'jaeden (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "offhand": [
+    {
+      "item": "Jewel of Infinite Possibilities",
+      "source": "Drop: Netherspite (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Fathomstone",
+      "source": "Drop: Hydross the Unstable (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Heart of the Pit",
+      "source": "Drop: Brutallus (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "ranged": [
+    {
+      "item": "Tirisfal Wand of Ascendancy",
+      "source": "Drop: Shade of Aran (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Wand of the Forgotten Star",
+      "source": "Drop: High Astromancer Solarian (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Wand of the Demonsoul",
+      "source": "Drop: (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "weapon_2h": [
+    {
+      "item": "Zhar'doom, Greatstaff of the Devourer",
+      "source": "Drop: Illidan Stormrage (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ]
+}

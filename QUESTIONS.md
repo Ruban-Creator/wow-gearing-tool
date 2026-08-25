@@ -556,6 +556,20 @@ messiest stage yet - two genuinely sim-breaking bugs, both silent - so a few cal
   actual look at the rendered page. Same structural bar used for every prior stage's report, but
   flagging since "looks right when opened" was never actually confirmed for this one specifically.
 
+## Stage 6.13 (Destruction Warlock, PLAN CLOSED): real judgment call worth your eyes
+
+`profiles/tbc/destruction_warlock/` is done and real-verified, closing out the full 6.3-6.13
+staging plan (full writeup in NOTES.md). One real scoping call:
+
+- **Destro-Fire (the real alternate build sharing Destruction's talents) was verified via a direct
+  sim/combat-log check but was NOT given its own full candidate pool, reference_bis, synthetic
+  character, or phase3 sweep** - its own real gear data (`destro_fire_preraid`/`destro_fire_t4`)
+  only reaches phase1, so a phase3-focused sweep (this tool's primary convention) wouldn't have
+  much real data to work with anyway. `settings_template_fire.json` exists in the profile
+  directory and is real/working (confirmed Incinerate-primary casts), but there's no `gear best`
+  entry point wired up for it specifically. If you'd want a real, lighter-weight phase1 sweep for
+  this alternate build specifically, that's a genuine, scoped follow-up - not built here.
+
 ## Stage 6.12 (Demonology Warlock): real finding worth your eyes (not really a "call" - the data spoke)
 
 `profiles/tbc/demonology_warlock/` is done and real-verified (full writeup in NOTES.md). Not really

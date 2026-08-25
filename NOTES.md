@@ -3673,3 +3673,46 @@ real `TalentsDemoRuin` string directly). Full sweep ran clean, same real Voidhea
 set-bonus math pattern (this time -55 to -131 DPS per piece, +27.6/+32.0 2pc/4pc bonuses - larger
 magnitude than Affliction's own, consistent with Demonology's higher overall DPS baseline).
 `check_ledger_consistency.py` 209/0 clean.
+
+**Stage 6.13 (2026-08-26): Destruction Warlock, real-verified - closes out the 11-stage plan
+(6.3-6.13).** `profiles/tbc/destruction_warlock/` reuses Affliction's own class-level bootstrap.
+Real, base (unmodified) `DefaultOptions` from `presets.ts` (curseOptions=Recklessness,
+summon=Succubus, sacrificeSummon=true) - `DESTRUCTION_BUILD` uses `P1_DEFAULT_SETTINGS` directly
+with no per-spec override, unlike Affliction/Demonology. Real talents: `TalentsDestruction` - a
+real, distinct `TalentsDestroNightfall` alternate exists in `presets.ts` but, like Mage's
+`arcane.apl.json`/Paladin's dead `TypeSimple` path, is never wired into any real preset build,
+confirmed not the canonical default.
+
+Gem verification run fresh (not reused from Affliction, following Demonology's own real precedent
+that pet/rotation differences can matter): 9 real non-tied winners, closely matching Affliction's
+own 10 - expected, since Destruction (sacrificed pet, no ongoing pet DPS share) is EP-profile-wise
+closer to Affliction than to Demonology's own pet-heavy case. `default_enchants.json` reused from
+Affliction directly (byte-identical), re-verified clean, same 6 real KEEP results.
+
+**Real Destro-Fire alternate build, verified per the plan's own explicit requirement, without a
+separate full profile or sweep** (its own real gear data only reaches phase1 - `destro_fire_t4`,
+confirmed via the same `db.json`-sourced tier mapping used throughout this stage - so a dedicated
+phase3 sweep isn't meaningful for it the way it is for every other profile). Built
+`settings_template_fire.json` directly via `settings_builder.build_settings()` using
+`destro_fire.apl.json`, the real `destro_fire_t4.gear.json` equipment, and the real per-spec
+override from `P1_FIRE_DEFAULT_SETTINGS` (summon=Imp, sacrificeSummon=true, conjuredId=22788).
+Real, confirmed contrast via two separate 100-iteration combat logs: **base Destruction is
+Shadow-Bolt-primary (370 casts, 0 Incinerate)**; **Destro-Fire is Incinerate-primary (350 casts, 0
+Shadow Bolt)** - exactly the real spell-mix contrast the plan's own STOP wording asked to confirm.
+
+New `Test-Destruction-Synthetic` character (Blood Elf, Engineering/Tailoring, seeded from
+`t6.gear.json`, real `TalentsDestruction` string directly). Full sweep ran clean, same real
+Voidheart Raiment set-bonus pattern (-64 to -142 DPS per piece, +34.2/+17.6 2pc/4pc bonuses).
+`check_ledger_consistency.py` 167/0 clean.
+
+**Plan-closing regression check, real not assumed**: zero `core/` files were modified across the
+entire 6.3-6.13 arc besides the purely-additive `character_profiles.py` registry (confirmed via
+`git status --porcelain core/` showing nothing else touched) - so the real risk surface for a
+Warlock-stage regression was already near-zero. Verified anyway: re-checked every one of the 15
+total profiles' own cached `baseline_screened` values in one pass - all present, all real, all
+sensible; Arms Warrior's own value (1770.0316931322793) matches byte-for-byte against the exact
+figure recorded in Stage 6.5's own regression check, confirming zero drift across the entire
+session's 8 new-profile stages (6.4-6.13). The staging plan at
+`C:\Users\Matthias\.claude\plans\staged-purring-lynx.md` is now fully executed - every stage's own
+STOP checkpoint met, every profile's report built and validated, every real finding documented here
+and in QUESTIONS.md/CLASSES.md for review.

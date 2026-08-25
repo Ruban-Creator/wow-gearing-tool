@@ -1,0 +1,850 @@
+{
+  "apiVersion": 14,
+  "raidBuffs": {
+    "arcaneBrilliance": true,
+    "powerWordFortitude": "TristateEffectImproved",
+    "shadowProtection": true,
+    "divineSpirit": "TristateEffectImproved",
+    "giftOfTheWild": "TristateEffectImproved",
+    "bloodlust": true
+  },
+  "debuffs": {
+    "judgementOfWisdom": true,
+    "judgementOfLight": true,
+    "improvedSealOfTheCrusader": "TristateEffectImproved",
+    "misery": true,
+    "curseOfElements": "TristateEffectImproved",
+    "bloodFrenzy": true,
+    "giftOfArthas": true,
+    "mangle": true,
+    "exposeArmor": "TristateEffectImproved",
+    "faerieFire": "TristateEffectImproved",
+    "sunderArmor": true,
+    "curseOfRecklessness": true,
+    "huntersMark": "TristateEffectImproved",
+    "exposeWeaknessUptime": 0.9,
+    "exposeWeaknessHunterAgility": 1080,
+    "insectSwarm": true
+  },
+  "partyBuffs": {
+    "ferociousInspiration": 1,
+    "leaderOfThePack": "TristateEffectImproved",
+    "drums": "LesserDrumsOfBattle",
+    "graceOfAirTotem": "TristateEffectImproved",
+    "strengthOfEarthTotem": "TristateEffectImproved",
+    "windfuryTotem": "TristateEffectRegular",
+    "totemTwisting": true,
+    "battleShout": "TristateEffectImproved"
+  },
+  "player": {
+    "apiVersion": 14,
+    "name": "Player",
+    "race": "RaceBloodElf",
+    "class": "ClassWarlock",
+    "equipment": {
+      "items": [
+        {
+          "id": 28963,
+          "enchant": 3002,
+          "gems": [
+            34220,
+            32196
+          ]
+        },
+        {
+          "id": 28530
+        },
+        {
+          "id": 28967,
+          "enchant": 2982,
+          "gems": [
+            32196,
+            32196
+          ]
+        },
+        {
+          "id": 28766
+        },
+        {
+          "id": 21848,
+          "gems": [
+            32196,
+            32196
+          ]
+        },
+        {
+          "id": 24250,
+          "enchant": 2650,
+          "gems": [
+            32196
+          ]
+        },
+        {
+          "id": 21847,
+          "enchant": 2937,
+          "gems": [
+            32196,
+            32196
+          ]
+        },
+        {
+          "id": 21846,
+          "gems": [
+            32196,
+            32196
+          ]
+        },
+        {
+          "id": 24262,
+          "enchant": 2748,
+          "gems": [
+            32196,
+            32196,
+            32196
+          ]
+        },
+        {
+          "id": 28517,
+          "gems": [
+            32196,
+            32196
+          ]
+        },
+        {
+          "id": 28793
+        },
+        {
+          "id": 28753
+        },
+        {
+          "id": 27683
+        },
+        {
+          "id": 29370
+        },
+        {
+          "id": 28802,
+          "enchant": 2672
+        },
+        {
+          "id": 29270
+        },
+        {
+          "id": 28673
+        }
+      ]
+    },
+    "consumables": {
+      "flaskId": 22866,
+      "foodId": 27657,
+      "conjuredId": 22788,
+      "mhImbueId": 25122,
+      "potId": 22839,
+      "explosiveId": 30217,
+      "petScrollAgi": true,
+      "petScrollStr": true
+    },
+    "bonusStats": {
+      "apiVersion": 14,
+      "stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pseudoStats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "itemSwap": {
+      "items": [
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {}
+      ],
+      "prepullBonusStats": {
+        "apiVersion": 14,
+        "stats": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "pseudoStats": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "buffs": {
+      "blessingOfKings": true,
+      "blessingOfSalvation": true,
+      "blessingOfWisdom": "TristateEffectImproved",
+      "blessingOfMight": "TristateEffectImproved",
+      "unleashedRage": true
+    },
+    "warlock": {
+      "options": {
+        "classOptions": {
+          "armor": "FelArmor",
+          "curseOptions": "Recklessness",
+          "sacrificeSummon": true,
+          "summon": "Imp"
+        }
+      }
+    },
+    "talentsString": "-20500301332101-50500051220051053105",
+    "profession1": "Engineering",
+    "profession2": "Tailoring",
+    "cooldowns": {},
+    "rotation": {
+      "type": "TypeAPL",
+      "prepullActions": [
+        {
+          "action": {
+            "castSpell": {
+              "spellId": {
+                "spellId": 32231,
+                "rank": 2
+              }
+            }
+          },
+          "doAtValue": {
+            "const": {
+              "val": "-3s"
+            }
+          }
+        }
+      ],
+      "priorityList": [
+        {
+          "action": {
+            "autocastOtherCooldowns": {}
+          }
+        },
+        {
+          "action": {
+            "groupReference": {
+              "groupName": "Cast Curse"
+            }
+          }
+        },
+        {
+          "action": {
+            "condition": {
+              "variableRef": {
+                "name": "Should Cast Shadow Burn"
+              }
+            },
+            "castSpell": {
+              "spellId": {
+                "spellId": 30546
+              }
+            }
+          }
+        },
+        {
+          "action": {
+            "condition": {
+              "variableRef": {
+                "name": "Should Cast Death Coil"
+              }
+            },
+            "castSpell": {
+              "spellId": {
+                "spellId": 27223
+              }
+            }
+          }
+        },
+        {
+          "action": {
+            "condition": {
+              "variableRef": {
+                "name": "Should Cast Immolate"
+              }
+            },
+            "castSpell": {
+              "spellId": {
+                "spellId": 27215,
+                "rank": 9
+              }
+            }
+          }
+        },
+        {
+          "action": {
+            "castSpell": {
+              "spellId": {
+                "spellId": 32231,
+                "rank": 2
+              }
+            }
+          }
+        },
+        {
+          "action": {
+            "castSpell": {
+              "spellId": {
+                "spellId": 27222
+              }
+            }
+          }
+        }
+      ],
+      "groups": [
+        {
+          "name": "Cast Curse",
+          "actions": [
+            {
+              "action": {
+                "condition": {
+                  "or": {
+                    "vals": [
+                      {
+                        "variableRef": {
+                          "name": "Should Cast Recklessness or Elements"
+                        }
+                      },
+                      {
+                        "variableRef": {
+                          "name": "Should Cast Doom"
+                        }
+                      }
+                    ]
+                  }
+                },
+                "castWarlockAssignedCurse": {}
+              }
+            },
+            {
+              "action": {
+                "condition": {
+                  "variableRef": {
+                    "name": "Should Cast Agony"
+                  }
+                },
+                "castSpell": {
+                  "spellId": {
+                    "spellId": 27218,
+                    "rank": 7
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "valueVariables": [
+        {
+          "name": "Should Cast Immolate",
+          "value": {
+            "and": {
+              "vals": [
+                {
+                  "cmp": {
+                    "op": "OpLe",
+                    "lhs": {
+                      "dotRemainingTime": {
+                        "spellId": {
+                          "spellId": 27215,
+                          "tag": 1,
+                          "rank": 9
+                        }
+                      }
+                    },
+                    "rhs": {
+                      "spellCastTime": {
+                        "spellId": {
+                          "spellId": 27215,
+                          "rank": 9
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "cmp": {
+                    "op": "OpGe",
+                    "lhs": {
+                      "remainingTime": {}
+                    },
+                    "rhs": {
+                      "math": {
+                        "op": "OpAdd",
+                        "lhs": {
+                          "spellCastTime": {
+                            "spellId": {
+                              "spellId": 27215,
+                              "rank": 9
+                            }
+                          }
+                        },
+                        "rhs": {
+                          "dotBaseDuration": {
+                            "spellId": {
+                              "spellId": 27215,
+                              "tag": 1,
+                              "rank": 9
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Should Cast Death Coil",
+          "value": {
+            "cmp": {
+              "op": "OpLe",
+              "lhs": {
+                "math": {
+                  "op": "OpAdd",
+                  "lhs": {
+                    "remainingTime": {}
+                  },
+                  "rhs": {
+                    "spellTravelTime": {
+                      "spellId": {
+                        "spellId": 27223,
+                        "rank": 4
+                      }
+                    }
+                  }
+                }
+              },
+              "rhs": {
+                "math": {
+                  "op": "OpAdd",
+                  "lhs": {
+                    "spellCastTime": {
+                      "spellId": {
+                        "spellId": 32231,
+                        "rank": 2
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "spellTravelTime": {
+                      "spellId": {
+                        "spellId": 32231,
+                        "rank": 2
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Should Cast Shadow Burn",
+          "value": {
+            "cmp": {
+              "op": "OpLe",
+              "lhs": {
+                "remainingTime": {}
+              },
+              "rhs": {
+                "math": {
+                  "op": "OpAdd",
+                  "lhs": {
+                    "spellCastTime": {
+                      "spellId": {
+                        "spellId": 32231,
+                        "rank": 2
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "spellTravelTime": {
+                      "spellId": {
+                        "spellId": 32231,
+                        "rank": 2
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Should Cast Incinerate",
+          "value": {
+            "const": {
+              "val": "True"
+            }
+          }
+        },
+        {
+          "name": "Should Cast Recklessness or Elements",
+          "value": {
+            "and": {
+              "vals": [
+                {
+                  "not": {
+                    "val": {
+                      "warlockAssignedCurseIsActive": {}
+                    }
+                  }
+                },
+                {
+                  "or": {
+                    "vals": [
+                      {
+                        "warlockIsAssignedCurse": {
+                          "curseType": "Elements"
+                        }
+                      },
+                      {
+                        "warlockIsAssignedCurse": {
+                          "curseType": "Recklessness"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Should Cast Doom",
+          "value": {
+            "and": {
+              "vals": [
+                {
+                  "warlockIsAssignedCurse": {
+                    "curseType": "Doom"
+                  }
+                },
+                {
+                  "cmp": {
+                    "op": "OpGe",
+                    "lhs": {
+                      "remainingTime": {}
+                    },
+                    "rhs": {
+                      "dotBaseDuration": {
+                        "spellId": {
+                          "spellId": 30910,
+                          "rank": 2
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Should Cast Agony",
+          "value": {
+            "and": {
+              "vals": [
+                {
+                  "or": {
+                    "vals": [
+                      {
+                        "warlockIsAssignedCurse": {}
+                      },
+                      {
+                        "and": {
+                          "vals": [
+                            {
+                              "warlockIsAssignedCurse": {
+                                "curseType": "Doom"
+                              }
+                            },
+                            {
+                              "not": {
+                                "val": {
+                                  "warlockAssignedCurseIsActive": {}
+                                }
+                              }
+                            },
+                            {
+                              "cmp": {
+                                "op": "OpLt",
+                                "lhs": {
+                                  "remainingTime": {}
+                                },
+                                "rhs": {
+                                  "dotBaseDuration": {
+                                    "spellId": {
+                                      "spellId": 30910,
+                                      "rank": 2
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "val": {
+                      "dotIsActive": {
+                        "spellId": {
+                          "spellId": 27218,
+                          "rank": 7
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "cmp": {
+                    "op": "OpGe",
+                    "lhs": {
+                      "remainingTime": {}
+                    },
+                    "rhs": {
+                      "math": {
+                        "op": "OpMul",
+                        "lhs": {
+                          "dotTickFrequency": {
+                            "spellId": {
+                              "spellId": 27218,
+                              "rank": 7
+                            }
+                          }
+                        },
+                        "rhs": {
+                          "const": {
+                            "val": "9"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "reactionTimeMs": 100,
+    "distanceFromTarget": 20,
+    "healingModel": {}
+  },
+  "encounter": {
+    "apiVersion": 14,
+    "duration": 180,
+    "durationVariation": 5,
+    "executeProportion20": 0.2,
+    "executeProportion25": 0.25,
+    "executeProportion35": 0.35,
+    "executeProportion45": 0.45,
+    "executeProportion90": 0.9,
+    "targets": [
+      {
+        "id": 31146,
+        "name": "Raid Target",
+        "level": 73,
+        "mobType": "MobTypeMechanical",
+        "stats": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          320,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          54,
+          0,
+          0,
+          0,
+          7685,
+          0,
+          6070400,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "minBaseDamage": 15113,
+        "damageSpread": 0.5,
+        "swingSpeed": 2,
+        "parryHaste": true
+      }
+    ]
+  }
+}

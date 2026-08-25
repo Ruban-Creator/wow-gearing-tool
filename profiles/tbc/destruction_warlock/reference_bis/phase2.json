@@ -1,0 +1,119 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Hood of the Corruptor",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Destruction preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "The Sun King's Talisman",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Destruction preset"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Voidheart Mantle",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Destruction preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Ruby Drape of the Mysticant",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Vestments of the Sea-Witch",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Mindstorm Wristbands",
+        "rank": "Best",
+        "source": "Drop: Al'ar (Tempest Keep)"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Voidheart Gloves",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Destruction preset"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of Blasting",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Leggings of the Corruptor",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Destruction preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Boots of Blasting",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Ring of Endless Coils",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      },
+      {
+        "item": "Band of Eternity",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Destruction preset"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Icon of the Silver Crescent",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Destruction preset"
+      },
+      {
+        "item": "Quagmirran's Eye",
+        "rank": "Best",
+        "source": "Drop: Quagmirran (The Slave Pens)"
+      }
+    ],
+    "mainhand": [
+      {
+        "item": "Fang of the Leviathan",
+        "rank": "Best",
+        "source": "Drop: Leotheras the Blind (Serpentshrine Cavern)"
+      }
+    ],
+    "offhand": [
+      {
+        "item": "Fathomstone",
+        "rank": "Best",
+        "source": "Drop: Hydross the Unstable (Serpentshrine Cavern)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Wand of the Forgotten Star",
+        "rank": "Best",
+        "source": "Drop: High Astromancer Solarian (Tempest Keep)"
+      }
+    ]
+  }
+}

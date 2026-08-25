@@ -1,0 +1,23 @@
+{
+  "class": "warlock",
+  "spec": "destruction",
+  "weapon_topology": "one_hand_plus_offhand_item",
+  "primary_gem_stat_id": "5",
+  "primary_gem_id": 32196,
+  "distance_from_target": 20,
+  "raid_ap_contribution": {
+    "enabled": false,
+    "note": "Same as Affliction/Demonology Warlock - Curse of Recklessness is enemy-side, already benefits a solo sim directly."
+  },
+  "set_bonus_go_source": "sim/warlock/items.go",
+  "apl_source": "ui/warlock/dps/apls/destruction.apl.json",
+  "apl_note": "Real TypeAPL directly, same as Affliction/Demonology. A real, distinct Destro-Fire alternate build (destro_fire.apl.json + its own destro_fire_preraid/destro_fire_t4.gear.json + P1_DESTRUCTION_FIRE_EP) shares Destruction's own talents exactly (TalentsDestruction) - per the plan's own guidance, implemented as an alternate settings file within this profile (settings_template_fire.json) rather than a 4th profile, real-verified via direct sim/combat-log but not given its own full sweep/candidate pool since its own real gear data only extends to phase1 (destro_fire_t4 = phase1 per the same db.json-sourced tier mapping) - a full sweep there would duplicate less of the phase3-primary value this tool's other reports focus on. See default settings_template.json for the primary (Shadowbolt-primary) build used for the real phase3 sweep below.",
+  "weapon_topology_note": "Shares Affliction's own real gear-tier data verbatim (t4/t5/t6/swp) - same real handType-confirmed phase-varying topology.",
+  "stat_weights_note": "Real, confirmed byte-identical to Affliction's own P1_AFFLI_DEMO_DESTRO_EP - reused directly per CLASSES.md's stated exception.",
+  "gear_tier_note": "Same real t4/t5/t6/swp -> phase1/2/3/5 mapping as Affliction Warlock.",
+  "talents_note": "Real TalentsDestruction ('-20500301332101-50500051220051053105') - a real, distinct TalentsDestroNightfall alternate exists in presets.ts but is never wired into any real preset build (DESTRUCTION_BUILD uses TalentsDestruction), same 'defined but unreferenced by a canonical build' pattern already found for Mage/Paladin's own dead-alternate files, confirmed not the real default.",
+  "class_options_note": "Real, base (unmodified) DefaultOptions from presets.ts: curseOptions=Recklessness, summon=Succubus, sacrificeSummon=true, armor=FelArmor - DESTRUCTION_BUILD uses P1_DEFAULT_SETTINGS directly with no per-spec override, unlike Affliction/Demonology.",
+  "gems_enchants_note": "Reused Affliction's own verified default_enchants.json. Gem verification run fresh (not reused), same real reasoning as Demonology - see QUESTIONS.md for the real result.",
+  "synthetic_character": true,
+  "synthetic_character_note": "No real Destruction Warlock alt exists - built via ingest/build_synthetic_character.py from the real wowsims t6.gear.json preset, same real race/professions convention as Affliction/Demonology."
+}

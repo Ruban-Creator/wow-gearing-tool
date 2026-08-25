@@ -1,0 +1,12 @@
+{
+  "warlock": {
+    "options": {
+      "classOptions": {
+        "armor": "FelArmor",
+        "curseOptions": "Recklessness",
+        "sacrificeSummon": true,
+        "summon": "Succubus"
+      }
+    }
+  }
+}
