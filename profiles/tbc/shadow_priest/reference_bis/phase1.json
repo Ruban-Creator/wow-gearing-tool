@@ -1,0 +1,119 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Spellstrike Hood",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Ritssyn's Lost Pendant",
+        "rank": "Best",
+        "source": "Drop: (Karazhan)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Frozen Shadoweave Shoulders",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "back": [
+      {
+        "item": "Shadow-Cloak of Dalaran",
+        "rank": "Best",
+        "source": "Drop: Moroes (Karazhan)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Frozen Shadoweave Robe",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Bracers of Havok",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Handwraps of Flowing Thought",
+        "rank": "Best",
+        "source": "Drop: Attumen the Huntsman (Karazhan)"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of Divine Inspiration",
+        "rank": "Best",
+        "source": "Drop: High King Maulgar (Gruul's Lair)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Spellstrike Pants",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Frozen Shadoweave Boots",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Cobalt Band of Tyrigosa",
+        "rank": "Best",
+        "source": "Drop: Nexus-Prince Shaffar (Mana-Tombs)"
+      },
+      {
+        "item": "Band of Crimson Fury",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Shadow preset"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Quagmirran's Eye",
+        "rank": "Best",
+        "source": "Drop: Quagmirran (The Slave Pens)"
+      },
+      {
+        "item": "Icon of the Silver Crescent",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Shadow preset"
+      }
+    ],
+    "mainhand": [
+      {
+        "item": "Nathrezim Mindblade",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      }
+    ],
+    "offhand": [
+      {
+        "item": "Orb of the Soul-Eater",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Shadow preset"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "The Black Stalk",
+        "rank": "Best",
+        "source": "Drop: The Black Stalker (The Underbog)"
+      }
+    ]
+  }
+}

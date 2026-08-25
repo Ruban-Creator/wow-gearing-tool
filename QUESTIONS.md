@@ -556,6 +556,18 @@ messiest stage yet - two genuinely sim-breaking bugs, both silent - so a few cal
   actual look at the rendered page. Same structural bar used for every prior stage's report, but
   flagging since "looks right when opened" was never actually confirmed for this one specifically.
 
+## Stage 6.8 (Shadow Priest): real judgment call worth your eyes
+
+`profiles/tbc/shadow_priest/` is done and real-verified (full writeup in NOTES.md). One real call:
+
+- **`raid_buffs_overlay.json` left empty** despite Priest's own real `DefaultPartyBuffs` wanting a
+  caster-group totem set (manaSpringTotem/wrathOfAirTotem) instead of the shared baseline's
+  melee-group totems (strengthOfEarthTotem/windfuryTotem/graceOfAirTotem) - kept uniform with every
+  prior caster profile's own same choice rather than tailor per-class raid comp. If you'd rather
+  each profile reflect ITS OWN class's realistic raid positioning instead of one shared assumption
+  across all of them, this is the stage to revisit that call from (would mean touching every
+  existing profile's overlay, not just this one).
+
 ## Stage 6.7 (Combat Rogue): done, real-verified, no open judgment calls to flag
 
 `profiles/tbc/combat_rogue/` is done and real-verified (full writeup in NOTES.md). Cleanest stage

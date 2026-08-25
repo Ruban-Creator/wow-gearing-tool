@@ -1,0 +1,112 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Hood of Absolution",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Shadow preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Ritssyn's Lost Pendant",
+        "rank": "Best",
+        "source": "Drop: (Karazhan)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Shoulderpads of Absolution",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Shadow preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Nethervoid Cloak",
+        "rank": "Best",
+        "source": "Drop: (Hyjal Summit)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Shroud of Absolution",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Shadow preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Bracers of Nimble Thought",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Handguards of Absolution",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Shadow preset"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Waistwrap of Infinity",
+        "rank": "Best",
+        "source": "Drop: Supremus (Black Temple)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Leggings of Channeled Elements",
+        "rank": "Best",
+        "source": "Drop: Kaz'rogal (Hyjal Summit)"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Slippers of the Seacaller",
+        "rank": "Best",
+        "source": "Drop: High Warlord Naj'entus (Black Temple)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Ring of Ancient Knowledge",
+        "rank": "Best",
+        "source": "Drop: (Black Temple)"
+      },
+      {
+        "item": "Ring of Ancient Knowledge",
+        "rank": "Best",
+        "source": "Drop: (Black Temple)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Icon of the Silver Crescent",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Shadow preset"
+      },
+      {
+        "item": "The Skull of Gul'dan",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "weapon_2h": [
+      {
+        "item": "Zhar'doom, Greatstaff of the Devourer",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Wand of the Forgotten Star",
+        "rank": "Best",
+        "source": "Drop: High Astromancer Solarian (Tempest Keep)"
+      }
+    ]
+  }
+}

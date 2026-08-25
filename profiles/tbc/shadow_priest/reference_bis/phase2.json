@@ -1,0 +1,119 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Hood of the Avatar",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Shadow preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Ritssyn's Lost Pendant",
+        "rank": "Best",
+        "source": "Drop: (Karazhan)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Wings of the Avatar",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Shadow preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Royal Cloak of the Sunstriders",
+        "rank": "Best",
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Vestments of the Sea-Witch",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Elementalist Bracelets",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Shadow preset"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Soul-Eater's Handwraps",
+        "rank": "Best",
+        "source": "Drop: Magtheridon (Magtheridon's Lair)"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of Blasting",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Trousers of the Astromancer",
+        "rank": "Best",
+        "source": "Drop: High Astromancer Solarian (Tempest Keep)"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Frozen Shadoweave Boots",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Ring of Endless Coils",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      },
+      {
+        "item": "Band of Al'ar",
+        "rank": "Best",
+        "source": "Drop: Al'ar (Tempest Keep)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Dark Iron Smoking Pipe",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Shadow preset"
+      },
+      {
+        "item": "Icon of the Silver Crescent",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Shadow preset"
+      }
+    ],
+    "mainhand": [
+      {
+        "item": "Nathrezim Mindblade",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      }
+    ],
+    "offhand": [
+      {
+        "item": "Orb of the Soul-Eater",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Shadow preset"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Wand of the Forgotten Star",
+        "rank": "Best",
+        "source": "Drop: High Astromancer Solarian (Tempest Keep)"
+      }
+    ]
+  }
+}

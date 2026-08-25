@@ -1,0 +1,9 @@
+{
+  "priest": {
+    "options": {
+      "classOptions": {
+        "preShadowform": true
+      }
+    }
+  }
+}

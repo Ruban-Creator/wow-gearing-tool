@@ -3469,3 +3469,47 @@ no achieved-BiS-empty warning). Regression: zero `core/` files were modified for
 the purely-additive `character_profiles.py` entry, so no shared-code regression risk existed; spot-
 checked Arms Warrior's cached baseline (1770.0316931322793) against the last known-good value
 recorded in Stage 6.5's own regression check - unchanged.
+
+**Stage 6.8 (2026-08-25/26): Shadow Priest, real-verified.** `profiles/tbc/shadow_priest/` built
+from `sim/tbc-new/ui/priest/dps/` - `one_hand_plus_offhand_item` topology confirmed via real
+`handType` data across all 4 gear files: preraid/P1/P2 use a real 1H weapon + offhand (Orb of the
+Soul-Eater); P3's real BiS switches to a 2H staff (Zhar'doom, Greatstaff of the Devourer - the same
+real item Feral Cat Druid's own P5 BiS uses) with no offhand. A real second `test.apl.json` exists
+alongside `default.apl.json` but is never imported in `presets.ts` - confirmed dev fixture, not a
+second real rotation, resolving the exact ambiguity the staging plan flagged checking for.
+
+`PriestOptions` has real `armor`/`use_shadowfiend` fields beyond `preShadowform`, but `presets.ts`'s
+own `DefaultOptions` only sets `preShadowform: true` - used exactly that (not invented). Real,
+live-verified finding: Shadowfiend still summons and contributes real DPS (21.1 avg in a 3000-
+iteration test) even with `use_shadowfiend` left at its real proto default (unset/false) - the APL
+alone drives the pet summon, confirming that toggle is legacy/inert for a `TypeAPL` rotation, not a
+required input. `Priest.Rotation` is a real, empty `{}` proto message, same as Rogue - no per-spec
+rotation config needed. Real combat-log verification: Mind Flay (546 casts), Vampiric Touch (462),
+Shadow Word: Pain (158), Shadowform pre-cast (2) - real, confirmed Shadow rotation, not Wrath/
+Starfire or any other spec's spells.
+
+Real EP weights from `priest/dps/presets.ts`'s own `P3_EP_PRESET` - a real, distinct `P1_EP_PRESET`
+also exists (real SpellHitRating/MP5 differences from itemization progression) but wasn't used,
+matching this tool's phase3-primary convention. `raid_buffs_overlay.json` left empty despite
+Priest's own real `DefaultPartyBuffs` specifying a caster-group totem set (manaSpringTotem/
+wrathOfAirTotem) different from the shared baseline's melee-group totems - every prior caster
+profile already made the same call to keep raid-comp assumptions uniform across all profiles rather
+than tailor per-class, so this isn't a new deviation (see QUESTIONS.md if this should be revisited).
+
+`default_enchants.json`: 8/11 verified, 3 legitimate drops - `Enchant Cloak - Subtlety` (threat
+reduction, real zero DPS by design) and `Enchant Boots - Boar's Speed` (movement, real zero DPS),
+both confirmed in the DB and correctly recognized as intentional utility picks, not a data gap; the
+third, `Enchant Chest - Exceptional Stats`, showed a real but tiny +0.60 DPS delta that didn't clear
+the tool's own noise threshold - a legitimate near-zero result, not a bug in the check. Gem
+verification: 20 real socketed candidates tested, all negative/non-tied - `chase_bonus_gems.json`
+correctly stays empty, same real "pure Spell Damage always wins" result already found for Feral Cat
+Druid's own Agility gem.
+
+New `Test-ShadowPriest-Synthetic` character (Undead, Enchanting/Tailoring - real professions from
+`presets.ts`'s own `OtherDefaults`, not guessed - seeded from `p3.gear.json`, real Shadow talents
+string `500230013--503250510240103051451` from `StandardTalents` directly). Full sweep ran clean
+and exercised a real feature not seen fire in any prior stage's own summary: the sidegrade-check
+pass flagged 3 real "don't compete now, but bank it" combos (e.g. Cowl of the Illidari High Lord +
+Blood-cursed Shoulderpads, a real +5.9 DPS sidegrade once Absolution Regalia's 2pc bonus is already
+broken by another swap). `check_ledger_consistency.py` 143/0 clean. Zero `core/` files modified
+besides the additive `character_profiles.py` entry - no regression risk.

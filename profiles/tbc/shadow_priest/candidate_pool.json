@@ -1,0 +1,517 @@
+{
+  "head": [
+    {
+      "item": "Spellstrike Hood",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Hood of the Avatar",
+      "source": "wowsims Phase 2 Shadow preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Hood of Absolution",
+      "source": "wowsims Phase 3 Shadow preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "neck": [
+    {
+      "item": "Ritssyn's Lost Pendant",
+      "source": "Drop: (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "shoulder": [
+    {
+      "item": "Frozen Shadoweave Shoulders",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Wings of the Avatar",
+      "source": "wowsims Phase 2 Shadow preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Shoulderpads of Absolution",
+      "source": "wowsims Phase 3 Shadow preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "back": [
+    {
+      "item": "Shadow-Cloak of Dalaran",
+      "source": "Drop: Moroes (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Royal Cloak of the Sunstriders",
+      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Nethervoid Cloak",
+      "source": "Drop: (Hyjal Summit)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "chest": [
+    {
+      "item": "Frozen Shadoweave Robe",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Vestments of the Sea-Witch",
+      "source": "Drop: Lady Vashj (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Shroud of Absolution",
+      "source": "wowsims Phase 3 Shadow preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "wrist": [
+    {
+      "item": "Bracers of Havok",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Elementalist Bracelets",
+      "source": "wowsims Phase 2 Shadow preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Bracers of Nimble Thought",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "hands": [
+    {
+      "item": "Handwraps of Flowing Thought",
+      "source": "Drop: Attumen the Huntsman (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Soul-Eater's Handwraps",
+      "source": "Drop: Magtheridon (Magtheridon's Lair)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Handguards of Absolution",
+      "source": "wowsims Phase 3 Shadow preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "waist": [
+    {
+      "item": "Belt of Divine Inspiration",
+      "source": "Drop: High King Maulgar (Gruul's Lair)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Belt of Blasting",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Waistwrap of Infinity",
+      "source": "Drop: Supremus (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "legs": [
+    {
+      "item": "Spellstrike Pants",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Trousers of the Astromancer",
+      "source": "Drop: High Astromancer Solarian (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Leggings of Channeled Elements",
+      "source": "Drop: Kaz'rogal (Hyjal Summit)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "feet": [
+    {
+      "item": "Frozen Shadoweave Boots",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Slippers of the Seacaller",
+      "source": "Drop: High Warlord Naj'entus (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "ring": [
+    {
+      "item": "Cobalt Band of Tyrigosa",
+      "source": "Drop: Nexus-Prince Shaffar (Mana-Tombs)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Band of Crimson Fury",
+      "source": "wowsims Phase 1 Shadow preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Ring of Endless Coils",
+      "source": "Drop: Lady Vashj (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Band of Al'ar",
+      "source": "Drop: Al'ar (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Ring of Ancient Knowledge",
+      "source": "Drop: (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "trinket": [
+    {
+      "item": "Quagmirran's Eye",
+      "source": "Drop: Quagmirran (The Slave Pens)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Icon of the Silver Crescent",
+      "source": "wowsims Phase 1 Shadow preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Dark Iron Smoking Pipe",
+      "source": "wowsims Phase 2 Shadow preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "The Skull of Gul'dan",
+      "source": "Drop: Illidan Stormrage (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "mainhand": [
+    {
+      "item": "Nathrezim Mindblade",
+      "source": "Drop: Prince Malchezaar (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "offhand": [
+    {
+      "item": "Orb of the Soul-Eater",
+      "source": "wowsims Phase 1 Shadow preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "ranged": [
+    {
+      "item": "The Black Stalk",
+      "source": "Drop: The Black Stalker (The Underbog)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Wand of the Forgotten Star",
+      "source": "Drop: High Astromancer Solarian (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "weapon_2h": [
+    {
+      "item": "Zhar'doom, Greatstaff of the Devourer",
+      "source": "Drop: Illidan Stormrage (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ]
+}
