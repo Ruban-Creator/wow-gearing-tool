@@ -1,6 +1,17 @@
 {
   "head": [
     {
+      "item": "Antlers of Malorne",
+      "source": "wowsims Phase 1 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
       "item": "Nordrassil Headpiece",
       "source": "wowsims Phase 2 Balance preset",
       "seen_in": [
@@ -39,6 +50,17 @@
     }
   ],
   "neck": [
+    {
+      "item": "Adornment of Stolen Souls",
+      "source": "Drop: Prince Malchezaar (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "The Sun King's Talisman",
       "source": "wowsims Phase 2 Balance preset",
@@ -79,6 +101,17 @@
   ],
   "shoulder": [
     {
+      "item": "Pauldrons of Malorne",
+      "source": "wowsims Phase 1 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
       "item": "Nordrassil Wrath-Mantle",
       "source": "wowsims Phase 2 Balance preset",
       "seen_in": [
@@ -117,6 +150,17 @@
     }
   ],
   "back": [
+    {
+      "item": "Ruby Drape of the Mysticant",
+      "source": "Drop: Prince Malchezaar (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "Brute Cloak of the Ogre-Magi",
       "source": "Drop: High King Maulgar (Gruul's Lair)",
@@ -157,6 +201,17 @@
   ],
   "chest": [
     {
+      "item": "Spellfire Robe",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
       "item": "Nordrassil Chestpiece",
       "source": "wowsims Phase 2 Balance preset",
       "seen_in": [
@@ -188,6 +243,17 @@
     }
   ],
   "wrist": [
+    {
+      "item": "Bracers of Havok",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "Mindstorm Wristbands",
       "source": "Drop: Al'ar (Tempest Keep)",
@@ -228,6 +294,17 @@
   ],
   "hands": [
     {
+      "item": "Spellfire Gloves",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
       "item": "Nordrassil Gauntlets",
       "source": "wowsims Phase 2 Balance preset",
       "seen_in": [
@@ -266,6 +343,17 @@
     }
   ],
   "waist": [
+    {
+      "item": "Spellfire Belt",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "Belt of Blasting",
       "source": "Crafted: Tailoring",
@@ -310,6 +398,10 @@
       "source": "Crafted: Tailoring",
       "seen_in": [
         {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
           "phase": "P2",
           "rank": "Best"
         }
@@ -344,6 +436,17 @@
     }
   ],
   "feet": [
+    {
+      "item": "Boots of Foretelling",
+      "source": "Drop: Maiden of Virtue (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "Velvet Boots of the Guardian",
       "source": "Drop: The Lurker Below (Serpentshrine Cavern)",
@@ -388,7 +491,22 @@
       "source": "Drop: (Karazhan)",
       "seen_in": [
         {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
           "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Violet Signet of the Archmage",
+      "source": "wowsims Phase 1 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P1",
           "rank": "Best"
         }
       ],
@@ -468,8 +586,12 @@
   "trinket": [
     {
       "item": "Icon of the Silver Crescent",
-      "source": "wowsims Phase 2 Balance preset",
+      "source": "wowsims Phase 1 Balance preset",
       "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
         {
           "phase": "P2",
           "rank": "Best"
@@ -481,6 +603,10 @@
       "item": "Quagmirran's Eye",
       "source": "Drop: Quagmirran (The Slave Pens)",
       "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
         {
           "phase": "P2",
           "rank": "Best"
@@ -541,28 +667,48 @@
       "best_rank_seen": "Best"
     }
   ],
-  "weapon_2h": [
+  "mainhand": [
     {
-      "item": "The Nexus Key",
-      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
+      "item": "Nathrezim Mindblade",
+      "source": "Drop: Prince Malchezaar (Karazhan)",
       "seen_in": [
         {
-          "phase": "P2",
+          "phase": "P1",
           "rank": "Best"
         }
       ],
       "best_rank_seen": "Best"
     },
     {
-      "item": "Zhar'doom, Greatstaff of the Devourer",
-      "source": "Drop: Illidan Stormrage (Black Temple)",
+      "item": "Sunflare",
+      "source": "Drop: Kil'jaeden (Sunwell Plateau)",
       "seen_in": [
         {
-          "phase": "P3",
+          "phase": "P5",
           "rank": "Best"
-        },
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "offhand": [
+    {
+      "item": "Talisman of Kalecgos",
+      "source": "wowsims Phase 1 Balance preset",
+      "seen_in": [
         {
-          "phase": "P4",
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Heart of the Pit",
+      "source": "Drop: Brutallus (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
           "rank": "Best"
         }
       ],
@@ -570,6 +716,17 @@
     }
   ],
   "ranged": [
+    {
+      "item": "Ivory Idol of the Moongoddess",
+      "source": "Drop: Grand Warlock Nethekurse (The Shattered Halls)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "Idol of the Raven Goddess",
       "source": "wowsims Phase 2 Balance preset",
@@ -594,26 +751,28 @@
       "best_rank_seen": "Best"
     }
   ],
-  "mainhand": [
+  "weapon_2h": [
     {
-      "item": "Sunflare",
-      "source": "Drop: Kil'jaeden (Sunwell Plateau)",
+      "item": "The Nexus Key",
+      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
       "seen_in": [
         {
-          "phase": "P5",
+          "phase": "P2",
           "rank": "Best"
         }
       ],
       "best_rank_seen": "Best"
-    }
-  ],
-  "offhand": [
+    },
     {
-      "item": "Heart of the Pit",
-      "source": "Drop: Brutallus (Sunwell Plateau)",
+      "item": "Zhar'doom, Greatstaff of the Devourer",
+      "source": "Drop: Illidan Stormrage (Black Temple)",
       "seen_in": [
         {
-          "phase": "P5",
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
           "rank": "Best"
         }
       ],

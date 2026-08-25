@@ -1,6 +1,17 @@
 {
   "head": [
     {
+      "item": "Cyclone Helm",
+      "source": "wowsims Phase 1 Enhancement preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
       "item": "Cataclysm Helm",
       "source": "wowsims Phase 2 Enhancement preset",
       "seen_in": [
@@ -40,6 +51,17 @@
   ],
   "neck": [
     {
+      "item": "Choker of Vile Intent",
+      "source": "wowsims Phase 1 Enhancement preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
       "item": "Telonicus's Pendant of Mayhem",
       "source": "wowsims Phase 2 Enhancement preset",
       "seen_in": [
@@ -78,6 +100,17 @@
     }
   ],
   "shoulder": [
+    {
+      "item": "Cyclone Shoulderplates",
+      "source": "wowsims Phase 1 Enhancement preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "Shoulderpads of the Stranger",
       "source": "Drop: Hydross the Unstable (Serpentshrine Cavern)",
@@ -125,6 +158,17 @@
   ],
   "back": [
     {
+      "item": "Vengeance Wrap",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
       "item": "Thalassian Wildercloak",
       "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
       "seen_in": [
@@ -164,6 +208,17 @@
   ],
   "chest": [
     {
+      "item": "Ebon Netherscale Breastplate",
+      "source": "Crafted: Leatherworking",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
       "item": "Cataclysm Chestplate",
       "source": "wowsims Phase 2 Enhancement preset",
       "seen_in": [
@@ -202,6 +257,17 @@
     }
   ],
   "wrist": [
+    {
+      "item": "Ebon Netherscale Bracers",
+      "source": "Crafted: Leatherworking",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "True-Aim Stalker Bands",
       "source": "Drop: Leotheras the Blind (Serpentshrine Cavern)",
@@ -249,6 +315,17 @@
   ],
   "hands": [
     {
+      "item": "Ebon Netherscale Belt",
+      "source": "Crafted: Leatherworking",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
       "item": "Cataclysm Gauntlets",
       "source": "wowsims Phase 2 Enhancement preset",
       "seen_in": [
@@ -288,6 +365,17 @@
   ],
   "waist": [
     {
+      "item": "Liar's Tongue Gloves",
+      "source": "Drop: Magtheridon (Magtheridon's Lair)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
       "item": "Belt of One-Hundred Deaths",
       "source": "Drop: Lady Vashj (Serpentshrine Cavern)",
       "seen_in": [
@@ -319,6 +407,17 @@
     }
   ],
   "legs": [
+    {
+      "item": "Skulker's Greaves",
+      "source": "Drop: Netherspite (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "Cataclysm Legplates",
       "source": "wowsims Phase 2 Enhancement preset",
@@ -359,6 +458,17 @@
   ],
   "feet": [
     {
+      "item": "Edgewalker Longboots",
+      "source": "Drop: Moroes (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
       "item": "Boots of Utter Darkness",
       "source": "Crafted: Leatherworking",
       "seen_in": [
@@ -397,6 +507,28 @@
     }
   ],
   "ring": [
+    {
+      "item": "Shapeshifter's Signet",
+      "source": "wowsims Phase 1 Enhancement preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Ring of a Thousand Marks",
+      "source": "Drop: Prince Malchezaar (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "Band of the Ranger-General",
       "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
@@ -471,6 +603,10 @@
       "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)",
       "seen_in": [
         {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
           "phase": "P2",
           "rank": "Best"
         },
@@ -487,8 +623,12 @@
     },
     {
       "item": "Bloodlust Brooch",
-      "source": "wowsims Phase 2 Enhancement preset",
+      "source": "wowsims Phase 1 Enhancement preset",
       "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
         {
           "phase": "P2",
           "rank": "Best"
@@ -535,6 +675,17 @@
     }
   ],
   "weapon_dual_wield": [
+    {
+      "item": "Gladiator's Cleaver",
+      "source": "wowsims Phase 1 Enhancement preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "Talon of the Phoenix",
       "source": "Drop: Al'ar (Tempest Keep)",
@@ -600,6 +751,10 @@
       "item": "Totem of the Astral Winds",
       "source": "Drop: Pandemonius (Mana-Tombs)",
       "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
         {
           "phase": "P2",
           "rank": "Best"

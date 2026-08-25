@@ -1,4 +1,4 @@
-const PHASE_LABELS = { phase2: "Phase 2", phase3: "Phase 3", phase4: "Phase 4", phase5: "Phase 5" };
+const PHASE_LABELS = { phase1: "Phase 1", phase2: "Phase 2", phase3: "Phase 3", phase4: "Phase 4", phase5: "Phase 5" };
 
 // Populated from Api.get_supported_phases() on load, rather than a second
 // hardcoded literal here that could drift from gui/api.py's own PHASES list

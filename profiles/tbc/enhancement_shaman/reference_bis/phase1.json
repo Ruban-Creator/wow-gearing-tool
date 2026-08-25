@@ -1,0 +1,117 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Cyclone Helm",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Enhancement preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Choker of Vile Intent",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Enhancement preset"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Cyclone Shoulderplates",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Enhancement preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Vengeance Wrap",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Ebon Netherscale Breastplate",
+        "rank": "Best",
+        "source": "Crafted: Leatherworking"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Ebon Netherscale Bracers",
+        "rank": "Best",
+        "source": "Crafted: Leatherworking"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Ebon Netherscale Belt",
+        "rank": "Best",
+        "source": "Crafted: Leatherworking"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Liar's Tongue Gloves",
+        "rank": "Best",
+        "source": "Drop: Magtheridon (Magtheridon's Lair)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Skulker's Greaves",
+        "rank": "Best",
+        "source": "Drop: Netherspite (Karazhan)"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Edgewalker Longboots",
+        "rank": "Best",
+        "source": "Drop: Moroes (Karazhan)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Shapeshifter's Signet",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Enhancement preset"
+      },
+      {
+        "item": "Ring of a Thousand Marks",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Dragonspine Trophy",
+        "rank": "Best",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      },
+      {
+        "item": "Bloodlust Brooch",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Enhancement preset"
+      }
+    ],
+    "weapon_dual_wield": [
+      {
+        "item": "Gladiator's Cleaver",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Enhancement preset"
+      },
+      {
+        "item": "Gladiator's Cleaver",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Enhancement preset"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Totem of the Astral Winds",
+        "rank": "Best",
+        "source": "Drop: Pandemonius (Mana-Tombs)"
+      }
+    ]
+  }
+}

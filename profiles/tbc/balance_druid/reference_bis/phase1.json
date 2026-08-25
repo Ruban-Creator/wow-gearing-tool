@@ -1,0 +1,119 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Antlers of Malorne",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Balance preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Adornment of Stolen Souls",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Pauldrons of Malorne",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Balance preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Ruby Drape of the Mysticant",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Spellfire Robe",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Bracers of Havok",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Spellfire Gloves",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Spellfire Belt",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Spellstrike Pants",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Boots of Foretelling",
+        "rank": "Best",
+        "source": "Drop: Maiden of Virtue (Karazhan)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Ring of Recurrence",
+        "rank": "Best",
+        "source": "Drop: (Karazhan)"
+      },
+      {
+        "item": "Violet Signet of the Archmage",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Balance preset"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Icon of the Silver Crescent",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Balance preset"
+      },
+      {
+        "item": "Quagmirran's Eye",
+        "rank": "Best",
+        "source": "Drop: Quagmirran (The Slave Pens)"
+      }
+    ],
+    "mainhand": [
+      {
+        "item": "Nathrezim Mindblade",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      }
+    ],
+    "offhand": [
+      {
+        "item": "Talisman of Kalecgos",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Balance preset"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Ivory Idol of the Moongoddess",
+        "rank": "Best",
+        "source": "Drop: Grand Warlock Nethekurse (The Shattered Halls)"
+      }
+    ]
+  }
+}

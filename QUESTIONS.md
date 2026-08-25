@@ -406,6 +406,45 @@ All 5 profiles now pass `check_ledger_consistency.py` clean and stayed byte-iden
 other across every regression check this stage. Nothing committed without being asked each time,
 same as every prior stage.
 
+## Real GUI bugs found and fixed, verified live on your machine (2026-08-25)
+
+You reported the GUI getting stuck (Run Report open on startup, unclosable) and Phase 1 missing
+from the phase grid. Both real, both fixed and verified by actually running the app on this PC
+(you'd enabled that) rather than just reasoning about the code:
+
+- **Modal CSS bug**: `.modal-overlay{display:flex}` in `gui/assets/style.css` beat the browser's
+  default `[hidden]{display:none}` at equal specificity, so every modal (Settings, Run Report)
+  rendered permanently open and unclosable since the GUI was first built - this predates today's
+  Shaman work entirely, just never got exercised by a human clicking around until now. Fixed with
+  a `.modal-overlay[hidden]{display:none}` override.
+- **Phase 1 missing**: real, deliberate, but now-stale gap - `reference_bis/phase1.json` never
+  existed for ANY profile (a documented data-curation gap, not a code gap - `time_horizon.py`'s
+  own phase-ranging loop already handled phase 1 with zero changes needed). Built real Phase 1
+  reference data for all 5 profiles: the 4 wowsims-preset-based ones via
+  `build_wowsims_reference_bis.py` (real p1 gear_sets files already existed in the vendored sim,
+  just never passed as an argument before), Hunter's own via real Wowhead research (her
+  reference_bis has always been hand-curated, not built by that script) - source:
+  https://www.wowhead.com/tbc/guide/survival-hunter-dps-karazhan-best-in-slot-gear-burning-crusade-classic-wow.
+  **Real near-miss worth knowing about**: my first URL guess for Hunter's Phase 1 guide
+  (`/tbc/guide/classes/hunter/survival/dps-bis-gear-pve-phase-1`, matching Phase 2's own URL
+  pattern) actually resolved to a Wrath of the Lich King Classic guide, not TBC - caught by
+  reading the resolved page title before transcribing anything, not assumed safe from the URL
+  alone. Real, correct URL found via Wowhead's own BiS guide index instead.
+
+Ran real Phase 1 sweeps for all 5 characters after adding the data, verified via
+`check_ledger_consistency.py` (clean on all 5) and a regression re-run of Hunter's Phase 3 sweep
+(zero mismatches against the known-good baseline - confirms adding Phase 1 didn't disturb the
+other phases). Rebuilt `dist/gearing-tool-gui.exe` with both fixes, then verified by actually
+launching it, clicking through Run Report → Phase 1 → Run, and confirming a real report came
+back ("Report ready", registered in `reports.json` with a fresh timestamp) - not just trusting
+the code read correctly.
+
+Minor, unrelated thing spotted in passing, not fixed (out of scope for this pass): the CLI
+console's 2H-weapon-options print for a crafted item shows a doubled prefix ("Crafted: Crafted:
+Blacksmithing") - a pre-existing cosmetic formatting quirk in `run_full_sweep_mv.py`'s 2H section
+(combines `tier` and `source` blindly, and a crafted item's tier bucket name is already
+"Crafted"), not something introduced today, and doesn't affect the JSON/HTML report data.
+
 ## TODO for you: manually verify "Teeth of Gruul" as a real DPS upgrade for Béarforceone
 
 You flagged confusion (2026-08-25) that a "healing" neck, Teeth of Gruul, shows as a +20.4 DPS

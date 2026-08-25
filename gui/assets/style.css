@@ -364,6 +364,17 @@ html, body {
   z-index: 100;
 }
 
+/* Real bug found 2026-08-25: the bare .modal-overlay{display:flex} rule
+   above beats the browser's default [hidden]{display:none} UA rule at
+   equal specificity (both 0,1,0), so app.js's openModal()/closeModal()
+   (which just toggle the `hidden` attribute) had no visual effect at all -
+   every modal rendered permanently open, unclosable, from first paint.
+   This selector's extra attribute clause (0,2,0) outranks the bare class
+   rule, so [hidden] correctly wins again. */
+.modal-overlay[hidden] {
+  display: none;
+}
+
 .modal {
   background: var(--bg-raised);
   border: 1px solid var(--border);

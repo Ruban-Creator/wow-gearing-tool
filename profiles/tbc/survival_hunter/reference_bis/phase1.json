@@ -1,0 +1,337 @@
+{
+  "source": "https://www.wowhead.com/tbc/guide/survival-hunter-dps-karazhan-best-in-slot-gear-burning-crusade-classic-wow",
+  "source_note": "Wowhead, author Veramos, page 'Updated: 2026/02/01'. Karazhan/Gruul's Lair/Magtheridon's Lair - the first raid tier, distinct from the Pre-Raid list.",
+  "fetched": "2026-08-25",
+  "slots": {
+    "head": [
+      {
+        "rank": "Best",
+        "item": "Beast Lord Helm",
+        "source": "Drop: Pathaleon the Calculator (The Mechanar)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Demon Stalker Greathelm",
+        "source": "Drop: Tier Token from Prince Malchezaar (Karazhan)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Stalker's Helmet of Second Sight",
+        "source": "Quest: Teron Gorefiend, I am... (Karazhan)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Mask of Veiled Death",
+        "source": "World Drop: Outland"
+      }
+    ],
+    "shoulder": [
+      {
+        "rank": "Best",
+        "item": "Beast Lord Mantle",
+        "source": "Drop: Warlord Kalithresh (The Steamvault)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Expedition Scout's Epaulets",
+        "source": "Quest: Fel Embers"
+      },
+      {
+        "rank": "Optional",
+        "item": "Wastewalker Shoulderpads",
+        "source": "Drop: Avatar of the Martyred (Heroic Auchenai Crypts)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Mantle of Perenolde",
+        "source": "Drop: Epoch Hunter (Old Hillsbrad Foothills)"
+      }
+    ],
+    "back": [
+      {
+        "rank": "Best",
+        "item": "Drape of the Dark Reavers",
+        "source": "Drop: Shade of Aran (Karazhan)"
+      },
+      {
+        "rank": "Best",
+        "item": "Blood Knight War Cloak",
+        "source": "Vendor: G'eras (25 Badges of Justice)"
+      },
+      {
+        "rank": "Strong",
+        "item": "Vengeance Wrap",
+        "source": "Crafted: Tailoring"
+      },
+      {
+        "rank": "Optional",
+        "item": "Cloak of the Pit Stalker",
+        "source": "Drop: Magtheridon (Magtheridon's Lair)"
+      }
+    ],
+    "chest": [
+      {
+        "rank": "Best",
+        "item": "Beast Lord Cuirass",
+        "source": "Drop: Warp Splinter (The Botanica)"
+      },
+      {
+        "rank": "Best",
+        "item": "Primalstrike Vest",
+        "source": "Crafted: Elemental Leatherworking"
+      },
+      {
+        "rank": "Optional",
+        "item": "Ebon Netherscale Breastplate",
+        "source": "Crafted: Dragonscale Leatherworking"
+      },
+      {
+        "rank": "Optional",
+        "item": "Hauberk of Karabor",
+        "source": "Quest: Varedis Must Be Stopped"
+      }
+    ],
+    "wrist": [
+      {
+        "rank": "Best",
+        "item": "Ravager's Bands of Agility",
+        "source": "Drop: Rokad the Ravager (Karazhan)"
+      },
+      {
+        "rank": "Best",
+        "item": "Nightfall Wristguards",
+        "source": "Drop: Epoch Hunter (Old Hillsbrad Foothills)"
+      },
+      {
+        "rank": "Very Strong",
+        "item": "Primalstrike Bracers",
+        "source": "Crafted: Elemental Leatherworking"
+      },
+      {
+        "rank": "Optional",
+        "item": "Felstalker Bracers",
+        "source": "Crafted: Leatherworking (Honored, Honor Hold/Thrallmar)"
+      }
+    ],
+    "hands": [
+      {
+        "rank": "Best",
+        "item": "Beast Lord Handguards",
+        "source": "Drop: Warchief Kargath Bladefist (The Shattered Halls)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Gloves of Dexterous Manipulation",
+        "source": "Drop: Attumen the Huntsman (Karazhan)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Gauntlets of the Dragonslayer",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Fel Leather Gloves",
+        "source": "Crafted: Leatherworking (Friendly, The Consortium)"
+      }
+    ],
+    "waist": [
+      {
+        "rank": "Best",
+        "item": "Lurker's Belt of Agility",
+        "source": "Drop: Hyakiss the Lurker (Karazhan)"
+      },
+      {
+        "rank": "Best",
+        "item": "Girdle of Treachery",
+        "source": "Drop: Echo of Medivh (Karazhan)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Girdle of the Deathdealer",
+        "source": "Drop: Aeonus (Heroic The Black Morass)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Primalstrike Belt",
+        "source": "Crafted: Elemental Leatherworking"
+      }
+    ],
+    "legs": [
+      {
+        "rank": "Best",
+        "item": "Scaled Greaves of the Marksman",
+        "source": "Drop: Doom Lord Kazzak (World Boss, Hellfire Peninsula)"
+      },
+      {
+        "rank": "Best",
+        "item": "Skulker's Greaves",
+        "source": "Drop: Netherspite (Karazhan)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Beast Lord Leggings",
+        "source": "Drop: Warlord Kalithresh (The Steamvault)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Midnight Legguards",
+        "source": "Drop: Quagmirran (Heroic The Slave Pens)"
+      }
+    ],
+    "feet": [
+      {
+        "rank": "Best",
+        "item": "Glider's Sabatons of Agility",
+        "source": "Drop: Shadikith the Glider (Karazhan)"
+      },
+      {
+        "rank": "Best",
+        "item": "Edgewalker Longboots",
+        "source": "Drop: Moroes (Karazhan)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Fiend Slayer Boots",
+        "source": "Drop: Echo of Medivh (Karazhan)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Rapscallion Boots",
+        "source": "Drop: Shade of Aran (Karazhan)"
+      }
+    ],
+    "neck": [
+      {
+        "rank": "Best",
+        "item": "Jagged Bark Pendant",
+        "source": "Drop: Warp Splinter (The Botanica)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Saberclaw Talisman",
+        "source": "Drop: Shade of Aran (Karazhan)"
+      },
+      {
+        "rank": "High Agility",
+        "item": "Prestor's Talisman of Connivery",
+        "source": "Drop: Nefarian (Blackwing Lair)"
+      },
+      {
+        "rank": "Great",
+        "item": "Choker of Vile Intent",
+        "source": "Vendor: G'eras (25 Badges of Justice)"
+      }
+    ],
+    "ring": [
+      {
+        "rank": "Best",
+        "item": "Ring of the Recalcitrant",
+        "source": "Quest: Magtheridon's Head - Drops from Magtheridon (Magtheridon's Lair)"
+      },
+      {
+        "rank": "Best",
+        "item": "Pathfinder's Band",
+        "source": "World Drop: Outland"
+      },
+      {
+        "rank": "2nd Best",
+        "item": "Garona's Signet Ring",
+        "source": "Drop: The Curator (Karazhan)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Ravenclaw Band",
+        "source": "Drop: Talon King Ikiss (Sethekk Halls)"
+      }
+    ],
+    "trinket": [
+      {
+        "rank": "Best",
+        "item": "Dragonspine Trophy",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      },
+      {
+        "rank": "Best",
+        "item": "Bloodlust Brooch",
+        "source": "Vendor: G'eras (41 Badges of Justice)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Hourglass of the Unraveller",
+        "source": "Drop: Temporus (The Black Morass)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Abacus of Violent Odds",
+        "source": "Drop: Pathaleon the Calculator (The Mechanar)"
+      }
+    ],
+    "weapon_dual_wield": [
+      {
+        "rank": "Best MH",
+        "item": "Stellaris",
+        "source": "Drop: Nethermancer Sepethrea (The Mechanar)"
+      },
+      {
+        "rank": "Best MH",
+        "item": "Claw of the Watcher",
+        "source": "Drop: Shirrak the Dead Watcher (Auchenai Crypts)"
+      },
+      {
+        "rank": "Best OH",
+        "item": "Blade of the Unrequited",
+        "source": "Drop: Julianne (Karazhan)"
+      },
+      {
+        "rank": "Optional MH/OH",
+        "item": "Guile of Khoraazi",
+        "source": "Vendor: Paulsta'ats (Exalted, The Consortium)"
+      }
+    ],
+    "weapon_two_hand": [
+      {
+        "rank": "Best",
+        "item": "Legacy",
+        "source": "Drop: The Big Bad Wolf (Karazhan)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Mooncleaver",
+        "source": "Crafted: Master Axesmith Blacksmithing"
+      },
+      {
+        "rank": "Optional",
+        "item": "Sonic Spear",
+        "source": "Drop: Murmur (Shadow Labyrinth)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Quantum Blade",
+        "source": "Drop: Aeonus (Heroic The Black Morass)"
+      }
+    ],
+    "ranged": [
+      {
+        "rank": "Best",
+        "item": "Sunfury Bow of the Phoenix",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      },
+      {
+        "rank": "Best",
+        "item": "Barrel-Blade Longrifle",
+        "source": "Drop: Doomwalker (World Boss, Shadowmoon Valley)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Wolfslayer Sniper Rifle",
+        "source": "Drop: The Big Bad Wolf (Karazhan)"
+      },
+      {
+        "rank": "Optional",
+        "item": "Wrathtide Longbow",
+        "source": "Drop: Warlord Kalithresh (Heroic The Steamvault)"
+      }
+    ]
+  }
+}

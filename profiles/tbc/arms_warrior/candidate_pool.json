@@ -1,6 +1,17 @@
 {
   "head": [
     {
+      "item": "Warbringer Battle-Helm",
+      "source": "wowsims Phase 1 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
       "item": "Furious Gizmatic Goggles",
       "source": "Crafted: Engineering",
       "seen_in": [
@@ -40,6 +51,17 @@
   ],
   "neck": [
     {
+      "item": "Adamantine Chain of the Unbroken",
+      "source": "Drop: Quagmirran (The Slave Pens)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
       "item": "Pendant of the Perilous",
       "source": "Drop: (Serpentshrine Cavern)",
       "seen_in": [
@@ -78,6 +100,17 @@
     }
   ],
   "shoulder": [
+    {
+      "item": "Ragesteel Shoulders",
+      "source": "Crafted: Blacksmithing",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "Shoulderpads of the Stranger",
       "source": "Drop: Hydross the Unstable (Serpentshrine Cavern)",
@@ -122,6 +155,10 @@
       "source": "Crafted: Tailoring",
       "seen_in": [
         {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
           "phase": "P2",
           "rank": "Best"
         }
@@ -164,6 +201,17 @@
   ],
   "chest": [
     {
+      "item": "Warbringer Breastplate",
+      "source": "wowsims Phase 1 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
       "item": "Bloodsea Brigand's Vest",
       "source": "Drop: Fathom-Lord Karathress (Serpentshrine Cavern)",
       "seen_in": [
@@ -202,6 +250,17 @@
     }
   ],
   "wrist": [
+    {
+      "item": "Bladespire Warbands",
+      "source": "Drop: High King Maulgar (Gruul's Lair)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "Bracers of Eradication",
       "source": "Drop: The Lurker Below (Serpentshrine Cavern)",
@@ -242,6 +301,17 @@
   ],
   "hands": [
     {
+      "item": "Gauntlets of Martial Perfection",
+      "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
       "item": "Gloves of the Searing Grip",
       "source": "Drop: Al'ar (Tempest Keep)",
       "seen_in": [
@@ -281,6 +351,17 @@
   ],
   "waist": [
     {
+      "item": "Girdle of the Endless Pit",
+      "source": "Drop: Magtheridon (Magtheridon's Lair)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
       "item": "Belt of One-Hundred Deaths",
       "source": "Drop: Lady Vashj (Serpentshrine Cavern)",
       "seen_in": [
@@ -312,6 +393,17 @@
     }
   ],
   "legs": [
+    {
+      "item": "Skulker's Greaves",
+      "source": "Drop: Netherspite (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "Leggings of Murderous Intent",
       "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
@@ -352,6 +444,17 @@
   ],
   "feet": [
     {
+      "item": "Ironstriders of Urgency",
+      "source": "Drop: Nightbane (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
       "item": "Warboots of Obliteration",
       "source": "Drop: Morogrim Tidewalker (Serpentshrine Cavern)",
       "seen_in": [
@@ -391,9 +494,13 @@
   ],
   "ring": [
     {
-      "item": "Band of the Ranger-General",
-      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
+      "item": "Shapeshifter's Signet",
+      "source": "wowsims Phase 1 Arms preset",
       "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
         {
           "phase": "P2",
           "rank": "Best"
@@ -402,8 +509,19 @@
       "best_rank_seen": "Best"
     },
     {
-      "item": "Shapeshifter's Signet",
-      "source": "wowsims Phase 2 Arms preset",
+      "item": "Ring of a Thousand Marks",
+      "source": "Drop: Prince Malchezaar (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Band of the Ranger-General",
+      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
       "seen_in": [
         {
           "phase": "P2",
@@ -474,9 +592,28 @@
   ],
   "trinket": [
     {
+      "item": "Badge of the Swarmguard",
+      "source": "Drop: Battleguard Sartura (Ahn'Qiraj)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
       "item": "Dragonspine Trophy",
       "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)",
       "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
         {
           "phase": "P2",
           "rank": "Best"
@@ -491,17 +628,6 @@
         },
         {
           "phase": "P5",
-          "rank": "Best"
-        }
-      ],
-      "best_rank_seen": "Best"
-    },
-    {
-      "item": "Badge of the Swarmguard",
-      "source": "Drop: Battleguard Sartura (Ahn'Qiraj)",
-      "seen_in": [
-        {
-          "phase": "P2",
           "rank": "Best"
         }
       ],
@@ -535,6 +661,17 @@
     }
   ],
   "weapon_2h": [
+    {
+      "item": "Lionheart Champion",
+      "source": "Crafted: Blacksmithing",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "Twinblade of the Phoenix",
       "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
@@ -574,6 +711,17 @@
     }
   ],
   "ranged": [
+    {
+      "item": "Sunfury Bow of the Phoenix",
+      "source": "Drop: Prince Malchezaar (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "Serpent Spine Longbow",
       "source": "Drop: Lady Vashj (Serpentshrine Cavern)",

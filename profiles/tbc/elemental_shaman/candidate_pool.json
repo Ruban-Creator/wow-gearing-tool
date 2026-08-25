@@ -2,8 +2,12 @@
   "head": [
     {
       "item": "Cyclone Faceguard",
-      "source": "wowsims Phase 2 Elemental preset",
+      "source": "wowsims Phase 1 Elemental preset",
       "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
         {
           "phase": "P2",
           "rank": "Best"
@@ -39,6 +43,17 @@
     }
   ],
   "neck": [
+    {
+      "item": "Adornment of Stolen Souls",
+      "source": "Drop: Prince Malchezaar (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "The Sun King's Talisman",
       "source": "wowsims Phase 2 Elemental preset",
@@ -80,8 +95,12 @@
   "shoulder": [
     {
       "item": "Cyclone Shoulderguards",
-      "source": "wowsims Phase 2 Elemental preset",
+      "source": "wowsims Phase 1 Elemental preset",
       "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
         {
           "phase": "P2",
           "rank": "Best"
@@ -114,6 +133,10 @@
       "item": "Brute Cloak of the Ogre-Magi",
       "source": "Drop: High King Maulgar (Gruul's Lair)",
       "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
         {
           "phase": "P2",
           "rank": "Best"
@@ -149,6 +172,17 @@
     }
   ],
   "chest": [
+    {
+      "item": "Netherstrike Breastplate",
+      "source": "Crafted: Leatherworking",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "Cataclysm Chestpiece",
       "source": "wowsims Phase 2 Elemental preset",
@@ -188,6 +222,17 @@
     }
   ],
   "wrist": [
+    {
+      "item": "Netherstrike Bracers",
+      "source": "Crafted: Leatherworking",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "Mindstorm Wristbands",
       "source": "Drop: Al'ar (Tempest Keep)",
@@ -232,6 +277,10 @@
       "source": "Drop: Magtheridon (Magtheridon's Lair)",
       "seen_in": [
         {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
           "phase": "P2",
           "rank": "Best"
         }
@@ -266,6 +315,17 @@
     }
   ],
   "waist": [
+    {
+      "item": "Netherstrike Belt",
+      "source": "Crafted: Leatherworking",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "Belt of Blasting",
       "source": "Crafted: Tailoring",
@@ -306,6 +366,17 @@
   ],
   "legs": [
     {
+      "item": "Leggings of the Seventh Circle",
+      "source": "wowsims Phase 1 Elemental preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
       "item": "Cataclysm Leggings",
       "source": "wowsims Phase 2 Elemental preset",
       "seen_in": [
@@ -344,6 +415,17 @@
     }
   ],
   "feet": [
+    {
+      "item": "Boots of Foretelling",
+      "source": "Drop: Maiden of Virtue (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
     {
       "item": "Velvet Boots of the Guardian",
       "source": "Drop: The Lurker Below (Serpentshrine Cavern)",
@@ -388,7 +470,22 @@
       "source": "Drop: (Karazhan)",
       "seen_in": [
         {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
           "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Ring of Recurrence",
+      "source": "Drop: (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
           "rank": "Best"
         }
       ],
@@ -450,8 +547,12 @@
   "trinket": [
     {
       "item": "Icon of the Silver Crescent",
-      "source": "wowsims Phase 2 Elemental preset",
+      "source": "wowsims Phase 1 Elemental preset",
       "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
         {
           "phase": "P2",
           "rank": "Best"
@@ -463,6 +564,10 @@
       "item": "The Lightning Capacitor",
       "source": "Drop: Terestian Illhoof (Karazhan)",
       "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
         {
           "phase": "P2",
           "rank": "Best"
@@ -516,28 +621,48 @@
       "best_rank_seen": "Best"
     }
   ],
-  "weapon_2h": [
+  "mainhand": [
     {
-      "item": "The Nexus Key",
-      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
+      "item": "Nathrezim Mindblade",
+      "source": "Drop: Prince Malchezaar (Karazhan)",
       "seen_in": [
         {
-          "phase": "P2",
+          "phase": "P1",
           "rank": "Best"
         }
       ],
       "best_rank_seen": "Best"
     },
     {
-      "item": "Zhar'doom, Greatstaff of the Devourer",
-      "source": "Drop: Illidan Stormrage (Black Temple)",
+      "item": "Sunflare",
+      "source": "Drop: Kil'jaeden (Sunwell Plateau)",
       "seen_in": [
         {
-          "phase": "P3",
+          "phase": "P5",
           "rank": "Best"
-        },
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "offhand": [
+    {
+      "item": "Mazthoril Honor Shield",
+      "source": "wowsims Phase 1 Elemental preset",
+      "seen_in": [
         {
-          "phase": "P4",
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Heart of the Pit",
+      "source": "Drop: Brutallus (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
           "rank": "Best"
         }
       ],
@@ -549,6 +674,10 @@
       "item": "Totem of the Void",
       "source": "Drop: (The Mechanar)",
       "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
         {
           "phase": "P2",
           "rank": "Best"
@@ -576,26 +705,28 @@
       "best_rank_seen": "Best"
     }
   ],
-  "mainhand": [
+  "weapon_2h": [
     {
-      "item": "Sunflare",
-      "source": "Drop: Kil'jaeden (Sunwell Plateau)",
+      "item": "The Nexus Key",
+      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
       "seen_in": [
         {
-          "phase": "P5",
+          "phase": "P2",
           "rank": "Best"
         }
       ],
       "best_rank_seen": "Best"
-    }
-  ],
-  "offhand": [
+    },
     {
-      "item": "Heart of the Pit",
-      "source": "Drop: Brutallus (Sunwell Plateau)",
+      "item": "Zhar'doom, Greatstaff of the Devourer",
+      "source": "Drop: Illidan Stormrage (Black Temple)",
       "seen_in": [
         {
-          "phase": "P5",
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
           "rank": "Best"
         }
       ],

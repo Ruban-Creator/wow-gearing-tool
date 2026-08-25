@@ -81,11 +81,16 @@ SUPPORTED_CHARACTERS = {
     "Test-Enhancement-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "enhancement_shaman"),
 }
 
-# reference_bis/phase1.json doesn't exist yet (a real data-curation gap, not
-# a code gap - see the plan's Context section) - deliberately not offered
-# until that data exists, rather than let a user pick it and hit a
-# FileNotFoundError deep in the pipeline.
-PHASES = ["phase2", "phase3", "phase4", "phase5"]
+# Phase 1 real, not a gap anymore (2026-08-25): every profile's own
+# reference_bis/phase1.json now exists (rebuilt from wowsims' own real p1
+# gear_sets files for the 4 wowsims-preset-based profiles; Hunter's own
+# hand-curated Wowhead reference still needs a real Phase 1 entry - see
+# QUESTIONS.md). time_horizon.py's own bis_until_phase loop already ranged
+# over 1..FINAL_PHASE unconditionally from the start (its own docstring:
+# "a future phase1 file would be too [picked up for free], with no code
+# change needed") - this was genuinely only ever a missing-data gap, not a
+# code gap, confirmed by that loop needing zero changes here.
+PHASES = ["phase1", "phase2", "phase3", "phase4", "phase5"]
 
 # One global job slot, not per-character concurrency - the real sim-call
 # concurrency ceiling (valuation.SIMSERVER_POOL_SIZE=2) means two

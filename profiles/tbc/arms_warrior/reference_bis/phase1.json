@@ -1,0 +1,112 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Warbringer Battle-Helm",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Arms preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Adamantine Chain of the Unbroken",
+        "rank": "Best",
+        "source": "Drop: Quagmirran (The Slave Pens)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Ragesteel Shoulders",
+        "rank": "Best",
+        "source": "Crafted: Blacksmithing"
+      }
+    ],
+    "back": [
+      {
+        "item": "Vengeance Wrap",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Warbringer Breastplate",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Arms preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Bladespire Warbands",
+        "rank": "Best",
+        "source": "Drop: High King Maulgar (Gruul's Lair)"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Gauntlets of Martial Perfection",
+        "rank": "Best",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Girdle of the Endless Pit",
+        "rank": "Best",
+        "source": "Drop: Magtheridon (Magtheridon's Lair)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Skulker's Greaves",
+        "rank": "Best",
+        "source": "Drop: Netherspite (Karazhan)"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Ironstriders of Urgency",
+        "rank": "Best",
+        "source": "Drop: Nightbane (Karazhan)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Shapeshifter's Signet",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Arms preset"
+      },
+      {
+        "item": "Ring of a Thousand Marks",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Badge of the Swarmguard",
+        "rank": "Best",
+        "source": "Drop: Battleguard Sartura (Ahn'Qiraj)"
+      },
+      {
+        "item": "Dragonspine Trophy",
+        "rank": "Best",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      }
+    ],
+    "weapon_2h": [
+      {
+        "item": "Lionheart Champion",
+        "rank": "Best",
+        "source": "Crafted: Blacksmithing"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Sunfury Bow of the Phoenix",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      }
+    ]
+  }
+}

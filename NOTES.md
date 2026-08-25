@@ -2967,3 +2967,56 @@ Full sweep verified for Enhancement after the real fix: real Achieved BiS (Neck/
 confirmed to weight Armor Penetration, after Warrior and Hunter - not a Warrior-only stat by any
 means). Re-ran all four other pipelines (Hunter, Warrior, Druid, Elemental) afterward - all
 byte-identical by item order/content.
+
+**Same session, later: two real GUI bugs, found by the user actually running the packaged app
+(2026-08-25).** `gui/assets/style.css`'s `.modal-overlay{display:flex}` beat the browser's
+default `[hidden]{display:none}` at equal specificity - the SAME bug class already found and
+fixed once this session in `report_template.html`'s legend row, but in the GUI's own separate
+codebase, and pre-dating today entirely (present since the GUI was first built - just never
+exercised by a human clicking Run Report/Settings until now). Every modal rendered permanently
+open and unclosable. Fixed identically: `.modal-overlay[hidden]{display:none}` override wins the
+specificity fight. Worth remembering as a general pattern for this project now that it's shown up
+twice independently: **before shipping any new `hidden`-toggled UI element, check whether its own
+CSS (or an ancestor's) sets `display` unconditionally** - the browser default only wins when
+nothing else claims that property.
+
+Separately, real Phase 1 support: `PHASES`/`PHASE_LABELS` only ever listed phase2-5 -
+deliberate, documented (`reference_bis/phase1.json` didn't exist for any profile), not a code
+gap - `time_horizon.py`'s own `bis_until_phase` loop already ranged `1..FINAL_PHASE`
+unconditionally from the start, confirmed needing zero changes. Built real phase1.json for all 5
+profiles: the 4 wowsims-preset-based ones (Warrior/Druid/Elemental/Enhancement) via
+`build_wowsims_reference_bis.py` with a `phase1:pN_x.gear.json` argument added - the real p1 gear
+set files already existed in the vendored sim (`p1_arms.gear.json`, `p1_a.gear.json`,
+`p1.gear.json`, etc.), just never referenced. Hunter's own reference_bis has always been
+hand-curated from Wowhead (predates the wowsims-preset-builder decision) - built her real
+phase1.json the same way, from Wowhead's own real Phase 1 Survival Hunter BiS guide.
+
+**Real near-miss in that research, worth remembering**: guessing the Phase 1 URL by analogy to
+Phase 2's real, already-committed source (`/tbc/guide/classes/hunter/survival/dps-bis-gear-pve-
+phase-1`, swapping "2"→"1") resolved to a real page - but a **Wrath of the Lich King Classic**
+guide, not TBC (title said so explicitly: "Naxxramas, Obsidian Sanctum, Eye of Eternity" - no
+such raids exist in TBC). Wowhead apparently doesn't have a page at that exact slug for Phase 1
+specifically (unlike Phase 2 where it does), and the broken URL didn't 404 - it silently landed
+on a same-named guide from a different expansion. Caught by actually reading the resolved page
+title/intro text before transcribing anything, not by assuming a URL that "looks right" by
+pattern-matching a sibling page's real, already-verified URL is automatically safe. Real, correct
+URL found instead via Wowhead's own BiS guide index page
+(`/tbc/guides/classes/best-in-slot-guides-burning-crusade-classic`), which lists real per-class
+Phase 1 guide links directly - confirmed TBC-correct by title before use.
+
+candidate_pool.json for the 4 wowsims-based profiles needed a full rebuild (adds phase1 entries
+into the existing union-across-phases file) - confirmed via git diff that this only ever adds
+new "seen_in" phase entries to existing items (or reorders keys, a harmless side effect of
+Python dict insertion order shifting when phase1 is now processed first) and never removes real
+data - spot-checked specific items that looked like deletions in a raw line-diff and confirmed
+both were still present with an added P1 entry. Hunter's own `candidate_pool.json` needed no
+rebuild at all - her existing 79-item hand-curated pool already happened to include every real
+Phase 1 item, confirmed by checking a sample before assuming a rebuild was necessary.
+
+Ran real Phase 1 sweeps for all 5 characters, `check_ledger_consistency.py` clean on all 5,
+regression-verified Hunter's Phase 3 output stays byte-identical (by item order) after adding
+Phase 1 data. Rebuilt `dist/gearing-tool-gui.exe` with both fixes and verified live: launched the
+real exe, screenshotted it (confirmed via .NET `System.Drawing`/`user32.dll` P/Invoke from
+PowerShell - this session had real remote-control access to the user's machine), clicked through
+Run Report → Phase 1 → Run, and confirmed a real "Report ready" result registered in
+`reports.json` with a fresh timestamp - not just trusted from reading the code.

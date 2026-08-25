@@ -1,0 +1,119 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Cyclone Faceguard",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Elemental preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Adornment of Stolen Souls",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Cyclone Shoulderguards",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Elemental preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Brute Cloak of the Ogre-Magi",
+        "rank": "Best",
+        "source": "Drop: High King Maulgar (Gruul's Lair)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Netherstrike Breastplate",
+        "rank": "Best",
+        "source": "Crafted: Leatherworking"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Netherstrike Bracers",
+        "rank": "Best",
+        "source": "Crafted: Leatherworking"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Soul-Eater's Handwraps",
+        "rank": "Best",
+        "source": "Drop: Magtheridon (Magtheridon's Lair)"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Netherstrike Belt",
+        "rank": "Best",
+        "source": "Crafted: Leatherworking"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Leggings of the Seventh Circle",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Elemental preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Boots of Foretelling",
+        "rank": "Best",
+        "source": "Drop: Maiden of Virtue (Karazhan)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Ring of Unrelenting Storms",
+        "rank": "Best",
+        "source": "Drop: (Karazhan)"
+      },
+      {
+        "item": "Ring of Recurrence",
+        "rank": "Best",
+        "source": "Drop: (Karazhan)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Icon of the Silver Crescent",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Elemental preset"
+      },
+      {
+        "item": "The Lightning Capacitor",
+        "rank": "Best",
+        "source": "Drop: Terestian Illhoof (Karazhan)"
+      }
+    ],
+    "mainhand": [
+      {
+        "item": "Nathrezim Mindblade",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      }
+    ],
+    "offhand": [
+      {
+        "item": "Mazthoril Honor Shield",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Elemental preset"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Totem of the Void",
+        "rank": "Best",
+        "source": "Drop: (The Mechanar)"
+      }
+    ]
+  }
+}
