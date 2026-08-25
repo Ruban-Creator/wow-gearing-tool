@@ -35,6 +35,15 @@ def set_active_item_sets_go(path: str) -> None:
     _thresholds_cache = None  # a different profile's source invalidates the cache
 
 
+def _extract_thresholds(body: str) -> list[int]:
+    # Tab depth varies: a set's own inline Bonuses map is nested one level
+    # deeper (two tabs) than a top-level `var sharedFoo = map[...]{...}`
+    # bonus map a set can instead reference by name (one tab) - real bug
+    # found via Warrior's shared PvP-set bonus map, fixed by matching either
+    # depth rather than assuming the inline-only case's fixed two tabs.
+    return sorted(int(x) for x in re.findall(r'\n\t+(\d+):\s*func\(agent core\.Agent', body))
+
+
 def set_bonus_thresholds() -> dict[str, list[int]]:
     """Real bonus threshold piece counts per set name, parsed directly from
     the vendored sim's own Go source - never guessed. db.json has no
@@ -43,7 +52,24 @@ def set_bonus_thresholds() -> dict[str, list[int]]:
     e.g. sim/hunter/item_sets.go's `Bonuses: map[int32]core.ApplySetBonus{
     2: func(...){...}, 4: func(...){...} }` per set) is the only real
     source. Verified against a live in-game tooltip once (Rift Stalker
-    Armor: 2/4, matching exactly)."""
+    Armor: 2/4, matching exactly).
+
+    Two-stage, block-scoped parse (Stage 6.1 fix - a real bug, not
+    theoretical): the original single-regex version let a non-greedy `.*?`
+    between one set's "Name:" and the NEXT "Bonuses: map[...]{" literal
+    ANYWHERE later in the file skip straight over sets whose own Bonuses
+    is a bare variable reference (e.g. warrior/items.go's PvP sets share
+    one `sharedPvpSetBonus` map instead of each having an inline one) -
+    confirmed live: it silently attributed Warbringer Battlegear's real
+    T4 thresholds to "Oathbound's Savage Plate Battlegear"'s name instead,
+    and Warbringer Battlegear (and the PvP sets themselves) never appeared
+    in the result at all. Bounding each set's own search to its own
+    `core.NewItemSet(core.ItemSet{ ... })` block prevents that cross-block
+    skip; a bare-identifier `Bonuses: sharedFoo,` reference is then resolved
+    against that identifier's own top-level `var sharedFoo = map[int32]
+    core.ApplySetBonus{...}` definition, so shared-bonus sets (real, common
+    for PvP set pairs that share identical bonuses) get their real
+    thresholds too, not silently dropped."""
     global _thresholds_cache
     if _thresholds_cache is not None:
         return _thresholds_cache
@@ -54,12 +80,53 @@ def set_bonus_thresholds() -> dict[str, list[int]]:
             "set_active_item_sets_go() before any set-bonus code runs."
         )
     text = open(_active_item_sets_go, encoding="utf-8").read()
+
+    # Top-level shared bonus-map variables (var sharedFoo = map[int32]core.ApplySetBonus{...}),
+    # defined OUTSIDE any NewItemSet(...) block, resolved lazily below only
+    # for sets that actually reference one by name.
+    shared_bonus_bodies = {
+        m.group(1): m.group(2)
+        for m in re.finditer(r'var (\w+)\s*=\s*map\[int32\]core\.ApplySetBonus\{(.*?)\n\}',
+                              text, re.DOTALL)
+    }
+
+    # A THIRD real reference form found via Druid's own PvP sets (Stage 6.2,
+    # not theoretical): `Bonuses: someFunc(46437),` - a function CALL that
+    # returns a map[int32]core.ApplySetBonus, rather than a bare variable.
+    # The argument (a spell id, confirmed by reading the real function body)
+    # is only used inside the returned map for ExposeToAPL bookkeeping, not
+    # part of the threshold key structure - so the same function body's
+    # thresholds are correct regardless of which call site's argument is
+    # being resolved, and don't need to be re-parsed per call.
+    function_bonus_bodies = {
+        m.group(1): m.group(2)
+        for m in re.finditer(
+            r'func (\w+)\([^)]*\)\s*map\[int32\]core\.ApplySetBonus\s*\{.*?'
+            r'return map\[int32\]core\.ApplySetBonus\{(.*?)\n\t\}\n\}',
+            text, re.DOTALL)
+    }
+
     result = {}
-    for m in re.finditer(r'Name:\s*"([^"]+)".*?Bonuses:\s*map\[int32\]core\.ApplySetBonus\{(.*?)\n\t\},',
-                          text, re.DOTALL):
-        set_name = m.group(1)
-        body = m.group(2)
-        thresholds = sorted(int(x) for x in re.findall(r'\n\t\t(\d+):\s*func\(agent core\.Agent', body))
+    for block in re.finditer(r'core\.NewItemSet\(core\.ItemSet\{(.*?)\n\}\)', text, re.DOTALL):
+        body = block.group(1)
+        name_m = re.search(r'Name:\s*"([^"]+)"', body)
+        if not name_m:
+            continue
+        set_name = name_m.group(1)
+
+        inline_m = re.search(r'Bonuses:\s*map\[int32\]core\.ApplySetBonus\{(.*?)\n\t\}', body, re.DOTALL)
+        if inline_m:
+            thresholds = _extract_thresholds(inline_m.group(1))
+        else:
+            thresholds = []
+            call_m = re.search(r'Bonuses:\s*(\w+)\(', body)
+            if call_m and call_m.group(1) in function_bonus_bodies:
+                thresholds = _extract_thresholds(function_bonus_bodies[call_m.group(1)])
+            else:
+                ref_m = re.search(r'Bonuses:\s*(\w+),', body)
+                if ref_m and ref_m.group(1) in shared_bonus_bodies:
+                    thresholds = _extract_thresholds(shared_bonus_bodies[ref_m.group(1)])
+
         if thresholds:
             result[set_name] = thresholds
     _thresholds_cache = result

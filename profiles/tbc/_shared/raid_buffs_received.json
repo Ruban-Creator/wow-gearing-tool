@@ -1,6 +1,45 @@
 {
-  "raidBuffs": {},
-  "debuffs": {},
-  "partyBuffs": {},
-  "playerBuffs": {}
+  "raidBuffs": {
+    "arcaneBrilliance": true,
+    "powerWordFortitude": "TristateEffectImproved",
+    "shadowProtection": true,
+    "divineSpirit": "TristateEffectImproved",
+    "giftOfTheWild": "TristateEffectImproved",
+    "bloodlust": true
+  },
+  "debuffs": {
+    "judgementOfWisdom": true,
+    "judgementOfLight": true,
+    "improvedSealOfTheCrusader": "TristateEffectImproved",
+    "misery": true,
+    "curseOfElements": "TristateEffectImproved",
+    "bloodFrenzy": true,
+    "giftOfArthas": true,
+    "mangle": true,
+    "exposeArmor": "TristateEffectImproved",
+    "faerieFire": "TristateEffectImproved",
+    "sunderArmor": true,
+    "curseOfRecklessness": true,
+    "huntersMark": "TristateEffectImproved",
+    "exposeWeaknessUptime": 0.9,
+    "exposeWeaknessHunterAgility": 1080,
+    "insectSwarm": true
+  },
+  "partyBuffs": {
+    "ferociousInspiration": 1,
+    "leaderOfThePack": "TristateEffectImproved",
+    "drums": "LesserDrumsOfBattle",
+    "graceOfAirTotem": "TristateEffectImproved",
+    "strengthOfEarthTotem": "TristateEffectImproved",
+    "windfuryTotem": "TristateEffectRegular",
+    "totemTwisting": true,
+    "battleShout": "TristateEffectImproved"
+  },
+  "playerBuffs": {
+    "blessingOfKings": true,
+    "blessingOfSalvation": true,
+    "blessingOfWisdom": "TristateEffectImproved",
+    "blessingOfMight": "TristateEffectImproved",
+    "unleashedRage": true
+  }
 }

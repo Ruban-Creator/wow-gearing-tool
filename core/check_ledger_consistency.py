@@ -208,14 +208,17 @@ def check_html(ledger_data: dict, html_path: str, rep: Report) -> None:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--character", default="Lerynia-Thunderstrike")
+    parser.add_argument("--phase", default="phase3")
     parser.add_argument("--html", default=DEFAULT_HTML, help="Path to the published ledger HTML")
     parser.add_argument("--skip-html", action="store_true", help="Skip the HTML splice check")
     args = parser.parse_args()
 
     rep = Report()
 
-    tiered_path = os.path.join(REPO_ROOT, "data", "cache", "tiered_report.json")
-    ledger_path = os.path.join(REPO_ROOT, "data", "cache", "ledger_data.json")
+    char_cache_dir = os.path.join(REPO_ROOT, "data", "characters", args.character, "cache")
+    tiered_path = os.path.join(char_cache_dir, f"tiered_report_{args.phase}.json")
+    ledger_path = os.path.join(char_cache_dir, f"ledger_data_{args.phase}.json")
 
     if not os.path.exists(tiered_path):
         print(f"FATAL: {tiered_path} not found - run core/run_full_sweep_mv.py first")

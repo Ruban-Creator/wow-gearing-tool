@@ -1,0 +1,615 @@
+{
+  "head": [
+    {
+      "item": "Furious Gizmatic Goggles",
+      "source": "wowsims Phase 2 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Onslaught Battle-Helm",
+      "source": "wowsims Phase 3 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Coif of Alleria",
+      "source": "wowsims Phase 5 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "neck": [
+    {
+      "item": "Pendant of the Perilous",
+      "source": "wowsims Phase 2 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Choker of Serrated Blades",
+      "source": "wowsims Phase 3 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Hard Khorium Choker",
+      "source": "wowsims Phase 5 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "shoulder": [
+    {
+      "item": "Shoulderpads of the Stranger",
+      "source": "wowsims Phase 2 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Onslaught Shoulderblades",
+      "source": "wowsims Phase 3 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Demontooth Shoulderpads",
+      "source": "wowsims Phase 5 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "back": [
+    {
+      "item": "Vengeance Wrap",
+      "source": "wowsims Phase 2 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Shadowmoon Destroyer's Drape",
+      "source": "wowsims Phase 3 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Dory's Embrace",
+      "source": "wowsims Phase 4 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Cloak of Unforgivable Sin",
+      "source": "wowsims Phase 5 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "chest": [
+    {
+      "item": "Bloodsea Brigand's Vest",
+      "source": "wowsims Phase 2 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Onslaught Breastplate",
+      "source": "wowsims Phase 3 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Bladed Chaos Tunic",
+      "source": "wowsims Phase 5 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "wrist": [
+    {
+      "item": "Bracers of Eradication",
+      "source": "wowsims Phase 2 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Deadly Cuffs",
+      "source": "wowsims Phase 3 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Onslaught Bracers",
+      "source": "wowsims Phase 5 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "hands": [
+    {
+      "item": "Gloves of the Searing Grip",
+      "source": "wowsims Phase 2 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Onslaught Gauntlets",
+      "source": "wowsims Phase 3 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Thalassian Ranger Gauntlets",
+      "source": "wowsims Phase 5 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "waist": [
+    {
+      "item": "Belt of One-Hundred Deaths",
+      "source": "wowsims Phase 2 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Onslaught Belt",
+      "source": "wowsims Phase 5 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "legs": [
+    {
+      "item": "Leggings of Murderous Intent",
+      "source": "wowsims Phase 2 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Leggings of Divine Retribution",
+      "source": "wowsims Phase 3 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Leggings of the Immortal Night",
+      "source": "wowsims Phase 5 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "feet": [
+    {
+      "item": "Warboots of Obliteration",
+      "source": "wowsims Phase 2 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Shadowmaster's Boots",
+      "source": "wowsims Phase 3 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Onslaught Treads",
+      "source": "wowsims Phase 5 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "ring": [
+    {
+      "item": "Band of the Ranger-General",
+      "source": "wowsims Phase 2 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Shapeshifter's Signet",
+      "source": "wowsims Phase 2 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Stormrage Signet Ring",
+      "source": "wowsims Phase 3 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Unstoppable Aggressor's Ring",
+      "source": "wowsims Phase 3 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Signet of Primal Wrath",
+      "source": "wowsims Phase 4 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Band of Ruinous Delight",
+      "source": "wowsims Phase 5 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Hard Khorium Band",
+      "source": "wowsims Phase 5 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "trinket": [
+    {
+      "item": "Dragonspine Trophy",
+      "source": "wowsims Phase 2 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        },
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Badge of the Swarmguard",
+      "source": "wowsims Phase 2 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Madness of the Betrayer",
+      "source": "wowsims Phase 3 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Blackened Naaru Sliver",
+      "source": "wowsims Phase 5 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "weapon_2h": [
+    {
+      "item": "Twinblade of the Phoenix",
+      "source": "wowsims Phase 2 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Cataclysm's Edge",
+      "source": "wowsims Phase 3 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Apolyon, the Soul-Render",
+      "source": "wowsims Phase 5 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "ranged": [
+    {
+      "item": "Serpent Spine Longbow",
+      "source": "wowsims Phase 2 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Ancient Amani Longbow",
+      "source": "wowsims Phase 4 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Golden Bow of Quel'Thalas",
+      "source": "wowsims Phase 5 Arms preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ]
+}

@@ -34,6 +34,7 @@ import acquisition_gate  # noqa: E402
 import time_horizon  # noqa: E402
 import stat_weights  # noqa: E402
 import gem_optimizer  # noqa: E402
+import sweep_all_loot  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # This file is still Survival Hunter's own sweep script (Stage 6.1+ gives
@@ -53,7 +54,6 @@ SETTINGS_TEMPLATE = os.path.join(PROFILE_DIR, "settings_template.json")
 SETTINGS_2H = os.path.join(PROFILE_DIR, "settings_template_2h.json")
 POOL_PATH = os.path.join(PROFILE_DIR, "candidate_pool.json")
 DB_PATH = os.path.join(REPO_ROOT, "sim", "tbc-new", "assets", "database", "db.json")
-SWEEP_PATH = os.path.join(REPO_ROOT, "data", "cache", "full_sweep_candidates.json")
 MAX_WORKERS = 2  # matches valuation.SIMSERVER_POOL_SIZE - see its comment for why 4 was 7.4x slower
 
 SCREEN_ITERATIONS = 500  # cheap ranking pass across the whole pool
@@ -128,6 +128,14 @@ TYPE_TO_SLOT = {
     14: "ranged",
 }
 TWO_HAND = 4
+# Real HandType enum values (proto/common.proto) - Stage 6.2 needs the other
+# three, not just TWO_HAND, for a real one_hand_plus_offhand_item profile
+# (Balance Druid: a real, distinct "held in off-hand" item type exists,
+# HandTypeOffHand - not a weapon a caster would ever dual-wield, confirmed
+# separate from HandTypeOneHand in the proto).
+MAIN_HAND = 1
+ONE_HAND = 2
+OFF_HAND = 3
 
 # Display grouping for the per-slot leaderboards: ring1/ring2, trinket1/
 # trinket2, and mainhand/offhand share one pool each (an item can go in
@@ -167,10 +175,41 @@ def horizon_tag(r: dict) -> str:
     return f"  [BiS through P{phase}]" if r.get("final_phase") else f"  [BiS until P{phase}]"
 
 
-def slot_for_item(item: dict) -> str | None:
+def slot_for_item(item: dict, weapon_topology: str = "dual_wield") -> str | None:
+    """weapon_topology matters here (Stage 6.1/6.2, real bugs found and
+    fixed, not a hypothetical):
+    - dual_wield (Hunter): a 2H weapon is an OPTIONAL alternate to her real
+      spec - own side-pool ("weapon_2h", evaluated separately below under
+      its own melee-weave settings), never the normal tiered report. A 1H
+      weapon goes to the shared "weapon_dual_wield" pool (either hand).
+    - two_hand (Arms Warrior): 2H IS the real, only mainhand slot - routing
+      it into the Hunter-only side-pool would mean every one of his real
+      weapon candidates silently never appears in his main report at all.
+      A 1H weapon has no real slot for this topology (strict downgrade,
+      loses 2H-specialization talents) - excluded rather than guessed into
+      a nonexistent offhand pool.
+    - one_hand_plus_offhand_item (Balance Druid, Stage 6.2): mainhand and
+      offhand are REAL, INDEPENDENT single-item pools (not a shared
+      dual-wield pool - a caster's real offhand item, HandTypeOffHand, is
+      never itself a weapon she'd equip in mainhand). A 2H weapon is still
+      a real optional alternate here (her actual BiS weapon choice varies
+      by phase between a 2H staff and a 1H+offhand combo - confirmed from
+      real wowsims gear-set data) - same side-pool treatment as dual_wield."""
     t = item.get("type")
     if t == 13:
-        if item.get("handType") == TWO_HAND:
+        hand_type = item.get("handType")
+        is_two_hand = hand_type == TWO_HAND
+        if weapon_topology == "two_hand":
+            return "mainhand" if is_two_hand else None
+        if weapon_topology == "one_hand_plus_offhand_item":
+            if is_two_hand:
+                return "weapon_2h"  # own pool, own settings/baseline - see the 2H section below
+            if hand_type == OFF_HAND:
+                return "offhand"
+            if hand_type in (MAIN_HAND, ONE_HAND):
+                return "mainhand"
+            return None  # unknown/unclassified handType - exclude rather than guess
+        if is_two_hand:
             return "weapon_2h"  # own pool, own settings/baseline - see the 2H section below
         return "weapon_dual_wield"
     return TYPE_TO_SLOT.get(t)
@@ -209,12 +248,15 @@ def describe_source_and_tier(item: dict, npc_by_id: dict, zone_by_id: dict) -> t
     return "Source unclear", "Other", None
 
 
-def run_with_progress(fn, items: list, label: str, workers: int = MAX_WORKERS, log_every_pct: int = 5) -> list:
+def run_with_progress(fn, items: list, label: str, workers: int = MAX_WORKERS, log_every_pct: int = 5,
+                       progress_cb=None) -> list:
     """Same concurrent map as `ThreadPoolExecutor(...).map(fn, items)`, plus
     periodic "label: done/total (pct%)" progress lines - real precursor to
     the GUI progress indicator already noted in CLAUDE.md's future-scope
-    section (candidates screened so far / total, not a blank wait). Order of
-    the returned list is NOT the same as `items` (completion order, not
+    section (candidates screened so far / total, not a blank wait), now
+    real: progress_cb(dict) is called at the same cadence as the print, so a
+    GUI caller gets live stage/done/total/pct without scraping stdout. Order
+    of the returned list is NOT the same as `items` (completion order, not
     submission order) - both call sites here already only build a dict/set
     from the results, so this is safe; a future caller that needs input
     order preserved would need to carry an index through `fn` itself."""
@@ -232,17 +274,34 @@ def run_with_progress(fn, items: list, label: str, workers: int = MAX_WORKERS, l
             pct = done * 100 // total
             if done == total or (pct != last_logged_pct and pct % log_every_pct == 0):
                 print(f"{label}: {done}/{total} ({pct}%)")
+                if progress_cb:
+                    progress_cb({"stage": label, "done": done, "total": total, "pct": pct})
                 last_logged_pct = pct
     return results
 
 
-def main():
+def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_cb=None):
+    """name_realm e.g. "Lerynia-Thunderstrike"; phase e.g. "phase3" (matches
+    reference_bis/<phase>.json and gui/api.py's PHASES list). profile_dir
+    defaults to today's only real profile (Survival Hunter) - a future
+    Stage 6.1/6.2 caller passes a different one. progress_cb, if given, is
+    called with {"stage", "done", "total", "pct"} at the same points this
+    already prints progress to stdout (see run_with_progress) plus a few
+    milestone-only stages (no done/total, just "stage") bracketing the parts
+    of the run that aren't a parallel item sweep."""
+    def milestone(stage: str):
+        if progress_cb:
+            progress_cb({"stage": stage, "done": None, "total": None, "pct": None})
+
+    phase_num = int(phase.removeprefix("phase"))
+    milestone("Starting sweep")
     start = time.time()
     db = json.load(open(DB_PATH, encoding="utf-8"))
     npc_by_id = {n["id"]: n["name"] for n in db.get("npcs", [])}
     zone_by_id = {z["id"]: z["name"] for z in db.get("zones", [])}
 
-    char = json.load(open(os.path.join(REPO_ROOT, "data", "character.json"), encoding="utf-8"))
+    char_path = os.path.join(REPO_ROOT, "data", "characters", name_realm, "character.json")
+    char = json.load(open(char_path, encoding="utf-8"))
 
     # Stage 6 (multi-class support): load this profile's real manifest and
     # wire every per-profile subsystem's active state from it, once, here -
@@ -250,10 +309,30 @@ def main():
     # this active state rather than a hardcoded Hunter constant. For
     # Survival Hunter specifically this must reproduce today's exact
     # existing values (Stage 6.0's regression check) - see profile.json.
-    profile = json.load(open(os.path.join(PROFILE_DIR, "profile.json"), encoding="utf-8"))
-    stat_weights.set_active(stat_weights.load(PROFILE_DIR))
+    # Shadows the module-level defaults of the same name (both point at the
+    # same files when profile_dir == PROFILE_DIR, today's only real caller) -
+    # every nested function below (screen_one, confirm_one, ...) is defined
+    # inside main() and so closes over these locals, not the module globals,
+    # once a future Stage 6.1/6.2 caller passes a different profile_dir.
+    SETTINGS_TEMPLATE = os.path.join(profile_dir, "settings_template.json")
+    # Stage 6.2 finding: a separate 2H settings variant is a real, Hunter-
+    # specific need (her rotation itself changes - a "melee weave" APL
+    # constant only relevant when using a 2H weapon in melee as a Survival
+    # Hunter). A profile whose rotation doesn't change with weapon choice
+    # (Balance Druid: still just casting spells either way) has no reason to
+    # need a second settings file at all - falls back to the real
+    # SETTINGS_TEMPLATE itself rather than requiring every
+    # one_hand_plus_offhand_item profile to hand-maintain a redundant copy.
+    _settings_2h_path = os.path.join(profile_dir, "settings_template_2h.json")
+    SETTINGS_2H = _settings_2h_path if os.path.exists(_settings_2h_path) else SETTINGS_TEMPLATE
+    POOL_PATH = os.path.join(profile_dir, "candidate_pool.json")
+
+    profile = json.load(open(os.path.join(profile_dir, "profile.json"), encoding="utf-8"))
+    stat_weights.set_active(stat_weights.load(profile_dir))
+    time_horizon.set_current_phase(phase_num)
+    time_horizon.set_active_ref_dir(os.path.join(profile_dir, "reference_bis"))
     gc.set_active_default_gem(profile["primary_gem_id"])
-    chase_bonus = json.load(open(os.path.join(PROFILE_DIR, "chase_bonus_gems.json"), encoding="utf-8"))
+    chase_bonus = json.load(open(os.path.join(profile_dir, "chase_bonus_gems.json"), encoding="utf-8"))
     gem_optimizer.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
     set_bonus.set_active_item_sets_go(os.path.join(REPO_ROOT, "sim", "tbc-new", profile["set_bonus_go_source"]))
     mv.set_shared_slot_groups(profile["weapon_topology"])
@@ -276,29 +355,40 @@ def main():
     # Curated-pool items' real Wowhead source text/tier, so they show up in
     # the right tier bucket too, not just the sweep additions.
     curated_source_text = {}
-    p3_ref = json.load(open(os.path.join(PROFILE_DIR, "reference_bis", "phase3.json"), encoding="utf-8"))
-    for entries in p3_ref["slots"].values():
+    ref_path = os.path.join(profile_dir, "reference_bis", f"{phase}.json")
+    ref_bis = json.load(open(ref_path, encoding="utf-8"))
+    for entries in ref_bis["slots"].values():
         for e in entries:
             curated_source_text[e["item"]] = e["source"]
 
-    sweep_items = json.load(open(SWEEP_PATH, encoding="utf-8"))
+    # Pure sub-second filter, no sim calls - run fresh every time rather than
+    # trusting a possibly-stale cached file (this used to be a separate,
+    # easy-to-forget manual step; see the plan's Context section).
+    milestone("Building candidate pool")
+    sweep_path = sweep_all_loot.run(phase_num, profile_dir)
+    sweep_items = json.load(open(sweep_path, encoding="utf-8"))
     owned_by_id = {it["id"]: it for it in owned_items if it}
     meta_gem_id = opt.find_owned_meta_gem(owned_items)
     item_meta = {}  # item_id -> (source_text, tier)
     new_count = 0
 
-    # 2H weapons get their own pool, evaluated separately below (own
-    # settings variant - meleeWeave, own baseline with the offhand
-    # physically empty). They must NOT flow through the shared
-    # `candidates`/all_candidates machinery further down, which assumes one
-    # global SETTINGS_TEMPLATE and a normal DW offhand - exactly the "wrong
-    # number, not just worse" trap this was excluded from before.
+    # For a dual_wield profile (Hunter), 2H weapons get their own pool,
+    # evaluated separately below (own settings variant - meleeWeave, own
+    # baseline with the offhand physically empty) - they must NOT flow
+    # through the shared `candidates`/all_candidates machinery further down,
+    # which assumes one global SETTINGS_TEMPLATE and a normal DW offhand -
+    # exactly the "wrong number, not just worse" trap this was excluded
+    # from before. For a two_hand profile, slot_for_item() itself already
+    # routes 2H weapons straight to "mainhand" through the normal pipeline
+    # instead (Stage 6.1 fix) - this pool simply stays empty for such a
+    # profile, which is what correctly skips the whole Hunter-only 2H
+    # side-analysis section below.
     weapon_2h_candidates: list[opt.Candidate] = []
 
     for item in sweep_items:
         if item["id"] in curated_ids:
             continue
-        slot = slot_for_item(item)
+        slot = slot_for_item(item, profile["weapon_topology"])
         if slot is None:
             continue
         req_prof = idb.required_profession_name(item)
@@ -375,11 +465,27 @@ def main():
                 item_slot_label.setdefault(c.item_id, label)
 
     mv.set_slot_hints(candidates)
+    milestone("Computing baseline")
     baseline_config = opt.build_owned_config(owned_items)
     baseline_screen = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, SCREEN_ITERATIONS, opt.SEED)
-    # Deterministic (no Monte Carlo iterations involved - see valuation.get_agility),
-    # computed once and reused for every candidate below, never per-candidate.
-    baseline_agility = mv.valuation.get_agility(SETTINGS_TEMPLATE, baseline_config)
+    # Real bug found and fixed Stage 6.1: this flag used to be dead config
+    # (always computed regardless) - harmless for Warrior at first only by
+    # accident, because Hunter's own raid_buffs_overlay.json still had
+    # exposeWeaknessUptime/exposeWeaknessHunterAgility declared Hunter-side,
+    # so measured_ew_uptime() found nothing for a non-Hunter sim. Moving
+    # those into _shared/raid_buffs_received.json (this stage's own real
+    # boundary decision - Expose Weakness being up on the target affects
+    # everyone's damage, not just Lerynia's) made that accident stop being
+    # true: the debuff now shows up as active in EVERY profile's sim, so an
+    # ungated baseline_agility would compute a real number for Warrior too
+    # - one based on RUBÁN's own Agility, which has nothing to do with a
+    # debuff only LERYNIA casts. Actually gating on the flag now, not
+    # optional cleanup.
+    baseline_agility = None
+    if profile["raid_ap_contribution"]["enabled"]:
+        # Deterministic (no Monte Carlo iterations involved - see valuation.get_agility),
+        # computed once and reused for every candidate below, never per-candidate.
+        baseline_agility = mv.valuation.get_agility(SETTINGS_TEMPLATE, baseline_config)
     print(f"Baseline @ {SCREEN_ITERATIONS} iter (screening): combined={baseline_screen['combined']:.1f}, "
           f"Agility={baseline_agility}\n")
 
@@ -467,7 +573,7 @@ def main():
     def screen_one(c):
         return c, mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_screen, SCREEN_ITERATIONS, opt.SEED)
 
-    screened = run_with_progress(screen_one, all_candidates, "Screening")
+    screened = run_with_progress(screen_one, all_candidates, "Screening", progress_cb=progress_cb)
     print(f"[+{time.time()-start:.1f}s] Screened {len(screened)} candidates @ {SCREEN_ITERATIONS} iter")
 
     # --- Pick each (tier, slot) leaderboard from the screening results ---
@@ -537,7 +643,7 @@ def main():
         return c.item_id, mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_confirm,
                                         CONFIRM_ITERATIONS, opt.SEED, baseline_agility=baseline_agility)
 
-    confirmed_pairs = run_with_progress(confirm_one, to_resolve, "Confirming")
+    confirmed_pairs = run_with_progress(confirm_one, to_resolve, "Confirming", progress_cb=progress_cb)
     confirmed_by_id = dict(confirmed_pairs)
 
     # Escalate to the full 30k pass only if still not clear at 5k's own noise
@@ -577,7 +683,7 @@ def main():
         return c.item_id, mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_resolved,
                                         RESOLVE_ITERATIONS, opt.SEED, baseline_agility=baseline_agility)
 
-    resolved_pairs = run_with_progress(resolve_one, need_full_resolve, "Resolving")
+    resolved_pairs = run_with_progress(resolve_one, need_full_resolve, "Resolving", progress_cb=progress_cb)
     resolved_by_id = dict(resolved_pairs)
 
     for key, rows in by_tier_slot.items():
@@ -656,7 +762,7 @@ def main():
                                             baseline_config, candidates, RESOLVE_ITERATIONS, opt.SEED)
             return c.item_id, set_name, check
 
-        rescue_results = run_with_progress(rescue_one, rescue_candidates, "Sidegrade-checking")
+        rescue_results = run_with_progress(rescue_one, rescue_candidates, "Sidegrade-checking", progress_cb=progress_cb)
         for item_id, set_name, check in rescue_results:
             if check and not check["tied_within_noise"] and check["mv_if_set_broken"] > 0:
                 rescue_notes_by_item[item_id] = (
@@ -699,7 +805,7 @@ def main():
         return c.item_id, mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_screen,
                                         SCREEN_ITERATIONS, opt.SEED, baseline_agility=baseline_agility)
 
-    ap_only_pairs = run_with_progress(add_ap_only, screened_upgrades_needing_ap, "Raid-AP lookups")
+    ap_only_pairs = run_with_progress(add_ap_only, screened_upgrades_needing_ap, "Raid-AP lookups", progress_cb=progress_cb)
     ap_only_by_id = dict(ap_only_pairs)
 
     for key, rows in by_tier_slot.items():
@@ -762,7 +868,7 @@ def main():
     print("         for a total. A different unit entirely, not DPS, never added into Player.\n")
 
     if achieved_bis:
-        print("=== Achieved BiS (nothing in the Phase 3 pool beats these) ===")
+        print(f"=== Achieved BiS (nothing in the {phase} pool beats these) ===")
         for entry in achieved_bis:
             names = ", ".join(i["name"] for i in entry["items"])
             print(f"  {entry['slot']:<10} {names}")
@@ -856,7 +962,16 @@ def main():
 
     two_hand_out: list[dict] = []
     two_hand_meta: dict = {}
-    if weapon_2h_candidates:
+    # Explicit topology gate, not just "pool happens to be empty" - this
+    # whole section only means something for a profile with a real current
+    # offhand slot weighing an optional 2H alternate (dual_wield AND, since
+    # Stage 6.2, one_hand_plus_offhand_item - Balance Druid's real BiS
+    # weapon choice genuinely varies by phase between a 2H staff and a
+    # 1H+offhand combo). A two_hand profile's weapon_2h_candidates is
+    # already always empty by construction (slot_for_item routes 2H
+    # straight to "mainhand" for it), so this is defense-in-depth there,
+    # not the only thing preventing it firing.
+    if profile["weapon_topology"] != "two_hand" and weapon_2h_candidates:
         weave_dw_result = mv.valuation.evaluate(SETTINGS_2H, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
         no_weave_result = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
         print(f"=== 2H Weapon Options (melee weave rotation) ===")
@@ -875,7 +990,7 @@ def main():
             r = mv.valuation.evaluate(SETTINGS_2H, trial, SCREEN_ITERATIONS, opt.SEED)
             return c, trial, r
 
-        screened_2h = run_with_progress(screen_2h, weapon_2h_candidates, "Screening 2H weapons")
+        screened_2h = run_with_progress(screen_2h, weapon_2h_candidates, "Screening 2H weapons", progress_cb=progress_cb)
 
         rows_2h = []
         for c, trial, r in screened_2h:
@@ -900,7 +1015,7 @@ def main():
 
         to_resolve_2h = [r for r in rows_2h[:LEADERBOARD_SIZE]
                           if abs(r["mv"]) < mv.CLEAR_MARGIN_MULTIPLE * r["noise_stdev"]]
-        run_with_progress(resolve_2h_row, to_resolve_2h, "Resolving 2H")
+        run_with_progress(resolve_2h_row, to_resolve_2h, "Resolving 2H", progress_cb=progress_cb)
 
         real_upgrades_2h = [r for r in rows_2h if not r["tied_within_noise"] and r["mv"] > 0]
         top_2h = real_upgrades_2h[:TOP_N_2H]
@@ -945,12 +1060,20 @@ def main():
     elapsed = time.time() - start
     print(f"Elapsed: {elapsed:.1f}s")
 
-    out_path = os.path.join(REPO_ROOT, "data", "cache", "tiered_report.json")
+    out_dir = os.path.join(REPO_ROOT, "data", "characters", name_realm, "cache")
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, f"tiered_report_{phase}.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump({"baseline_screened": baseline_screen["combined"], "achieved_bis": achieved_bis,
                    "tiers": tiered_out, "two_hand": two_hand_out, "two_hand_meta": two_hand_meta}, f, indent=2)
     print(f"Wrote {out_path}")
+    milestone("Done")
+    return out_path
 
 
 if __name__ == "__main__":
-    main()
+    # Real CLI entry point is `gear best <character> <phase>` (cli/gear.py) -
+    # this direct-invocation fallback exists only for quick manual debugging
+    # against today's one real character/phase, matching the pipeline's
+    # exact behavior before this file took real arguments.
+    main("Lerynia-Thunderstrike", "phase3")

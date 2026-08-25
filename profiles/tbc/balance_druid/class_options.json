@@ -1,0 +1,9 @@
+{
+  "balanceDruid": {
+    "options": {
+      "classOptions": {
+        "innervateTarget": {}
+      }
+    }
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Onslaught Battle-Helm",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arms preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Choker of Serrated Blades",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arms preset"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Onslaught Shoulderblades",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arms preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Shadowmoon Destroyer's Drape",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arms preset"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Onslaught Breastplate",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arms preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Deadly Cuffs",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arms preset"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Onslaught Gauntlets",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arms preset"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of One-Hundred Deaths",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arms preset"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Leggings of Divine Retribution",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arms preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Shadowmaster's Boots",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arms preset"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Stormrage Signet Ring",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arms preset"
+      },
+      {
+        "item": "Unstoppable Aggressor's Ring",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arms preset"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Madness of the Betrayer",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arms preset"
+      },
+      {
+        "item": "Dragonspine Trophy",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arms preset"
+      }
+    ],
+    "weapon_2h": [
+      {
+        "item": "Cataclysm's Edge",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arms preset"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Serpent Spine Longbow",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Arms preset"
+      }
+    ]
+  }
+}

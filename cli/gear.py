@@ -49,11 +49,12 @@ def cmd_best(args):
     """Real pipeline now (was a Stage-1 stub) - both blockers it was waiting
     on are long resolved: Stage 2's Expose Weakness raid-vs-personal
     question (now the "Debuff" column, per-attacker) and a real gear
-    export. Thin wrapper - run_full_sweep_mv.main() takes no arguments,
-    it reads data/character.json and the candidate pool from their fixed
-    repo-relative paths and writes data/cache/tiered_report.json."""
+    export. Thin wrapper - run_full_sweep_mv.main(name_realm, phase) reads
+    data/characters/<name_realm>/character.json and writes
+    data/characters/<name_realm>/cache/tiered_report_<phase>.json."""
+    phase = _normalize_phase(args.phase)
     import run_full_sweep_mv
-    run_full_sweep_mv.main()
+    run_full_sweep_mv.main(args.character, phase)
 
 
 def cmd_character_list(args):
@@ -147,7 +148,9 @@ def main():
     p_sync.add_argument("character", nargs="?", default="Lerynia-Thunderstrike")
     p_sync.set_defaults(func=cmd_sync)
 
-    p_best = sub.add_parser("best", help="full MV sweep against the owned pool - writes data/cache/tiered_report.json")
+    p_best = sub.add_parser("best", help="full MV sweep against the owned pool - writes data/characters/<character>/cache/tiered_report_<phase>.json")
+    p_best.add_argument("character", nargs="?", default="Lerynia-Thunderstrike")
+    p_best.add_argument("phase", nargs="?", default="phase3")
     p_best.set_defaults(func=cmd_best)
 
     p_preset = sub.add_parser("preset", help="run a shipped .build.json preset through the sim")

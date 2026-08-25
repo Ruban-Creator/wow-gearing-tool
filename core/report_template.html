@@ -1,0 +1,495 @@
+<title>__REPORT_TITLE__</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Overpass:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Overpass+Mono:wght@400;500;600;700&display=swap');
+
+  :root{
+    --bg:#f2ecdd; --surface:#fbf8ef; --surface-2:#f6f0e2;
+    --ink:#2b2a22; --ink-muted:#6d6752; --ink-faint:#9a927a;
+    --border:#dcd2b8; --border-soft:#e8ded1;
+    --sage:#4f6d5c; --sage-bg:#e2e9de; --sage-strong:#2f4a3b;
+    --brass:#9c6f34; --brass-bg:#f0e2c4; --brass-strong:#7a5322;
+    --bad:#a1483c; --bad-bg:#f3e0dc;
+    /* WoW item-quality colors, toned to this palette's saturation - used
+       only for the BiS-until-Phase-N tier tag (green reuses --sage). */
+    --tier-blue:#3a6ea8; --tier-blue-bg:#dde6f0; --tier-blue-strong:#2b527d;
+    --tier-purple:#7c5aa8; --tier-purple-bg:#e8e0f0; --tier-purple-strong:#5c4080;
+    --tier-orange:#b8631f; --tier-orange-bg:#f3e2ce; --tier-orange-strong:#8a4a15;
+    --shadow: 0 1px 2px rgba(43,42,34,.06), 0 4px 12px rgba(43,42,34,.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1a1812; --surface:#221f17; --surface-2:#28241a;
+      --ink:#ece5d2; --ink-muted:#b0a689; --ink-faint:#7c7460;
+      --border:#3c3626; --border-soft:#2e2a1e;
+      --sage:#8bad99; --sage-bg:#25332a; --sage-strong:#a9c7b5;
+      --brass:#e0b46f; --brass-bg:#3a2e18; --brass-strong:#f0cb8e;
+      --bad:#e08b7e; --bad-bg:#3a221e;
+      --tier-blue:#7fa8d9; --tier-blue-bg:#1f2d3d; --tier-blue-strong:#a8c5e8;
+      --tier-purple:#b89ad9; --tier-purple-bg:#2a2038; --tier-purple-strong:#d0b8ea;
+      --tier-orange:#e0954f; --tier-orange-bg:#3a2818; --tier-orange-strong:#f0b378;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1a1812; --surface:#221f17; --surface-2:#28241a;
+    --ink:#ece5d2; --ink-muted:#b0a689; --ink-faint:#7c7460;
+    --border:#3c3626; --border-soft:#2e2a1e;
+    --sage:#8bad99; --sage-bg:#25332a; --sage-strong:#a9c7b5;
+    --brass:#e0b46f; --brass-bg:#3a2e18; --brass-strong:#f0cb8e;
+    --bad:#e08b7e; --bad-bg:#3a221e;
+    --tier-blue:#7fa8d9; --tier-blue-bg:#1f2d3d; --tier-blue-strong:#a8c5e8;
+    --tier-purple:#b89ad9; --tier-purple-bg:#2a2038; --tier-purple-strong:#d0b8ea;
+    --tier-orange:#e0954f; --tier-orange-bg:#3a2818; --tier-orange-strong:#f0b378;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"Overpass", system-ui, sans-serif;
+    font-size:15px; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:920px; margin:0 auto; padding:28px 20px 80px;}
+
+  .mono{font-family:"Overpass Mono", ui-monospace, monospace; font-variant-numeric:tabular-nums;}
+
+  /* ---------- Header ---------- */
+  header.top{
+    display:flex; flex-wrap:wrap; gap:18px 28px; align-items:flex-end;
+    justify-content:space-between;
+    border-bottom:2px solid var(--sage-strong);
+    padding-bottom:18px; margin-bottom:22px;
+  }
+  .title-block h1{
+    margin:0 0 4px; font-size:26px; font-weight:700; letter-spacing:.01em;
+  }
+  .title-block .sub{color:var(--ink-muted); font-size:13.5px;}
+  .title-block .sub b{color:var(--ink); font-weight:600;}
+
+  .stat-strip{display:flex; gap:16px; flex-wrap:wrap;}
+  .stat{
+    background:var(--surface); border:1px solid var(--border-soft); border-radius:8px;
+    padding:8px 14px; box-shadow:var(--shadow); min-width:108px;
+  }
+  .stat .k{font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-faint); font-weight:600;}
+  .stat .v{font-size:17px; font-weight:700; margin-top:2px;}
+  .stat .v.mono{font-size:16px;}
+
+  /* ---------- Legend ---------- */
+  .legend{
+    display:flex; flex-direction:column; gap:10px;
+    background:var(--surface-2); border:1px solid var(--border-soft); border-radius:10px;
+    padding:14px 16px; margin-bottom:26px; font-size:12.5px; color:var(--ink-muted);
+  }
+  .legend-row{display:flex; gap:12px; align-items:baseline;}
+  .legend-label{
+    flex:0 0 auto; white-space:nowrap; font-weight:700; font-size:11px;
+    text-transform:uppercase; letter-spacing:.04em; text-align:center;
+    min-width:88px; padding:3px 9px; border-radius:5px; align-self:center;
+  }
+  .legend-label.sage{background:var(--sage-bg); color:var(--sage-strong);}
+  .legend-label.brass{background:var(--brass-bg); color:var(--brass-strong);}
+  .legend-label.neutral{background:var(--surface); border:1px solid var(--border-soft); color:var(--ink-muted);}
+  .legend-label.bad{background:var(--bad-bg); color:var(--bad);}
+  .legend-desc{flex:1 1 auto; min-width:0; line-height:1.5;}
+
+  /* ---------- Tier nav ---------- */
+  nav.tiernav{
+    display:flex; flex-wrap:wrap; gap:8px; margin-bottom:30px;
+  }
+  nav.tiernav a{
+    font-size:12.5px; font-weight:600; text-decoration:none; color:var(--sage-strong);
+    background:var(--sage-bg); border:1px solid var(--border-soft);
+    padding:6px 11px; border-radius:20px; white-space:nowrap;
+  }
+  nav.tiernav a .n{color:var(--ink-faint); font-weight:500; margin-left:3px;}
+
+  /* ---------- Tier section ---------- */
+  section.tier{margin-bottom:38px; scroll-margin-top:16px;}
+  .tier-head{
+    display:flex; align-items:baseline; gap:10px; margin-bottom:14px;
+    border-bottom:1px solid var(--border); padding-bottom:8px;
+  }
+  .tier-head h2{
+    margin:0; font-size:18px; font-weight:700; letter-spacing:.01em;
+  }
+  .tier-head .count{
+    font-size:12px; color:var(--ink-faint); font-weight:500;
+  }
+
+  .slot-block{margin-bottom:18px;}
+  .slot-label{
+    font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.09em;
+    color:var(--ink-faint); margin:0 0 8px 2px;
+  }
+
+  .item-row{
+    display:grid;
+    grid-template-columns: 1fr auto auto;
+    gap:4px 16px;
+    align-items:center;
+    background:var(--surface); border:1px solid var(--border-soft); border-left:3px solid var(--sage);
+    border-radius:9px;
+    padding:10px 14px; margin-bottom:7px;
+    box-shadow:var(--shadow);
+  }
+  .item-row.set-rescue{border-left-color:var(--brass);}
+  .item-row.locked-row{border-left-color:var(--bad);}
+  .item-row .name-col{min-width:0;}
+  .item-name{font-weight:600; font-size:14.5px;}
+  .item-name .tag{
+    font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--ink-faint); background:var(--surface-2); border:1px solid var(--border-soft);
+    border-radius:4px; padding:1px 5px; margin-left:7px; vertical-align:1px;
+  }
+  .item-name .tag.tier-green{color:var(--sage-strong); background:var(--sage-bg); border-color:var(--border-soft);}
+  .item-name .tag.tier-blue{color:var(--tier-blue-strong); background:var(--tier-blue-bg); border-color:var(--border-soft);}
+  .item-name .tag.tier-purple{color:var(--tier-purple-strong); background:var(--tier-purple-bg); border-color:var(--border-soft);}
+  .item-name .tag.tier-orange{color:var(--tier-orange-strong); background:var(--tier-orange-bg); border-color:var(--border-soft);}
+  .pair-plus{color:var(--ink-faint); font-weight:400; margin:0 2px;}
+  .item-source{font-size:12px; color:var(--ink-muted); margin-top:2px;}
+
+  .wh-link{color:inherit; text-decoration:none; border-bottom:1px dashed var(--ink-faint);}
+  .wh-link:hover{border-bottom-color:var(--sage-strong); color:var(--sage-strong);}
+  .craft-link{border-bottom:none; font-size:12px; opacity:.75; vertical-align:1px;}
+  .craft-link:hover{opacity:1;}
+  .bis-text .name.wh-link{border-bottom-color:var(--sage);}
+  .bis-text .name.wh-link:hover{color:var(--sage-strong); border-bottom-color:var(--sage-strong);}
+
+  .delta{
+    display:flex; flex-direction:column; align-items:flex-end; min-width:78px;
+  }
+  .delta .k{font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-faint); font-weight:600;}
+  .delta .v{font-size:15.5px; font-weight:700;}
+  .delta.dps .v{color:var(--sage-strong);}
+  .delta.dps .v.neg{color:var(--bad);}
+  .delta.ap .v{color:var(--brass-strong);}
+  .delta.ap .v.neg{color:var(--bad);}
+  .delta .v.na{color:var(--ink-faint); font-weight:500; font-size:13px;}
+
+  .set-note{
+    grid-column:1 / -1;
+    background:var(--brass-bg); border:1px solid var(--border-soft); border-left:3px solid var(--brass);
+    border-radius:6px; padding:7px 11px; margin-top:2px;
+    font-size:12px; color:var(--ink); line-height:1.45;
+  }
+  .set-note b{color:var(--brass-strong); font-weight:700; text-transform:uppercase; font-size:10.5px; letter-spacing:.05em;}
+
+  .gate-note{
+    grid-column:1 / -1;
+    background:var(--bad-bg); border:1px solid var(--border-soft); border-left:3px solid var(--bad);
+    border-radius:6px; padding:7px 11px; margin-top:2px;
+    font-size:12px; color:var(--ink); line-height:1.45;
+  }
+  .gate-note b{color:var(--bad); font-weight:700; text-transform:uppercase; font-size:10.5px; letter-spacing:.05em;}
+  .item-name .lock{
+    font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--bad); background:var(--bad-bg); border:1px solid var(--border-soft);
+    border-radius:4px; padding:1px 5px; margin-left:7px; vertical-align:1px;
+  }
+
+  .more-row{font-size:12px; color:var(--ink-faint); padding:2px 4px 0; font-style:italic;}
+
+  /* ---------- Achieved BiS ---------- */
+  section.bis{margin-bottom:34px;}
+  .bis-head{
+    display:flex; align-items:baseline; gap:10px; margin-bottom:14px;
+    border-bottom:1px solid var(--border); padding-bottom:8px;
+  }
+  .bis-head h2{margin:0; font-size:18px; font-weight:700; letter-spacing:.01em; color:var(--sage-strong);}
+  .bis-head .count{font-size:12px; color:var(--ink-faint); font-weight:500;}
+  .bis-sub{font-size:12.5px; color:var(--ink-muted); margin:-8px 0 14px;}
+  .bis-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:9px;}
+  .bis-card{
+    display:flex; align-items:center; gap:10px;
+    background:var(--sage-bg); border:1px solid var(--border-soft); border-left:3px solid var(--sage);
+    border-radius:9px; padding:10px 13px;
+  }
+  .bis-check{
+    flex:none; width:22px; height:22px; border-radius:50%;
+    background:var(--sage); color:var(--surface);
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:700;
+  }
+  .bis-text .slot{font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--sage-strong); font-weight:700;}
+  .bis-text .name{font-size:13.5px; font-weight:600; line-height:1.3;}
+
+  .empty-tier{color:var(--ink-faint); font-size:13px; padding:6px 2px; font-style:italic;}
+
+  footer{
+    margin-top:46px; padding-top:16px; border-top:1px solid var(--border-soft);
+    font-size:11.5px; color:var(--ink-faint); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  }
+
+  @media (max-width:600px){
+    .item-row{grid-template-columns:1fr; row-gap:8px;}
+    .delta{flex-direction:row; justify-content:space-between; width:100%;}
+    header.top{align-items:flex-start;}
+    .legend-row{flex-direction:column; gap:4px;}
+    .legend-label{align-self:flex-start;}
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="top">
+    <div class="title-block">
+      <h1>__REPORT_TITLE__</h1>
+      <div class="sub">__REPORT_SUBTITLE__</div>
+    </div>
+    <div class="stat-strip">
+      <div class="stat">
+        <div class="k">Baseline DPS</div>
+        <div class="v mono" id="stat-baseline">–</div>
+      </div>
+      <div class="stat">
+        <div class="k">Sim commit</div>
+        <div class="v mono" id="stat-sha" style="font-size:13px;">–</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="legend">
+    <div class="legend-row">
+      <span class="legend-label sage">Player · DPS</span>
+      <span class="legend-desc">Your own personal damage-per-second gain vs. current gear — a real sim number.</span>
+    </div>
+    <div class="legend-row">
+      <span class="legend-label brass">Debuff · AP</span>
+      <span class="legend-desc">How much stronger/weaker your Expose Weakness debuff gets, per physical attacker in the raid — multiply by your raid's actual count for a total. A different unit entirely, never added into Player.</span>
+    </div>
+    <div class="legend-row">
+      <span class="legend-label neutral">Ties</span>
+      <span class="legend-desc">Ties within noise and already-owned items are excluded — every row here is a real, resolvable upgrade.</span>
+    </div>
+    <div class="legend-row">
+      <span class="legend-label bad">Locked</span>
+      <span class="legend-desc">Real upgrade, but reputation- or rating-gated below what you currently have.</span>
+    </div>
+  </div>
+
+  <section class="bis" id="bis-section" hidden>
+    <div class="bis-head">
+      <h2>Achieved BiS</h2>
+      <span class="count" id="bis-count"></span>
+    </div>
+    <div class="bis-sub" id="bis-sub"></div>
+    <div class="bis-grid" id="bis-grid"></div>
+  </section>
+
+  <nav class="tiernav" id="tiernav"></nav>
+
+  <div id="tiers"></div>
+
+  <section class="two-hand" id="two-hand-section" hidden>
+    <div class="tier-head">
+      <h2>2H Weapon Options (melee weave)</h2>
+      <span class="count" id="two-hand-count"></span>
+    </div>
+    <div class="bis-sub" id="two-hand-sub"></div>
+    <div id="two-hand-body"></div>
+  </section>
+
+
+  <footer>
+    <span id="footer-methodology"></span>
+    <span>Top 5 shown per slot per tier.</span>
+  </footer>
+</div>
+
+<script>
+const DATA = __REPORT_DATA_JSON__;
+
+function fmtDelta(v, kind){
+  if (v === null || v === undefined) return {text:'n/a', cls:'na'};
+  const sign = v >= 0 ? '+' : '';
+  const text = sign + v.toFixed(1);
+  const cls = v < 0 ? 'neg' : '';
+  return {text, cls};
+}
+
+function whLink(name, itemId, extraClass){
+  if (!itemId) return name;
+  const cls = 'wh-link' + (extraClass ? ' ' + extraClass : '');
+  return `<a class="${cls}" href="https://www.wowhead.com/tbc/item=${itemId}" target="_blank" rel="noopener noreferrer">${name}</a>`;
+}
+
+function craftLink(spellId){
+  if (!spellId) return '';
+  return ` <a class="wh-link craft-link" href="https://www.wowhead.com/tbc/spell=${spellId}" target="_blank" rel="noopener noreferrer" title="Crafting recipe">🔨</a>`;
+}
+
+function horizonTag(it){
+  if (it.bis_until_phase == null || !it.tier_color) return '';
+  const text = it.final_phase ? 'BiS through P' + it.bis_until_phase : 'BiS until P' + it.bis_until_phase;
+  return `<span class="tag tier-${it.tier_color}">${text}</span>`;
+}
+
+document.getElementById('stat-baseline').textContent = DATA.baseline_dps.toFixed(1) + ' DPS';
+document.getElementById('stat-sha').textContent = DATA.sim_commit_sha.slice(0, 10);
+
+document.getElementById('footer-methodology').textContent =
+  'Screened @ ' + DATA.screen_iterations + ' iterations, confirmed @ ' + DATA.confirm_iterations +
+  ' where borderline, resolved @ ' + DATA.resolve_iterations + ' where flagged.';
+
+const bisList = DATA.achieved_bis || [];
+if (bisList.length > 0) {
+  document.getElementById('bis-section').hidden = false;
+  document.getElementById('bis-count').textContent = bisList.length + ' slot' + (bisList.length === 1 ? '' : 's') + ' locked in';
+  document.getElementById('bis-sub').textContent =
+    'Nothing in the full Phase ' + DATA.current_phase + ' pool — every tier below, curated and swept — beats these. ' +
+    (DATA.current_phase < DATA.final_phase_num
+      ? 'Not going anywhere until Phase ' + (DATA.current_phase + 1) + '.'
+      : 'Not going anywhere for the rest of the expansion.');
+  const bisGrid = document.getElementById('bis-grid');
+  bisList.forEach(entry => {
+    entry.items.forEach(it => {
+      const card = document.createElement('div');
+      card.className = 'bis-card';
+      card.innerHTML = `
+        <div class="bis-check">&#10003;</div>
+        <div class="bis-text">
+          <div class="slot">${entry.slot}</div>
+          <div class="name">${whLink(it.name, it.item_id)}</div>
+        </div>
+      `;
+      bisGrid.appendChild(card);
+    });
+  });
+}
+
+const tiersEl = document.getElementById('tiers');
+const navEl = document.getElementById('tiernav');
+
+DATA.tiers.forEach((tier, ti) => {
+  const anchorId = 'tier-' + ti;
+  const itemCount = tier.slots.reduce((sum, s) => sum + s.items.length, 0);
+
+  const navLink = document.createElement('a');
+  navLink.href = '#' + anchorId;
+  navLink.innerHTML = tier.name.replace(/\s*\(.*\)/, '') + ' <span class="n">' + itemCount + '</span>';
+  navEl.appendChild(navLink);
+
+  const section = document.createElement('section');
+  section.className = 'tier';
+  section.id = anchorId;
+
+  const head = document.createElement('div');
+  head.className = 'tier-head';
+  head.innerHTML = '<h2>' + tier.name + '</h2><span class="count">' + itemCount + ' upgrade' + (itemCount === 1 ? '' : 's') + '</span>';
+  section.appendChild(head);
+
+  tier.slots.forEach(slotGroup => {
+    const block = document.createElement('div');
+    block.className = 'slot-block';
+
+    const label = document.createElement('div');
+    label.className = 'slot-label';
+    label.textContent = slotGroup.slot;
+    block.appendChild(label);
+
+    slotGroup.items.forEach(it => {
+      const row = document.createElement('div');
+      const dpsF = fmtDelta(it.mv);
+      const apF = fmtDelta(it.raid_ap_per_attacker);
+      const screenedTag = it.resolved ? '' : '<span class="tag">screened only</span>';
+      const locked = it.gate && !it.gate.satisfied;
+      const lockTag = locked ? '<span class="lock">locked</span>' : '';
+      const setRescue = (it.set_note || it.rescue_note) && !(!it.tied_within_noise && it.mv > 0);
+      row.className = 'item-row' + (locked ? ' locked-row' : setRescue ? ' set-rescue' : '');
+
+      row.innerHTML = `
+        <div class="name-col">
+          <div class="item-name">${whLink(it.name, it.item_id)}${craftLink(it.craft_spell_id)}${screenedTag}${lockTag}${horizonTag(it)}</div>
+          <div class="item-source">${it.source || 'Source unclear'}</div>
+        </div>
+        <div class="delta dps">
+          <div class="k">Player (DPS)</div>
+          <div class="v ${dpsF.cls}">${dpsF.text}</div>
+        </div>
+        <div class="delta ap">
+          <div class="k">Debuff (AP/ea)</div>
+          <div class="v ${apF.cls === 'na' ? 'na' : apF.cls}">${apF.text}</div>
+        </div>
+      `;
+
+      if (it.set_note) {
+        const note = document.createElement('div');
+        note.className = 'set-note';
+        note.innerHTML = '<b>Set bonus</b><br>' + it.set_note;
+        row.appendChild(note);
+      }
+
+      if (it.rescue_note) {
+        const note = document.createElement('div');
+        note.className = 'set-note';
+        note.innerHTML = '<b>Sidegrade</b><br>' + it.rescue_note;
+        row.appendChild(note);
+      }
+
+      if (it.gate) {
+        const note = document.createElement('div');
+        note.className = 'gate-note';
+        note.innerHTML = '<b>Not yet obtainable</b><br>' + it.gate.note;
+        row.appendChild(note);
+      }
+
+      block.appendChild(row);
+    });
+
+    if (slotGroup.more > 0) {
+      const more = document.createElement('div');
+      more.className = 'more-row';
+      more.textContent = '…and ' + slotGroup.more + ' more not shown.';
+      block.appendChild(more);
+    }
+
+    section.appendChild(block);
+  });
+
+  tiersEl.appendChild(section);
+});
+
+const twoHand = DATA.two_hand || [];
+const twoHandMeta = DATA.two_hand_meta || {};
+if (twoHand.length > 0) {
+  document.getElementById('two-hand-section').hidden = false;
+  document.getElementById('two-hand-count').textContent =
+    'top ' + twoHand.length + ' across all tiers';
+
+  const weaveGain = (twoHandMeta.weave_dw != null && twoHandMeta.no_weave_dw != null)
+    ? (twoHandMeta.weave_dw - twoHandMeta.no_weave_dw).toFixed(1) : null;
+  document.getElementById('two-hand-sub').innerHTML =
+    'Compared against weaving with your CURRENT dual-wield gear (' +
+    (twoHandMeta.weave_dw != null ? twoHandMeta.weave_dw.toFixed(1) : '?') + ' DPS' +
+    (weaveGain ? ', itself +' + weaveGain + ' over no-weave' : '') +
+    ') — not the no-weave baseline. On bosses that allow weaving, this is the real question: ' +
+    'does switching weapon help further, given you\'re already weaving.';
+
+  const twoHandBody = document.getElementById('two-hand-body');
+  const block = document.createElement('div');
+  block.className = 'slot-block';
+
+  twoHand.slice().sort((a, b) => b.mv - a.mv).forEach(it => {
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    const dpsF = fmtDelta(it.mv);
+    const screenedTag = it.resolved ? '' : '<span class="tag">screened only</span>';
+    row.innerHTML = `
+      <div class="name-col">
+        <div class="item-name">${whLink(it.name, it.item_id)}${craftLink(it.craft_spell_id)}${screenedTag}${horizonTag(it)}</div>
+        <div class="item-source">${it.tier}: ${it.source || 'Source unclear'}</div>
+      </div>
+      <div class="delta dps">
+        <div class="k">Player (DPS)</div>
+        <div class="v ${dpsF.cls}">${dpsF.text}</div>
+      </div>
+    `;
+    block.appendChild(row);
+  });
+  twoHandBody.appendChild(block);
+}
+
+</script>

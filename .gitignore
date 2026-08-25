@@ -4,6 +4,7 @@ __pycache__/
 data/cache/
 data/character.json
 data/characters/
+data/local_config.json
 wowsimcli*
 *.exe
 build/

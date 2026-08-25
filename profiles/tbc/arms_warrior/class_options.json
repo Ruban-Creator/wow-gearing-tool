@@ -1,0 +1,14 @@
+{
+  "dpsWarrior": {
+    "options": {
+      "classOptions": {
+        "defaultShout": "WarriorShoutBattle",
+        "defaultStance": "WarriorStanceBerserker",
+        "startingRage": 50,
+        "queueDelay": 250,
+        "stanceSnapshot": true,
+        "hasBsT2": true
+      }
+    }
+  }
+}

@@ -55,6 +55,24 @@ same failure mode and the same fix.
 - Rebuilt exe verified launching clean from a working directory with no
   relation to the repo at all (`C:\Users\Matthias`, not inside the repo
   tree), confirming the fix isn't coincidental.
+- **Run Report feature (2026-08-24)**: `gui/api.py` now reaches into `core/`
+  for the first time (`run_full_sweep_mv`, `build_ledger_data`,
+  `render_report`, `local_config`) via the same dynamic
+  `sys.path.insert()` + bare-`import` pattern already used for `ingest/`.
+  Confirmed before rebuilding that every module reachable from that new
+  import chain (`core/*.py`, `adapters/tbc/*.py`) is pure-stdlib - no new
+  third-party dependency needed adding to `hiddenimports` or
+  `requirements-gui.txt`. Rebuilt exe launched clean (process survived past
+  the point where a frozen-path import bug would have crashed it - the same
+  failure mode as the `os.getcwd()` bug above, since these new imports
+  happen eagerly at `Api()` construction, not lazily inside a method) and
+  rendered the real "Gearing Tool" window (confirmed via
+  `Get-Process | Select MainWindowTitle`, same technique as before).
 - **Still not done by a human**: actually clicking through the character
-  list / report links in the real rendered window. Automated checks confirm
-  it starts and has the right title, not that it looks/behaves right.
+  list / report links / new Run Report and Settings dialogs in the real
+  rendered window. Automated checks confirm it starts, has the right
+  title, and survives past its own import chain - not that it
+  looks/behaves right. The Run Report/Settings UI itself was click-tested
+  against the real `gui/assets/` files running under a plain browser with
+  pywebview's API mocked out (see the plan's Stage 6 note) - that covers
+  the JS/HTML/CSS logic, not the packaged exe's own native window chrome.

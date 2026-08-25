@@ -1,0 +1,112 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Nordrassil Headpiece",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Balance preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "The Sun King's Talisman",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Balance preset"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Nordrassil Wrath-Mantle",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Balance preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Brute Cloak of the Ogre-Magi",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Balance preset"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Nordrassil Chestpiece",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Balance preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Mindstorm Wristbands",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Balance preset"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Nordrassil Gauntlets",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Balance preset"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of Blasting",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Balance preset"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Spellstrike Pants",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Balance preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Velvet Boots of the Guardian",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Balance preset"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Ring of Recurrence",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Balance preset"
+      },
+      {
+        "item": "Band of Eternity",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Balance preset"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Icon of the Silver Crescent",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Balance preset"
+      },
+      {
+        "item": "Quagmirran's Eye",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Balance preset"
+      }
+    ],
+    "weapon_2h": [
+      {
+        "item": "The Nexus Key",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Balance preset"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Idol of the Raven Goddess",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Balance preset"
+      }
+    ]
+  }
+}

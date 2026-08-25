@@ -1,0 +1,112 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Furious Gizmatic Goggles",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arms preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Pendant of the Perilous",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arms preset"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Shoulderpads of the Stranger",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arms preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Vengeance Wrap",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arms preset"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Bloodsea Brigand's Vest",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arms preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Bracers of Eradication",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arms preset"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Gloves of the Searing Grip",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arms preset"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of One-Hundred Deaths",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arms preset"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Leggings of Murderous Intent",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arms preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Warboots of Obliteration",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arms preset"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Band of the Ranger-General",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arms preset"
+      },
+      {
+        "item": "Shapeshifter's Signet",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arms preset"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Dragonspine Trophy",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arms preset"
+      },
+      {
+        "item": "Badge of the Swarmguard",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arms preset"
+      }
+    ],
+    "weapon_2h": [
+      {
+        "item": "Twinblade of the Phoenix",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arms preset"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Serpent Spine Longbow",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Arms preset"
+      }
+    ]
+  }
+}

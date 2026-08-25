@@ -1,0 +1,623 @@
+{
+  "head": [
+    {
+      "item": "Nordrassil Headpiece",
+      "source": "wowsims Phase 2 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Thunderheart Headguard",
+      "source": "wowsims Phase 3 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Cover of Ursoc the Mighty",
+      "source": "wowsims Phase 5 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "neck": [
+    {
+      "item": "The Sun King's Talisman",
+      "source": "wowsims Phase 2 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Brooch of Nature's Mercy",
+      "source": "wowsims Phase 4 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Amulet of Unfettered Magics",
+      "source": "wowsims Phase 5 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "shoulder": [
+    {
+      "item": "Nordrassil Wrath-Mantle",
+      "source": "wowsims Phase 2 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Thunderheart Shoulderpads",
+      "source": "wowsims Phase 3 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Spaulders of Devastation",
+      "source": "wowsims Phase 5 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "back": [
+    {
+      "item": "Brute Cloak of the Ogre-Magi",
+      "source": "wowsims Phase 2 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Cloak of the Illidari Council",
+      "source": "wowsims Phase 3 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Tattered Cape of Antonidas",
+      "source": "wowsims Phase 5 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "chest": [
+    {
+      "item": "Nordrassil Chestpiece",
+      "source": "wowsims Phase 2 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Thunderheart Vest",
+      "source": "wowsims Phase 3 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        },
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "wrist": [
+    {
+      "item": "Mindstorm Wristbands",
+      "source": "wowsims Phase 2 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Bracers of Nimble Thought",
+      "source": "wowsims Phase 3 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Thunderheart Bands",
+      "source": "wowsims Phase 5 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "hands": [
+    {
+      "item": "Nordrassil Gauntlets",
+      "source": "wowsims Phase 2 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Thunderheart Handguards",
+      "source": "wowsims Phase 3 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Tranquil Moonlight Wraps",
+      "source": "wowsims Phase 5 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "waist": [
+    {
+      "item": "Belt of Blasting",
+      "source": "wowsims Phase 2 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Belt of the Crescent Moon",
+      "source": "wowsims Phase 3 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Thunderheart Cord",
+      "source": "wowsims Phase 5 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "legs": [
+    {
+      "item": "Spellstrike Pants",
+      "source": "wowsims Phase 2 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Leggings of Channeled Elements",
+      "source": "wowsims Phase 3 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Breeches of Natural Aggression",
+      "source": "wowsims Phase 5 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "feet": [
+    {
+      "item": "Velvet Boots of the Guardian",
+      "source": "wowsims Phase 2 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Naturewarden's Treads",
+      "source": "wowsims Phase 3 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Thunderheart Footwraps",
+      "source": "wowsims Phase 5 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "ring": [
+    {
+      "item": "Ring of Recurrence",
+      "source": "wowsims Phase 2 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Band of Eternity",
+      "source": "wowsims Phase 2 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Ring of Ancient Knowledge",
+      "source": "wowsims Phase 3 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Band of the Eternal Sage",
+      "source": "wowsims Phase 3 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Mana Attuned Band",
+      "source": "wowsims Phase 4 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Ring of Omnipotence",
+      "source": "wowsims Phase 5 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Loop of Forged Power",
+      "source": "wowsims Phase 5 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "trinket": [
+    {
+      "item": "Icon of the Silver Crescent",
+      "source": "wowsims Phase 2 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Quagmirran's Eye",
+      "source": "wowsims Phase 2 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Ashtongue Talisman of Equilibrium",
+      "source": "wowsims Phase 3 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "The Skull of Gul'dan",
+      "source": "wowsims Phase 3 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        },
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Hex Shrunken Head",
+      "source": "wowsims Phase 4 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Shifting Naaru Sliver",
+      "source": "wowsims Phase 5 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "weapon_2h": [
+    {
+      "item": "The Nexus Key",
+      "source": "wowsims Phase 2 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Zhar'doom, Greatstaff of the Devourer",
+      "source": "wowsims Phase 3 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "ranged": [
+    {
+      "item": "Idol of the Raven Goddess",
+      "source": "wowsims Phase 2 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        },
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "mainhand": [
+    {
+      "item": "Sunflare",
+      "source": "wowsims Phase 5 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "offhand": [
+    {
+      "item": "Heart of the Pit",
+      "source": "wowsims Phase 5 Balance preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ]
+}

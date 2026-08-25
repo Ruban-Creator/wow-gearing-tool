@@ -1,0 +1,119 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Cover of Ursoc the Mighty",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Balance preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Amulet of Unfettered Magics",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Balance preset"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Spaulders of Devastation",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Balance preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Tattered Cape of Antonidas",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Balance preset"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Thunderheart Vest",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Balance preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Thunderheart Bands",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Balance preset"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Tranquil Moonlight Wraps",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Balance preset"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Thunderheart Cord",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Balance preset"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Breeches of Natural Aggression",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Balance preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Thunderheart Footwraps",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Balance preset"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Ring of Omnipotence",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Balance preset"
+      },
+      {
+        "item": "Loop of Forged Power",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Balance preset"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "The Skull of Gul'dan",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Balance preset"
+      },
+      {
+        "item": "Shifting Naaru Sliver",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Balance preset"
+      }
+    ],
+    "mainhand": [
+      {
+        "item": "Sunflare",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Balance preset"
+      }
+    ],
+    "offhand": [
+      {
+        "item": "Heart of the Pit",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Balance preset"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Idol of the Raven Goddess",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Balance preset"
+      }
+    ]
+  }
+}

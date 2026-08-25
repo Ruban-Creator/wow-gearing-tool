@@ -36,20 +36,56 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import item_db as idb  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# Still Survival Hunter's own reference_bis - Stage 6 (multi-class support)
-# hasn't generalized this file yet (bis_until_phase is Hunter-only tagging
-# for now); update to a profile-driven REF_DIR when a second profile needs it.
-REF_DIR = os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter", "reference_bis")
 
-# The user's own real character is currently in Phase 3 - CLAUDE.md's
-# planned GUI phase toggle will need to change this (and the candidate
-# pool's own MAX_PHASE filter in sweep_all_loot.py) to view the ledger as
-# of a different "current" phase. Named here as a single constant rather
-# than a scattered literal so that toggle only has to change one thing;
-# not built yet, this is just keeping the seam ready.
-CURRENT_PHASE = 3
+# Which profile's reference_bis/ to read - settable per run (Stage 6.1's
+# first real second-profile test), same set_active()/get_active() pattern as
+# stat_weights.py: one real "active ref dir" set once at the start of a
+# pipeline run, failing loud if a caller forgets to set it rather than
+# silently reusing whichever profile happened to run last (that used to be
+# a real risk here - a hardcoded REF_DIR would have silently tagged a
+# Warrior sweep against Hunter's own reference lists).
+_ref_dir: str | None = None
+
+
+def set_active_ref_dir(path: str) -> None:
+    global _ref_dir, _phase_item_ranks_cache
+    _ref_dir = path
+    _phase_item_ranks_cache = None  # cached ranks are keyed to the old ref dir's content - stale cache would misreport
+
+
+def _ref_dir_active() -> str:
+    if _ref_dir is None:
+        raise RuntimeError(
+            "time_horizon.set_active_ref_dir() was never called - a pipeline entry point "
+            "must call it (with profile_dir/reference_bis) before any bis_until_phase/"
+            "tier_color scoring code runs."
+        )
+    return _ref_dir
+
+
+# Which phase the ledger is being built "as of" - settable per run (the
+# GUI's Run Report phase dropdown) rather than a fixed constant, same
+# set_active()/get_active() pattern as stat_weights.py: one real "current
+# phase" set once at the start of a pipeline run, read by many functions,
+# failing loud if a caller forgets to set it rather than silently reusing
+# whatever phase happened to run last.
 FINAL_PHASE = 5  # confirmed by Phase 5's own guide text ("the fifth and final phase of TBC")
-ALL_PHASES = tuple(range(CURRENT_PHASE, FINAL_PHASE + 1))
+_current_phase: int | None = None
+
+
+def set_current_phase(phase: int) -> None:
+    global _current_phase, _phase_item_ranks_cache
+    _current_phase = phase
+    _phase_item_ranks_cache = None  # bis_until_phase math depends on CURRENT_PHASE - stale cache would misreport
+
+
+def _current() -> int:
+    if _current_phase is None:
+        raise RuntimeError(
+            "time_horizon.set_current_phase() was never called - a pipeline entry point "
+            "must call it before any bis_until_phase/tier_color scoring code runs."
+        )
+    return _current_phase
 
 # WoW's own item-quality color language, reused here since it's already a
 # shared vocabulary: green (uncommon) < blue (rare) < purple (epic) <
@@ -89,15 +125,16 @@ def _load_phase_item_ranks() -> dict[int, dict[str, str]]:
     up to FINAL_PHASE - not hardcoded to (3,4,5). phase2.json
     already exists (built earlier for Stage 3's candidate pool) and is
     picked up here for free; a future phase1 file would be too, with no
-    code change needed, since CURRENT_PHASE won't always be 3 - per the
-    user, this tool should work starting from any phase a character is
-    actually in, not just the one it happened to be built during."""
+    code change needed, since the current phase (set_current_phase()) won't
+    always be 3 - per the user, this tool should work starting from any
+    phase a character is actually in, not just the one it happened to be
+    built during."""
     global _phase_item_ranks_cache
     if _phase_item_ranks_cache is not None:
         return _phase_item_ranks_cache
     result = {}
     for phase in range(1, FINAL_PHASE + 1):
-        path = os.path.join(REF_DIR, f"phase{phase}.json")
+        path = os.path.join(_ref_dir_active(), f"phase{phase}.json")
         if not os.path.exists(path):
             continue
         data = json.load(open(path, encoding="utf-8"))
@@ -113,8 +150,8 @@ def _load_phase_item_ranks() -> dict[int, dict[str, str]]:
 def lasts_until_phase(item_name: str, item_id: int | None = None) -> dict:
     """{"bis_until_phase": N or None, "final_phase": bool, "tier_color": str or None}.
 
-    Walks CURRENT_PHASE -> ... -> FINAL_PHASE. Absence from CURRENT_PHASE's
-    own table is treated as unknown, not disqualifying - the current
+    Walks the current phase (set via set_current_phase()) -> ... -> FINAL_PHASE.
+    Absence from the current phase's own table is treated as unknown, not disqualifying - the current
     phase's curated list is already known to have real completeness gaps
     (items our own sim finds as real upgrades that the guide's table just
     doesn't happen to rank), so skipping it there avoids under-claiming.
@@ -130,7 +167,7 @@ def lasts_until_phase(item_name: str, item_id: int | None = None) -> dict:
     label; that case was already obvious without a tag, per the user.
 
     tier_color follows WoW's own item-quality language, relative to
-    CURRENT_PHASE (per the user - green/blue/purple/orange should still
+    the current phase (per the user - green/blue/purple/orange should still
     make sense if this tool is ever run starting from Phase 1 or 2, not
     just today's Phase 3): green (BiS for the current phase only), blue
     (one more phase), purple (two or more additional phases - in
@@ -141,12 +178,13 @@ def lasts_until_phase(item_name: str, item_id: int | None = None) -> dict:
     starts"). None when bis_until_phase is None. item_id is optional only
     so old callers don't break; passing it is what unlocks the orange
     tier - without it a FINAL_PHASE-lasting item always reads purple."""
+    current_phase = _current()
     by_phase = _load_phase_item_ranks()
     bis_until = None
-    for phase in ALL_PHASES:
+    for phase in range(current_phase, FINAL_PHASE + 1):
         rank = by_phase.get(phase, {}).get(item_name)
         if rank is None:
-            if phase == CURRENT_PHASE:
+            if phase == current_phase:
                 continue
             break
         if _is_true_bis(rank):
@@ -156,11 +194,11 @@ def lasts_until_phase(item_name: str, item_id: int | None = None) -> dict:
 
     final_phase = bis_until == FINAL_PHASE
     tier_color = None
-    if bis_until == CURRENT_PHASE:
+    if bis_until == current_phase:
         tier_color = "green"
-    elif bis_until == CURRENT_PHASE + 1:
+    elif bis_until == current_phase + 1:
         tier_color = "blue"
-    elif bis_until is not None and bis_until >= CURRENT_PHASE + 2:
+    elif bis_until is not None and bis_until >= current_phase + 2:
         origin_phase = None
         if item_id is not None:
             item = idb.by_id(item_id)

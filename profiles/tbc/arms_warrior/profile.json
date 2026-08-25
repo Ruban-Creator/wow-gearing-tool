@@ -1,0 +1,15 @@
+{
+  "class": "warrior",
+  "spec": "arms",
+  "weapon_topology": "two_hand",
+  "primary_gem_stat_id": "0",
+  "primary_gem_id": 32193,
+  "distance_from_target": 25,
+  "raid_ap_contribution": {
+    "enabled": false,
+    "note": "Warriors have no Expose-Weakness-style analytical raid-AP model - Sunder Armor is an enemy-side debuff a solo sim already benefits from directly (see CLAUDE.md's Stage 6 finding). This flag isn't actually read by run_full_sweep_mv.py today (confirmed - it always computes the raid-AP column regardless), but it degrades correctly anyway since expose_weakness.measured_ew_uptime() looks for Expose Weakness's real spell id and finds nothing for a Warrior sim."
+  },
+  "set_bonus_go_source": "sim/warrior/items.go",
+  "apl_source": "ui/warrior/dps/apls/arms.apl.json",
+  "apl_note": "Unlike Hunter's hand-embedded TypeSimple rotation, Arms Warrior uses the sim's real TypeAPL system - confirmed against proto/apl.proto that player.rotation is one shared APLRotation message across every class (type/simple/prepullActions/priorityList/groups/valueVariables all at the same top level), so arms.apl.json's raw file content is already a complete, valid player.rotation value verbatim - no transform needed."
+}

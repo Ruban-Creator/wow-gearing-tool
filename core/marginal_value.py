@@ -111,6 +111,7 @@ def mv_single(settings_path: str, baseline_config: list[dict], candidate: "opt.C
 
     best = None
     best_trial = None
+    sim_error = None
     for slot in slots:
         slot_idx = gc.SLOT_ORDER.index(slot)
         if opt.is_unique_conflict(baseline_config, slot_idx, candidate.item_id):
@@ -119,13 +120,30 @@ def mv_single(settings_path: str, baseline_config: list[dict], candidate: "opt.C
             continue
         trial = list(baseline_config)
         trial[slot_idx] = candidate.as_entry()
-        result = valuation.evaluate(settings_path, trial, iterations, seed)
+        try:
+            result = valuation.evaluate(settings_path, trial, iterations, seed)
+        except RuntimeError as e:
+            # Real bug found and fixed Stage 6.1 (not theoretical): some
+            # items with no classAllowlist in the DB still have a per-item
+            # Go effect that unconditionally type-asserts a SPECIFIC class's
+            # Agent (e.g. Beast-tamer's Shoulders' hunter.Pet buff panics
+            # for any non-Hunter - "interface conversion: *dps.DpsWarrior is
+            # not hunter.HunterAgent"). Neither the DB nor a static
+            # exclusion list can enumerate every such item ahead of time
+            # (they're scattered across each class's own vendored Go
+            # source, keyed by item id, not by any DB field) - so this
+            # candidate is excluded, honestly, with the real error message,
+            # same as any other unusable candidate, rather than one bad
+            # item crashing the whole multi-candidate sweep.
+            sim_error = str(e)
+            continue
         if best is None or result["combined"] > best["combined"]:
             best = result
             best_trial = trial
 
     if best is None:
-        return {"name": candidate.name, "excluded_reason": "unique conflict in every candidate slot"}
+        reason = f"sim error: {sim_error}" if sim_error else "unique conflict in every candidate slot"
+        return {"name": candidate.name, "excluded_reason": reason}
 
     delta = best["combined"] - baseline_result["combined"]
     noise = delta_noise(baseline_result, best, iterations)

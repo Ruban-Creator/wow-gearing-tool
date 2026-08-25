@@ -120,14 +120,40 @@ def update_acquisition_status(reputation: dict, arena_teams: list) -> None:
         json.dump(status, f, indent=2)
 
 
-def resolve_items(raw_items: list[dict], item_db: dict[int, dict]) -> tuple[list[dict], list[dict]]:
+def resolve_items(raw_items: list[dict], item_db: dict[int, dict],
+                   preserve_positions: bool = False) -> tuple[list[dict], list[dict]]:
+    """preserve_positions=True is required for equipped items - real bug found
+    and fixed 2026-08-25 testing against Rubán-Thunderstrike (a 2H-weapon
+    Warrior, the first real character in this project with a genuinely empty
+    equipment slot - Lerynia has all 17 filled, so this never surfaced
+    before). EquipmentSpec.items is a real, fixed 17-slot positional array
+    (confirmed from WowSimsExporter's own Lua source, see NOTES.md) - the
+    whole rest of the pipeline (gear_config.SLOT_ORDER-indexed lookups in
+    optimizer.py/run_full_sweep_mv.py) assumes `equipped["items"][i]`
+    corresponds to `SLOT_ORDER[i]`. The old unconditional `continue` on an
+    empty/unresolved slot silently DROPPED it instead of keeping a
+    placeholder, collapsing the list and shifting every later real item up
+    by one position - confirmed live: Rubán's real empty offhand (raw index
+    15, a genuine `None` - he wields a 2H weapon) was dropped, which shifted
+    his real ranged weapon (raw index 16, Xavian Stiletto) into the
+    offhand-display position instead. Bags/bank callers correctly keep
+    preserve_positions=False (default) - those aren't slot-fixed, dropping
+    an empty/unresolvable entry there is correct, not a bug."""
     resolved, unresolved = [], []
     for it in raw_items or []:
         if not it or it.get("id") is None:
+            if preserve_positions:
+                resolved.append(None)
             continue
         db_item = item_db.get(it["id"])
         if db_item is None:
             unresolved.append(it)
+            if preserve_positions:
+                # Keep it in position even though we can't name it - dropping
+                # it would silently treat a REAL equipped item as an empty
+                # slot, corrupting every later slot's position exactly like
+                # the empty-slot bug this function now avoids.
+                resolved.append(it)
         else:
             resolved.append({**it, "name": db_item.get("name")})
     return resolved, unresolved
@@ -144,7 +170,7 @@ def build(name_realm: str) -> dict:
     item_db = load_item_db()
 
     equipped_raw = char.get("gear", {}).get("items", [])
-    equipped, equipped_unresolved = resolve_items(equipped_raw, item_db)
+    equipped, equipped_unresolved = resolve_items(equipped_raw, item_db, preserve_positions=True)
 
     gt = find_gt_companion(name_realm) or {}
     bags, bags_unresolved = resolve_items(gt.get("bags", []), item_db)

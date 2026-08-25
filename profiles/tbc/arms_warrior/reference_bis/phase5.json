@@ -1,0 +1,112 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Coif of Alleria",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Arms preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Hard Khorium Choker",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Arms preset"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Demontooth Shoulderpads",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Arms preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Cloak of Unforgivable Sin",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Arms preset"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Bladed Chaos Tunic",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Arms preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Onslaught Bracers",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Arms preset"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Thalassian Ranger Gauntlets",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Arms preset"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Onslaught Belt",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Arms preset"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Leggings of the Immortal Night",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Arms preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Onslaught Treads",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Arms preset"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Band of Ruinous Delight",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Arms preset"
+      },
+      {
+        "item": "Hard Khorium Band",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Arms preset"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Dragonspine Trophy",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Arms preset"
+      },
+      {
+        "item": "Blackened Naaru Sliver",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Arms preset"
+      }
+    ],
+    "weapon_2h": [
+      {
+        "item": "Apolyon, the Soul-Render",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Arms preset"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Golden Bow of Quel'Thalas",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Arms preset"
+      }
+    ]
+  }
+}

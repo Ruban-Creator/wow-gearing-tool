@@ -245,11 +245,107 @@ is gating that one model behind a per-profile flag (default off), not building N
   data, and a genuine fresh in-game re-export/re-sync is still the real fix needed before trusting
   `data/character.json` for anything beyond this test.
 
-**Stage 6.1 (Arms Warrior) is next, not started** - real prerequisite: `Rubán-Thunderstrike` needs
-a fresh `gear sync` (only identity-level data confirmed so far) before his real gear can be simmed.
-See the plan file for the full per-stage design (class_options/stat_weights/raid-buffs-overlay
-sourced from wowsims' own shipped `warrior/dps/presets.ts`, real APL from
-`warrior/dps/apls/arms.apl.json`, hand-curated `reference_bis/` from Wowhead).
+**Stage 6.1 (Arms Warrior) is done, real-verified, not just designed (2026-08-25)** — full plan at
+`C:\Users\Matthias\.claude\plans\staged-purring-lynx.md` (approved, mid-session revision: reference
+BiS prefers wowsims' own shipped preset gear sets where they exist over hand-curating from
+Wowhead, since they turned out real, plain-JSON, and far less error-prone to consume than
+expected — Wowhead curation stays the fallback only for a slot a preset leaves genuinely
+unresolved). `profiles/tbc/arms_warrior/` built end to end: `profile.json` (`weapon_topology:
+"two_hand"`, real Strength gem `32193` "Bold Crimson Spinel" — same tier/phase/quality as
+Lerynia's own Agility gem, found in the DB not guessed), `class_options.json`, `consumables.json`,
+`stat_weights.json` (real P3-P5 Arms EP weights from `warrior/dps/presets.ts`), `loot_eligibility.json`
+(class/armor/weapon/ranged-type allowlists, generalized from Hunter's own hardcoded constants),
+`reference_bis/phase2-5.json` + `candidate_pool.json` (resolved from `warrior/dps/gear_sets/pN_arms.gear.json`
+via a new `core/build_wowsims_reference_bis.py`), `settings_template.json` (built once via a new
+`core/build_profile_settings.py` driver — the first profile with no pre-existing hand-maintained
+file to diff against, so verified via a real sim call instead: 1749.9 DPS, real per-spell action
+log confirming the APL rotation actually fires, not just parses).
+
+Real shared-code fixes this stage forced, not incidental — every one regression-checked against
+Hunter's own pipeline staying byte-identical:
+- `run_full_sweep_mv.py`'s `slot_for_item()` was hardcoded to route every 2H weapon into Hunter's
+  own optional melee-weave side-pool — for a `two_hand` profile, 2H is the *only* real mainhand
+  slot; would have silently kept every one of Rubán's real weapon candidates out of his own
+  tiered report entirely. Now topology-aware.
+- `ingest/build_character.py`'s `resolve_items()` silently dropped any empty/unresolvable
+  equipped-item slot instead of keeping a positional placeholder — corrupted the positional
+  alignment of every slot after the first gap (confirmed live: his real empty offhand got
+  dropped, shifting his real ranged weapon into the offhand display position). Fixed via a
+  `preserve_positions` flag, equipped-items-only; bags/bank correctly unaffected.
+- `core/set_bonus.py`'s regex silently misattributed one set's real bonus data to a *different*
+  set's name whenever a set shares its bonus by Go variable reference instead of an inline map
+  (Warrior's real PvP sets do this) — his own real, already-equipped Gladiator pieces would have
+  had an invisible set bonus. Fixed via a block-scoped, reference-resolving parse.
+- `core/marginal_value.py`'s `mv_single()` now catches a real sim-engine crash per-candidate
+  (some items have no DB classAllowlist but still register a Go effect that hard-crashes for the
+  wrong class — e.g. Beast-tamer's Shoulders assumes a Hunter agent) and excludes just that
+  candidate, honestly, instead of one bad item killing the whole multi-candidate sweep.
+- `profile.json`'s `raid_ap_contribution.enabled` flag actually gates `run_full_sweep_mv.py`'s
+  raid-AP computation now — it used to be dead config that only "worked" by accident because
+  Hunter's Expose-Weakness debuff settings hadn't been generalized into `_shared/` yet; once they
+  were (this stage's own real raid-buffs-boundary decision), a Warrior sim would have started
+  reporting a real-looking but meaningless AP number based on *his* Agility instead of Lerynia's.
+- `core/time_horizon.py`'s `REF_DIR` and `core/sweep_all_loot.py`'s class/armor/weapon eligibility
+  constants are both profile-driven now (`set_active_ref_dir()`, `loot_eligibility.json`), not
+  hardcoded to Hunter.
+
+`gui/api.py`'s `SUPPORTED_CHARACTERS` is now a real name→profile_dir map (not a flat set) —
+`Rubán-Thunderstrike` shows `has_profile: true` and Run Report works for him end to end through
+the actual GUI `Api` layer (verified directly, not just via the CLI path). See `QUESTIONS.md` for
+the full list of real judgment calls (gem/stat-weight sourcing, the `raid_buffs_overlay.json`
+shared/per-profile boundary, `consumables.json`'s alternate-item-list placeholders) worth a look
+when there's time, none blocking.
+
+**Stage 6.2 (Balance Druid, Béarforceone-Thunderstrike) is done, real-verified (2026-08-25)** —
+same plan file, same standard as 6.1: every stage backed by a real STOP checkpoint, not assumed.
+`profiles/tbc/balance_druid/` built end to end (real Phase 3 EP weights and Spell-Damage-family
+gem `Runed Crimson Spinel`/32196 - same tier/phase/quality convention as the other two profiles'
+own gem picks; `weapon_topology: "one_hand_plus_offhand_item"`). Real sim call: 1028.8 DPS + 3
+real Treant summons (Force of Nature), 19 distinct real actions confirming the APL fires. Full
+sweep: no crashes, real report rendered and opened through the actual GUI `Api.run_report()`
+call. `check_ledger_consistency.py`: 1295 assertions, only the same already-understood
+"achieved_bis empty" non-bug both non-Hunter characters hit (a large, not-yet-optimized candidate
+pool genuinely has no unbeatable slot yet - not a pipeline defect).
+
+Balance Druid turned out to be architecturally bigger than Stage 6.1 anticipated - her real BiS
+weapon choice genuinely varies by phase between a 2H staff and a 1H+offhand combo (confirmed from
+wowsims' own real gear-set data, not assumed), which no prior profile ever exercised. Real,
+general infrastructure built to handle this, not a one-off special case:
+- `run_full_sweep_mv.py`'s `slot_for_item()` gained a real third topology branch
+  (`one_hand_plus_offhand_item`), keyed off the item's real `handType` (`HandTypeOffHand=3` is a
+  genuinely distinct value from `HandTypeOneHand=2` - a caster's real offhand item is never
+  itself a weapon she'd equip in mainhand). The 2H-side-pool report section's gate widened from
+  "only Hunter's dual_wield" to "any profile with a real current offhand slot" - both `dual_wield`
+  and `one_hand_plus_offhand_item` genuinely benefit from "would a 2H weapon beat what I have."
+- `SETTINGS_2H` (the melee-weave settings variant) is now optional, not assumed to exist -
+  falls back to the profile's own real `SETTINGS_TEMPLATE` when no `settings_template_2h.json`
+  file is present. Real finding: the separate settings file was never actually a "2H weapon"
+  concept, it was a Hunter-specific need (her rotation itself changes for melee weaving) - a
+  profile whose rotation doesn't change with weapon choice (Balance Druid: still just casting)
+  has no reason to need one. Verified live: her real "weave OFF"/"weave ON" baselines come out
+  numerically identical (+0.0), exactly as they should for a spec with no such toggle.
+- `core/build_wowsims_reference_bis.py`'s pool-key mapping for mainhand was hardcoded to always
+  mean "weapon_2h" (true for every prior profile) - now derived per real item `handType`, so a
+  phase where her real BiS is 1H+offhand correctly produces separate `mainhand`/`offhand` pool
+  entries instead of silently mis-slotting a 1H dagger into the 2H-only pool.
+- `core/set_bonus.py` gained a real THIRD reference-resolution form: some of Druid's real PvP
+  sets share their bonus via a Go **function call** (`Bonuses: pvpResilience2PBonus(46437),`,
+  the function itself returning the real threshold map), distinct from both Stage 6.1's inline
+  and bare-variable-reference forms. All three forms are now real, resolved, tested - not just
+  the one pattern each new profile happened to need.
+
+Every one of these was re-verified against Hunter's *and* Warrior's full pipelines staying
+byte-identical after the change - real regression checks, not assumed safe because they're
+"just a new branch." See `QUESTIONS.md` for the full session log.
+
+Stage 6.3 (a fourth class/spec) is not scoped. The reusable infrastructure is now genuinely
+broad: any real `weapon_topology` a profile needs (`dual_wield`/`two_hand`/
+`one_hand_plus_offhand_item`) is handled, `set_bonus.py` handles inline/variable/function-call
+Go source forms, and `loot_eligibility.json`/`REF_DIR` are fully profile-driven. What's NOT
+reusable, confirmed twice now: hand-transcribing class_options/consumables/stat_weights, the
+per-class set-bonus source path, and the reference-BiS sourcing all have to be redone from that
+class's own real `sim/tbc-new/ui/<class>/...`/`sim/tbc-new/sim/<class>/...` sources every time -
+no shortcut found for that part yet.
 
 ## Future scope (deferred to final implementation, not now)
 

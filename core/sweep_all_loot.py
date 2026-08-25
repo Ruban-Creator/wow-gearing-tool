@@ -1,21 +1,25 @@
-"""Full item-DB sweep for a Survival Hunter, Phase <= 3 only (per user: "all
-loot that can drop/be bought/be crafted" during P3 is fair game, P4/P5 is
-not). Replaces relying solely on Wowhead's curated BiS picks (which can
-silently omit a real upgrade the guide author didn't think worth listing)
-with an exhaustive filter over the sim's own item DB.
+"""Full item-DB sweep for a given profile, Phase <= max_phase only (per user:
+"all loot that can drop/be bought/be crafted" during the current phase is
+fair game, later phases are not). Replaces relying solely on Wowhead's
+curated BiS picks (which can silently omit a real upgrade the guide author
+didn't think worth listing) with an exhaustive filter over the sim's own
+item DB.
 
-Eligibility, all from the DB's own fields - never guessed:
-- classAllowlist (if present) must include Hunter (3).
-- Armor pieces: armorType Leather(2) or Mail(3) only - Cloth/Plate excluded
-  as a scope decision (technically equippable, never physical-DPS-competitive,
-  not worth the compute), not an arbitrary data omission.
-- Weapons: weaponType in {Axe, Dagger, Fist, Polearm, Sword} - TBC Hunter
-  weapon proficiencies, excludes Mace/Staff/Shield/OffHand-only.
-- Ranged: rangedWeaponType in {Bow, Crossbow, Gun} only.
+Eligibility, all from the DB's own fields plus one profile-supplied file
+(loot_eligibility.json - class id, armor/weapon/ranged-weapon-type
+allowlists, Stage 6.1 - previously hardcoded Hunter constants, generalized
+once Arms Warrior became the second real profile to test this against):
+- classAllowlist (if present) must include the profile's class_id.
+- Armor pieces: armorType in the profile's armor_ok list (Hunter: Leather+
+  Mail, Cloth/Plate excluded as a scope decision - technically equippable,
+  never physical-DPS-competitive, not worth the compute; Warrior: Mail+Plate).
+- Weapons: weaponType in the profile's weapon_ok list (real per-class TBC
+  weapon proficiencies).
+- Ranged: rangedWeaponType in the profile's ranged_ok list.
 - Jewelry/trinket/cloak: no armor-type restriction.
 - quality >= 3 (Rare+) - a practical floor against vendor trash/quest greens,
   not a hidden exclusion of anything that's actually competitive.
-- phase <= 3.
+- phase <= max_phase.
 - must have at least one real `sources` entry (drop/crafted/quest/vendor).
 """
 import json
@@ -25,17 +29,68 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import stat_weights  # noqa: E402
+import set_bonus  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(REPO_ROOT, "sim", "tbc-new", "assets", "database", "db.json")
 
-HUNTER_CLASS = 3
-ARMOR_OK = {2, 3}  # Leather, Mail
-WEAPON_OK = {1, 2, 3, 6, 9}  # Axe, Dagger, Fist, Polearm, Sword
-RANGED_OK = {1, 2, 3}  # Bow, Crossbow, Gun
 ITEM_TYPE_WEAPON = 13
 ITEM_TYPE_RANGED = 14
 NO_ARMOR_RESTRICTION_TYPES = {2, 4, 11, 12}  # Neck, Back, Finger, Trinket
+
+# Per-profile eligibility (class id + armor/weapon/ranged-weapon-type
+# allowlists) - same settable-active-state pattern as stat_weights.py: one
+# real "active eligibility" set once at the start of a sweep, failing loud
+# if a caller forgets to set it rather than silently reusing whichever
+# profile's rules happened to run last.
+_eligibility: dict | None = None
+
+
+def set_active_eligibility(rules: dict) -> None:
+    global _eligibility
+    _eligibility = rules
+
+
+def _eligibility_active() -> dict:
+    if _eligibility is None:
+        raise RuntimeError(
+            "sweep_all_loot.set_active_eligibility() was never called - a pipeline entry "
+            "point must load a profile's loot_eligibility.json and call it before any "
+            "eligible()/run() call."
+        )
+    return _eligibility
+
+
+# Real, confirmed bug (Stage 6.1, first non-Hunter sweep): some old items
+# with no classAllowlist (armor type alone doesn't restrict which classes
+# can equip Mail, e.g.) still register a per-item Go effect that
+# unconditionally type-asserts the equipping agent as a specific class -
+# e.g. Beast Lord Handguards/Leggings (real Hunter dungeon set, `classAllowlist:
+# null` in the DB) crashed the sim outright the moment a Warrior trial tried
+# to equip one: "interface conversion: *dps.DpsWarrior is not hunter.HunterAgent"
+# (sim/hunter/item_sets.go). db.json has no field marking this - the DB's
+# classAllowlist is about legal equip slots, not about which class's Go init
+# code safely handles the item. Only confirmed against Hunter's own sets so
+# far (the one other class this project actually sweeps against real data) -
+# a future profile hitting the same crash for a different class's sets
+# should extend this the same way, not hardcode a second one-off list.
+_unsafe_set_names: set[str] = set()
+
+
+def _load_unsafe_set_names(active_class_id: int) -> set[str]:
+    """Real Hunter set names (from set_bonus.py's own parser, pointed at
+    Hunter's real item_sets.go), only when the active profile ISN'T Hunter -
+    Hunter sweeping her own sets is exactly what's supposed to happen."""
+    if active_class_id == 3:  # ClassHunter
+        return set()
+    hunter_go = os.path.join(REPO_ROOT, "sim", "tbc-new", "sim", "hunter", "item_sets.go")
+    prev_path, prev_cache = set_bonus._active_item_sets_go, set_bonus._thresholds_cache
+    try:
+        set_bonus.set_active_item_sets_go(hunter_go)
+        return set(set_bonus.set_bonus_thresholds())
+    finally:
+        set_bonus._active_item_sets_go, set_bonus._thresholds_cache = prev_path, prev_cache
+
 
 MAX_PHASE = 3
 MIN_QUALITY = 3
@@ -89,8 +144,11 @@ def is_encounter_only_legendary(item: dict) -> bool:
     return False
 
 
-def eligible(item: dict) -> bool:
-    if item.get("phase", 99) > MAX_PHASE:
+def eligible(item: dict, max_phase: int = MAX_PHASE) -> bool:
+    rules = _eligibility_active()
+    if item.get("setName") in _unsafe_set_names:
+        return False
+    if item.get("phase", 99) > max_phase:
         return False
     if item.get("quality", 0) < MIN_QUALITY:
         return False
@@ -104,14 +162,14 @@ def eligible(item: dict) -> bool:
             return False
 
     allowlist = item.get("classAllowlist")
-    if allowlist and HUNTER_CLASS not in allowlist:
+    if allowlist and rules["class_id"] not in allowlist:
         return False
 
     item_type = item.get("type")
     if item_type == ITEM_TYPE_WEAPON:
-        return item.get("weaponType") in WEAPON_OK
+        return item.get("weaponType") in rules["weapon_ok"]
     if item_type == ITEM_TYPE_RANGED:
-        return item.get("rangedWeaponType") in RANGED_OK
+        return item.get("rangedWeaponType") in rules["ranged_ok"]
     if item_type in NO_ARMOR_RESTRICTION_TYPES:
         return True
     # Armor slots (head/shoulder/chest/wrist/hands/waist/legs/feet)
@@ -120,27 +178,34 @@ def eligible(item: dict) -> bool:
         # No armor type at all on an armor-slot item is unusual - could be a
         # cosmetic/off-spec item; exclude rather than guess it's fine.
         return False
-    return armor_type in ARMOR_OK
+    return armor_type in rules["armor_ok"]
 
 
-def main():
-    # This whole file is Hunter-specific by design (see module docstring -
-    # class/weapon-type eligibility filters), not one of Stage 6's
-    # generalized coupling points - still needs the active-profile state set
-    # since core/stat_weights.py's API changed under it.
-    profile_dir = os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter")
+def run(max_phase: int, profile_dir: str) -> str:
+    """Eligible-item universe for one phase, shared by any character running
+    this profile - so the output is namespaced by (profile, phase), not by
+    character. Returns the written path.
+
+    Stage 6.1: eligibility rules (class id, armor/weapon/ranged-weapon-type
+    allowlists) are now profile-driven (loot_eligibility.json), same pattern
+    as stat_weights.py - real active-state wiring, not a hardcoded Hunter
+    constant."""
     stat_weights.set_active(stat_weights.load(profile_dir))
+    eligibility_rules = json.load(open(os.path.join(profile_dir, "loot_eligibility.json"), encoding="utf-8"))
+    set_active_eligibility(eligibility_rules)
+    global _unsafe_set_names
+    _unsafe_set_names = _load_unsafe_set_names(eligibility_rules["class_id"])
 
     db = json.load(open(DB_PATH, encoding="utf-8"))
     items = db["items"]
 
     by_type = defaultdict(list)
     for it in items:
-        if eligible(it):
+        if eligible(it, max_phase):
             by_type[it.get("type")].append(it)
 
     total = sum(len(v) for v in by_type.values())
-    print(f"Eligible (phase<=3, ilvl>={MIN_ILVL}, quality>={MIN_QUALITY}): {total}")
+    print(f"Eligible (phase<={max_phase}, ilvl>={MIN_ILVL}, quality>={MIN_QUALITY}): {total}")
 
     shortlisted = []
     for t, lst in sorted(by_type.items()):
@@ -158,10 +223,17 @@ def main():
 
     print(f"\nTotal shortlisted for real sim: {len(shortlisted)}")
 
-    out_path = os.path.join(REPO_ROOT, "data", "cache", "full_sweep_candidates.json")
+    profile_name = os.path.basename(os.path.normpath(profile_dir))
+    out_path = os.path.join(REPO_ROOT, "data", "cache", f"full_sweep_candidates_{profile_name}_phase{max_phase}.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(shortlisted, f, indent=2)
     print(f"Wrote {out_path}")
+    return out_path
+
+
+def main():
+    profile_dir = os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter")
+    run(MAX_PHASE, profile_dir)
 
 
 if __name__ == "__main__":

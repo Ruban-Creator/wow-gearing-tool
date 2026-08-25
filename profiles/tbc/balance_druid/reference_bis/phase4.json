@@ -1,0 +1,112 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Thunderheart Headguard",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Balance preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Brooch of Nature's Mercy",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Balance preset"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Thunderheart Shoulderpads",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Balance preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Cloak of the Illidari Council",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Balance preset"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Thunderheart Vest",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Balance preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Bracers of Nimble Thought",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Balance preset"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Thunderheart Handguards",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Balance preset"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of the Crescent Moon",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Balance preset"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Leggings of Channeled Elements",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Balance preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Naturewarden's Treads",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Balance preset"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Ring of Ancient Knowledge",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Balance preset"
+      },
+      {
+        "item": "Mana Attuned Band",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Balance preset"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "The Skull of Gul'dan",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Balance preset"
+      },
+      {
+        "item": "Hex Shrunken Head",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Balance preset"
+      }
+    ],
+    "weapon_2h": [
+      {
+        "item": "Zhar'doom, Greatstaff of the Devourer",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Balance preset"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Idol of the Raven Goddess",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Balance preset"
+      }
+    ]
+  }
+}

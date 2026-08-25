@@ -20,13 +20,20 @@ everything past "Achieved BiS" silently went blank.
 import json
 import os
 import subprocess
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import time_horizon  # noqa: E402
+import run_full_sweep_mv as sweep_mv  # noqa: E402 - source of truth for the real iteration counts (see report_template.html's footer)
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOP_N_SHOWN = 5
 
 
-def build():
-    report = json.load(open(os.path.join(REPO_ROOT, "data", "cache", "tiered_report.json"), encoding="utf-8"))
+def build(name_realm: str, phase: str):
+    report_path = os.path.join(REPO_ROOT, "data", "characters", name_realm, "cache", f"tiered_report_{phase}.json")
+    report = json.load(open(report_path, encoding="utf-8"))
+    current_phase_num = int(phase.removeprefix("phase"))
 
     tiers_list = []
     for tier_name, slot_dict in report["tiers"].items():
@@ -53,12 +60,25 @@ def build():
         "two_hand": report["two_hand"],
         "two_hand_meta": report["two_hand_meta"],
         "interactions": report.get("interactions", []),
+        # Drives the template's own phase/iteration-count text (Achieved BiS
+        # subtitle, footer) so neither has to hardcode a phase number or an
+        # iteration constant that could silently drift from the real ones -
+        # see NOTES.md/CLAUDE.md on why a stale phase number in rendered text
+        # is a real correctness bug, not cosmetic.
+        "current_phase": current_phase_num,
+        "final_phase_num": time_horizon.FINAL_PHASE,
+        "screen_iterations": sweep_mv.SCREEN_ITERATIONS,
+        "confirm_iterations": sweep_mv.CONFIRM_ITERATIONS,
+        "resolve_iterations": sweep_mv.RESOLVE_ITERATIONS,
     }
 
 
 if __name__ == "__main__":
-    data = build()
-    out_path = os.path.join(REPO_ROOT, "data", "cache", "ledger_data.json")
+    name_realm, phase = "Lerynia-Thunderstrike", "phase3"
+    data = build(name_realm, phase)
+    out_dir = os.path.join(REPO_ROOT, "data", "characters", name_realm, "cache")
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, f"ledger_data_{phase}.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
     print(f"Wrote {out_path}")
