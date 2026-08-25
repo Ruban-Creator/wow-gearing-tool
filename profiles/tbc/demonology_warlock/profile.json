@@ -1,0 +1,23 @@
+{
+  "class": "warlock",
+  "spec": "demonology",
+  "weapon_topology": "one_hand_plus_offhand_item",
+  "primary_gem_stat_id": "5",
+  "primary_gem_id": 32196,
+  "distance_from_target": 20,
+  "raid_ap_contribution": {
+    "enabled": false,
+    "note": "Same as Affliction Warlock - Curse of Recklessness is enemy-side, already benefits a solo sim directly."
+  },
+  "set_bonus_go_source": "sim/warlock/items.go",
+  "apl_source": "ui/warlock/dps/apls/demonology.apl.json",
+  "apl_note": "Real TypeAPL directly, same as Affliction - no TypeSimple gotcha for Warlock (confirmed once at the class level, all 4 real apls use makePresetAPLRotation).",
+  "weapon_topology_note": "Shares Affliction's own real gear-tier data verbatim (t4/t5/t6/swp) - same real handType-confirmed phase-varying topology (1H+offhand at T4/T5/SWP, 2H Zhar'doom at T6).",
+  "stat_weights_note": "Real, confirmed byte-identical to Affliction's own P1_AFFLI_DEMO_DESTRO_EP (presets.ts's own single shared preset across Affliction/Demonology/Destruction, not per-spec) - reused directly per CLASSES.md's own stated exception for this exact case.",
+  "gear_tier_note": "Same real t4/t5/t6/swp -> phase1/2/3/5 mapping as Affliction Warlock, sourced from db.json's own per-item phase field - see affliction_warlock/profile.json's own note for the full real derivation.",
+  "talents_note": "Real, confirmed finding, corrects the staging plan's own assumption: wowsims' own canonical Demonology build (DEMONOLOGY_BUILD in presets.ts) uses TalentsDemoRuin ('Demo/Ruin'), NOT TalentsDemoFelguard - the plan guessed Felguard as 'matching TBC live-era convention' but the real, sourced wowsims default is Demo/Ruin. Used the real, sourced value, not the plan's own unverified guess.",
+  "class_options_note": "Real, per-spec DefaultOptions override confirmed from presets.ts's own P1_DEMONOLOGY_DEFAULT_SETTINGS: curseOptions=Recklessness, summon=Succubus, sacrificeSummon=false.",
+  "gems_enchants_note": "Reused Affliction's own verified default_enchants.json (byte-identical gear/enchant candidates, no rotation-dependent reason for a slot enchant to differ). Gem verification was NOT reused, despite the CLASSES.md exception nominally applying (byte-identical EP weights) - ran it fresh instead, and a real, meaningfully different result confirmed that was the right call: only 1 real winner here (Girdle of Ruination) vs Affliction's own 10, and several items that were real winners for Affliction (e.g. Voidheart Mantle-family items) are real, non-tied LOSSES here - Demonology's own real pet/rotation balance (Succubus contributing ~14% of combined DPS) shifts the practical gem-choice math enough to matter, not just a theoretical concern. See QUESTIONS.md.",
+  "synthetic_character": true,
+  "synthetic_character_note": "No real Demonology Warlock alt exists - built via ingest/build_synthetic_character.py from the real wowsims t6.gear.json preset, same real race/professions convention as Affliction."
+}

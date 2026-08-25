@@ -1,0 +1,119 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Dark Conjuror's Collar",
+        "rank": "Best",
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Amulet of Unfettered Magics",
+        "rank": "Best",
+        "source": "Drop: Eredar Twins (Sunwell Plateau)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Mantle of the Malefic",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Affliction preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Tattered Cape of Antonidas",
+        "rank": "Best",
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Sunfire Robe",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Bracers of the Malefic",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Affliction preset"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Handguards of Defiled Worlds",
+        "rank": "Best",
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of the Malefic",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Affliction preset"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Leggings of Calamity",
+        "rank": "Best",
+        "source": "Drop: Brutallus (Sunwell Plateau)"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Boots of the Malefic",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Affliction preset"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Loop of Forged Power",
+        "rank": "Best",
+        "source": "Crafted: Jewelcrafting"
+      },
+      {
+        "item": "Ring of Omnipotence",
+        "rank": "Best",
+        "source": "Drop: M'uru (Sunwell Plateau)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Shifting Naaru Sliver",
+        "rank": "Best",
+        "source": "Drop: M'uru (Sunwell Plateau)"
+      },
+      {
+        "item": "The Skull of Gul'dan",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "mainhand": [
+      {
+        "item": "Sunflare",
+        "rank": "Best",
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
+      }
+    ],
+    "offhand": [
+      {
+        "item": "Heart of the Pit",
+        "rank": "Best",
+        "source": "Drop: Brutallus (Sunwell Plateau)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Wand of the Demonsoul",
+        "rank": "Best",
+        "source": "Drop: (Sunwell Plateau)"
+      }
+    ]
+  }
+}

@@ -556,6 +556,27 @@ messiest stage yet - two genuinely sim-breaking bugs, both silent - so a few cal
   actual look at the rendered page. Same structural bar used for every prior stage's report, but
   flagging since "looks right when opened" was never actually confirmed for this one specifically.
 
+## Stage 6.12 (Demonology Warlock): real finding worth your eyes (not really a "call" - the data spoke)
+
+`profiles/tbc/demonology_warlock/` is done and real-verified (full writeup in NOTES.md). Not really
+a judgment call since the fresh gem-verification pass settled it directly, but worth knowing: gem
+choices genuinely differ between Warlock specs sharing the same gear/EP weights, because pet DPS
+share isn't part of the EP-weight prefilter at all - only the real per-spec sim verification catches
+it. Worth keeping in mind for any future pet-heavy spec sharing a class-level bootstrap with a
+non-pet spec: don't extend the CLASSES.md gem-reuse exception to a spec whose own pet contributes a
+meaningfully different share of total DPS, even if the raw EP weights match on paper.
+
+## Stage 6.11 (Affliction Warlock): real finding worth your eyes
+
+`profiles/tbc/affliction_warlock/` is done and real-verified (full writeup in NOTES.md). One real,
+somewhat surprising finding, not exactly a "judgment call" since it's just what the real data says:
+wowsims' own canonical Affliction talent build does NOT spec into Unstable Affliction (confirmed by
+counting the real talent-string segment length against the proto field count, then confirmed by a
+combat log showing 0 UA casts) - despite the APL script referencing it and the spec's own name
+strongly implying otherwise. If you'd rather this profile spec into UA (a real, valid alternate
+Affliction build some players prefer), that's a real, deliberate deviation from the literal wowsims
+default I used here, not a bug to fix - flag if you want that swap made.
+
 ## Stage 6.10 (Retribution Paladin): done, real-verified, one cosmetic data bug to flag
 
 `profiles/tbc/retribution_paladin/` is done and real-verified (full writeup in NOTES.md). No real

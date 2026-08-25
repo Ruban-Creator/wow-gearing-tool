@@ -1,0 +1,21 @@
+{
+  "class": "warlock",
+  "spec": "affliction",
+  "weapon_topology": "one_hand_plus_offhand_item",
+  "primary_gem_stat_id": "5",
+  "primary_gem_id": 32196,
+  "distance_from_target": 20,
+  "raid_ap_contribution": {
+    "enabled": false,
+    "note": "Warlock's real ally-affecting debuffs (Curse of Elements/Recklessness) are enemy-side effects a solo sim already benefits from directly, same finding as every other non-Hunter class."
+  },
+  "set_bonus_go_source": "sim/warlock/items.go",
+  "apl_source": "ui/warlock/dps/apls/affliction.apl.json",
+  "apl_note": "Real TypeAPL directly (unlike Arcane Mage/Retribution Paladin, Warlock's own canonical preset builds never use TypeSimple at all - all 4 real specs/variants use makePresetAPLRotation directly). Warlock.Rotation is a real, empty {} proto message - no per-spec rotation config needed, matching Rogue/Priest.",
+  "gear_tier_note": "Warlock's own real gear_sets are named by RAID TIER (preraid/t4/t5/t6/za/swp), not by phase (p1-p5) like every other class - a real, confirmed naming convention difference. Resolved the real tier-to-phase mapping directly from db.json's own per-item 'phase' field (authoritative, not guessed): t4 items are uniformly phase=1, t5 items are phase=2, t6 items are phase=3 (za's own items are also almost entirely phase=3, clustering with t6 - patch-timing-adjacent content, not a separate progression phase), swp items are phase=5. Built phase1(t4)/phase2(t5)/phase3(t6)/phase5(swp) reference_bis - phase4 is a real, disclosed gap (no dedicated tier sits there; only 2 real za items reach phase=4, not enough for a meaningful separate phase4 gear set) - preraid.gear.json (also phase=1, redundant with t4) not built as a separate entry, matching every other profile's own precedent of not building a pre-phase-1 entry.",
+  "weapon_topology_note": "Confirmed via real handType data: t4/t5/preraid/swp use a real 1H weapon (handType=1) + offhand; t6/za both use the real 2H Zhar'doom staff (handType=4, the same real item Priest's and Arcane Mage's own P3 staff builds use) - genuinely phase-varying, same pattern as Priest/Balance Druid/Arcane Mage.",
+  "stat_weights_note": "Real EP weights from warlock/dps/presets.ts's own P1_AFFLI_DEMO_DESTRO_EP - explicitly shared, byte-identical across Affliction/Demonology/Destruction per the real source (not per-spec), confirmed directly rather than assumed. Destruction (Fire) alone derives a distinct P1_DESTRUCTION_FIRE_EP (swaps Fire/Shadow damage weights) - out of scope for this profile.",
+  "class_options_note": "Real, per-spec DefaultOptions overrides confirmed from presets.ts's own P1_AFFLICTION_DEFAULT_SETTINGS: curseOptions=Elements, summon=Imp, sacrificeSummon=false, armor=FelArmor (inherited from the shared DefaultOptions, not overridden) - used exactly as specified, not the shared base DefaultOptions (curseOptions=Recklessness/summon=Succubus/sacrificeSummon=true) which is Destruction's own real default instead.",
+  "synthetic_character": true,
+  "synthetic_character_note": "No real Affliction Warlock alt exists - built via ingest/build_synthetic_character.py from the real wowsims t6.gear.json preset (phase3, this tool's primary convention), real race/professions from presets.ts's own OtherDefaults (Engineering/Tailoring; race not specified there, used Undead as a flavor pick with no real-data implication)."
+}

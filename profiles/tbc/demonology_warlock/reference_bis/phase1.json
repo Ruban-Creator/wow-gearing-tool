@@ -1,0 +1,119 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Voidheart Crown",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Demonology preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Brooch of Unquenchable Fury",
+        "rank": "Best",
+        "source": "Drop: Moroes (Karazhan)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Voidheart Mantle",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Demonology preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Ruby Drape of the Mysticant",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Voidheart Robe",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Demonology preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Bracers of Havok",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Voidheart Gloves",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Demonology preset"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Girdle of Ruination",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Spellstrike Pants",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Frozen Shadoweave Boots",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Band of Crimson Fury",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Demonology preset"
+      },
+      {
+        "item": "Ring of Recurrence",
+        "rank": "Best",
+        "source": "Drop: (Karazhan)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Quagmirran's Eye",
+        "rank": "Best",
+        "source": "Drop: Quagmirran (The Slave Pens)"
+      },
+      {
+        "item": "Icon of the Silver Crescent",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Demonology preset"
+      }
+    ],
+    "mainhand": [
+      {
+        "item": "Bloodmaw Magus-Blade",
+        "rank": "Best",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      }
+    ],
+    "offhand": [
+      {
+        "item": "Jewel of Infinite Possibilities",
+        "rank": "Best",
+        "source": "Drop: Netherspite (Karazhan)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Tirisfal Wand of Ascendancy",
+        "rank": "Best",
+        "source": "Drop: Shade of Aran (Karazhan)"
+      }
+    ]
+  }
+}

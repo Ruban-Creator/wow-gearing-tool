@@ -1,0 +1,12 @@
+{
+  "warlock": {
+    "options": {
+      "classOptions": {
+        "armor": "FelArmor",
+        "curseOptions": "Elements",
+        "sacrificeSummon": false,
+        "summon": "Imp"
+      }
+    }
+  }
+}

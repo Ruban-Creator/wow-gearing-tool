@@ -1,0 +1,112 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Hood of the Malefic",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Demonology preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Translucent Spellthread Necklace",
+        "rank": "Best",
+        "source": "Drop: Reliquary of the Lost (Black Temple)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Mantle of the Malefic",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Demonology preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Shroud of the Highborne",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Vestments of the Sea-Witch",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Bracers of Nimble Thought",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Gloves of the Malefic",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Demonology preset"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of Blasting",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Leggings of the Malefic",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Demonology preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Slippers of the Seacaller",
+        "rank": "Best",
+        "source": "Drop: High Warlord Naj'entus (Black Temple)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Ring of Ancient Knowledge",
+        "rank": "Best",
+        "source": "Drop: (Black Temple)"
+      },
+      {
+        "item": "Ring of Ancient Knowledge",
+        "rank": "Best",
+        "source": "Drop: (Black Temple)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "The Skull of Gul'dan",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      },
+      {
+        "item": "Icon of the Silver Crescent",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Demonology preset"
+      }
+    ],
+    "weapon_2h": [
+      {
+        "item": "Zhar'doom, Greatstaff of the Devourer",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Wand of the Forgotten Star",
+        "rank": "Best",
+        "source": "Drop: High Astromancer Solarian (Tempest Keep)"
+      }
+    ]
+  }
+}

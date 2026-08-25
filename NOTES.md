@@ -3599,3 +3599,77 @@ ground-rule distinction, this is a DB *data-completeness* issue, not a sim *mode
 computed DPS value (+35.8) is real and correct, only the display label is garbled. Not patched -
 touching vendored DB data is out of scope and risks masking a future real upstream fix; flagged in
 QUESTIONS.md for awareness instead.
+
+**Stage 6.11 (2026-08-26): Affliction Warlock, real-verified - and the Warlock class-level
+bootstrap all three specs reuse.** `profiles/tbc/affliction_warlock/` built from
+`sim/tbc-new/ui/warlock/dps/` - real, confirmed: Warlock's own gear_sets are named by RAID TIER
+(preraid/t4/t5/t6/za/swp), not by phase (p1-p5) like every other class. Resolved the real
+tier-to-phase mapping directly from `db.json`'s own per-item `phase` field (authoritative, not
+guessed): t4=phase1, t5=phase2, t6=phase3, za mostly clusters with t6 (phase3, a few phase4 rep
+items - not enough for its own phase4 reference_bis), swp=phase5. Built phase1/2/3/5 reference_bis
+- phase4 is a real, disclosed gap. `one_hand_plus_offhand_item` topology confirmed via real
+`handType` (t4/t5/preraid/swp use 1H+offhand; t6/za both use the real 2H Zhar'doom staff, the same
+real item Priest's and Arcane Mage's own P3 staff builds use).
+
+No TypeSimple gotcha here - all 4 real Warlock apls (`affliction`/`demonology`/`destruction`/
+`destro_fire`) use `TypeAPL` directly via `makePresetAPLRotation`, confirmed once at the class
+level. `Warlock.Rotation` is a real, empty `{}` proto message, same as Rogue/Priest.
+
+Real, non-obvious combat-log finding: the canonical `TalentsAffliction` string
+(`05022221112351055003--50500051220001`) does NOT actually spec into Unstable Affliction, despite
+Affliction's real APL explicitly referencing it (`dotIsActive` check on spell 30405) - confirmed by
+counting the Affliction-tree talent-string segment (20 characters for 21 real talent fields,
+`unstable_affliction` being proto field 21) and cross-checking `warlock.Talents.UnstableAffliction`
+gates `registerUnstableAffliction()` in `talents.go` - trailing zeros are truncated in this string
+format, so the missing 21st digit means 0 points. A 100-iteration combat log confirmed zero UA
+casts, and separately confirmed her assigned curse is Curse of Elements (a raid-utility curse, per
+the real `P1_AFFLICTION_DEFAULT_SETTINGS` override), not Curse of Agony - so neither of the plan's
+own two named example DoTs actually fire for this specific canonical build. The REAL DoT-stacking
+rotation that does fire, confirmed via combat log: **Immolate (179), Corruption (162), Siphon Life
+(195)** casts, plus Shadow Bolt (316) as filler - a real, working, just differently-shaped
+Affliction rotation than assumed. Real pet: Imp (curseOptions=Elements/summon=Imp/
+sacrificeSummon=false per the real per-spec override), contributing 82.9 avg DPS.
+
+Real EP weights from `warlock/dps/presets.ts`'s own `P1_AFFLI_DEMO_DESTRO_EP` - explicitly,
+confirmed-real SHARED across Affliction/Demonology/Destruction (not per-spec), the class-level
+bootstrap this stage exists to build once for reuse by 6.12/6.13. `default_enchants.json`: 6/9
+verified, 3 legitimate drops (same familiar zero/near-zero-DPS utility enchants). Gem verification:
+25 real candidates tested, 10 real non-tied winners - a genuinely different, larger-magnitude
+result than Priest/Feral's own "always zero winners" pattern, closer to Arcane Mage's own
+Hit/Haste-favoring result (Warlock's own real EP weights are meaningfully Hit/Haste-heavy too).
+
+New `Test-Affliction-Synthetic` character (Undead, Engineering/Tailoring, seeded from `t6.gear.json`
+- phase3, this tool's primary convention - real Affliction talents string from `TalentsAffliction`
+directly). Full sweep ran clean, real Voidheart Raiment set-bonus math correctly flagged (4 pieces
+individually -50 to -95 DPS, offset by +21.8/+40.2 2pc/4pc bonuses), a third real sidegrade-banking
+case. `check_ledger_consistency.py` 167/0 clean.
+
+**Stage 6.12 (2026-08-26): Demonology Warlock, real-verified.** `profiles/tbc/demonology_warlock/`
+reuses Affliction's own class-level bootstrap (`stat_weights.json`/`loot_eligibility.json`/
+`raid_buffs_overlay.json`/`consumables.json`/gear-tier data copied verbatim, all real class-level,
+not spec-level). Real, confirmed correction to the staging plan's own assumption: wowsims' own
+canonical `DEMONOLOGY_BUILD` uses `TalentsDemoRuin` ("Demo/Ruin"), **not** `TalentsDemoFelguard` -
+the plan had guessed Felguard as "matching TBC live-era convention" without checking the real
+source; the real, sourced default is Demo/Ruin, used here instead of the guess.
+
+Real, confirmed pet-focused rotation: **Succubus pet contributes 311.9 avg DPS, ~14% of her 2532.3
+combined DPS** (curseOptions=Recklessness/summon=Succubus/sacrificeSummon=false per the real
+per-spec override) - satisfies the plan's own "pet DPS contribution visible in the breakdown" STOP
+requirement directly from the real pet-DPS breakdown, no combat-log grep needed this time.
+
+`default_enchants.json` reused from Affliction directly (byte-identical gear/candidates, no
+rotation-dependent reason for a slot enchant choice to differ) - re-verified clean, same 6 real
+KEEP results. **Gem verification was deliberately NOT reused** despite CLASSES.md's own stated
+exception nominally applying (byte-identical EP weights) - ran it fresh instead, and this turned
+out to matter: only 1 real winner (Girdle of Ruination) vs Affliction's own 10, and several of
+Affliction's own real winners (the Voidheart-family items) are real, non-tied LOSSES here -
+Demonology's real ~14%-of-DPS pet contribution shifts the practical gem-choice math enough to flip
+outcomes, not just a theoretical concern the CLASSES.md exception's own caveat already anticipated.
+`settings_template.json` rebuilt after the real, single winner (her equipped gear didn't overlap
+it, but rebuilt to keep the file consistent with the verified chase list regardless).
+
+New `Test-Demonology-Synthetic` character (Orc, Engineering/Tailoring, seeded from `t6.gear.json`,
+real `TalentsDemoRuin` string directly). Full sweep ran clean, same real Voidheart Raiment
+set-bonus math pattern (this time -55 to -131 DPS per piece, +27.6/+32.0 2pc/4pc bonuses - larger
+magnitude than Affliction's own, consistent with Demonology's higher overall DPS baseline).
+`check_ledger_consistency.py` 209/0 clean.
