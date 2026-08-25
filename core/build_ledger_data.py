@@ -24,16 +24,27 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import time_horizon  # noqa: E402
+import stat_weights  # noqa: E402
 import run_full_sweep_mv as sweep_mv  # noqa: E402 - source of truth for the real iteration counts (see report_template.html's footer)
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOP_N_SHOWN = 5
 
 
-def build(name_realm: str, phase: str):
+def build(name_realm: str, phase: str, profile_dir: str | None = None):
+    """profile_dir defaults to Survival Hunter's own profile when omitted,
+    matching every other "settable, defaults to Hunter" entry point in this
+    codebase (Stage 6.0's load_candidates() etc) - every existing caller
+    that doesn't pass one keeps working unchanged."""
+    if profile_dir is None:
+        profile_dir = os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter")
     report_path = os.path.join(REPO_ROOT, "data", "characters", name_realm, "cache", f"tiered_report_{phase}.json")
     report = json.load(open(report_path, encoding="utf-8"))
     current_phase_num = int(phase.removeprefix("phase"))
+    profile = json.load(open(os.path.join(profile_dir, "profile.json"), encoding="utf-8"))
+    raid_ap_enabled = profile["raid_ap_contribution"]["enabled"]
+    weights = stat_weights.load(profile_dir)
+    arp_relevant = weights.get(sweep_mv.ARMOR_PEN_STAT_ID, 0) > 0
 
     tiers_list = []
     for tier_name, slot_dict in report["tiers"].items():
@@ -67,6 +78,19 @@ def build(name_realm: str, phase: str):
         # is a real correctness bug, not cosmetic.
         "current_phase": current_phase_num,
         "final_phase_num": time_horizon.FINAL_PHASE,
+        # Real per-profile gate (Stage 2's Expose Weakness model, Survival
+        # Hunter-only) - the "Debuff (AP/ea)" column/legend only means
+        # anything for a profile that actually has this mechanic; every
+        # other class's raid_ap_per_attacker is always null by construction
+        # (see run_full_sweep_mv.py's raid_ap_contribution gate), so showing
+        # a column of "n/a" for them is confusing clutter, not information.
+        "raid_ap_enabled": raid_ap_enabled,
+        # Real per-profile gate, same pattern as raid_ap_enabled above - the
+        # Armor Penetration warning tag only means anything for a profile
+        # that actually weights ArP (see run_full_sweep_mv.py's
+        # item_arp_rating() comment for why it's flagged instead of trusted
+        # via one-at-a-time MV alone).
+        "arp_relevant": arp_relevant,
         "screen_iterations": sweep_mv.SCREEN_ITERATIONS,
         "confirm_iterations": sweep_mv.CONFIRM_ITERATIONS,
         "resolve_iterations": sweep_mv.RESOLVE_ITERATIONS,

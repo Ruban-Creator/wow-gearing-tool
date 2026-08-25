@@ -11,7 +11,7 @@
       {
         "item": "Brooch of Nature's Mercy",
         "rank": "Best",
-        "source": "wowsims Phase 4 Balance preset"
+        "source": "Drop: Akil'zon (Zul'Aman)"
       }
     ],
     "shoulder": [
@@ -25,7 +25,7 @@
       {
         "item": "Cloak of the Illidari Council",
         "rank": "Best",
-        "source": "wowsims Phase 4 Balance preset"
+        "source": "Drop: The Illidari Council (Black Temple)"
       }
     ],
     "chest": [
@@ -39,7 +39,7 @@
       {
         "item": "Bracers of Nimble Thought",
         "rank": "Best",
-        "source": "wowsims Phase 4 Balance preset"
+        "source": "Crafted: Tailoring"
       }
     ],
     "hands": [
@@ -53,52 +53,52 @@
       {
         "item": "Belt of the Crescent Moon",
         "rank": "Best",
-        "source": "wowsims Phase 4 Balance preset"
+        "source": "Drop: Kaz'rogal (Hyjal Summit)"
       }
     ],
     "legs": [
       {
         "item": "Leggings of Channeled Elements",
         "rank": "Best",
-        "source": "wowsims Phase 4 Balance preset"
+        "source": "Drop: Kaz'rogal (Hyjal Summit)"
       }
     ],
     "feet": [
       {
         "item": "Naturewarden's Treads",
         "rank": "Best",
-        "source": "wowsims Phase 4 Balance preset"
+        "source": "Drop: Reliquary of the Lost (Black Temple)"
       }
     ],
     "ring": [
       {
         "item": "Ring of Ancient Knowledge",
         "rank": "Best",
-        "source": "wowsims Phase 4 Balance preset"
+        "source": "Drop: (Black Temple)"
       },
       {
         "item": "Mana Attuned Band",
         "rank": "Best",
-        "source": "wowsims Phase 4 Balance preset"
+        "source": "Drop: (Zul'Aman)"
       }
     ],
     "trinket": [
       {
         "item": "The Skull of Gul'dan",
         "rank": "Best",
-        "source": "wowsims Phase 4 Balance preset"
+        "source": "Drop: Illidan Stormrage (Black Temple)"
       },
       {
         "item": "Hex Shrunken Head",
         "rank": "Best",
-        "source": "wowsims Phase 4 Balance preset"
+        "source": "Drop: Hex Lord Malacrass (Zul'Aman)"
       }
     ],
     "weapon_2h": [
       {
         "item": "Zhar'doom, Greatstaff of the Devourer",
         "rank": "Best",
-        "source": "wowsims Phase 4 Balance preset"
+        "source": "Drop: Illidan Stormrage (Black Temple)"
       }
     ],
     "ranged": [

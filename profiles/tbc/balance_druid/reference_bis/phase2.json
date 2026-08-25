@@ -25,7 +25,7 @@
       {
         "item": "Brute Cloak of the Ogre-Magi",
         "rank": "Best",
-        "source": "wowsims Phase 2 Balance preset"
+        "source": "Drop: High King Maulgar (Gruul's Lair)"
       }
     ],
     "chest": [
@@ -39,7 +39,7 @@
       {
         "item": "Mindstorm Wristbands",
         "rank": "Best",
-        "source": "wowsims Phase 2 Balance preset"
+        "source": "Drop: Al'ar (Tempest Keep)"
       }
     ],
     "hands": [
@@ -53,28 +53,28 @@
       {
         "item": "Belt of Blasting",
         "rank": "Best",
-        "source": "wowsims Phase 2 Balance preset"
+        "source": "Crafted: Tailoring"
       }
     ],
     "legs": [
       {
         "item": "Spellstrike Pants",
         "rank": "Best",
-        "source": "wowsims Phase 2 Balance preset"
+        "source": "Crafted: Tailoring"
       }
     ],
     "feet": [
       {
         "item": "Velvet Boots of the Guardian",
         "rank": "Best",
-        "source": "wowsims Phase 2 Balance preset"
+        "source": "Drop: The Lurker Below (Serpentshrine Cavern)"
       }
     ],
     "ring": [
       {
         "item": "Ring of Recurrence",
         "rank": "Best",
-        "source": "wowsims Phase 2 Balance preset"
+        "source": "Drop: (Karazhan)"
       },
       {
         "item": "Band of Eternity",
@@ -91,14 +91,14 @@
       {
         "item": "Quagmirran's Eye",
         "rank": "Best",
-        "source": "wowsims Phase 2 Balance preset"
+        "source": "Drop: Quagmirran (The Slave Pens)"
       }
     ],
     "weapon_2h": [
       {
         "item": "The Nexus Key",
         "rank": "Best",
-        "source": "wowsims Phase 2 Balance preset"
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
       }
     ],
     "ranged": [

@@ -4,14 +4,14 @@
       {
         "item": "Coif of Alleria",
         "rank": "Best",
-        "source": "wowsims Phase 5 Arms preset"
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
       }
     ],
     "neck": [
       {
         "item": "Hard Khorium Choker",
         "rank": "Best",
-        "source": "wowsims Phase 5 Arms preset"
+        "source": "Crafted: Jewelcrafting"
       }
     ],
     "shoulder": [
@@ -25,7 +25,7 @@
       {
         "item": "Cloak of Unforgivable Sin",
         "rank": "Best",
-        "source": "wowsims Phase 5 Arms preset"
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
       }
     ],
     "chest": [
@@ -46,7 +46,7 @@
       {
         "item": "Thalassian Ranger Gauntlets",
         "rank": "Best",
-        "source": "wowsims Phase 5 Arms preset"
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
       }
     ],
     "waist": [
@@ -60,7 +60,7 @@
       {
         "item": "Leggings of the Immortal Night",
         "rank": "Best",
-        "source": "wowsims Phase 5 Arms preset"
+        "source": "Drop: Felmyst (Sunwell Plateau)"
       }
     ],
     "feet": [
@@ -74,38 +74,38 @@
       {
         "item": "Band of Ruinous Delight",
         "rank": "Best",
-        "source": "wowsims Phase 5 Arms preset"
+        "source": "Drop: Eredar Twins (Sunwell Plateau)"
       },
       {
         "item": "Hard Khorium Band",
         "rank": "Best",
-        "source": "wowsims Phase 5 Arms preset"
+        "source": "Crafted: Jewelcrafting"
       }
     ],
     "trinket": [
       {
         "item": "Dragonspine Trophy",
         "rank": "Best",
-        "source": "wowsims Phase 5 Arms preset"
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
       },
       {
         "item": "Blackened Naaru Sliver",
         "rank": "Best",
-        "source": "wowsims Phase 5 Arms preset"
+        "source": "Drop: M'uru (Sunwell Plateau)"
       }
     ],
     "weapon_2h": [
       {
         "item": "Apolyon, the Soul-Render",
         "rank": "Best",
-        "source": "wowsims Phase 5 Arms preset"
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
       }
     ],
     "ranged": [
       {
         "item": "Golden Bow of Quel'Thalas",
         "rank": "Best",
-        "source": "wowsims Phase 5 Arms preset"
+        "source": "Drop: Eredar Twins (Sunwell Plateau)"
       }
     ]
   }

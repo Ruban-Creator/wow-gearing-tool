@@ -56,7 +56,7 @@
     },
     {
       "item": "Brooch of Nature's Mercy",
-      "source": "wowsims Phase 4 Balance preset",
+      "source": "Drop: Akil'zon (Zul'Aman)",
       "seen_in": [
         {
           "phase": "P4",
@@ -67,7 +67,7 @@
     },
     {
       "item": "Amulet of Unfettered Magics",
-      "source": "wowsims Phase 5 Balance preset",
+      "source": "Drop: Eredar Twins (Sunwell Plateau)",
       "seen_in": [
         {
           "phase": "P5",
@@ -119,7 +119,7 @@
   "back": [
     {
       "item": "Brute Cloak of the Ogre-Magi",
-      "source": "wowsims Phase 2 Balance preset",
+      "source": "Drop: High King Maulgar (Gruul's Lair)",
       "seen_in": [
         {
           "phase": "P2",
@@ -130,7 +130,7 @@
     },
     {
       "item": "Cloak of the Illidari Council",
-      "source": "wowsims Phase 3 Balance preset",
+      "source": "Drop: The Illidari Council (Black Temple)",
       "seen_in": [
         {
           "phase": "P3",
@@ -145,7 +145,7 @@
     },
     {
       "item": "Tattered Cape of Antonidas",
-      "source": "wowsims Phase 5 Balance preset",
+      "source": "Drop: Kil'jaeden (Sunwell Plateau)",
       "seen_in": [
         {
           "phase": "P5",
@@ -190,7 +190,7 @@
   "wrist": [
     {
       "item": "Mindstorm Wristbands",
-      "source": "wowsims Phase 2 Balance preset",
+      "source": "Drop: Al'ar (Tempest Keep)",
       "seen_in": [
         {
           "phase": "P2",
@@ -201,7 +201,7 @@
     },
     {
       "item": "Bracers of Nimble Thought",
-      "source": "wowsims Phase 3 Balance preset",
+      "source": "Crafted: Tailoring",
       "seen_in": [
         {
           "phase": "P3",
@@ -268,7 +268,7 @@
   "waist": [
     {
       "item": "Belt of Blasting",
-      "source": "wowsims Phase 2 Balance preset",
+      "source": "Crafted: Tailoring",
       "seen_in": [
         {
           "phase": "P2",
@@ -279,7 +279,7 @@
     },
     {
       "item": "Belt of the Crescent Moon",
-      "source": "wowsims Phase 3 Balance preset",
+      "source": "Drop: Kaz'rogal (Hyjal Summit)",
       "seen_in": [
         {
           "phase": "P3",
@@ -307,7 +307,7 @@
   "legs": [
     {
       "item": "Spellstrike Pants",
-      "source": "wowsims Phase 2 Balance preset",
+      "source": "Crafted: Tailoring",
       "seen_in": [
         {
           "phase": "P2",
@@ -318,7 +318,7 @@
     },
     {
       "item": "Leggings of Channeled Elements",
-      "source": "wowsims Phase 3 Balance preset",
+      "source": "Drop: Kaz'rogal (Hyjal Summit)",
       "seen_in": [
         {
           "phase": "P3",
@@ -333,7 +333,7 @@
     },
     {
       "item": "Breeches of Natural Aggression",
-      "source": "wowsims Phase 5 Balance preset",
+      "source": "Drop: Kalecgos (Sunwell Plateau)",
       "seen_in": [
         {
           "phase": "P5",
@@ -346,7 +346,7 @@
   "feet": [
     {
       "item": "Velvet Boots of the Guardian",
-      "source": "wowsims Phase 2 Balance preset",
+      "source": "Drop: The Lurker Below (Serpentshrine Cavern)",
       "seen_in": [
         {
           "phase": "P2",
@@ -357,7 +357,7 @@
     },
     {
       "item": "Naturewarden's Treads",
-      "source": "wowsims Phase 3 Balance preset",
+      "source": "Drop: Reliquary of the Lost (Black Temple)",
       "seen_in": [
         {
           "phase": "P3",
@@ -385,7 +385,7 @@
   "ring": [
     {
       "item": "Ring of Recurrence",
-      "source": "wowsims Phase 2 Balance preset",
+      "source": "Drop: (Karazhan)",
       "seen_in": [
         {
           "phase": "P2",
@@ -407,7 +407,7 @@
     },
     {
       "item": "Ring of Ancient Knowledge",
-      "source": "wowsims Phase 3 Balance preset",
+      "source": "Drop: (Black Temple)",
       "seen_in": [
         {
           "phase": "P3",
@@ -433,7 +433,7 @@
     },
     {
       "item": "Mana Attuned Band",
-      "source": "wowsims Phase 4 Balance preset",
+      "source": "Drop: (Zul'Aman)",
       "seen_in": [
         {
           "phase": "P4",
@@ -444,7 +444,7 @@
     },
     {
       "item": "Ring of Omnipotence",
-      "source": "wowsims Phase 5 Balance preset",
+      "source": "Drop: M'uru (Sunwell Plateau)",
       "seen_in": [
         {
           "phase": "P5",
@@ -455,7 +455,7 @@
     },
     {
       "item": "Loop of Forged Power",
-      "source": "wowsims Phase 5 Balance preset",
+      "source": "Crafted: Jewelcrafting",
       "seen_in": [
         {
           "phase": "P5",
@@ -479,7 +479,7 @@
     },
     {
       "item": "Quagmirran's Eye",
-      "source": "wowsims Phase 2 Balance preset",
+      "source": "Drop: Quagmirran (The Slave Pens)",
       "seen_in": [
         {
           "phase": "P2",
@@ -490,7 +490,7 @@
     },
     {
       "item": "Ashtongue Talisman of Equilibrium",
-      "source": "wowsims Phase 3 Balance preset",
+      "source": "Reputation reward",
       "seen_in": [
         {
           "phase": "P3",
@@ -501,7 +501,7 @@
     },
     {
       "item": "The Skull of Gul'dan",
-      "source": "wowsims Phase 3 Balance preset",
+      "source": "Drop: Illidan Stormrage (Black Temple)",
       "seen_in": [
         {
           "phase": "P3",
@@ -520,7 +520,7 @@
     },
     {
       "item": "Hex Shrunken Head",
-      "source": "wowsims Phase 4 Balance preset",
+      "source": "Drop: Hex Lord Malacrass (Zul'Aman)",
       "seen_in": [
         {
           "phase": "P4",
@@ -531,7 +531,7 @@
     },
     {
       "item": "Shifting Naaru Sliver",
-      "source": "wowsims Phase 5 Balance preset",
+      "source": "Drop: M'uru (Sunwell Plateau)",
       "seen_in": [
         {
           "phase": "P5",
@@ -544,7 +544,7 @@
   "weapon_2h": [
     {
       "item": "The Nexus Key",
-      "source": "wowsims Phase 2 Balance preset",
+      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
       "seen_in": [
         {
           "phase": "P2",
@@ -555,7 +555,7 @@
     },
     {
       "item": "Zhar'doom, Greatstaff of the Devourer",
-      "source": "wowsims Phase 3 Balance preset",
+      "source": "Drop: Illidan Stormrage (Black Temple)",
       "seen_in": [
         {
           "phase": "P3",
@@ -597,7 +597,7 @@
   "mainhand": [
     {
       "item": "Sunflare",
-      "source": "wowsims Phase 5 Balance preset",
+      "source": "Drop: Kil'jaeden (Sunwell Plateau)",
       "seen_in": [
         {
           "phase": "P5",
@@ -610,7 +610,7 @@
   "offhand": [
     {
       "item": "Heart of the Pit",
-      "source": "wowsims Phase 5 Balance preset",
+      "source": "Drop: Brutallus (Sunwell Plateau)",
       "seen_in": [
         {
           "phase": "P5",

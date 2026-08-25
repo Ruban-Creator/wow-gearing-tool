@@ -9,6 +9,10 @@
     --sage:#4f6d5c; --sage-bg:#e2e9de; --sage-strong:#2f4a3b;
     --brass:#9c6f34; --brass-bg:#f0e2c4; --brass-strong:#7a5322;
     --bad:#a1483c; --bad-bg:#f3e0dc;
+    /* Caution, not error - distinct from --bad's red (real blockers like
+       Locked) and --brass's gold (a different, unrelated legend row). Used
+       for the Armor Pen tag: a real signal worth noticing, not a problem. */
+    --warn:#a3821e; --warn-bg:#f2e6b8; --warn-strong:#7a5f12;
     /* WoW item-quality colors, toned to this palette's saturation - used
        only for the BiS-until-Phase-N tier tag (green reuses --sage). */
     --tier-blue:#3a6ea8; --tier-blue-bg:#dde6f0; --tier-blue-strong:#2b527d;
@@ -24,6 +28,7 @@
       --sage:#8bad99; --sage-bg:#25332a; --sage-strong:#a9c7b5;
       --brass:#e0b46f; --brass-bg:#3a2e18; --brass-strong:#f0cb8e;
       --bad:#e08b7e; --bad-bg:#3a221e;
+      --warn:#e0c04f; --warn-bg:#3a3018; --warn-strong:#f0d878;
       --tier-blue:#7fa8d9; --tier-blue-bg:#1f2d3d; --tier-blue-strong:#a8c5e8;
       --tier-purple:#b89ad9; --tier-purple-bg:#2a2038; --tier-purple-strong:#d0b8ea;
       --tier-orange:#e0954f; --tier-orange-bg:#3a2818; --tier-orange-strong:#f0b378;
@@ -37,6 +42,7 @@
     --sage:#8bad99; --sage-bg:#25332a; --sage-strong:#a9c7b5;
     --brass:#e0b46f; --brass-bg:#3a2e18; --brass-strong:#f0cb8e;
     --bad:#e08b7e; --bad-bg:#3a221e;
+    --warn:#e0c04f; --warn-bg:#3a3018; --warn-strong:#f0d878;
     --tier-blue:#7fa8d9; --tier-blue-bg:#1f2d3d; --tier-blue-strong:#a8c5e8;
     --tier-purple:#b89ad9; --tier-purple-bg:#2a2038; --tier-purple-strong:#d0b8ea;
     --tier-orange:#e0954f; --tier-orange-bg:#3a2818; --tier-orange-strong:#f0b378;
@@ -93,6 +99,7 @@
   .legend-label.brass{background:var(--brass-bg); color:var(--brass-strong);}
   .legend-label.neutral{background:var(--surface); border:1px solid var(--border-soft); color:var(--ink-muted);}
   .legend-label.bad{background:var(--bad-bg); color:var(--bad);}
+  .legend-label.warn{background:var(--warn-bg); color:var(--warn-strong);}
   .legend-desc{flex:1 1 auto; min-width:0; line-height:1.5;}
 
   /* ---------- Tier nav ---------- */
@@ -148,6 +155,7 @@
   .item-name .tag.tier-blue{color:var(--tier-blue-strong); background:var(--tier-blue-bg); border-color:var(--border-soft);}
   .item-name .tag.tier-purple{color:var(--tier-purple-strong); background:var(--tier-purple-bg); border-color:var(--border-soft);}
   .item-name .tag.tier-orange{color:var(--tier-orange-strong); background:var(--tier-orange-bg); border-color:var(--border-soft);}
+  .item-name .tag.arp-tag{color:var(--warn-strong); background:var(--warn-bg); border-color:var(--border-soft); cursor:help;}
   .pair-plus{color:var(--ink-faint); font-weight:400; margin:0 2px;}
   .item-source{font-size:12px; color:var(--ink-muted); margin-top:2px;}
 
@@ -261,7 +269,7 @@
       <span class="legend-label sage">Player · DPS</span>
       <span class="legend-desc">Your own personal damage-per-second gain vs. current gear — a real sim number.</span>
     </div>
-    <div class="legend-row">
+    <div class="legend-row" id="legend-ap">
       <span class="legend-label brass">Debuff · AP</span>
       <span class="legend-desc">How much stronger/weaker your Expose Weakness debuff gets, per physical attacker in the raid — multiply by your raid's actual count for a total. A different unit entirely, never added into Player.</span>
     </div>
@@ -272,6 +280,10 @@
     <div class="legend-row">
       <span class="legend-label bad">Locked</span>
       <span class="legend-desc">Real upgrade, but reputation- or rating-gated below what you currently have.</span>
+    </div>
+    <div class="legend-row" id="legend-arp">
+      <span class="legend-label warn">Armor Pen</span>
+      <span class="legend-desc">Carries Armor Penetration Rating. ArP's real value is nonlinear and depends on how much you already have stacked (up to the 100%-armor-reduction cap) — this tool doesn't currently joint-sim ArP combinations, so treat multiple ArP picks as needing a manual sanity check, not independently-additive DPS gains.</span>
     </div>
   </div>
 
@@ -291,7 +303,7 @@
 
   <section class="two-hand" id="two-hand-section" hidden>
     <div class="tier-head">
-      <h2>2H Weapon Options (melee weave)</h2>
+      <h2 id="two-hand-heading">2H Weapon Options</h2>
       <span class="count" id="two-hand-count"></span>
     </div>
     <div class="bis-sub" id="two-hand-sub"></div>
@@ -335,6 +347,28 @@ function horizonTag(it){
 
 document.getElementById('stat-baseline').textContent = DATA.baseline_dps.toFixed(1) + ' DPS';
 document.getElementById('stat-sha').textContent = DATA.sim_commit_sha.slice(0, 10);
+
+// Expose Weakness's raid-wide AP contribution is a Survival Hunter-only
+// mechanic (see CLAUDE.md's Stage 2 decision) - every other profile's
+// raid_ap_per_attacker is always null, so the whole "Debuff (AP/ea))"
+// column/legend is hidden outright for them rather than showing a column
+// of "n/a".
+const showAP = !!DATA.raid_ap_enabled;
+// Real bug found 2026-08-25: .legend-row{display:flex} (author CSS) beats
+// the browser's default [hidden]{display:none} UA rule at equal
+// specificity, so setting .hidden=true alone left this row visible -
+// setting the inline style directly always wins regardless of the class.
+if (!showAP) document.getElementById('legend-ap').style.display = 'none';
+
+// Same gate pattern as showAP above - only a profile whose real stat
+// weights value Armor Penetration (physical DPS specs) ever sees this tag.
+const showArp = !!DATA.arp_relevant;
+if (!showArp) document.getElementById('legend-arp').style.display = 'none';
+
+function arpTag(it){
+  if (!showArp || !it.arp_rating) return '';
+  return ` <span class="tag arp-tag" title="Armor Penetration Rating ${it.arp_rating} - stacks nonlinearly toward the ArP cap, verify combos manually">ArP ${it.arp_rating}</span>`;
+}
 
 document.getElementById('footer-methodology').textContent =
   'Screened @ ' + DATA.screen_iterations + ' iterations, confirmed @ ' + DATA.confirm_iterations +
@@ -414,17 +448,17 @@ DATA.tiers.forEach((tier, ti) => {
 
       row.innerHTML = `
         <div class="name-col">
-          <div class="item-name">${whLink(it.name, it.item_id)}${craftLink(it.craft_spell_id)}${screenedTag}${lockTag}${horizonTag(it)}</div>
+          <div class="item-name">${whLink(it.name, it.item_id)}${craftLink(it.craft_spell_id)}${screenedTag}${lockTag}${horizonTag(it)}${arpTag(it)}</div>
           <div class="item-source">${it.source || 'Source unclear'}</div>
         </div>
         <div class="delta dps">
           <div class="k">Player (DPS)</div>
           <div class="v ${dpsF.cls}">${dpsF.text}</div>
         </div>
-        <div class="delta ap">
+        ${showAP ? `<div class="delta ap">
           <div class="k">Debuff (AP/ea)</div>
           <div class="v ${apF.cls === 'na' ? 'na' : apF.cls}">${apF.text}</div>
-        </div>
+        </div>` : ''}
       `;
 
       if (it.set_note) {
@@ -471,14 +505,22 @@ if (twoHand.length > 0) {
   document.getElementById('two-hand-count').textContent =
     'top ' + twoHand.length + ' across all tiers';
 
-  const weaveGain = (twoHandMeta.weave_dw != null && twoHandMeta.no_weave_dw != null)
-    ? (twoHandMeta.weave_dw - twoHandMeta.no_weave_dw).toFixed(1) : null;
-  document.getElementById('two-hand-sub').innerHTML =
-    'Compared against weaving with your CURRENT dual-wield gear (' +
-    (twoHandMeta.weave_dw != null ? twoHandMeta.weave_dw.toFixed(1) : '?') + ' DPS' +
-    (weaveGain ? ', itself +' + weaveGain + ' over no-weave' : '') +
-    ') — not the no-weave baseline. On bosses that allow weaving, this is the real question: ' +
-    'does switching weapon help further, given you\'re already weaving.';
+  if (twoHandMeta.weave_supported) {
+    document.getElementById('two-hand-heading').textContent = '2H Weapon Options (melee weave)';
+    const weaveGain = (twoHandMeta.weave_dw != null && twoHandMeta.no_weave_dw != null)
+      ? (twoHandMeta.weave_dw - twoHandMeta.no_weave_dw).toFixed(1) : null;
+    document.getElementById('two-hand-sub').innerHTML =
+      'Compared against weaving with your CURRENT dual-wield gear (' +
+      (twoHandMeta.weave_dw != null ? twoHandMeta.weave_dw.toFixed(1) : '?') + ' DPS' +
+      (weaveGain ? ', itself +' + weaveGain + ' over no-weave' : '') +
+      ') — not the no-weave baseline. On bosses that allow weaving, this is the real question: ' +
+      'does switching weapon help further, given you\'re already weaving.';
+  } else {
+    document.getElementById('two-hand-sub').textContent =
+      'Compared against your current gear (' +
+      (twoHandMeta.weave_dw != null ? twoHandMeta.weave_dw.toFixed(1) : '?') +
+      ' DPS) — would a two-handed weapon beat what you have equipped now.';
+  }
 
   const twoHandBody = document.getElementById('two-hand-body');
   const block = document.createElement('div');
@@ -491,7 +533,7 @@ if (twoHand.length > 0) {
     const screenedTag = it.resolved ? '' : '<span class="tag">screened only</span>';
     row.innerHTML = `
       <div class="name-col">
-        <div class="item-name">${whLink(it.name, it.item_id)}${craftLink(it.craft_spell_id)}${screenedTag}${horizonTag(it)}</div>
+        <div class="item-name">${whLink(it.name, it.item_id)}${craftLink(it.craft_spell_id)}${screenedTag}${horizonTag(it)}${arpTag(it)}</div>
         <div class="item-source">${it.tier}: ${it.source || 'Source unclear'}</div>
       </div>
       <div class="delta dps">

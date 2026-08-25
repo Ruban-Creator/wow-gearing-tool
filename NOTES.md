@@ -2745,3 +2745,158 @@ per "record that as well in our list." **NOT live-tested** - written from readin
 source, not guessed, but never actually run in-game. Verify: log in, check `/gtlist` shows a
 recent trigger result, and confirm WSE's own SavedVariables timestamp for the character
 actually advanced (or just re-run `gear sync` and see equipped items are no longer stale).
+
+**2026-08-25: five real multi-profile bugs found and fixed by user review of Rubán's and
+Béarforceone's actual ledgers - a checklist for Stage 6.3 (Shaman) and beyond**, since every
+one of these is a "the code worked for Hunter, so it looked fine" trap that only surfaced once
+a SECOND and THIRD profile with genuinely different data shape existed. When building the next
+profile, check each of these against the new class's own real data before trusting its ledger:
+
+1. **A helper that hardcodes a provenance label instead of doing the real DB source lookup will
+   silently mask real data the DB actually has.** `core/build_wowsims_reference_bis.py` labeled
+   every reference-BiS item `"wowsims Phase N <Spec> preset"` instead of calling
+   `run_full_sweep_mv.describe_source_and_tier()` like the rest of the pipeline - Hunter never
+   exposed this because her reference BiS was hand-curated from Wowhead (real source text from
+   the start), but Warrior/Druid's wowsims-preset-sourced reference BiS meant 28 of 63 items
+   across both profiles had a real DB drop source sitting right there, unused. Fixed via
+   `_real_source()` (imports `run_full_sweep_mv` for its own `describe_source_and_tier`, only
+   falls back to the preset label when the DB genuinely has no source - same "Source unclear"
+   floor as everywhere else, so a genuine gap reads identically wherever it shows up). Check:
+   after building a new profile's reference_bis, spot check a few items against
+   `sim/tbc-new/assets/database/db.json`'s own `sources` field before assuming the preset label
+   was the only option.
+2. **`describe_source_and_tier()` only understands `drop`/`crafted`/`rep` source types** - real
+   PvP/Arena-purchased items (Onslaught set, Season gear generally) have `sources: None` in this
+   DB build entirely (no vendor/arena source type tracked at all). This is a genuine sim DB
+   data-completeness gap, not a parser bug - don't try to "fix" it by inventing a vendor-price
+   source, per the ground rules. Every future profile with PvP set pieces in its candidate pool
+   will hit this the same way.
+3. **A "melee weave" settings variant is a real, distinct Survival Hunter rotation mechanic, not
+   a generic "2H weapon alternative" concept** - `run_full_sweep_mv.py`'s 2H-weapon-options
+   section unconditionally used Hunter's weave framing/settings (`SETTINGS_2H`, "weave ON/OFF"
+   labels and math) for ANY profile with an offhand slot, which was meaningless for Balance
+   Druid (a caster choosing a 2H staff vs 1H+offhand is not "weaving" anything). Fixed via
+   `is_weave_profile = SETTINGS_2H != SETTINGS_TEMPLATE` (true exactly when a profile has its
+   own real `settings_template_2h.json`) gating both the sim calls (no more redundant
+   same-settings-twice sim call for a non-weave profile) and every user-facing label, in both
+   `run_full_sweep_mv.py`'s console output AND `report_template.html`'s heading/subtitle
+   (`two_hand_meta.weave_supported`). Only Hunter should ever see "melee weave" language -
+   check this explicitly for any future profile that reuses the 2H-alternative section
+   (dual_wield or one_hand_plus_offhand_item topologies).
+4. **A per-profile feature flag not being read yet is a real, easy-to-forget landmine** -
+   `arms_warrior/profile.json`'s own `raid_ap_contribution` note already self-documented "this
+   flag isn't actually read by run_full_sweep_mv.py today" (it degraded correctly anyway only
+   because `expose_weakness.measured_ew_uptime()` looks for a real Hunter-only spell id and
+   silently finds nothing for a Warrior sim - accidentally safe, not correctly gated). The
+   user-visible half of this gap was `report_template.html` always rendering the "Debuff (AP/ea)"
+   column/legend row even when every value was `null` for a non-Hunter profile. Fixed by
+   threading the real flag through: `build_ledger_data.build()` now takes `profile_dir`, reads
+   `profile["raid_ap_contribution"]["enabled"]` for real, and the template only renders the
+   column/legend when `DATA.raid_ap_enabled` is true. **Second, sneakier bug found fixing this
+   one**: `.legend-row{display:flex}` in the page's own CSS beats the browser's default
+   `[hidden]{display:none}` at equal specificity, so setting `.hidden = true` on the legend row
+   left it visibly unchanged - author CSS always wins over the UA stylesheet at a specificity
+   tie, hidden attribute or not. Fixed by setting `.style.display = 'none'` directly (inline
+   style always wins short of `!important`). **General lesson: never assume `element.hidden =
+   true` actually hides something - check whether any CSS rule sets `display` on that same
+   element/class first**, this template already had two other working examples
+   (`#two-hand-section`, `#bis-empty`) that happened to have no such competing rule, which is
+   exactly why this one slipped through unnoticed.
+5. **A curated candidate_pool.json built as a union across every phase a data source ships
+   (wowsims presets: P2-P5) needs its own explicit phase filter - it doesn't inherit one just
+   because the sweep's OTHER discovery path (`sweep_all_loot.py`) already has one.** Hunter's
+   own `candidate_pool_survival.json` was hand-curated to Phase 3 only from day one, so this
+   never came up for her; Warrior/Druid's reference-BiS-derived pool spans every phase wowsims
+   ships, and nothing filtered it before candidates got built from it - a "Phase 3 Ledger" was
+   listing real Phase 4/5 raid loot (Black Temple's own T6 tier is correctly Phase 3 on this
+   server's real schedule and stayed, confirmed by cross-checking Hunter's own long-established
+   Phase 3 report also includes T6 - but genuinely later content like Sunwell Plateau and
+   Zul'Aman drops, phase 4/5, had no business appearing at all). Fixed by filtering `candidates`
+   (from `opt.load_candidates()`) against each item's own real `db["phase"]` field right after
+   loading, mirroring `sweep_all_loot.eligible()`'s existing `item.get("phase", 99) > max_phase`
+   check - same real DB field, not invented data. **Any future profile whose reference-BiS/
+   candidate pool is built from a multi-phase source (which is now the standard approach per
+   the Stage 6.1 decision to prefer wowsims presets over hand-curated Wowhead) needs this same
+   filter applied - it is not automatic.**
+
+After all five fixes: re-ran Hunter's full pipeline as a regression check - byte-identical
+except the one new field each fix intentionally adds (`weave_supported`, `raid_ap_enabled`).
+`check_ledger_consistency.py` clean on all three characters (only the pre-existing, harmless
+"achieved_bis empty" warning on Warrior/Druid). Also found while running that checker: the
+on-disk `data/characters/<name>/cache/ledger_data_<phase>.json` cache file is not actually
+written by the real GUI flow (`gui/api.py`'s `run_report()` only builds it in memory) - it was
+stale from an earlier manual debug run and caused false-positive consistency-check failures
+that had nothing to do with these five bugs. Not fixed (no real consumer needs it on disk
+today), just worth knowing if that checker ever reports a mismatch again.
+
+**Same session, added afterward: a sixth item, this one flagged by the user rather than found
+by review - Armor Penetration Rating needs a visible warning tag, not just its normal linear EP
+weight.** ArP's real value is nonlinear (stacks toward the 100%-armor-reduction cap; Stage 5's
+interaction matrix would catch multi-ArP-item combinations properly via real joint sims, but
+it's dropped from the active pipeline for time-budget reasons - see the 2026-08-23 entry above),
+so a candidate carrying meaningful ArP needs a human sanity-check before trusting several
+independently-ranked picks are actually additive. Verified this was a live, current-data risk
+before building anything: Warrior's AND Hunter's own real `stat_weights.json` both weight ArP
+(stat id `"23"`) nonzero (0.23 and 0.9 respectively) - not Warrior-only, and the DB has 50 real
+phase<=3 items carrying it, several substantial (350 rating on Leggings of Divine Retribution,
+335 on Cataclysm's Edge). Implemented as a real per-profile flag, not hardcoded to one class:
+`run_full_sweep_mv.item_arp_rating()` reads an item's real base-stat ArP off
+`sim/tbc-new/assets/database/db.json`, gated on `stat_weights.get_active().get("23", 0) > 0` (so
+casters like Balance Druid, whose stat_weights.json has no ArP entry at all, never see it) -
+attached to every tiered-leaderboard row AND the 2H-alternative rows. `build_ledger_data.py`
+threads the same gate through as `arp_relevant` (loads `stat_weights.json` independently rather
+than trusting shared global state ordering across process boundaries). `report_template.html`
+renders a real "ArP <rating>" tag next to the item name (reusing the existing `--bad`/`--bag-bg`
+warning palette already used for "Locked") plus a gated legend row explaining why. Verified live
+after a real re-sweep of all three characters: Rubán shows 9 real flagged items across 8 slots
+(up to ArP 350), Lerynia's Hunter profile is also `arp_relevant: true` (confirms this isn't
+Warrior-specific), Béarforceone correctly shows `arp_relevant: false` throughout. Same
+`.legend-row{display:flex}` vs `[hidden]` pitfall from bug #4 above was avoided from the start
+by using `.style.display='none'` directly rather than `.hidden`, now that it's a known trap.
+Scope note: this is a warning label, not a real fix for the underlying gap - it doesn't compute
+a real joint-sim value for stacked ArP items, it just tells a human to go verify manually before
+trusting the ranking. Re-enabling Stage 5's interaction matrix (scoped to ArP-carrying candidates
+specifically, the same way it already special-cased Hit/Expertise Rating candidates before being
+dropped) would be the real fix if this becomes a recurring pain point.
+
+**Same session, one more: set pieces now rank by isolated mv + the real bonus threshold they
+complete, not isolated mv alone.** Per the user (2026-08-25): a set piece that's the specific
+piece crossing a real, currently-achievable 2pc/4pc threshold (given what's already owned of
+that set elsewhere) was ranked in the per-slot leaderboard purely by its own isolated mv, which
+can make it look like a weak pick even when the real, achievable combined value (with its bonus)
+beats standalone alternatives. Confirmed with the user which of three real design options to
+build (isolated mv + the specific threshold this piece completes, vs. sorting by the whole set's
+best-combo DPS, vs. a display-only badge with no new number) before writing anything, since the
+"fair" number to credit a single piece with is genuinely ambiguous (a 4pc bonus doesn't belong
+to any one piece intrinsically) - picked the first.
+
+Implementation: `threshold_values_by_set` captures the real per-threshold isolated bonus values
+(`set_bonus.isolate_bonus_value()`) that the existing `set_note` text already computes - no new
+sim calls, same gating as `set_notes_by_item` (a set whose own best-combo DPS doesn't beat
+baseline gets no credit, matching the 2026-08-24 fix that keeps a non-competitive set's pieces
+out of the "upgrades" list entirely). Per-candidate `set_bonus_credit` in the row-assembly loop:
+real total owned pieces of that set in `baseline_config`, minus 1 if the candidate's OWN target
+slot currently holds a same-set piece (it would be replaced, not stacked), plus 1 for the
+candidate itself - any threshold newly crossed by that transition gets summed in. New
+`rank_value(r) = r["mv"] + (r.get("set_bonus_credit") or 0)` replaces `r["mv"]` as the sort key
+in both the tier/slot leaderboard cut AND the final display sort (not the resolve-vs-screen
+precision decision, which stays keyed on the real isolated mv/noise - the credit is a ranking
+concept, not a "how sure are we of this number" one). The *displayed* DPS number for each item
+stays its honest isolated mv, unchanged - only where it sorts changes; the existing `set_note`
+text already explains the bonus threshold values in prose, so no new UI number was added (kept
+minimal, matching what was actually asked for).
+
+Verified real, not just "doesn't crash": re-ran full sweeps for all three characters. Only one
+candidate in the whole current sweep actually got a nonzero credit - Béarforceone's Wyrmhide
+Spaulders (crosses Oathbound's Wyrmhide Battlegear's real 2pc threshold given she already owns
+one other Wyrmhide piece), and correctly a NEGATIVE credit (-14.2, that bonus is actually bad) -
+confirms the logic handles a harmful bonus correctly too, not just positive ones. Zero credits
+fired for Lerynia or Rubán's current real gear state (expected - crediting only fires when a
+candidate is specifically the piece completing a threshold given CURRENT baseline ownership,
+which is a real but situational condition, not "every set piece gets a bonus"). Confirmed this
+is conservative-by-design, not a bug: a set she owns zero pieces of yet never gets credited for
+any single candidate, since one piece alone never crosses a 2pc+ threshold - matches reality.
+Regression check: diffed Lerynia's new tiered_report.json against the known-good baseline by
+item NAME ORDER specifically (not deep dict equality, which now differs harmlessly due to the
+new `arp_rating`/`set_bonus_credit` keys being present on every row) - zero real reordering,
+confirming `rank_value()` is a true no-op whenever credit is 0, exactly as designed.

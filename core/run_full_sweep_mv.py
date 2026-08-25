@@ -175,6 +175,22 @@ def horizon_tag(r: dict) -> str:
     return f"  [BiS through P{phase}]" if r.get("final_phase") else f"  [BiS until P{phase}]"
 
 
+def rank_value(r: dict) -> float:
+    """Real leaderboard sort key - a set piece's own isolated mv understates
+    its true worth whenever it's the specific piece that crosses a real,
+    currently-achievable set-bonus threshold (given what's already owned of
+    that set elsewhere): isolated mv alone would rank it against standalone
+    items using a number that ignores the bonus it's actually delivering.
+    set_bonus_credit (attached per-candidate in the row-assembly loop below,
+    from threshold_values_by_set - the same isolate_bonus_value() sim calls
+    the set_note text already pays for, never re-run) is 0/None for any
+    candidate that isn't the piece completing a real threshold, so this is
+    a no-op for the common case. Per the user (2026-08-25): order set
+    pieces higher than singular items when their real combined value
+    (isolated mv + the threshold bonus they complete) is actually higher."""
+    return r["mv"] + (r.get("set_bonus_credit") or 0)
+
+
 def slot_for_item(item: dict, weapon_topology: str = "dual_wield") -> str | None:
     """weapon_topology matters here (Stage 6.1/6.2, real bugs found and
     fixed, not a hypothetical):
@@ -229,6 +245,32 @@ def tier_from_text(text: str, zone_by_id: dict) -> str | None:
             if zname and zname in text:
                 return tier
     return None
+
+
+# Real Stat enum id (common.proto) for Armor Penetration Rating. Flagged
+# separately from the normal MV number (not folded into it) because ArP's
+# real value is nonlinear in a way a single-item MV against one baseline
+# can't fully capture: each ArP item's marginal DPS depends on how much ArP
+# is already stacked from OTHER equipped items, up to the 100%-armor-
+# reduction cap - two ArP items evaluated independently can each look
+# modest while their real combined value (a joint sim) is bigger than the
+# sum, or a second ArP item can look great in isolation while actually
+# pushing the character past the cap where it stops helping at all. Per the
+# user (2026-08-25): flag it so a human knows to sanity-check ArP-heavy
+# multi-item picks, rather than silently trust one-at-a-time MV ranking for
+# a stat this pipeline doesn't currently joint-sim (Stage 5's interaction
+# matrix, which would catch this properly, is dropped from the active
+# pipeline - see the 2026-08-23 NOTES.md entry on why).
+ARMOR_PEN_STAT_ID = "23"
+
+
+def item_arp_rating(item: dict) -> int:
+    """Real Armor Penetration Rating on an item's base stats (gems/enchants
+    not included - the common, visible case is the item's own itemization,
+    not a gem choice)."""
+    if not item:
+        return 0
+    return item.get("scalingOptions", {}).get("0", {}).get("stats", {}).get(ARMOR_PEN_STAT_ID, 0)
 
 
 def describe_source_and_tier(item: dict, npc_by_id: dict, zone_by_id: dict) -> tuple[str, str, int | None]:
@@ -351,6 +393,28 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
     acquisition_status = acquisition_gate.load_status()
 
     candidates = opt.load_candidates(POOL_PATH, owned_items, known_professions, pool_key_to_slots)
+    # Real bug found 2026-08-25: candidate_pool.json for a wowsims-preset-
+    # sourced profile (Warrior/Druid) is a union across every phase wowsims
+    # ships (P2-P5), unlike Hunter's own hand-curated candidate_pool_survival
+    # .json which only ever contained Phase 3 items to begin with - so a
+    # "Phase 3 Ledger" was listing real Phase 4/5 raid loot (Black Temple,
+    # even Sunwell) as an actionable upgrade. sweep_all_loot.py's own
+    # eligible() already gates its own additions on item["phase"] <=
+    # max_phase; this pool never went through that gate at all. Same real DB
+    # "phase" field, same standard - an item whose phase can't be determined
+    # (id not in idb, shouldn't happen) is kept rather than silently
+    # dropped, since there's no real evidence it's out of scope.
+    for slot, cands in candidates.items():
+        kept = []
+        for c in cands:
+            if not c.item_id:
+                kept.append(c)
+                continue
+            db_item = idb.by_id(c.item_id)
+            if db_item is not None and db_item.get("phase", 0) > phase_num:
+                continue
+            kept.append(c)
+        candidates[slot] = kept
     curated_ids = {c.item_id for cands in candidates.values() for c in cands if c.item_id}
     # Curated-pool items' real Wowhead source text/tier, so they show up in
     # the right tier bucket too, not just the sweep additions.
@@ -503,12 +567,21 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
     # of whichever pieces happen to cross it. Thresholds come straight
     # from the sim's own Go source (set_bonus_thresholds), never guessed.
     set_notes_by_item: dict[int, str] = {}
+    # Real per-threshold isolated bonus values, captured from the same sim
+    # calls the note text above already pays for (isolate_bonus_value() -
+    # never re-run separately below just to get the same number again).
+    # Used to credit whichever specific candidate piece would actually be
+    # the one crossing a threshold, given what she already owns of that
+    # set elsewhere - see the "set bonus ranking credit" section below for
+    # why a per-item leaderboard needs this instead of the flat isolated mv.
+    threshold_values_by_set: dict[str, dict[int, float]] = {}
     for set_name in sorted(set_names):
         thresholds = set_bonus.set_bonus_thresholds().get(set_name, [])
         if not thresholds:
             continue
         parts = []
         any_real = False
+        set_threshold_values: dict[int, float] = {}
         for threshold in thresholds:
             iso = set_bonus.isolate_bonus_value(SETTINGS_TEMPLATE, set_name, threshold,
                                                  candidates, baseline_config, SCREEN_ITERATIONS)
@@ -517,6 +590,8 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
             tag = "" if iso["real"] else " (tied)"
             any_real = any_real or iso["real"]
             parts.append(f"{threshold}pc bonus {iso['isolated_value']:+.1f}{tag}")
+            if iso["real"]:
+                set_threshold_values[threshold] = iso["isolated_value"]
         # Only flag items with this note if at least one threshold is a
         # real (non-tied) bonus - matches the original gating intent (a
         # set with no meaningful bonus anywhere shouldn't count as a
@@ -557,6 +632,7 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
         note = f"part of {set_name}: " + " · ".join(parts)
         for _, cand in set_bonus.set_pieces_in_pool(set_name, candidates):
             set_notes_by_item[cand.item_id] = note
+        threshold_values_by_set[set_name] = set_threshold_values
 
     if set_notes_by_item:
         print(f"Set-bonus check: {len(set_notes_by_item)} item(s) flagged across {len(set_names)} set(s).\n")
@@ -577,6 +653,16 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
     print(f"[+{time.time()-start:.1f}s] Screened {len(screened)} candidates @ {SCREEN_ITERATIONS} iter")
 
     # --- Pick each (tier, slot) leaderboard from the screening results ---
+    # ArP flag only means anything for a profile that actually weights it -
+    # a caster's stat_weights.json simply has no entry for it (see
+    # item_arp_rating()'s comment above), so this is False by construction
+    # for e.g. Balance Druid.
+    arp_relevant = stat_weights.get_active().get(ARMOR_PEN_STAT_ID, 0) > 0
+    # Real physical-slot lookup for the set-bonus-credit check below - needs
+    # to know what she currently has equipped in a candidate's OWN slot (to
+    # exclude it from the "already owned" count, since the candidate would
+    # replace it, not stack with it).
+    display_to_armor_slot = {SLOT_DISPLAY[s]: s for s in set_bonus.ARMOR_SET_SLOTS}
     by_tier_slot: dict[tuple[str, str], list] = {}
     for c, r in screened:
         if r.get("excluded_reason"):
@@ -585,10 +671,35 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
             continue  # already hers - not an acquisition target, see note above
         source, tier, craft_spell_id = item_meta.get(c.item_id, ("", "Other", None))
         slot_label = item_slot_label.get(c.item_id, "Other")
+        arp = item_arp_rating(idb.by_id(c.item_id)) if arp_relevant else 0
+        # Real set-bonus ranking credit (per the user, 2026-08-25): if THIS
+        # specific candidate is the piece that crosses a real, currently-
+        # achievable set-bonus threshold (given what she already owns of
+        # that set elsewhere), credit its isolated bonus value toward the
+        # sort key (rank_value(), used below) - not toward the displayed mv
+        # itself, which stays the honest isolated number.
+        set_bonus_credit = 0
+        item_dict = idb.by_id(c.item_id)
+        cand_set_name = item_dict.get("setName") if item_dict else None
+        if cand_set_name and cand_set_name in threshold_values_by_set:
+            phys_slot = display_to_armor_slot.get(slot_label)
+            if phys_slot:
+                idx = gc.SLOT_ORDER.index(phys_slot)
+                current_entry = baseline_config[idx] if idx < len(baseline_config) else None
+                current_item = idb.by_id(current_entry["id"]) if current_entry and current_entry.get("id") else None
+                owned_excl_slot = set_bonus.count_set_pieces_in_config(cand_set_name, baseline_config)
+                if current_item and current_item.get("setName") == cand_set_name:
+                    owned_excl_slot -= 1
+                count_with_candidate = owned_excl_slot + 1
+                for threshold, value in threshold_values_by_set[cand_set_name].items():
+                    if owned_excl_slot < threshold <= count_with_candidate:
+                        set_bonus_credit += value
         r = dict(r, source=source, tier=tier, slot=slot_label, item_id=c.item_id,
                  craft_spell_id=craft_spell_id,
                  set_note=set_notes_by_item.get(c.item_id),
                  gate=acquisition_gate.gate_for_item(source, slot_label, acquisition_status),
+                 arp_rating=arp or None,
+                 set_bonus_credit=set_bonus_credit or None,
                  **time_horizon.lasts_until_phase(c.name, c.item_id))
         by_tier_slot.setdefault((tier, slot_label), []).append((c, r))
 
@@ -621,7 +732,7 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
     # implementation. See NOTES.md's 2026-08-24 entry for the full numbers.
     to_resolve = []
     for key, rows in by_tier_slot.items():
-        rows.sort(key=lambda cr: cr[1]["mv"], reverse=True)
+        rows.sort(key=lambda cr: rank_value(cr[1]), reverse=True)
         for i, (c, r) in enumerate(rows[:LEADERBOARD_SIZE]):
             # The #1-ranked item for a (tier, slot) always enters the confirm
             # pass at minimum, regardless of the clear-margin check - per the
@@ -889,7 +1000,7 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
             # strong rescued item sorts to the bottom of its own slot and
             # never makes the top-5 cutoff below, defeating the point of
             # surfacing it at all.
-            upgrades.sort(key=lambda r: r["rescue_mv"] if r.get("rescue_note") else r["mv"], reverse=True)
+            upgrades.sort(key=lambda r: r["rescue_mv"] if r.get("rescue_note") else rank_value(r), reverse=True)
             if not upgrades:
                 continue
             tier_out[slot] = upgrades
@@ -952,12 +1063,20 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
         tiered_out[tier] = tier_out
 
     # --- 2H weapon options, own pool, own settings/baseline ---
-    # Compared against her CURRENT DW gear WITH weave enabled (not the
-    # no-weave baseline) - per the user, weave only happens "on bosses that
-    # allow for it", so on those specific bosses the real decision is
-    # "given I'm already weaving, does switching to a 2H weapon help
-    # further" - not "should I abandon DW entirely". The no-weave baseline
-    # is printed alongside for context, never silently dropped.
+    # Melee weave is a real, distinct rotation mechanic that currently only
+    # exists for Survival Hunter (settings_template_2h.json's "melee weave"
+    # APL variant - see NOTES.md's 2026-08-23 entry) - a caster like Balance
+    # Druid choosing between a 2H staff and a 1H+offhand combo is a plain
+    # weapon-choice comparison with no weave rotation involved at all. Real
+    # bug found 2026-08-25: this section unconditionally used weave framing
+    # (labels, a redundant "weave ON vs weave OFF" double-sim) for every
+    # dual/one-hand-plus-offhand profile, not just Hunter's. is_weave_profile
+    # is exactly SETTINGS_2H's own real/fallback distinction (line ~327) -
+    # a profile with a real settings_template_2h.json has a real weave
+    # mechanic to model; one that silently fell back to SETTINGS_TEMPLATE
+    # does not, and running the "same settings twice" sim call there was
+    # pure waste on top of being mislabeled.
+    is_weave_profile = SETTINGS_2H != SETTINGS_TEMPLATE
     print(f"[+{time.time()-start:.1f}s] Tiered report built. Starting 2H weapon analysis...")
 
     two_hand_out: list[dict] = []
@@ -972,13 +1091,31 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
     # straight to "mainhand" for it), so this is defense-in-depth there,
     # not the only thing preventing it firing.
     if profile["weapon_topology"] != "two_hand" and weapon_2h_candidates:
-        weave_dw_result = mv.valuation.evaluate(SETTINGS_2H, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
-        no_weave_result = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
-        print(f"=== 2H Weapon Options (melee weave rotation) ===")
-        print(f"Baseline, current DW gear, weave OFF: {no_weave_result['combined']:.1f}")
-        print(f"Baseline, current DW gear, weave ON:  {weave_dw_result['combined']:.1f} "
-              f"(+{weave_dw_result['combined'] - no_weave_result['combined']:.1f} from weave alone)\n")
-        two_hand_meta = {"no_weave_dw": no_weave_result["combined"], "weave_dw": weave_dw_result["combined"]}
+        if is_weave_profile:
+            # Compared against her CURRENT DW gear WITH weave enabled (not
+            # the no-weave baseline) - per the user, weave only happens "on
+            # bosses that allow for it", so on those specific bosses the
+            # real decision is "given I'm already weaving, does switching
+            # to a 2H weapon help further" - not "should I abandon DW
+            # entirely". The no-weave baseline is printed alongside for
+            # context, never silently dropped.
+            weave_dw_result = mv.valuation.evaluate(SETTINGS_2H, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
+            no_weave_result = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
+            print(f"=== 2H Weapon Options (melee weave rotation) ===")
+            print(f"Baseline, current DW gear, weave OFF: {no_weave_result['combined']:.1f}")
+            print(f"Baseline, current DW gear, weave ON:  {weave_dw_result['combined']:.1f} "
+                  f"(+{weave_dw_result['combined'] - no_weave_result['combined']:.1f} from weave alone)\n")
+            two_hand_meta = {"no_weave_dw": no_weave_result["combined"], "weave_dw": weave_dw_result["combined"],
+                              "weave_supported": True}
+        else:
+            # No real weave mechanic for this profile - one real sim call,
+            # plain "would a 2H weapon beat my current gear" comparison.
+            baseline_2h_result = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
+            print(f"=== 2H Weapon Options ===")
+            print(f"Baseline, current gear: {baseline_2h_result['combined']:.1f}\n")
+            weave_dw_result = baseline_2h_result
+            two_hand_meta = {"no_weave_dw": baseline_2h_result["combined"], "weave_dw": baseline_2h_result["combined"],
+                              "weave_supported": False}
 
         mh_idx = gc.SLOT_ORDER.index("mainhand")
         oh_idx = gc.SLOT_ORDER.index("offhand")
@@ -997,11 +1134,13 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
             delta = r["combined"] - weave_dw_result["combined"]
             noise = mv.delta_noise(weave_dw_result, r, SCREEN_ITERATIONS)
             source, tier, craft_spell_id = item_meta.get(c.item_id, ("Source unclear", "Other", None))
+            arp = item_arp_rating(idb.by_id(c.item_id)) if arp_relevant else 0
             rows_2h.append({"name": c.name, "item_id": c.item_id, "trial": trial,
                              "mv": delta, "noise_stdev": noise,
                              "tied_within_noise": abs(delta) < 2 * noise,
                              "source": source, "tier": tier, "craft_spell_id": craft_spell_id,
                              "resolved": False, "resolve_iterations": SCREEN_ITERATIONS,
+                             "arp_rating": arp or None,
                              **time_horizon.lasts_until_phase(c.name, c.item_id)})
         rows_2h.sort(key=lambda r: r["mv"], reverse=True)
 
@@ -1032,8 +1171,9 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
         for r in rows_2h:
             r.pop("trial")
 
+        vs_text = "vs weaving with current DW gear" if is_weave_profile else "vs current gear"
         if top_2h:
-            print(f"  -- Top {len(top_2h)} 2H upgrade(s) across all tiers/zones vs weaving with current DW gear --")
+            print(f"  -- Top {len(top_2h)} 2H upgrade(s) across all tiers/zones {vs_text} --")
             for r in top_2h:
                 flag = "" if r["resolved"] else "  (screened only)"
                 horizon = horizon_tag(r)
@@ -1041,10 +1181,14 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
             if len(real_upgrades_2h) > len(top_2h):
                 print(f"    ...and {len(real_upgrades_2h) - len(top_2h)} more real upgrade(s) not shown.")
         else:
-            print("  No 2H weapon beats weaving with her current DW gear.")
+            print(f"  No 2H weapon beats {vs_text.removeprefix('vs ')}.")
         print()
-    else:
-        print("=== 2H Weapon Options (melee weave rotation) ===\n  No eligible 2H weapons in the pool.\n")
+    elif profile["weapon_topology"] != "two_hand":
+        heading = "2H Weapon Options (melee weave rotation)" if is_weave_profile else "2H Weapon Options"
+        print(f"=== {heading} ===\n  No eligible 2H weapons in the pool.\n")
+    # else: a two_hand profile's mainhand IS her 2H slot already (routed
+    # straight through the normal pipeline above) - there's no separate
+    # "should I go 2H" question to print anything about at all.
 
     # Stage 5 (§7, the pairwise interaction matrix) is dropped from the
     # active pipeline per the user (2026-08-23) - its real cost (128

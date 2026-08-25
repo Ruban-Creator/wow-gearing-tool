@@ -2,7 +2,7 @@
   "head": [
     {
       "item": "Furious Gizmatic Goggles",
-      "source": "wowsims Phase 2 Arms preset",
+      "source": "Crafted: Engineering",
       "seen_in": [
         {
           "phase": "P2",
@@ -28,7 +28,7 @@
     },
     {
       "item": "Coif of Alleria",
-      "source": "wowsims Phase 5 Arms preset",
+      "source": "Drop: Kil'jaeden (Sunwell Plateau)",
       "seen_in": [
         {
           "phase": "P5",
@@ -41,7 +41,7 @@
   "neck": [
     {
       "item": "Pendant of the Perilous",
-      "source": "wowsims Phase 2 Arms preset",
+      "source": "Drop: (Serpentshrine Cavern)",
       "seen_in": [
         {
           "phase": "P2",
@@ -52,7 +52,7 @@
     },
     {
       "item": "Choker of Serrated Blades",
-      "source": "wowsims Phase 3 Arms preset",
+      "source": "Drop: (Hyjal Summit)",
       "seen_in": [
         {
           "phase": "P3",
@@ -67,7 +67,7 @@
     },
     {
       "item": "Hard Khorium Choker",
-      "source": "wowsims Phase 5 Arms preset",
+      "source": "Crafted: Jewelcrafting",
       "seen_in": [
         {
           "phase": "P5",
@@ -80,7 +80,7 @@
   "shoulder": [
     {
       "item": "Shoulderpads of the Stranger",
-      "source": "wowsims Phase 2 Arms preset",
+      "source": "Drop: Hydross the Unstable (Serpentshrine Cavern)",
       "seen_in": [
         {
           "phase": "P2",
@@ -119,7 +119,7 @@
   "back": [
     {
       "item": "Vengeance Wrap",
-      "source": "wowsims Phase 2 Arms preset",
+      "source": "Crafted: Tailoring",
       "seen_in": [
         {
           "phase": "P2",
@@ -130,7 +130,7 @@
     },
     {
       "item": "Shadowmoon Destroyer's Drape",
-      "source": "wowsims Phase 3 Arms preset",
+      "source": "Drop: Teron Gorefiend (Black Temple)",
       "seen_in": [
         {
           "phase": "P3",
@@ -152,7 +152,7 @@
     },
     {
       "item": "Cloak of Unforgivable Sin",
-      "source": "wowsims Phase 5 Arms preset",
+      "source": "Drop: Kil'jaeden (Sunwell Plateau)",
       "seen_in": [
         {
           "phase": "P5",
@@ -165,7 +165,7 @@
   "chest": [
     {
       "item": "Bloodsea Brigand's Vest",
-      "source": "wowsims Phase 2 Arms preset",
+      "source": "Drop: Fathom-Lord Karathress (Serpentshrine Cavern)",
       "seen_in": [
         {
           "phase": "P2",
@@ -204,7 +204,7 @@
   "wrist": [
     {
       "item": "Bracers of Eradication",
-      "source": "wowsims Phase 2 Arms preset",
+      "source": "Drop: The Lurker Below (Serpentshrine Cavern)",
       "seen_in": [
         {
           "phase": "P2",
@@ -215,7 +215,7 @@
     },
     {
       "item": "Deadly Cuffs",
-      "source": "wowsims Phase 3 Arms preset",
+      "source": "Drop: Rage Winterchill (Hyjal Summit)",
       "seen_in": [
         {
           "phase": "P3",
@@ -243,7 +243,7 @@
   "hands": [
     {
       "item": "Gloves of the Searing Grip",
-      "source": "wowsims Phase 2 Arms preset",
+      "source": "Drop: Al'ar (Tempest Keep)",
       "seen_in": [
         {
           "phase": "P2",
@@ -269,7 +269,7 @@
     },
     {
       "item": "Thalassian Ranger Gauntlets",
-      "source": "wowsims Phase 5 Arms preset",
+      "source": "Drop: Kil'jaeden (Sunwell Plateau)",
       "seen_in": [
         {
           "phase": "P5",
@@ -282,7 +282,7 @@
   "waist": [
     {
       "item": "Belt of One-Hundred Deaths",
-      "source": "wowsims Phase 2 Arms preset",
+      "source": "Drop: Lady Vashj (Serpentshrine Cavern)",
       "seen_in": [
         {
           "phase": "P2",
@@ -314,7 +314,7 @@
   "legs": [
     {
       "item": "Leggings of Murderous Intent",
-      "source": "wowsims Phase 2 Arms preset",
+      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
       "seen_in": [
         {
           "phase": "P2",
@@ -325,7 +325,7 @@
     },
     {
       "item": "Leggings of Divine Retribution",
-      "source": "wowsims Phase 3 Arms preset",
+      "source": "Drop: Gurtogg Bloodboil (Black Temple)",
       "seen_in": [
         {
           "phase": "P3",
@@ -340,7 +340,7 @@
     },
     {
       "item": "Leggings of the Immortal Night",
-      "source": "wowsims Phase 5 Arms preset",
+      "source": "Drop: Felmyst (Sunwell Plateau)",
       "seen_in": [
         {
           "phase": "P5",
@@ -353,7 +353,7 @@
   "feet": [
     {
       "item": "Warboots of Obliteration",
-      "source": "wowsims Phase 2 Arms preset",
+      "source": "Drop: Morogrim Tidewalker (Serpentshrine Cavern)",
       "seen_in": [
         {
           "phase": "P2",
@@ -364,7 +364,7 @@
     },
     {
       "item": "Shadowmaster's Boots",
-      "source": "wowsims Phase 3 Arms preset",
+      "source": "Drop: Mother Shahraz (Black Temple)",
       "seen_in": [
         {
           "phase": "P3",
@@ -392,7 +392,7 @@
   "ring": [
     {
       "item": "Band of the Ranger-General",
-      "source": "wowsims Phase 2 Arms preset",
+      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
       "seen_in": [
         {
           "phase": "P2",
@@ -414,7 +414,7 @@
     },
     {
       "item": "Stormrage Signet Ring",
-      "source": "wowsims Phase 3 Arms preset",
+      "source": "Drop: Illidan Stormrage (Black Temple)",
       "seen_in": [
         {
           "phase": "P3",
@@ -429,7 +429,7 @@
     },
     {
       "item": "Unstoppable Aggressor's Ring",
-      "source": "wowsims Phase 3 Arms preset",
+      "source": "Drop: Gurtogg Bloodboil (Black Temple)",
       "seen_in": [
         {
           "phase": "P3",
@@ -440,7 +440,7 @@
     },
     {
       "item": "Signet of Primal Wrath",
-      "source": "wowsims Phase 4 Arms preset",
+      "source": "Drop: (Zul'Aman)",
       "seen_in": [
         {
           "phase": "P4",
@@ -451,7 +451,7 @@
     },
     {
       "item": "Band of Ruinous Delight",
-      "source": "wowsims Phase 5 Arms preset",
+      "source": "Drop: Eredar Twins (Sunwell Plateau)",
       "seen_in": [
         {
           "phase": "P5",
@@ -462,7 +462,7 @@
     },
     {
       "item": "Hard Khorium Band",
-      "source": "wowsims Phase 5 Arms preset",
+      "source": "Crafted: Jewelcrafting",
       "seen_in": [
         {
           "phase": "P5",
@@ -475,7 +475,7 @@
   "trinket": [
     {
       "item": "Dragonspine Trophy",
-      "source": "wowsims Phase 2 Arms preset",
+      "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)",
       "seen_in": [
         {
           "phase": "P2",
@@ -498,7 +498,7 @@
     },
     {
       "item": "Badge of the Swarmguard",
-      "source": "wowsims Phase 2 Arms preset",
+      "source": "Drop: Battleguard Sartura (Ahn'Qiraj)",
       "seen_in": [
         {
           "phase": "P2",
@@ -509,7 +509,7 @@
     },
     {
       "item": "Madness of the Betrayer",
-      "source": "wowsims Phase 3 Arms preset",
+      "source": "Drop: The Illidari Council (Black Temple)",
       "seen_in": [
         {
           "phase": "P3",
@@ -524,7 +524,7 @@
     },
     {
       "item": "Blackened Naaru Sliver",
-      "source": "wowsims Phase 5 Arms preset",
+      "source": "Drop: M'uru (Sunwell Plateau)",
       "seen_in": [
         {
           "phase": "P5",
@@ -537,7 +537,7 @@
   "weapon_2h": [
     {
       "item": "Twinblade of the Phoenix",
-      "source": "wowsims Phase 2 Arms preset",
+      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
       "seen_in": [
         {
           "phase": "P2",
@@ -548,7 +548,7 @@
     },
     {
       "item": "Cataclysm's Edge",
-      "source": "wowsims Phase 3 Arms preset",
+      "source": "Drop: Archimonde (Hyjal Summit)",
       "seen_in": [
         {
           "phase": "P3",
@@ -563,7 +563,7 @@
     },
     {
       "item": "Apolyon, the Soul-Render",
-      "source": "wowsims Phase 5 Arms preset",
+      "source": "Drop: Kil'jaeden (Sunwell Plateau)",
       "seen_in": [
         {
           "phase": "P5",
@@ -576,7 +576,7 @@
   "ranged": [
     {
       "item": "Serpent Spine Longbow",
-      "source": "wowsims Phase 2 Arms preset",
+      "source": "Drop: Lady Vashj (Serpentshrine Cavern)",
       "seen_in": [
         {
           "phase": "P2",
@@ -591,7 +591,7 @@
     },
     {
       "item": "Ancient Amani Longbow",
-      "source": "wowsims Phase 4 Arms preset",
+      "source": "Drop: Zul'jin (Zul'Aman)",
       "seen_in": [
         {
           "phase": "P4",
@@ -602,7 +602,7 @@
     },
     {
       "item": "Golden Bow of Quel'Thalas",
-      "source": "wowsims Phase 5 Arms preset",
+      "source": "Drop: Eredar Twins (Sunwell Plateau)",
       "seen_in": [
         {
           "phase": "P5",

@@ -19,8 +19,30 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import item_db as idb  # noqa: E402
+import run_full_sweep_mv as sweep  # noqa: E402 - reuses describe_source_and_tier() so a
+# reference-BiS item with a real DB drop/craft/rep source shows that, not a
+# generic "came from a wowsims preset" label that says nothing about where
+# to actually get the item (real bug found 2026-08-25: 12 of Rubán's 16
+# preset-sourced items had real DB drop data being silently discarded).
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_PATH = os.path.join(REPO_ROOT, "sim", "tbc-new", "assets", "database", "db.json")
+_db = json.load(open(DB_PATH, encoding="utf-8"))
+NPC_BY_ID = {n["id"]: n["name"] for n in _db.get("npcs", [])}
+ZONE_BY_ID = {z["id"]: z["name"] for z in _db.get("zones", [])}
+
+
+def _real_source(item: dict, phase: str, spec_label: str) -> str:
+    """Real DB drop/craft/rep source when the DB has one; falls back to the
+    wowsims-preset provenance label (not a real acquisition source, just
+    "this is where the recommendation came from") only when the DB
+    genuinely has no source data for this item - same "Source unclear"
+    fallback the rest of the pipeline uses in that case, so a real gap
+    reads the same way everywhere rather than being masked by the label."""
+    desc, _tier, _craft = sweep.describe_source_and_tier(item, NPC_BY_ID, ZONE_BY_ID)
+    if desc != "Source unclear":
+        return desc
+    return f"wowsims {phase.replace('phase', 'Phase ')} {spec_label} preset"
 
 SLOT_ORDER = ["head", "neck", "shoulder", "back", "chest", "wrist", "hands", "waist",
               "legs", "feet", "ring1", "ring2", "trinket1", "trinket2",
@@ -64,8 +86,9 @@ def _weapon_pool_key(slot: str, hand_type: int | None) -> str | None:
 
 
 def resolve_gear_set(path: str) -> dict[str, dict]:
-    """slot -> {"item": name, "id": int, "hand_type": int|None} for each
-    real (non-empty) slot."""
+    """slot -> {"item": name, "id": int, "hand_type": int|None, "db_item": dict}
+    for each real (non-empty) slot. db_item is kept so the caller can look up
+    its real acquisition source instead of just labeling it by provenance."""
     data = json.load(open(path, encoding="utf-8"))
     result = {}
     for slot, it in zip(SLOT_ORDER, data["items"]):
@@ -76,7 +99,8 @@ def resolve_gear_set(path: str) -> dict[str, dict]:
             print(f"WARNING: {path} slot {slot} id={it['id']} not found in item DB - skipped, "
                   f"needs a real Wowhead fallback entry for this slot/phase.")
             continue
-        result[slot] = {"item": item["name"], "id": it["id"], "hand_type": item.get("handType")}
+        result[slot] = {"item": item["name"], "id": it["id"], "hand_type": item.get("handType"),
+                         "db_item": item}
     return result
 
 
@@ -104,7 +128,7 @@ def build(profile_dir: str, gear_sets_dir: str, spec_label: str, phase_files: di
             slots_out.setdefault(pool_key, []).append({
                 "item": entry["item"],
                 "rank": "Best",
-                "source": f"wowsims {phase.replace('phase', 'Phase ')} {spec_label} preset",
+                "source": _real_source(entry["db_item"], phase, spec_label),
             })
         out_path = os.path.join(ref_dir, f"{phase}.json")
         with open(out_path, "w", encoding="utf-8") as f:
@@ -123,7 +147,7 @@ def build(profile_dir: str, gear_sets_dir: str, spec_label: str, phase_files: di
                 continue
             bucket = pool.setdefault(pool_key, {})
             rec = bucket.setdefault(entry["item"], {
-                "source": f"wowsims {phase.replace('phase', 'Phase ')} {spec_label} preset",
+                "source": _real_source(entry["db_item"], phase, spec_label),
                 "seen_in": [],
             })
             rec["seen_in"].append({"phase": phase.replace("phase", "P"), "rank": "Best"})

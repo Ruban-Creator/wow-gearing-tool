@@ -11,7 +11,7 @@
       {
         "item": "Choker of Serrated Blades",
         "rank": "Best",
-        "source": "wowsims Phase 4 Arms preset"
+        "source": "Drop: (Hyjal Summit)"
       }
     ],
     "shoulder": [
@@ -39,7 +39,7 @@
       {
         "item": "Deadly Cuffs",
         "rank": "Best",
-        "source": "wowsims Phase 4 Arms preset"
+        "source": "Drop: Rage Winterchill (Hyjal Summit)"
       }
     ],
     "hands": [
@@ -53,59 +53,59 @@
       {
         "item": "Belt of One-Hundred Deaths",
         "rank": "Best",
-        "source": "wowsims Phase 4 Arms preset"
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
       }
     ],
     "legs": [
       {
         "item": "Leggings of Divine Retribution",
         "rank": "Best",
-        "source": "wowsims Phase 4 Arms preset"
+        "source": "Drop: Gurtogg Bloodboil (Black Temple)"
       }
     ],
     "feet": [
       {
         "item": "Shadowmaster's Boots",
         "rank": "Best",
-        "source": "wowsims Phase 4 Arms preset"
+        "source": "Drop: Mother Shahraz (Black Temple)"
       }
     ],
     "ring": [
       {
         "item": "Stormrage Signet Ring",
         "rank": "Best",
-        "source": "wowsims Phase 4 Arms preset"
+        "source": "Drop: Illidan Stormrage (Black Temple)"
       },
       {
         "item": "Signet of Primal Wrath",
         "rank": "Best",
-        "source": "wowsims Phase 4 Arms preset"
+        "source": "Drop: (Zul'Aman)"
       }
     ],
     "trinket": [
       {
         "item": "Madness of the Betrayer",
         "rank": "Best",
-        "source": "wowsims Phase 4 Arms preset"
+        "source": "Drop: The Illidari Council (Black Temple)"
       },
       {
         "item": "Dragonspine Trophy",
         "rank": "Best",
-        "source": "wowsims Phase 4 Arms preset"
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
       }
     ],
     "weapon_2h": [
       {
         "item": "Cataclysm's Edge",
         "rank": "Best",
-        "source": "wowsims Phase 4 Arms preset"
+        "source": "Drop: Archimonde (Hyjal Summit)"
       }
     ],
     "ranged": [
       {
         "item": "Ancient Amani Longbow",
         "rank": "Best",
-        "source": "wowsims Phase 4 Arms preset"
+        "source": "Drop: Zul'jin (Zul'Aman)"
       }
     ]
   }

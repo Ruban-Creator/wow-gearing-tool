@@ -338,3 +338,13 @@ something I changed unilaterally this session.
 `Béarforceone-Thunderstrike` (Balance Druid) all show `has_profile: true` in the GUI and have a
 real, working report sitting in `data/characters/<name>/reports/phase3.html`. Nothing committed
 yet - same as after Stage 6.1, left for you to review first.
+
+## TODO for you: manually verify "Teeth of Gruul" as a real DPS upgrade for Béarforceone
+
+You flagged confusion (2026-08-25) that a "healing" neck, Teeth of Gruul, shows as a +20.4 DPS
+upgrade for Béarforceone despite being healing-leaning (Healing Power 46 is its largest stat,
+contributing zero to her DPS). I re-ran the exact sim comparison and it's real and reproducible
+(+20.4 DPS, far outside noise) - it's a higher-ilvl epic with a bigger total stat budget than her
+current neck plus real Intellect/Spirit/MP5 her current piece has none of, likely a mana-sustain
+nonlinearity a flat EP weight doesn't capture. You said you'd rather confirm this yourself once
+home rather than just take my sim re-run as the final word - this is that flag, so it isn't lost.

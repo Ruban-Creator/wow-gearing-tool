@@ -132,7 +132,7 @@ def _run_report_job(name_realm: str, phase: str) -> None:
                                 progress_cb=progress_cb)
 
         _set_status(stage="Building report", detail=None)
-        ledger_data = build_ledger_data.build(name_realm, phase)
+        ledger_data = build_ledger_data.build(name_realm, phase, profile_dir=SUPPORTED_CHARACTERS[name_realm])
         html = render_report.render(ledger_data, char_data, phase)
 
         out_path = local_config.report_output_path(name_realm, phase)

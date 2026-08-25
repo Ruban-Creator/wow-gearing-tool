@@ -11,7 +11,7 @@
       {
         "item": "Amulet of Unfettered Magics",
         "rank": "Best",
-        "source": "wowsims Phase 5 Balance preset"
+        "source": "Drop: Eredar Twins (Sunwell Plateau)"
       }
     ],
     "shoulder": [
@@ -25,7 +25,7 @@
       {
         "item": "Tattered Cape of Antonidas",
         "rank": "Best",
-        "source": "wowsims Phase 5 Balance preset"
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
       }
     ],
     "chest": [
@@ -60,7 +60,7 @@
       {
         "item": "Breeches of Natural Aggression",
         "rank": "Best",
-        "source": "wowsims Phase 5 Balance preset"
+        "source": "Drop: Kalecgos (Sunwell Plateau)"
       }
     ],
     "feet": [
@@ -74,38 +74,38 @@
       {
         "item": "Ring of Omnipotence",
         "rank": "Best",
-        "source": "wowsims Phase 5 Balance preset"
+        "source": "Drop: M'uru (Sunwell Plateau)"
       },
       {
         "item": "Loop of Forged Power",
         "rank": "Best",
-        "source": "wowsims Phase 5 Balance preset"
+        "source": "Crafted: Jewelcrafting"
       }
     ],
     "trinket": [
       {
         "item": "The Skull of Gul'dan",
         "rank": "Best",
-        "source": "wowsims Phase 5 Balance preset"
+        "source": "Drop: Illidan Stormrage (Black Temple)"
       },
       {
         "item": "Shifting Naaru Sliver",
         "rank": "Best",
-        "source": "wowsims Phase 5 Balance preset"
+        "source": "Drop: M'uru (Sunwell Plateau)"
       }
     ],
     "mainhand": [
       {
         "item": "Sunflare",
         "rank": "Best",
-        "source": "wowsims Phase 5 Balance preset"
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
       }
     ],
     "offhand": [
       {
         "item": "Heart of the Pit",
         "rank": "Best",
-        "source": "wowsims Phase 5 Balance preset"
+        "source": "Drop: Brutallus (Sunwell Plateau)"
       }
     ],
     "ranged": [

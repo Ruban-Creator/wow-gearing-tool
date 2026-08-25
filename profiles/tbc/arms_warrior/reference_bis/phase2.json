@@ -4,77 +4,77 @@
       {
         "item": "Furious Gizmatic Goggles",
         "rank": "Best",
-        "source": "wowsims Phase 2 Arms preset"
+        "source": "Crafted: Engineering"
       }
     ],
     "neck": [
       {
         "item": "Pendant of the Perilous",
         "rank": "Best",
-        "source": "wowsims Phase 2 Arms preset"
+        "source": "Drop: (Serpentshrine Cavern)"
       }
     ],
     "shoulder": [
       {
         "item": "Shoulderpads of the Stranger",
         "rank": "Best",
-        "source": "wowsims Phase 2 Arms preset"
+        "source": "Drop: Hydross the Unstable (Serpentshrine Cavern)"
       }
     ],
     "back": [
       {
         "item": "Vengeance Wrap",
         "rank": "Best",
-        "source": "wowsims Phase 2 Arms preset"
+        "source": "Crafted: Tailoring"
       }
     ],
     "chest": [
       {
         "item": "Bloodsea Brigand's Vest",
         "rank": "Best",
-        "source": "wowsims Phase 2 Arms preset"
+        "source": "Drop: Fathom-Lord Karathress (Serpentshrine Cavern)"
       }
     ],
     "wrist": [
       {
         "item": "Bracers of Eradication",
         "rank": "Best",
-        "source": "wowsims Phase 2 Arms preset"
+        "source": "Drop: The Lurker Below (Serpentshrine Cavern)"
       }
     ],
     "hands": [
       {
         "item": "Gloves of the Searing Grip",
         "rank": "Best",
-        "source": "wowsims Phase 2 Arms preset"
+        "source": "Drop: Al'ar (Tempest Keep)"
       }
     ],
     "waist": [
       {
         "item": "Belt of One-Hundred Deaths",
         "rank": "Best",
-        "source": "wowsims Phase 2 Arms preset"
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
       }
     ],
     "legs": [
       {
         "item": "Leggings of Murderous Intent",
         "rank": "Best",
-        "source": "wowsims Phase 2 Arms preset"
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
       }
     ],
     "feet": [
       {
         "item": "Warboots of Obliteration",
         "rank": "Best",
-        "source": "wowsims Phase 2 Arms preset"
+        "source": "Drop: Morogrim Tidewalker (Serpentshrine Cavern)"
       }
     ],
     "ring": [
       {
         "item": "Band of the Ranger-General",
         "rank": "Best",
-        "source": "wowsims Phase 2 Arms preset"
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
       },
       {
         "item": "Shapeshifter's Signet",
@@ -86,26 +86,26 @@
       {
         "item": "Dragonspine Trophy",
         "rank": "Best",
-        "source": "wowsims Phase 2 Arms preset"
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
       },
       {
         "item": "Badge of the Swarmguard",
         "rank": "Best",
-        "source": "wowsims Phase 2 Arms preset"
+        "source": "Drop: Battleguard Sartura (Ahn'Qiraj)"
       }
     ],
     "weapon_2h": [
       {
         "item": "Twinblade of the Phoenix",
         "rank": "Best",
-        "source": "wowsims Phase 2 Arms preset"
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
       }
     ],
     "ranged": [
       {
         "item": "Serpent Spine Longbow",
         "rank": "Best",
-        "source": "wowsims Phase 2 Arms preset"
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
       }
     ]
   }
