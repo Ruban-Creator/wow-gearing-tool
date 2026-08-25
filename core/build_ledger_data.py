@@ -27,6 +27,11 @@ import time_horizon  # noqa: E402
 import stat_weights  # noqa: E402
 import run_full_sweep_mv as sweep_mv  # noqa: E402 - source of truth for the real iteration counts (see report_template.html's footer)
 
+# See adapters/tbc/valuation.py's own copy of this comment - the packaged
+# (windowed, console-less) GUI has nowhere to attach a child console, so
+# Windows pops a new visible one for this git call unless told not to.
+_NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOP_N_SHOWN = 5
 
@@ -61,7 +66,7 @@ def build(name_realm: str, phase: str, profile_dir: str | None = None):
 
     sim_commit_sha = subprocess.run(
         ["git", "-C", os.path.join(REPO_ROOT, "sim", "tbc-new"), "rev-parse", "HEAD"],
-        capture_output=True, text=True, check=True).stdout.strip()
+        capture_output=True, text=True, check=True, creationflags=_NO_WINDOW).stdout.strip()
 
     return {
         "baseline_dps": report["baseline_screened"],

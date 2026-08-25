@@ -11,10 +11,16 @@ import collections
 import json
 import os
 import subprocess
+import sys
 import threading
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SIMSERVER_EXE = os.path.join(REPO_ROOT, "adapters", "tbc", "simserver", "simserver.exe")
+
+# See valuation.py's own copy of this comment - the packaged (windowed,
+# console-less) GUI has nowhere to attach a child console, so Windows pops
+# a new visible one for every subprocess call here unless told not to.
+_NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 
 
 class SimServerProcess:
@@ -26,7 +32,7 @@ class SimServerProcess:
         self.proc = subprocess.Popen(
             [SIMSERVER_EXE],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            text=True, bufsize=1,
+            text=True, bufsize=1, creationflags=_NO_WINDOW,
         )
         ready = self.proc.stderr.readline()
         if "ready" not in ready:

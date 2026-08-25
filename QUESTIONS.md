@@ -445,6 +445,17 @@ Blacksmithing") - a pre-existing cosmetic formatting quirk in `run_full_sweep_mv
 (combines `tier` and `source` blindly, and a crafted item's tier bucket name is already
 "Crafted"), not something introduced today, and doesn't affect the JSON/HTML report data.
 
+## Console-window flood during report runs - real bug, fixed and verified
+
+You reported a lot of black cmd windows opening during a report run. Real, confirmed via your
+own screenshot (windows titled after `adapters/tbc/bridge`'s path). Cause: the packaged GUI has
+no console of its own, so every subprocess call to bridge.exe/wowsimcli.exe/simserver.exe/git
+made Windows pop a new visible console for the child instead - bridge.exe alone gets called on
+every single real sim call, so a full sweep meant hundreds of flashing windows. Fixed all 7 real
+subprocess call sites across the codebase with `CREATE_NO_WINDOW`, rebuilt the exe, and verified
+live: ran a real uncached sweep and watched the process list the whole time - no stray windows,
+real report still generated correctly. See NOTES.md for the full list of files touched.
+
 ## TODO for you: manually verify "Teeth of Gruul" as a real DPS upgrade for Béarforceone
 
 You flagged confusion (2026-08-25) that a "healing" neck, Teeth of Gruul, shows as a +20.4 DPS

@@ -16,6 +16,11 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 
+# See adapters/tbc/valuation.py's own copy of this comment - the packaged
+# (windowed, console-less) GUI has nowhere to attach a child console, so
+# Windows pops a new visible one for this git call unless told not to.
+_NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+
 from slpp import slpp as lua
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -39,7 +44,7 @@ def parse_lua_savedvariables(path: str) -> dict:
 def sim_commit_sha() -> str:
     out = subprocess.run(
         ["git", "-C", SIM_SUBMODULE, "rev-parse", "HEAD"],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, check=True, creationflags=_NO_WINDOW,
     )
     return out.stdout.strip()
 

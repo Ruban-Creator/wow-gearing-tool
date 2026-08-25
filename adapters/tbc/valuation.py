@@ -28,6 +28,18 @@ import sim_cache  # noqa: E402
 import gear_config  # noqa: E402
 import item_db  # noqa: E402
 
+# Real bug found 2026-08-25: the packaged GUI (a windowed, console-less
+# PyInstaller build) has no console of its own, so every bridge.exe
+# subprocess.run() call here (hundreds per sweep - once per real sim call)
+# made Windows spawn a brand-new visible console window for the child,
+# since it has nowhere else to attach one. Never affected functionality
+# (stdout/stderr aren't read from bridge.exe here), just flooded the
+# screen with flashing black windows during a report run - alarming for a
+# real user, not just cosmetic. CREATE_NO_WINDOW tells Windows not to
+# allocate one at all; harmless on non-Windows since it's never referenced
+# there.
+_NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+
 # Fist weapons only, per the user: they benefit disproportionately from
 # Weightstone's FLAT +14 crit rating / +12 weapon damage (a bigger relative
 # gain than on a bladed weapon, whose higher base damage dilutes the same
@@ -153,7 +165,7 @@ def _build_raid_sim_request(settings: dict, iterations: int, seed: int) -> dict:
         subprocess.run(
             [adapter.BRIDGE_EXE, "-in", in_path, "-out", out_path,
              "-iterations", str(iterations), "-seed", str(seed)],
-            check=True,
+            check=True, creationflags=_NO_WINDOW,
         )
         with open(out_path, encoding="utf-8") as f:
             return json.load(f)

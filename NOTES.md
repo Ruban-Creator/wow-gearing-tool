@@ -3020,3 +3020,31 @@ real exe, screenshotted it (confirmed via .NET `System.Drawing`/`user32.dll` P/I
 PowerShell - this session had real remote-control access to the user's machine), clicked through
 Run Report → Phase 1 → Run, and confirmed a real "Report ready" result registered in
 `reports.json` with a fresh timestamp - not just trusted from reading the code.
+
+**Same session, one more real GUI bug: a flood of visible black console windows during every
+report run.** The user reported it directly, and it was real - confirmed live in a screenshot,
+windows titled after `adapters/tbc/bridge`'s own path. Root cause: the packaged GUI is a
+windowed, console-less PyInstaller build (`console=False` in `packaging/gearing_tool_gui.spec`),
+so it has no console of its own for a child process to attach to - every plain
+`subprocess.run()`/`subprocess.Popen()` call spawning a console-mode child (bridge.exe,
+wowsimcli.exe, simserver.exe, git) made Windows allocate a brand-new visible console window for
+that child instead, since it had nowhere else to put one. `adapters/tbc/valuation.py`'s
+`_build_raid_sim_request()` was the dominant source - it calls bridge.exe on literally every real
+sim call (hundreds per sweep), so a full sweep flashed hundreds of black windows across the
+screen. Never affected functionality (stdout/stderr aren't read from bridge.exe there at all, and
+simserver.exe/wowsimcli.exe both communicate via captured pipes already) - purely a
+alarming-for-a-real-user cosmetic issue, but a real one worth fixing immediately once reported.
+
+Fixed by adding `creationflags=subprocess.CREATE_NO_WINDOW` (guarded `if sys.platform ==
+"win32" else 0` for cross-platform safety, even though this project only targets Windows today)
+to all 7 real subprocess call sites found via a full-codebase grep: `adapters/tbc/adapter.py`
+(3 - git version(), bridge.exe, wowsimcli.exe), `adapters/tbc/valuation.py` (1 - the hot-path
+bridge.exe call), `adapters/tbc/simserver_client.py` (1 - the persistent simserver.exe Popen),
+`core/build_ledger_data.py` (1 - git rev-parse for the report's sim_commit_sha), `ingest/
+build_character.py` (1 - the same git call, reused by `build_synthetic_character.py` too).
+Verified real, not just "should work": ran a real, uncached full sweep (Rubán, Phase 4) after
+rebuilding the exe and polled the running process list the whole time for any newly-spawned
+visible windows - none appeared, only legitimate user windows. Real sim call itself confirmed
+still working correctly post-fix (plausible DPS, real report generated) - `CREATE_NO_WINDOW`
+only suppresses the console allocation, it doesn't affect stdin/stdout/stderr piping at all, so
+there was no reason to expect it could break anything, and the live test confirmed it didn't.

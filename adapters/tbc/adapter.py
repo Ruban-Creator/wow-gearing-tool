@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 import uuid
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -17,11 +18,16 @@ BRIDGE_EXE = os.path.join(REPO_ROOT, "adapters", "tbc", "bridge", "bridge.exe")
 WOWSIMCLI_EXE = os.path.join(SIM_DIR, "wowsimcli.exe")
 CACHE_DIR = os.path.join(REPO_ROOT, "data", "cache")
 
+# See valuation.py's own copy of this comment - the packaged (windowed,
+# console-less) GUI has nowhere to attach a child console, so Windows pops
+# a new visible one for every subprocess call here unless told not to.
+_NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+
 
 def version() -> dict:
     out = subprocess.run(
         ["git", "-C", SIM_DIR, "rev-parse", "HEAD"],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, check=True, creationflags=_NO_WINDOW,
     )
     return {"repo": "wowsims/tbc-new", "commit_sha": out.stdout.strip()}
 
@@ -43,11 +49,11 @@ def run(individual_sim_settings_path: str, iterations: int, seed: int) -> dict:
         subprocess.run(
             [BRIDGE_EXE, "-in", individual_sim_settings_path, "-out", req_path,
              "-iterations", str(iterations), "-seed", str(seed)],
-            check=True,
+            check=True, creationflags=_NO_WINDOW,
         )
         subprocess.run(
             [WOWSIMCLI_EXE, "sim", "--infile", req_path, "--outfile", result_path],
-            check=True, cwd=SIM_DIR,
+            check=True, cwd=SIM_DIR, creationflags=_NO_WINDOW,
         )
 
         with open(result_path, encoding="utf-8") as f:
