@@ -1,0 +1,12 @@
+{
+  "enhancementShaman": {
+    "options": {
+      "classOptions": {
+        "shieldProcrate": 0,
+        "imbueMh": "WindfuryWeapon"
+      },
+      "imbueOh": "WindfuryWeapon",
+      "syncType": "DelayOffhandSwings"
+    }
+  }
+}

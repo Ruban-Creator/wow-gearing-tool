@@ -2920,3 +2920,50 @@ character.json from disk instead of re-syncing in that case. Worth remembering f
 (Enhancement) and any future profile built the same way: **a synthetic profile needs this same
 `synthetic_character` flag from the start**, or its very first `Api.run_report()` call fails with
 a real, confusing `SystemExit` error that has nothing to do with the profile itself.
+
+**Stage 6.4 (Enhancement Shaman): a real, more serious bug found - `build_wowsims_reference_bis
+.py` had never actually been exercised on a dual_wield profile before.** Hunter's own dual_wield
+reference_bis predates this script entirely (hand-curated from Wowhead in Stage 4), so its
+dual_wield handling was pure guesswork that happened to never get tested until Enhancement
+Shaman. `optimizer.py`'s own real `_WEAPON_TOPOLOGY_POOLS` expects exactly ONE shared
+`"weapon_dual_wield"` pool key covering both mainhand and offhand for this topology - but
+`_weapon_pool_key()` always wrote separate `"mainhand"`/`"offhand"` keys regardless of topology.
+That's coincidentally correct for `one_hand_plus_offhand_item` (Druid/Elemental - those really
+are two independent single-item pools, matching `_WEAPON_TOPOLOGY_POOLS` exactly) and
+coincidentally correct for `two_hand` too (a two_hand profile's real candidates always have
+`hand_type == HAND_TYPE_TWO_HAND`, so the old unconditional check always returned `"weapon_2h"`
+anyway - `optimizer.py`'s real key for that topology). But for `dual_wield`, writing separate
+keys meant `opt.load_candidates()`'s `pool_key_to_slots.get(pool_key, [])` returned `[]` for
+both (neither `"mainhand"` nor `"offhand"` is a recognized weapon key under `dual_wield`'s real
+topology pools) - **the entire curated reference-BiS weapon pool for Enhancement was silently
+invisible to the real sweep**, confirmed live: before the fix, `candidate_pool.json`'s real
+weapon entries (Syphon of the Nathrezim, Talon of the Phoenix, etc.) never reached `candidates`
+at all. Fixed by making `_weapon_pool_key()` branch explicitly on `weapon_topology` instead of
+relying on `two_hand`'s coincidental correctness - `dual_wield` now always returns
+`"weapon_dual_wield"` for both slots, matching `optimizer.py` exactly. Verified via a real
+before/after check: `achieved_bis` for Enhancement now correctly includes `"Weapon"` (her real
+current dual-wielded Syphon of the Nathrezim pair, listed twice - a real, correct signal that
+only makes sense if the weapon candidates were actually evaluated and found not to be beaten).
+
+A small, incidental second fix landed alongside this (same function's caller): a dual-wield
+profile that equips the identical item in both mainhand and offhand now shares one pool_key -
+without a dedup guard, the same phase got recorded twice in that item's `seen_in` list. Cosmetic
+only (never affected which candidates got evaluated or their MV), caught it removed 4 duplicate
+entries from Elemental Shaman's own already-committed `candidate_pool.json` too (an unrelated
+item that happened to hit the same phase twice for a different reason) when re-running the
+builder to verify.
+
+**Regression discipline paid off finding a second bug within the fix itself**: my first attempt
+at this fix added `and weapon_topology != "two_hand"` to the 2H-item branch, reasoning (wrongly)
+that `two_hand` needed to be excluded from special-casing - this actually broke Warrior (his real
+2H weapon candidates started routing to `"mainhand"` instead of `"weapon_2h"`), caught immediately
+by diffing the rebuilt `candidate_pool.json` against the last git commit before moving on, not by
+assuming a "generalizing" change was automatically safe. Second attempt (branch on
+`weapon_topology` directly, matching `_WEAPON_TOPOLOGY_POOLS` literally instead of reasoning
+about it) came back byte-identical for Warrior and Druid.
+
+Full sweep verified for Enhancement after the real fix: real Achieved BiS (Neck/Ranged/Weapon),
+`check_ledger_consistency.py` clean (1230 assertions), `arp_relevant: true` (a third real profile
+confirmed to weight Armor Penetration, after Warrior and Hunter - not a Warrior-only stat by any
+means). Re-ran all four other pipelines (Hunter, Warrior, Druid, Elemental) afterward - all
+byte-identical by item order/content.

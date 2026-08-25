@@ -70,14 +70,40 @@ POOL_KEY_FOR_SLOT = {
 }
 
 
-def _weapon_pool_key(slot: str, hand_type: int | None) -> str | None:
-    """mainhand/offhand only - real per-item routing, not a fixed mapping.
-    A 2H item in mainhand goes to the "weapon_2h" side-pool (matches
-    run_full_sweep_mv.py's own slot_for_item() routing for any topology
-    that isn't strictly "two_hand"); a real 1H mainhand or a real distinct
-    offhand item (HandTypeOffHand - never itself a weapon a caster would
-    dual-wield) goes to its own single-item pool key. offhand for a 2H
-    phase never reaches here (the raw gear-set slot is genuinely empty)."""
+def _weapon_pool_key(slot: str, hand_type: int | None, weapon_topology: str) -> str | None:
+    """mainhand/offhand only - real per-item routing, keyed to match
+    optimizer.py's own real _WEAPON_TOPOLOGY_POOLS exactly (never assumed).
+
+    Real bug found and fixed 2026-08-25 (Stage 6.4, Enhancement Shaman - the
+    first dual_wield profile ever built through this script; Hunter's own
+    dual_wield reference_bis predates this script entirely, hand-curated
+    from Wowhead, so this path was never exercised until now): this used to
+    ignore weapon_topology and always emit separate "mainhand"/"offhand"
+    keys - correct by coincidence for two_hand (a two_hand profile's real
+    mainhand candidates always have hand_type == HAND_TYPE_TWO_HAND, so the
+    old unconditional check happened to always return "weapon_2h" anyway,
+    optimizer.py's real key for that topology) and correct for
+    one_hand_plus_offhand_item (Balance Druid, Elemental Shaman - two real,
+    independent single-item pools, EXACTLY optimizer.py's own real keys for
+    that topology), but WRONG for dual_wield (Hunter, Enhancement Shaman):
+    optimizer.py expects ONE shared "weapon_dual_wield" key covering both
+    slots, and mainhand/offhand written separately were silently invisible
+    to opt.load_candidates() (pool_key_to_slots.get() returns [] for an
+    unrecognized key) - the whole curated reference-BiS weapon pool for a
+    dual_wield profile never reached the real sweep at all before this fix.
+    Fixed by branching on weapon_topology explicitly instead of relying on
+    two_hand's coincidental correctness, so the next topology added here
+    doesn't get the same silent trap."""
+    if weapon_topology == "dual_wield":
+        return "weapon_dual_wield" if slot in ("mainhand", "offhand") else None
+    if weapon_topology == "two_hand":
+        return "weapon_2h" if slot == "mainhand" else None
+    # one_hand_plus_offhand_item: two real, independent single-item pools -
+    # except a real 2H item in mainhand still goes to the "weapon_2h"
+    # side-pool (matches run_full_sweep_mv.py's own slot_for_item()
+    # routing) - real for Elemental Shaman/Balance Druid, whose actual BiS
+    # weapon choice varies by phase. offhand for a 2H phase never reaches
+    # here (the raw gear-set slot is genuinely empty).
     if slot == "mainhand":
         return "weapon_2h" if hand_type == HAND_TYPE_TWO_HAND else "mainhand"
     if slot == "offhand":
@@ -104,13 +130,15 @@ def resolve_gear_set(path: str) -> dict[str, dict]:
     return result
 
 
-def _pool_key_for(slot: str, entry: dict) -> str | None:
+def _pool_key_for(slot: str, entry: dict, weapon_topology: str) -> str | None:
     if slot in ("mainhand", "offhand"):
-        return _weapon_pool_key(slot, entry["hand_type"])
+        return _weapon_pool_key(slot, entry["hand_type"], weapon_topology)
     return POOL_KEY_FOR_SLOT.get(slot)
 
 
 def build(profile_dir: str, gear_sets_dir: str, spec_label: str, phase_files: dict[str, str]) -> None:
+    profile = json.load(open(os.path.join(profile_dir, "profile.json"), encoding="utf-8"))
+    weapon_topology = profile["weapon_topology"]
     ref_dir = os.path.join(profile_dir, "reference_bis")
     os.makedirs(ref_dir, exist_ok=True)
 
@@ -122,7 +150,7 @@ def build(profile_dir: str, gear_sets_dir: str, spec_label: str, phase_files: di
 
         slots_out = {}
         for slot, entry in resolved.items():
-            pool_key = _pool_key_for(slot, entry)
+            pool_key = _pool_key_for(slot, entry, weapon_topology)
             if pool_key is None:
                 continue
             slots_out.setdefault(pool_key, []).append({
@@ -142,7 +170,7 @@ def build(profile_dir: str, gear_sets_dir: str, spec_label: str, phase_files: di
     pool: dict[str, dict[str, dict]] = {}  # pool_key -> item_name -> {"source", "seen_in": [...]}
     for phase, resolved in per_phase.items():
         for slot, entry in resolved.items():
-            pool_key = _pool_key_for(slot, entry)
+            pool_key = _pool_key_for(slot, entry, weapon_topology)
             if pool_key is None:
                 continue
             bucket = pool.setdefault(pool_key, {})
@@ -150,7 +178,14 @@ def build(profile_dir: str, gear_sets_dir: str, spec_label: str, phase_files: di
                 "source": _real_source(entry["db_item"], phase, spec_label),
                 "seen_in": [],
             })
-            rec["seen_in"].append({"phase": phase.replace("phase", "P"), "rank": "Best"})
+            # A dual_wield profile can equip the SAME item in both mainhand
+            # and offhand (real, e.g. two of the same axe) - both slots
+            # share one pool_key now (the fix above), so without this check
+            # the same phase would be recorded twice in seen_in for no
+            # reason (cosmetic only, never a correctness issue).
+            phase_entry = {"phase": phase.replace("phase", "P"), "rank": "Best"}
+            if phase_entry not in rec["seen_in"]:
+                rec["seen_in"].append(phase_entry)
 
     pool_out = {}
     for pool_key, items in pool.items():

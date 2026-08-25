@@ -73,10 +73,12 @@ SUPPORTED_CHARACTERS = {
     "Lerynia-Thunderstrike": os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter"),
     "Rubán-Thunderstrike": os.path.join(REPO_ROOT, "profiles", "tbc", "arms_warrior"),
     "Béarforceone-Thunderstrike": os.path.join(REPO_ROOT, "profiles", "tbc", "balance_druid"),
-    # Synthetic test character (Stage 6.3) - no real Shaman export exists yet,
-    # see profile.json's synthetic_character_note. Real, proven pipeline run
-    # (full sweep, real report), just not a real personal character.
+    # Synthetic test characters (Stage 6.3/6.4) - no real Shaman export
+    # exists yet, see each profile.json's synthetic_character_note. Real,
+    # proven pipeline runs (full sweep, real report), just not real
+    # personal characters.
     "Test-Elemental-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "elemental_shaman"),
+    "Test-Enhancement-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "enhancement_shaman"),
 }
 
 # reference_bis/phase1.json doesn't exist yet (a real data-curation gap, not

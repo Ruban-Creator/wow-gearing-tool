@@ -1,0 +1,117 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Cursed Vision of Sargeras",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Choker of Endless Nightmares",
+        "rank": "Best",
+        "source": "Drop: Supremus (Black Temple)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Swiftstrike Shoulders",
+        "rank": "Best",
+        "source": "Crafted: Leatherworking"
+      }
+    ],
+    "back": [
+      {
+        "item": "Shadowmoon Destroyer's Drape",
+        "rank": "Best",
+        "source": "Drop: Teron Gorefiend (Black Temple)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Midnight Chestguard",
+        "rank": "Best",
+        "source": "Drop: Archimonde (Hyjal Summit)"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Deadly Cuffs",
+        "rank": "Best",
+        "source": "Drop: Rage Winterchill (Hyjal Summit)"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Fists of Mukoa",
+        "rank": "Best",
+        "source": "Drop: High Warlord Naj'entus (Black Temple)"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of One-Hundred Deaths",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Bow-stitched Leggings",
+        "rank": "Best",
+        "source": "Drop: Azgalor (Hyjal Summit)"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Softstep Boots of Tracking",
+        "rank": "Best",
+        "source": "Drop: Teron Gorefiend (Black Temple)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Stormrage Signet Ring",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      },
+      {
+        "item": "Signet of Primal Wrath",
+        "rank": "Best",
+        "source": "Drop: (Zul'Aman)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Berserker's Call",
+        "rank": "Best",
+        "source": "Drop: Zul'jin (Zul'Aman)"
+      },
+      {
+        "item": "Dragonspine Trophy",
+        "rank": "Best",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      }
+    ],
+    "weapon_dual_wield": [
+      {
+        "item": "Syphon of the Nathrezim",
+        "rank": "Best",
+        "source": "Drop: Supremus (Black Temple)"
+      },
+      {
+        "item": "Syphon of the Nathrezim",
+        "rank": "Best",
+        "source": "Drop: Supremus (Black Temple)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Stonebreaker's Totem",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Enhancement preset"
+      }
+    ]
+  }
+}

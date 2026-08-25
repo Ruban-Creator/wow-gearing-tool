@@ -376,6 +376,36 @@ expectation. Real per-spec differences already known from research (dual_wield t
 weights favoring Strength, real `imbueMh`/`imbueOh: WindfuryWeapon` + `syncType:
 DelayOffhandSwings` Options fields) - see the plan file for the full real values.
 
+## Stage 6.4 (Enhancement Shaman) done - Shaman (both real specs) is now complete
+
+`profiles/tbc/enhancement_shaman/` built end to end, real dual_wield topology, real weapon-imbue
+Options fields (`imbueMh`/`imbueOh: WindfuryWeapon`, `syncType: DelayOffhandSwings` - the first
+profile whose Options message needed this shape, verified via a real sim call with no protojson
+error, so the string enum casing was right on the first try).
+
+Real, more serious bug found this stage (see NOTES.md's full writeup): `build_wowsims_reference
+_bis.py` had literally never been run against a dual_wield profile before (Hunter's own
+reference_bis predates the script). It was writing weapon candidates under keys the real
+optimizer.py pool-loading logic doesn't recognize for dual_wield - Enhancement's entire curated
+weapon pool (Syphon of the Nathrezim, Talon of the Phoenix, etc.) would have silently never
+reached the sweep. Fixed, verified via a real before/after check (achieved_bis now correctly
+shows her real dual-wielded weapons), and confirmed zero regression for Warrior/Druid/Elemental
+via a full rebuild + git diff (caught and corrected a wrong first attempt at the fix myself,
+which would have broken Warrior - see NOTES.md).
+
+Real sim call for Enhancement showed noticeably lower combined DPS (873.8) than Elemental
+(1889.8) or the other three profiles - checked this wasn't a broken rotation (real Stormstrike
+cast confirmed via spell ID 17364 in the action log; the log format uses numeric spell IDs, not
+names, so an earlier text-search for "Stormstrike"/"Windfury" as literal strings returned zero
+matches and briefly looked like a red flag before I found the real cause) rather than assuming
+TBC Enhancement's own real, historically-weaker relative throughput explains it - plausible but
+not independently confirmed against an external reference; flag if this looks wrong once you can
+look at it yourself.
+
+All 5 profiles now pass `check_ledger_consistency.py` clean and stayed byte-identical to each
+other across every regression check this stage. Nothing committed without being asked each time,
+same as every prior stage.
+
 ## TODO for you: manually verify "Teeth of Gruul" as a real DPS upgrade for Béarforceone
 
 You flagged confusion (2026-08-25) that a "healing" neck, Teeth of Gruul, shows as a +20.4 DPS

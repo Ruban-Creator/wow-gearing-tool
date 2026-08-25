@@ -1,0 +1,117 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Coif of Alleria",
+        "rank": "Best",
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Hard Khorium Choker",
+        "rank": "Best",
+        "source": "Crafted: Jewelcrafting"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Skyshatter Pauldrons",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Enhancement preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Cloak of Unforgivable Sin",
+        "rank": "Best",
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Bladed Chaos Tunic",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Enhancement preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Skyshatter Wristguards",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Enhancement preset"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Thalassian Ranger Gauntlets",
+        "rank": "Best",
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Skyshatter Girdle",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Enhancement preset"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Leggings of the Immortal Night",
+        "rank": "Best",
+        "source": "Drop: Felmyst (Sunwell Plateau)"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Skyshatter Greaves",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Enhancement preset"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Band of Ruinous Delight",
+        "rank": "Best",
+        "source": "Drop: Eredar Twins (Sunwell Plateau)"
+      },
+      {
+        "item": "Stormrage Signet Ring",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Blackened Naaru Sliver",
+        "rank": "Best",
+        "source": "Drop: M'uru (Sunwell Plateau)"
+      },
+      {
+        "item": "Shard of Contempt",
+        "rank": "Best",
+        "source": "Drop: Priestess Delrissa (Magisters' Terrace)"
+      }
+    ],
+    "weapon_dual_wield": [
+      {
+        "item": "Hand of the Deceiver",
+        "rank": "Best",
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
+      },
+      {
+        "item": "Mounting Vengeance",
+        "rank": "Best",
+        "source": "Drop: (Sunwell Plateau)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Stonebreaker's Totem",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Enhancement preset"
+      }
+    ]
+  }
+}

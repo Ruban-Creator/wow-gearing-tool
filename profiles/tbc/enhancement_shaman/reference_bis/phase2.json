@@ -1,0 +1,117 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Cataclysm Helm",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Enhancement preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Telonicus's Pendant of Mayhem",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Enhancement preset"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Shoulderpads of the Stranger",
+        "rank": "Best",
+        "source": "Drop: Hydross the Unstable (Serpentshrine Cavern)"
+      }
+    ],
+    "back": [
+      {
+        "item": "Thalassian Wildercloak",
+        "rank": "Best",
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Cataclysm Chestplate",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Enhancement preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "True-Aim Stalker Bands",
+        "rank": "Best",
+        "source": "Drop: Leotheras the Blind (Serpentshrine Cavern)"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Cataclysm Gauntlets",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Enhancement preset"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of One-Hundred Deaths",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Cataclysm Legplates",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Enhancement preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Boots of Utter Darkness",
+        "rank": "Best",
+        "source": "Crafted: Leatherworking"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Band of the Ranger-General",
+        "rank": "Best",
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
+      },
+      {
+        "item": "Ring of Lethality",
+        "rank": "Best",
+        "source": "Drop: Hydross the Unstable (Serpentshrine Cavern)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Dragonspine Trophy",
+        "rank": "Best",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      },
+      {
+        "item": "Bloodlust Brooch",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Enhancement preset"
+      }
+    ],
+    "weapon_dual_wield": [
+      {
+        "item": "Talon of the Phoenix",
+        "rank": "Best",
+        "source": "Drop: Al'ar (Tempest Keep)"
+      },
+      {
+        "item": "Rod of the Sun King",
+        "rank": "Best",
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Totem of the Astral Winds",
+        "rank": "Best",
+        "source": "Drop: Pandemonius (Mana-Tombs)"
+      }
+    ]
+  }
+}

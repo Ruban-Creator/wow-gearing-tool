@@ -1,0 +1,16 @@
+{
+  "class": "shaman",
+  "spec": "enhancement",
+  "weapon_topology": "dual_wield",
+  "primary_gem_stat_id": "0",
+  "primary_gem_id": 32193,
+  "raid_ap_contribution": {
+    "enabled": false,
+    "note": "Shaman has no Expose-Weakness-style analytical raid-AP model - same reasoning as Warrior's/Druid's/Elemental Shaman's profile.json."
+  },
+  "set_bonus_go_source": "sim/shaman/item_sets.go",
+  "apl_source": "ui/shaman/enhancement/apls/default.apl.json",
+  "apl_note": "Same TypeAPL pattern as every other profile so far - confirmed via the same makePresetAPLRotation() helper, the file's raw content is a direct, valid player.rotation value.",
+  "synthetic_character": true,
+  "synthetic_character_note": "No real Shaman character exists yet (2026-08-25) - this profile is validated against a synthetic test character seeded from a real wowsims preset gear set (see ingest/build_synthetic_character.py), not a real personal export. Never treat its report as trustworthy personal upgrade advice."
+}
