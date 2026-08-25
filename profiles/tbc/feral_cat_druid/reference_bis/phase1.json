@@ -1,0 +1,112 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Wolfshead Helm",
+        "rank": "Best",
+        "source": "Crafted: Leatherworking"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Haramad's Bargain",
+        "rank": "Best",
+        "source": "Reputation reward"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Mantle of Malorne",
+        "rank": "Best",
+        "source": "wowsims Phase 1 FeralCat preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Drape of the Dark Reavers",
+        "rank": "Best",
+        "source": "Drop: Shade of Aran (Karazhan)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Breastplate of Malorne",
+        "rank": "Best",
+        "source": "wowsims Phase 1 FeralCat preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Ravager's Wrist-Wraps",
+        "rank": "Best",
+        "source": "Drop: Rokad the Ravager (Karazhan)"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Gloves of Dexterous Manipulation",
+        "rank": "Best",
+        "source": "Drop: Attumen the Huntsman (Karazhan)"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Lurker's Grasp",
+        "rank": "Best",
+        "source": "Drop: Hyakiss the Lurker (Karazhan)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Skulker's Greaves",
+        "rank": "Best",
+        "source": "Drop: Netherspite (Karazhan)"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Edgewalker Longboots",
+        "rank": "Best",
+        "source": "Drop: Moroes (Karazhan)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Ring of the Recalcitrant",
+        "rank": "Best",
+        "source": "wowsims Phase 1 FeralCat preset"
+      },
+      {
+        "item": "Shapeshifter's Signet",
+        "rank": "Best",
+        "source": "wowsims Phase 1 FeralCat preset"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Badge of the Swarmguard",
+        "rank": "Best",
+        "source": "Drop: Battleguard Sartura (Ahn'Qiraj)"
+      },
+      {
+        "item": "Bloodlust Brooch",
+        "rank": "Best",
+        "source": "wowsims Phase 1 FeralCat preset"
+      }
+    ],
+    "weapon_2h": [
+      {
+        "item": "Terestian's Stranglestaff",
+        "rank": "Best",
+        "source": "Drop: Terestian Illhoof (Karazhan)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Everbloom Idol",
+        "rank": "Best",
+        "source": "wowsims Phase 1 FeralCat preset"
+      }
+    ]
+  }
+}

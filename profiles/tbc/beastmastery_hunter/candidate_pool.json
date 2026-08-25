@@ -1,0 +1,648 @@
+{
+  "head": [
+    {
+      "item": "Beast Lord Helm",
+      "source": "Drop: Pathaleon the Calculator (The Mechanar)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Rift Stalker Helm",
+      "source": "wowsims Phase 2 Beast Mastery preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Cursed Vision of Sargeras",
+      "source": "Drop: Illidan Stormrage (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "neck": [
+    {
+      "item": "Choker of Vile Intent",
+      "source": "wowsims Phase 1 Beast Mastery preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Telonicus's Pendant of Mayhem",
+      "source": "wowsims Phase 2 Beast Mastery preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Choker of Serrated Blades",
+      "source": "Drop: (Hyjal Summit)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "shoulder": [
+    {
+      "item": "Beast Lord Mantle",
+      "source": "Drop: Warlord Kalithresh (The Steamvault)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Rift Stalker Mantle",
+      "source": "wowsims Phase 2 Beast Mastery preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Gronnstalker's Spaulders",
+      "source": "wowsims Phase 3 Beast Mastery preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "back": [
+    {
+      "item": "Vengeance Wrap",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Thalassian Wildercloak",
+      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Shadowmoon Destroyer's Drape",
+      "source": "Drop: Teron Gorefiend (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "chest": [
+    {
+      "item": "Beast Lord Cuirass",
+      "source": "Drop: Warp Splinter (The Botanica)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Rift Stalker Hauberk",
+      "source": "wowsims Phase 2 Beast Mastery preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Gronnstalker's Chestguard",
+      "source": "wowsims Phase 3 Beast Mastery preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "wrist": [
+    {
+      "item": "Nightfall Wristguards",
+      "source": "Drop: Epoch Hunter (Old Hillsbrad Foothills)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Vambraces of Ending",
+      "source": "Drop: High Astromancer Solarian (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Insidious Bands",
+      "source": "Drop: Teron Gorefiend (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "hands": [
+    {
+      "item": "Beast Lord Handguards",
+      "source": "Drop: Warchief Kargath Bladefist (The Shattered Halls)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Rift Stalker Gauntlets",
+      "source": "wowsims Phase 2 Beast Mastery preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Gronnstalker's Gloves",
+      "source": "wowsims Phase 3 Beast Mastery preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "waist": [
+    {
+      "item": "Gronn-Stitched Girdle",
+      "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Belt of Deep Shadow",
+      "source": "Crafted: Leatherworking",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Don Alejandro's Money Belt",
+      "source": "Drop: Anetheron (Hyjal Summit)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "legs": [
+    {
+      "item": "Skulker's Greaves",
+      "source": "Drop: Netherspite (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Leggings of Murderous Intent",
+      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Gronnstalker's Leggings",
+      "source": "wowsims Phase 3 Beast Mastery preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "feet": [
+    {
+      "item": "Edgewalker Longboots",
+      "source": "Drop: Moroes (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Cobra-Lash Boots",
+      "source": "Drop: Lady Vashj (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Shadowmaster's Boots",
+      "source": "Drop: Mother Shahraz (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "ring": [
+    {
+      "item": "Ring of a Thousand Marks",
+      "source": "Drop: Prince Malchezaar (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Ring of the Recalcitrant",
+      "source": "wowsims Phase 1 Beast Mastery preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Band of the Ranger-General",
+      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Band of the Eternal Champion",
+      "source": "wowsims Phase 3 Beast Mastery preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Stormrage Signet Ring",
+      "source": "Drop: Illidan Stormrage (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Signet of Primal Wrath",
+      "source": "Drop: (Zul'Aman)",
+      "seen_in": [
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "trinket": [
+    {
+      "item": "Bloodlust Brooch",
+      "source": "wowsims Phase 1 Beast Mastery preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Dragonspine Trophy",
+      "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Madness of the Betrayer",
+      "source": "Drop: The Illidari Council (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Berserker's Call",
+      "source": "Drop: Zul'jin (Zul'Aman)",
+      "seen_in": [
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "weapon_dual_wield": [
+    {
+      "item": "Claw of the Watcher",
+      "source": "Drop: Shirrak the Dead Watcher (Auchenai Crypts)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Blade of the Unrequited",
+      "source": "Drop: Romulo and Julianne (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Talon of the Phoenix",
+      "source": "Drop: Al'ar (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Claw of the Phoenix",
+      "source": "Drop: Al'ar (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Boundless Agony",
+      "source": "Drop: Azgalor (Hyjal Summit)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Blade of Infamy",
+      "source": "Drop: Anetheron (Hyjal Summit)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Dagger of Bad Mojo",
+      "source": "Drop: Hex Lord Malacrass (Zul'Aman)",
+      "seen_in": [
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "ranged": [
+    {
+      "item": "Sunfury Bow of the Phoenix",
+      "source": "Drop: Prince Malchezaar (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Serpent Spine Longbow",
+      "source": "Drop: Lady Vashj (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Bristleblitz Striker",
+      "source": "Drop: Archimonde (Hyjal Summit)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ]
+}

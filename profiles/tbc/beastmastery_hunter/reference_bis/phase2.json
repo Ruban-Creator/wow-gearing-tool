@@ -1,0 +1,117 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Rift Stalker Helm",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Beast Mastery preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Telonicus's Pendant of Mayhem",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Beast Mastery preset"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Rift Stalker Mantle",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Beast Mastery preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Thalassian Wildercloak",
+        "rank": "Best",
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Rift Stalker Hauberk",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Beast Mastery preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Vambraces of Ending",
+        "rank": "Best",
+        "source": "Drop: High Astromancer Solarian (Tempest Keep)"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Rift Stalker Gauntlets",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Beast Mastery preset"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of Deep Shadow",
+        "rank": "Best",
+        "source": "Crafted: Leatherworking"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Leggings of Murderous Intent",
+        "rank": "Best",
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Cobra-Lash Boots",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Band of the Ranger-General",
+        "rank": "Best",
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
+      },
+      {
+        "item": "Ring of the Recalcitrant",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Beast Mastery preset"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Bloodlust Brooch",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Beast Mastery preset"
+      },
+      {
+        "item": "Dragonspine Trophy",
+        "rank": "Best",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      }
+    ],
+    "weapon_dual_wield": [
+      {
+        "item": "Talon of the Phoenix",
+        "rank": "Best",
+        "source": "Drop: Al'ar (Tempest Keep)"
+      },
+      {
+        "item": "Claw of the Phoenix",
+        "rank": "Best",
+        "source": "Drop: Al'ar (Tempest Keep)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Serpent Spine Longbow",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      }
+    ]
+  }
+}

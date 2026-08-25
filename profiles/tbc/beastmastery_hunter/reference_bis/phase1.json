@@ -1,0 +1,117 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Beast Lord Helm",
+        "rank": "Best",
+        "source": "Drop: Pathaleon the Calculator (The Mechanar)"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Choker of Vile Intent",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Beast Mastery preset"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Beast Lord Mantle",
+        "rank": "Best",
+        "source": "Drop: Warlord Kalithresh (The Steamvault)"
+      }
+    ],
+    "back": [
+      {
+        "item": "Vengeance Wrap",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Beast Lord Cuirass",
+        "rank": "Best",
+        "source": "Drop: Warp Splinter (The Botanica)"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Nightfall Wristguards",
+        "rank": "Best",
+        "source": "Drop: Epoch Hunter (Old Hillsbrad Foothills)"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Beast Lord Handguards",
+        "rank": "Best",
+        "source": "Drop: Warchief Kargath Bladefist (The Shattered Halls)"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Gronn-Stitched Girdle",
+        "rank": "Best",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Skulker's Greaves",
+        "rank": "Best",
+        "source": "Drop: Netherspite (Karazhan)"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Edgewalker Longboots",
+        "rank": "Best",
+        "source": "Drop: Moroes (Karazhan)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Ring of a Thousand Marks",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      },
+      {
+        "item": "Ring of the Recalcitrant",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Beast Mastery preset"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Bloodlust Brooch",
+        "rank": "Best",
+        "source": "wowsims Phase 1 Beast Mastery preset"
+      },
+      {
+        "item": "Dragonspine Trophy",
+        "rank": "Best",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      }
+    ],
+    "weapon_dual_wield": [
+      {
+        "item": "Claw of the Watcher",
+        "rank": "Best",
+        "source": "Drop: Shirrak the Dead Watcher (Auchenai Crypts)"
+      },
+      {
+        "item": "Blade of the Unrequited",
+        "rank": "Best",
+        "source": "Drop: Romulo and Julianne (Karazhan)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Sunfury Bow of the Phoenix",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      }
+    ]
+  }
+}

@@ -41,6 +41,10 @@ def build(name_realm: str, profile_dir: str) -> dict:
     # which fails loud (by design, Stage 6.0) if this is skipped.
     stat_weights.set_active(stat_weights.load(profile_dir))
     gc.set_active_default_gem(profile["primary_gem_id"])
+    _default_enchants_path = os.path.join(profile_dir, "default_enchants.json")
+    default_enchants = (json.load(open(_default_enchants_path, encoding="utf-8"))
+                         if os.path.exists(_default_enchants_path) else {})
+    gc.set_active_default_enchants(default_enchants)
     chase_bonus = json.load(open(os.path.join(profile_dir, "chase_bonus_gems.json"), encoding="utf-8"))
     gem_optimizer.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
     raid_buffs_received = {
@@ -50,7 +54,8 @@ def build(name_realm: str, profile_dir: str) -> dict:
         "playerBuffs": {**shared["playerBuffs"], **overlay["playerBuffs"]},
     }
 
-    equipment_items = opt.build_owned_config(char_data["equipped"]["items"])
+    known_professions = {p["name"] for p in c["professions"]}
+    equipment_items = opt.build_owned_config(char_data["equipped"]["items"], known_professions)
     character = {
         "race": c["race"],
         "equipment": {"items": equipment_items},

@@ -1,0 +1,6 @@
+{
+  "class_id": 11,
+  "armor_ok": [2],
+  "weapon_ok": [2, 3, 4, 6, 8],
+  "ranged_ok": [6]
+}

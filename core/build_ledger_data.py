@@ -36,13 +36,16 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOP_N_SHOWN = 5
 
 
-def build(name_realm: str, phase: str, profile_dir: str | None = None):
-    """profile_dir defaults to Survival Hunter's own profile when omitted,
-    matching every other "settable, defaults to Hunter" entry point in this
-    codebase (Stage 6.0's load_candidates() etc) - every existing caller
-    that doesn't pass one keeps working unchanged."""
-    if profile_dir is None:
-        profile_dir = os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter")
+def build(name_realm: str, phase: str, profile_dir: str):
+    """profile_dir is REQUIRED, no default - used to be "defaults to Hunter
+    when omitted", the same footgun pattern found and removed from
+    run_full_sweep_mv.main() 2026-08-25 (see core/character_profiles.py's
+    docstring for the real bug that pattern caused there). This function's
+    own blast radius was smaller (it reads an already-computed
+    tiered_report - a wrong profile_dir here would misattribute metadata
+    like raid_ap_contribution's enabled flag, not the DPS numbers
+    themselves), but the same "resolve it via character_profiles.py, never
+    guess" rule applies regardless of severity."""
     report_path = os.path.join(REPO_ROOT, "data", "characters", name_realm, "cache", f"tiered_report_{phase}.json")
     report = json.load(open(report_path, encoding="utf-8"))
     current_phase_num = int(phase.removeprefix("phase"))
@@ -72,6 +75,7 @@ def build(name_realm: str, phase: str, profile_dir: str | None = None):
         "baseline_dps": report["baseline_screened"],
         "sim_commit_sha": sim_commit_sha,
         "achieved_bis": report["achieved_bis"],
+        "missing_enchants": report.get("missing_enchants", []),
         "tiers": tiers_list,
         "two_hand": report["two_hand"],
         "two_hand_meta": report["two_hand_meta"],
@@ -96,6 +100,13 @@ def build(name_realm: str, phase: str, profile_dir: str | None = None):
         # item_arp_rating() comment for why it's flagged instead of trusted
         # via one-at-a-time MV alone).
         "arp_relevant": arp_relevant,
+        # Real, disclosed fight-length assumption every number in this
+        # report was simmed against (defaults to 180s - see
+        # run_full_sweep_mv.main()'s own duration docstring) - per the user
+        # (2026-08-25), which items rank best can genuinely depend on fight
+        # length (their own real Teeth of Gruul finding), so this is never
+        # silently omitted from the report.
+        "fight_duration_seconds": report.get("fight_duration_seconds", 180),
         "screen_iterations": sweep_mv.SCREEN_ITERATIONS,
         "confirm_iterations": sweep_mv.CONFIRM_ITERATIONS,
         "resolve_iterations": sweep_mv.RESOLVE_ITERATIONS,

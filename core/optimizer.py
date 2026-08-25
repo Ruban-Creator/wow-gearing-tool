@@ -145,6 +145,26 @@ def gems_for_item(item: dict, meta_gem_id: int | None) -> list[int]:
     return gem_optimizer.best_gems_for_item(item, meta_gem_id)
 
 
+def achievable_enchant(enchant_id: int, known_professions: set[str]) -> int:
+    """0 if `enchant_id` requires a profession this character doesn't have -
+    real, found 2026-08-25 (the user flagged it live): Ring enchants are the
+    one slot in this game that can't be bought from any enchanter the way
+    every other slot can - only self-applicable by a character who
+    personally has Enchanting (see item_db.enchant_required_profession_name,
+    confirmed data-driven off db.json's own requiredProfession field, not a
+    hardcoded ring special-case). Every default-enchant lookup in this file
+    and run_full_sweep_mv.py routes through this so a non-Enchanter
+    character's baseline/candidates never silently assume an unachievable
+    ring enchant - same "never invent achievability" principle already
+    applied to items via required_profession_name()."""
+    if not enchant_id:
+        return 0
+    req_prof = idb.enchant_required_profession_name(enchant_id)
+    if req_prof and req_prof not in known_professions:
+        return 0
+    return enchant_id
+
+
 def load_candidates(pool_path: str, owned_items: list[dict],
                      known_professions: set[str] | None = None,
                      pool_key_to_slots: dict[str, list[str]] | None = None,
@@ -179,16 +199,33 @@ def load_candidates(pool_path: str, owned_items: list[dict],
         # evaluated with no enchant at all (e.g. Gronnstalker's Spaulders
         # missing the shoulder inscription), understating it by exactly
         # that enchant's value. Real bug, caught by a user's own wowsims.com
-        # test disagreeing with this tool - see NOTES.md. Default to
-        # whichever target slot she currently has an enchant on; for
+        # test disagreeing with this tool - see NOTES.md.
+        #
+        # Real second bug, found and fixed 2026-08-25 (per the user - "make
+        # sure unenchanted items never get compared to enchanted ones"):
+        # this used to default to whichever target slot she CURRENTLY has
+        # an enchant on - if her own current gear in that slot is under-
+        # enchanted or has none, every candidate silently inherited the
+        # same gap, understating them all uniformly and contradicting
+        # CLAUDE.md's own "assume the fully-optimal gem/enchant loadout"
+        # rule (already true for gems via DEFAULT_GEM, not actually true
+        # for enchants until now). Now uses the real, sim-verified BiS
+        # enchant for the slot (gear_config.get_active_default_enchants() -
+        # see core/verify_default_enchants.py for how each profile's real
+        # values were confirmed, never a raw untested id) - for
         # rings/trinkets this naturally stays 0 since those slots never
-        # carry enchants in this game.
+        # carry a real enchant in this game and never get a dict entry.
+        #
+        # Real third bug, found live by the user 2026-08-25: Ring enchants
+        # specifically require the WEARER to personally have Enchanting -
+        # unlike every other slot, no enchanter-for-hire can apply one to
+        # someone else's ring. achievable_enchant() gates this off (0, same
+        # as "no enchant") for a character without it - see its own
+        # docstring for the real, data-driven confirmation.
         default_enchant = 0
         for slot in target_slots:
-            slot_idx = gc.SLOT_ORDER.index(slot)
-            owned_here = owned_items[slot_idx] if slot_idx < len(owned_items) else None
-            if owned_here and owned_here.get("enchant"):
-                default_enchant = owned_here["enchant"]
+            default_enchant = achievable_enchant(gc.get_active_default_enchants().get(slot, 0), known_professions)
+            if default_enchant:
                 break
 
         cands = []
@@ -206,7 +243,13 @@ def load_candidates(pool_path: str, owned_items: list[dict],
                 cands.append(Candidate(name, item_id, excluded_reason=f"requires {req_prof}"))
                 continue
             if owned:
-                cands.append(Candidate(name, item_id, owned.get("enchant", 0), owned.get("gems")))
+                # Unconditionally the real default now, same as the
+                # non-owned branch below - an owned-but-unequipped item's
+                # literal current enchant (if any) is just as unreliable a
+                # signal of "best achievable" as an unequipped candidate's
+                # missing one; DPS*(P) assumes optimal gear, not whatever
+                # happens to be sitting in a bag right now.
+                cands.append(Candidate(name, item_id, default_enchant, owned.get("gems")))
             else:
                 gems = gems_for_item(item, meta_gem_id) if item else []
                 cands.append(Candidate(name, item_id, default_enchant, gems))
@@ -215,7 +258,7 @@ def load_candidates(pool_path: str, owned_items: list[dict],
     return result
 
 
-def build_owned_config(equipped_items: list[dict]) -> list[dict]:
+def build_owned_config(equipped_items: list[dict], known_professions: set[str] | None = None) -> list[dict]:
     """Optimal gems for her CURRENT gear, not her literal real (possibly
     outdated) socketed gems - matching CLAUDE.md's own MV(i) = DPS*(P∪{i})
     - DPS*(P) formula: DPS*(P) is the BEST achievable from pool P, gems
@@ -226,17 +269,42 @@ def build_owned_config(equipped_items: list[dict]) -> list[dict]:
     done yet, which was silently understating her own baseline and
     thereby overstating every candidate's true marginal value. Applying
     the same gem_optimizer treatment here that candidates already get
-    keeps the comparison fair on both sides. Enchants stay real (her
-    actual current enchant, never invented)."""
+    keeps the comparison fair on both sides.
+
+    Enchants used to stay real (her actual current enchant, never
+    invented) - reversed 2026-08-25 per the user ("unenchanted items must
+    never get compared to enchanted ones"): a slot she hasn't enchanted
+    yet (or has a stale/inferior one) was silently understating her own
+    baseline the same way an un-regemmed item used to, before the gem fix
+    above. Now unconditionally uses the real, sim-verified BiS enchant
+    for the slot (gear_config.get_active_default_enchants()), the same
+    treatment gems already get above - DPS*(P) is the best achievable
+    from P, never "whatever's actually socketed/enchanted right now",
+    for gems OR enchants. (Her real, possibly-different current enchant
+    still gets surfaced and compared explicitly in the Missing Enchants
+    ledger section - this function is the optimizer's baseline, not the
+    place that reports what she actually has equipped.)
+
+    known_professions gates Ring enchants specifically (achievable_enchant()
+    - real, found 2026-08-25: only a character who personally has Enchanting
+    can apply one, unlike every other enchant slot). Defaults to Survival
+    Hunter's real value (Herbalism/Mining, no Enchanting) when omitted, same
+    "existing callers stay provably unchanged" convention as
+    load_candidates()'s own default."""
+    if known_professions is None:
+        known_professions = {"Herbalism", "Mining"}
     meta_gem_id = find_owned_meta_gem(equipped_items)
+    default_enchants = gc.get_active_default_enchants()
     config = []
-    for it in equipped_items:
+    for idx, it in enumerate(equipped_items):
         if not it:
             config.append({})
             continue
         item = idb.by_id(it["id"])
         gems = gem_optimizer.best_gems_for_item(item, meta_gem_id) if item else it.get("gems")
-        config.append(gc.item_entry(it["id"], it.get("enchant", 0), gems))
+        slot = gc.SLOT_ORDER[idx]
+        enchant = achievable_enchant(default_enchants.get(slot, 0), known_professions)
+        config.append(gc.item_entry(it["id"], enchant, gems))
     return gem_optimizer.ensure_meta_requirement(config, equipped_items, meta_gem_id)
 
 

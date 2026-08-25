@@ -125,12 +125,40 @@ def check_tiered_report(report: dict, rep: Report) -> None:
     for entry in achieved:
         rep.check("slot" in entry and "items" in entry, f"tiered_report.json: malformed achieved_bis entry {entry!r}")
 
+    # missing_enchants: absence entirely is a soft warning only, since a
+    # cached report from before this feature landed (2026-08-25) genuinely
+    # predates the key - real, not a bug. An empty list on a FRESH report
+    # is separately harmless too (either every slot's already on its real
+    # BiS enchant, or the profile has no verified default_enchants.json
+    # data yet - a disclosed DB-coverage gap, see NOTES.md, not a pipeline
+    # defect).
+    rep.warn("missing_enchants" in report, "tiered_report.json: missing_enchants key absent (report predates the Missing Enchants feature)")
+    for entry in report.get("missing_enchants", []):
+        for field in ("slot", "item_name", "bis_enchant_id", "bis_name", "mv", "noise_stdev"):
+            rep.check(field in entry, f"tiered_report.json: malformed missing_enchants entry, missing '{field}': {entry!r}")
+        rep.check(entry.get("mv", 0) > 0, f"tiered_report.json: missing_enchants entry has non-positive mv (should have been filtered): {entry!r}")
+
+    # Stage 6.3 (2026-08-25): a weave-supported profile's two_hand rows must
+    # ALL carry a real boolean `weave` tag (which comparison each row came
+    # from - weave-on vs the real no-weave-at-all pass) so the report can
+    # group them without silently interleaving two numbers that assume
+    # different scenarios; a non-weave profile's rows must have NONE, same
+    # shape as before this feature existed - a mix would mean the two
+    # run_2h_pass() calls disagreed on whether to tag at all.
+    two_hand_meta = report.get("two_hand_meta", {})
+    weave_supported = two_hand_meta.get("weave_supported")
     for r in report.get("two_hand", []):
         for field in ("name", "item_id", "mv", "tier"):
             rep.check(field in r, f"two_hand: missing field '{field}' on {r.get('name', '?')!r}")
         if r.get("resolved"):
             rep.check(r.get("resolve_iterations", 0) > 0,
                        f"two_hand: {r.get('name')!r} is resolved but resolve_iterations is missing/zero")
+        if weave_supported:
+            rep.check(isinstance(r.get("weave"), bool),
+                       f"two_hand: {r.get('name')!r} on a weave-supported profile is missing a real boolean 'weave' tag")
+        else:
+            rep.check("weave" not in r,
+                       f"two_hand: {r.get('name')!r} has a 'weave' tag on a profile with weave_supported=false")
 
 
 def check_transform(report: dict, ledger_data: dict, rep: Report) -> None:
@@ -175,6 +203,8 @@ def check_transform(report: dict, ledger_data: dict, rep: Report) -> None:
 
     rep.check(ledger_data.get("achieved_bis") == report.get("achieved_bis"),
                "ledger_data.json: achieved_bis does not pass through tiered_report.json unchanged")
+    rep.check(ledger_data.get("missing_enchants", []) == report.get("missing_enchants", []),
+               "ledger_data.json: missing_enchants does not pass through tiered_report.json unchanged")
     rep.check(ledger_data.get("two_hand") == report.get("two_hand"),
                "ledger_data.json: two_hand does not pass through tiered_report.json unchanged")
     rep.check(ledger_data.get("two_hand_meta") == report.get("two_hand_meta"),

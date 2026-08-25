@@ -112,9 +112,13 @@ def _weapon_pool_key(slot: str, hand_type: int | None, weapon_topology: str) -> 
 
 
 def resolve_gear_set(path: str) -> dict[str, dict]:
-    """slot -> {"item": name, "id": int, "hand_type": int|None, "db_item": dict}
-    for each real (non-empty) slot. db_item is kept so the caller can look up
-    its real acquisition source instead of just labeling it by provenance."""
+    """slot -> {"item": name, "id": int, "hand_type": int|None, "db_item": dict,
+    "enchant": int|None} for each real (non-empty) slot. db_item is kept so
+    the caller can look up its real acquisition source instead of just
+    labeling it by provenance. enchant is the raw wowsims preset's own real
+    per-slot enchant effectId (None for a slot the preset leaves
+    unenchanted, e.g. a slot with no real TBC enchant at all - never
+    invented, just passed through as-is)."""
     data = json.load(open(path, encoding="utf-8"))
     result = {}
     for slot, it in zip(SLOT_ORDER, data["items"]):
@@ -126,7 +130,7 @@ def resolve_gear_set(path: str) -> dict[str, dict]:
                   f"needs a real Wowhead fallback entry for this slot/phase.")
             continue
         result[slot] = {"item": item["name"], "id": it["id"], "hand_type": item.get("handType"),
-                         "db_item": item}
+                         "db_item": item, "enchant": it.get("enchant")}
     return result
 
 

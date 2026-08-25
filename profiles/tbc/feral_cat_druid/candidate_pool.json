@@ -1,0 +1,721 @@
+{
+  "head": [
+    {
+      "item": "Wolfshead Helm",
+      "source": "Crafted: Leatherworking",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Cursed Vision of Sargeras",
+      "source": "Drop: Illidan Stormrage (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "neck": [
+    {
+      "item": "Haramad's Bargain",
+      "source": "Reputation reward",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Telonicus's Pendant of Mayhem",
+      "source": "wowsims Phase 2 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Choker of Endless Nightmares",
+      "source": "Drop: Supremus (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Clutch of Demise",
+      "source": "Drop: Brutallus (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "shoulder": [
+    {
+      "item": "Mantle of Malorne",
+      "source": "wowsims Phase 1 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Thunderheart Pauldrons",
+      "source": "wowsims Phase 3 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        },
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "back": [
+    {
+      "item": "Drape of the Dark Reavers",
+      "source": "Drop: Shade of Aran (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Thalassian Wildercloak",
+      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Cloak of Unforgivable Sin",
+      "source": "Drop: Kil'jaeden (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "chest": [
+    {
+      "item": "Breastplate of Malorne",
+      "source": "wowsims Phase 1 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Thunderheart Chestguard",
+      "source": "wowsims Phase 3 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Bladed Chaos Tunic",
+      "source": "wowsims Phase 5 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "wrist": [
+    {
+      "item": "Ravager's Wrist-Wraps",
+      "source": "Drop: Rokad the Ravager (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Vambraces of Ending",
+      "source": "Drop: High Astromancer Solarian (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Vindicator's Dragonhide Bracers",
+      "source": "wowsims Phase 3 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Thunderheart Wristguards",
+      "source": "wowsims Phase 5 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "hands": [
+    {
+      "item": "Gloves of Dexterous Manipulation",
+      "source": "Drop: Attumen the Huntsman (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Gloves of the Searing Grip",
+      "source": "Drop: Al'ar (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Thunderheart Gauntlets",
+      "source": "wowsims Phase 3 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Gloves of Immortal Dusk",
+      "source": "Crafted: Leatherworking",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "waist": [
+    {
+      "item": "Lurker's Grasp",
+      "source": "Drop: Hyakiss the Lurker (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Belt of One-Hundred Deaths",
+      "source": "Drop: Lady Vashj (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Thunderheart Waistguard",
+      "source": "wowsims Phase 5 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "legs": [
+    {
+      "item": "Skulker's Greaves",
+      "source": "Drop: Netherspite (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Leggings of Murderous Intent",
+      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Thunderheart Leggings",
+      "source": "wowsims Phase 3 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Leggings of the Immortal Night",
+      "source": "Drop: Felmyst (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "feet": [
+    {
+      "item": "Edgewalker Longboots",
+      "source": "Drop: Moroes (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Shadowmaster's Boots",
+      "source": "Drop: Mother Shahraz (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Thunderheart Treads",
+      "source": "wowsims Phase 5 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "ring": [
+    {
+      "item": "Ring of the Recalcitrant",
+      "source": "wowsims Phase 1 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Shapeshifter's Signet",
+      "source": "wowsims Phase 1 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Band of the Ranger-General",
+      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Ring of Lethality",
+      "source": "Drop: Hydross the Unstable (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Band of the Eternal Champion",
+      "source": "wowsims Phase 3 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Unstoppable Aggressor's Ring",
+      "source": "Drop: Gurtogg Bloodboil (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Signet of Primal Wrath",
+      "source": "Drop: (Zul'Aman)",
+      "seen_in": [
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Angelista's Revenge",
+      "source": "wowsims Phase 5 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Band of Ruinous Delight",
+      "source": "Drop: Eredar Twins (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "trinket": [
+    {
+      "item": "Badge of the Swarmguard",
+      "source": "Drop: Battleguard Sartura (Ahn'Qiraj)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Bloodlust Brooch",
+      "source": "wowsims Phase 1 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Tsunami Talisman",
+      "source": "Drop: Leotheras the Blind (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Berserker's Call",
+      "source": "Drop: Zul'jin (Zul'Aman)",
+      "seen_in": [
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Shard of Contempt",
+      "source": "Drop: Priestess Delrissa (Magisters' Terrace)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Blackened Naaru Sliver",
+      "source": "Drop: M'uru (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "weapon_2h": [
+    {
+      "item": "Terestian's Stranglestaff",
+      "source": "Drop: Terestian Illhoof (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Merciless Gladiator's Maul",
+      "source": "wowsims Phase 2 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Vengeful Gladiator's Staff",
+      "source": "wowsims Phase 3 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Stanchion of Primal Instinct",
+      "source": "Drop: Eredar Twins (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "ranged": [
+    {
+      "item": "Everbloom Idol",
+      "source": "wowsims Phase 1 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Idol of the Raven Goddess",
+      "source": "wowsims Phase 2 FeralCat preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        },
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ]
+}

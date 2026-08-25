@@ -1,0 +1,112 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Cursed Vision of Sargeras",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Clutch of Demise",
+        "rank": "Best",
+        "source": "Drop: Brutallus (Sunwell Plateau)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Thunderheart Pauldrons",
+        "rank": "Best",
+        "source": "wowsims Phase 5 FeralCat preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Cloak of Unforgivable Sin",
+        "rank": "Best",
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Bladed Chaos Tunic",
+        "rank": "Best",
+        "source": "wowsims Phase 5 FeralCat preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Thunderheart Wristguards",
+        "rank": "Best",
+        "source": "wowsims Phase 5 FeralCat preset"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Gloves of Immortal Dusk",
+        "rank": "Best",
+        "source": "Crafted: Leatherworking"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Thunderheart Waistguard",
+        "rank": "Best",
+        "source": "wowsims Phase 5 FeralCat preset"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Leggings of the Immortal Night",
+        "rank": "Best",
+        "source": "Drop: Felmyst (Sunwell Plateau)"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Thunderheart Treads",
+        "rank": "Best",
+        "source": "wowsims Phase 5 FeralCat preset"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Angelista's Revenge",
+        "rank": "Best",
+        "source": "wowsims Phase 5 FeralCat preset"
+      },
+      {
+        "item": "Band of Ruinous Delight",
+        "rank": "Best",
+        "source": "Drop: Eredar Twins (Sunwell Plateau)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Shard of Contempt",
+        "rank": "Best",
+        "source": "Drop: Priestess Delrissa (Magisters' Terrace)"
+      },
+      {
+        "item": "Blackened Naaru Sliver",
+        "rank": "Best",
+        "source": "Drop: M'uru (Sunwell Plateau)"
+      }
+    ],
+    "weapon_2h": [
+      {
+        "item": "Stanchion of Primal Instinct",
+        "rank": "Best",
+        "source": "Drop: Eredar Twins (Sunwell Plateau)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Idol of the Raven Goddess",
+        "rank": "Best",
+        "source": "wowsims Phase 5 FeralCat preset"
+      }
+    ]
+  }
+}

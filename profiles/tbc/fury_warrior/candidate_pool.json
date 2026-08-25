@@ -1,0 +1,771 @@
+{
+  "head": [
+    {
+      "item": "Warbringer Battle-Helm",
+      "source": "wowsims Phase 1 Fury preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Destroyer Battle-Helm",
+      "source": "wowsims Phase 2 Fury preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Cursed Vision of Sargeras",
+      "source": "Drop: Illidan Stormrage (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Coif of Alleria",
+      "source": "Drop: Kil'jaeden (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "neck": [
+    {
+      "item": "Adamantine Chain of the Unbroken",
+      "source": "Drop: Quagmirran (The Slave Pens)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Pendant of the Perilous",
+      "source": "Drop: (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Choker of Endless Nightmares",
+      "source": "Drop: Supremus (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Hard Khorium Choker",
+      "source": "Crafted: Jewelcrafting",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "shoulder": [
+    {
+      "item": "Warbringer Shoulderplates",
+      "source": "wowsims Phase 1 Fury preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Destroyer Shoulderblades",
+      "source": "wowsims Phase 2 Fury preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Onslaught Shoulderblades",
+      "source": "wowsims Phase 3 Fury preset",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Demontooth Shoulderpads",
+      "source": "wowsims Phase 5 Fury preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "back": [
+    {
+      "item": "Vengeance Wrap",
+      "source": "Crafted: Tailoring",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Shadowmoon Destroyer's Drape",
+      "source": "Drop: Teron Gorefiend (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Cloak of Unforgivable Sin",
+      "source": "Drop: Kil'jaeden (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "chest": [
+    {
+      "item": "Warbringer Breastplate",
+      "source": "wowsims Phase 1 Fury preset",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Destroyer Breastplate",
+      "source": "wowsims Phase 2 Fury preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Midnight Chestguard",
+      "source": "Drop: Archimonde (Hyjal Summit)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Bladed Chaos Tunic",
+      "source": "wowsims Phase 5 Fury preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "wrist": [
+    {
+      "item": "Bladespire Warbands",
+      "source": "Drop: High King Maulgar (Gruul's Lair)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Bracers of Eradication",
+      "source": "Drop: The Lurker Below (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Deadly Cuffs",
+      "source": "Drop: Rage Winterchill (Hyjal Summit)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Onslaught Bracers",
+      "source": "wowsims Phase 5 Fury preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "hands": [
+    {
+      "item": "Gauntlets of Martial Perfection",
+      "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Destroyer Gauntlets",
+      "source": "wowsims Phase 2 Fury preset",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Grips of Silent Justice",
+      "source": "Drop: Shade of Akama (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Thalassian Ranger Gauntlets",
+      "source": "Drop: Kil'jaeden (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "waist": [
+    {
+      "item": "Girdle of the Endless Pit",
+      "source": "Drop: Magtheridon (Magtheridon's Lair)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Belt of One-Hundred Deaths",
+      "source": "Drop: Lady Vashj (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Onslaught Belt",
+      "source": "wowsims Phase 5 Fury preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "legs": [
+    {
+      "item": "Skulker's Greaves",
+      "source": "Drop: Netherspite (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Leggings of Murderous Intent",
+      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Leggings of Divine Retribution",
+      "source": "Drop: Gurtogg Bloodboil (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Leggings of the Immortal Night",
+      "source": "Drop: Felmyst (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "feet": [
+    {
+      "item": "Ironstriders of Urgency",
+      "source": "Drop: Nightbane (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Warboots of Obliteration",
+      "source": "Drop: Morogrim Tidewalker (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Dreadboots of the Legion",
+      "source": "Drop: Reliquary of the Lost (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Onslaught Treads",
+      "source": "wowsims Phase 5 Fury preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "ring": [
+    {
+      "item": "Mithril Band of the Unscarred",
+      "source": "Drop: Netherspite (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Ring of a Thousand Marks",
+      "source": "Drop: Prince Malchezaar (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Band of the Ranger-General",
+      "source": "Drop: Kael'thas Sunstrider (Tempest Keep)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Stormrage Signet Ring",
+      "source": "Drop: Illidan Stormrage (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Unstoppable Aggressor's Ring",
+      "source": "Drop: Gurtogg Bloodboil (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Signet of Primal Wrath",
+      "source": "Drop: (Zul'Aman)",
+      "seen_in": [
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Angelista's Revenge",
+      "source": "wowsims Phase 5 Fury preset",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Band of Ruinous Delight",
+      "source": "Drop: Eredar Twins (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "trinket": [
+    {
+      "item": "Badge of the Swarmguard",
+      "source": "Drop: Battleguard Sartura (Ahn'Qiraj)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Dragonspine Trophy",
+      "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        },
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        },
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Madness of the Betrayer",
+      "source": "Drop: The Illidari Council (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Blackened Naaru Sliver",
+      "source": "Drop: M'uru (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "weapon_dual_wield": [
+    {
+      "item": "Dragonmaw",
+      "source": "Crafted: Blacksmithing",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Spiteblade",
+      "source": "Drop: Netherspite (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Dragonstrike",
+      "source": "Crafted: Blacksmithing",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Talon of Azshara",
+      "source": "Drop: Morogrim Tidewalker (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Warglaive of Azzinoth",
+      "source": "Drop: Illidan Stormrage (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Best"
+        },
+        {
+          "phase": "P4",
+          "rank": "Best"
+        },
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ],
+  "ranged": [
+    {
+      "item": "Sunfury Bow of the Phoenix",
+      "source": "Drop: Prince Malchezaar (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Serpent Spine Longbow",
+      "source": "Drop: Lady Vashj (Serpentshrine Cavern)",
+      "seen_in": [
+        {
+          "phase": "P2",
+          "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Ancient Amani Longbow",
+      "source": "Drop: Zul'jin (Zul'Aman)",
+      "seen_in": [
+        {
+          "phase": "P4",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    },
+    {
+      "item": "Golden Bow of Quel'Thalas",
+      "source": "Drop: Eredar Twins (Sunwell Plateau)",
+      "seen_in": [
+        {
+          "phase": "P5",
+          "rank": "Best"
+        }
+      ],
+      "best_rank_seen": "Best"
+    }
+  ]
+}

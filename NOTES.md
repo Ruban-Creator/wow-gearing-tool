@@ -3048,3 +3048,383 @@ visible windows - none appeared, only legitimate user windows. Real sim call its
 still working correctly post-fix (plausible DPS, real report generated) - `CREATE_NO_WINDOW`
 only suppresses the console allocation, it doesn't affect stdin/stdout/stderr piping at all, so
 there was no reason to expect it could break anything, and the live test confirmed it didn't.
+
+**Missing Enchants feature (2026-08-25) - real design reversal, not just a new UI section.**
+`optimizer.py`'s `load_candidates()`/`build_owned_config()` used to default every candidate's
+(and her own baseline's) enchant to "whatever slot she currently has an enchant on", not the real
+best available one - a real, deliberate call made early in the project, explicitly flagged in
+`build_owned_config()`'s own old docstring ("Enchants stay real, never invented"). That was
+inconsistent with gems, which already got the correct "always assume the objectively-best choice"
+treatment (`gem_optimizer.best_gems_for_item()`, unconditional, no "respect her real current gems"
+carve-out) - and inconsistent with CLAUDE.md's own stated principle ("keep assuming the
+fully-optimal gem/enchant loadout, same as it already does" - only actually true for gems until
+now). Fixed per the user's explicit ask ("unenchanted items must never get compared to enchanted
+ones") by mirroring gems exactly: `gc.get_active_default_enchants()` (new, mirrors
+`get_active_default_gem()`) is now the unconditional source for every slot's enchant, in every
+place a Candidate or the owned baseline gets built - `optimizer.py` (both functions),
+`run_full_sweep_mv.py`'s own separate full-world-item sweep loop (a second, independent site with
+the identical bug, found by grepping for `.get("enchant"` across the whole codebase rather than
+assuming the one known site was the only one), and `set_bonus.py`'s tier-set leave-one-out
+comparison. `core/interaction_matrix.py`'s own `.get("enchant", 0)` needed no fix - it reads from
+an already-built `baseline_config`, which now correctly carries the fixed value upstream.
+
+Real per-profile `default_enchants.json` built via `core/build_default_enchants.py` (reusing
+`build_wowsims_reference_bis.py`'s own `resolve_gear_set()`, now capturing each preset item's real
+`"enchant"` field alongside `id`/`hand_type`) for the 4 wowsims-preset profiles, and by hand from
+Wowhead's real "Hunter DPS Gems & Enchants" guide for Survival Hunter (predates the preset-builder
+convention, same as her reference_bis). Every id in every profile's file is real-sim-verified, not
+trusted from the source data as-is - `core/verify_default_enchants.py` isolates each slot (strip
+its real enchant to 0, compare "0 enchant" vs "candidate enchant" at 3000 iterations, same
+methodology as `set_bonus.isolate_bonus_value()`) and drops anything under a 1.0 DPS clear
+threshold. Real, disclosed finding from this pass, not smoothed over: **Balance Druid's raw preset
+enchant ids verified 0/11 real** (every one showed a ~0.00 delta - not a single recognized effect
+in this sim build) and **Enhancement Shaman verified only 3/10** (`back`/`wrist`/`hands`; the rest,
+including a `chest` id shared with Druid's own failing set, showed no real effect either) - a
+genuine sim-DB-coverage gap for these two profiles' preset data specifically, not a bug in this
+tool's own logic (Warrior and Elemental both verified real ids fine on the same source
+convention). `default_enchants.json` for both is smaller than a full slot list as a result - those
+slots simply have no verified default enchant to assume, same honest "no data" state as before
+this feature existed, not a wrong value kept because it came from a real-looking source file.
+
+**Real methodology bug in the verification script itself, caught before it corrupted any data**:
+the first version of `verify_default_enchants.py` compared "candidate enchant applied" against the
+character's own REAL, unmodified current gear - which trivially shows `delta=0.00` for any slot
+where she already happens to have that exact enchant equipped (not "the id is broken", just
+"nothing changed"). Caught on Warrior (Rubán's own real current gear already matched 4 of 9
+candidate ids exactly, all four showing a false "DROP"). Fixed by stripping the slot under test to
+a neutral zero-enchant baseline first, so both sides of the comparison are measured from the same
+real starting point - Warrior then verified 9/9.
+
+**Real gap the Stage 2 STOP checkpoint itself caught, live**: re-running `build_owned_config()` for
+Lerynia after the fix showed her real `ranged` slot enchant vanish entirely (was her real
+Stabilitzed Eternium Scope, effectId 2724) - her hand-researched `default_enchants.json` simply
+never had a `ranged` key, because the plan's own working assumption ("rings/waist/trinkets/ranged
+never carry a real enchant in the wowsims presets") turned out true for every OTHER profile's
+ranged/relic slot (Shaman totems, a Druid idol - genuinely un-enchantable in this game) but false
+for a Hunter's actual ranged WEAPON, which does take a real scope enchant. Added and re-verified
+(+17.37 DPS, clear real effect) - the other 4 profiles' own auto-built files were checked too and
+confirmed correctly ranged-less (their real ranged/relic slot items are relics/totems, not
+weapons, so "no enchant" is the true state there, not a parallel oversight).
+
+New `item_db.enchant_by_id()` added (db.json's `enchants` collection, keyed by `effectId`) purely
+for display-name resolution in the new "Missing Enchants" ledger section - same "display lookup,
+not proof the Go sim engine implements it" caveat as everywhere else this collection gets used.
+
+**Real fourth bug in the same feature, caught live by the user (2026-08-25), same day, after the
+above was already believed done**: the user flagged that the Missing Enchants section was
+recommending Ring enchants for Lerynia even though "ring enchants require you to be enchanter
+yourself" - a real TBC-era game rule this tool had never modeled anywhere. Unlike every other
+enchant slot (cloak, chest, weapon, etc.), which any enchanter can apply to any player's gear via
+a trade-window service, Ring enchants can only be self-cast by a character who personally has the
+Enchanting profession - there's no "pay a stranger" option. Confirmed directly in the DB rather
+than taken purely on the user's word: `db.json`'s `enchants` collection already carries a real
+`requiredProfession` field per entry, and checking it across the WHOLE collection showed exactly
+and only the four real Ring enchants (2928-2931, "Enchant Ring - Spellpower/Striking/Healing
+Power/Stats") set it to 3 (Enchanting) - every other enchant in the game, including all the ones
+already verified this session, has it unset. This is the identical field/pattern
+`item_db.required_profession_name()` already uses for ITEMS (a required crafting profession to
+*use* an item) - just never previously checked for enchant effects, and semantically different
+(an item's requiredProfession gates who can equip it; an enchant's gates who can even apply it at
+all, since normal enchants have no such restriction and only rings do).
+
+Fixed generically, not with a hardcoded "ring" special case, since the DB field itself already
+distinguishes the real cases: `item_db.enchant_required_profession_name()` (mirrors
+`required_profession_name()`) + `optimizer.achievable_enchant(enchant_id, known_professions)` (new,
+returns 0 if gated) - wired into every real default-enchant lookup found in the codebase:
+`optimizer.py`'s `load_candidates()`/`build_owned_config()` (the latter gained a real
+`known_professions` parameter it never had before, defaulting to Hunter's real Herbalism/Mining so
+every existing caller stays behavior-identical unless it explicitly passes real data - same
+convention `load_candidates()` already established), `run_full_sweep_mv.py`'s own separate
+full-world-item-sweep loop (both the 2H-weapon and general branches), its Missing Enchants
+computation itself (so a character without Enchanting never even sees a ring gap listed - not just
+silently getting 0 DPS for one), and `build_profile_settings.py`/`verify_default_enchants.py`'s own
+`build_owned_config()` calls. `set_bonus.py`'s tier-set leave-one-out comparison needed no change -
+confirmed its own `ARMOR_SET_SLOTS` (head/shoulder/chest/hands/legs) never includes rings at all.
+
+Verified live: Lerynia (Herbalism/Mining, no Enchanting) now correctly shows `ring1`/`ring2` as
+`None` in both her real baseline (`build_owned_config()`) and her real candidate pool
+(`load_candidates()`), where before the fix both assumed the gated Enchant Ring - Stats (2931)
+unconditionally. Two in-flight full sweeps (Lerynia, Rubán) that had been started under the
+pre-gate code were killed and restarted clean once this landed, rather than trusting output that
+predated the fix - confirmed via file mtime that neither killed run had gotten far enough to
+overwrite a real `tiered_report_phase3.json` with stale data first.
+
+**Real fifth bug, and a more serious one: Rubán's whole re-run had actually been sweeping against
+Hunter's own profile, not his.** Sanity-checking Lerynia's own corrected sweep also surfaced a real
+negative Missing Enchants delta (see next entry) - her feet slot's assumed BiS enchant
+("Cat's Swiftness", 2939) turned out to be worse than her real current one ("Dexterity", 2657,
++7.3 DPS confirmed by a real head-to-head 30k-iteration sim call, not assumed). Fixed
+`default_enchants.json` and hardened `run_full_sweep_mv.py`'s Missing Enchants filter to require
+`delta > 0` outright (it previously only checked `tied_within_noise`, never the sign - a real gap
+mirroring `is_available_upgrade()`'s own `and r["mv"] > 0` check elsewhere in the same file, just
+missed when this feature was first written).
+
+While re-running Rubán's own sweep to pick up that same code, his fresh Missing Enchants output
+showed something structurally wrong: both his Hands and Weapon slots listed "Enchant Weapon -
+Agility" (effectId 2564) as the recommended BiS - but his own `default_enchants.json` has no such
+value anywhere (`hands: 684`, `mainhand: 2673`). 2564 is Survival Hunter's real weapon-enchant id.
+Root cause found by inspecting `run_full_sweep_mv.py`'s own `main()` signature: `profile_dir: str
+= PROFILE_DIR`, where the module-level `PROFILE_DIR` constant is hardcoded to
+`profiles/tbc/survival_hunter` (a leftover default from before multi-profile support existed).
+My own ad-hoc verification command this session (`rfsm.main('Rubán-Thunderstrike', 'phase3')`)
+never passed `profile_dir` explicitly, so it silently swept his real character.json gear against
+HUNTER's candidate_pool.json, default_enchants.json, stat_weights.json, and settings_template.json
+- a real-looking, wrong report (his own equipped items still displayed correctly since those come
+from his own real character.json, which masked the bug until an enchant-name mismatch made it
+visible). Lerynia's own equivalent ad-hoc call happened to be correct by pure coincidence (her real
+profile_dir IS Hunter's), so nothing about her earlier results in this session was ever wrong.
+
+Checked whether this was a new bug or a known trap: `gui/api.py` already had a defensive comment
+about this exact class of bug from an earlier session ("own profile (run_full_sweep_mv.main()'s
+default profile_dir) - caught before it ever shipped") and always passes `profile_dir` explicitly
+via its own `SUPPORTED_CHARACTERS` map - the GUI path was never actually affected. But
+`cli/gear.py`'s real `cmd_best` command (`gear best <character> <phase>`) had the identical gap -
+`run_full_sweep_mv.main(args.character, phase, duration=args.duration)`, no `profile_dir` at all -
+meaning the real CLI entry point had this exact bug live the whole time for any non-Hunter
+character, not just my own test script.
+
+Fixed at the root instead of patching each call site individually: new `core/character_profiles.py`
+(the real `SUPPORTED_CHARACTERS` map, moved out of `gui/api.py` so both the CLI and GUI share one
+source of truth instead of two copies that could drift), `gui/api.py` now imports it rather than
+defining its own copy, `cli/gear.py`'s `cmd_best` resolves `profile_dir` from it and prints a clear
+"no known profile" message for an unsupported character instead of silently guessing, and
+`run_full_sweep_mv.main()`'s own `profile_dir` parameter lost its dangerous default entirely
+(now required - a call site that forgets it fails loud with a real `TypeError`, not a silent wrong
+sweep). Rubán's sweep re-run a third time with the real, explicit `profile_dir` this time.
+
+**Real sixth bug/fix, same day: Béarforceone's real weapon enchant gap, found by the user
+directly ("something i'm 100% sure of"), 2026-08-25.** Her `default_enchants.json` had been left
+completely empty (`{}`) earlier this session after every one of her 11 raw preset candidates
+verified `+0.00` - a real, disclosed data-coverage gap, not investigated further at the time. The
+user's report that her weapon specifically was unenchanted prompted a real re-investigation: her
+raw preset's mainhand candidate (effectId 22560, from `sim/tbc-new/ui/druid/balance/gear_sets/
+p3.gear.json`) is simply **absent from `db.json`'s `enchants` collection entirely** - not a weak
+effect, not implemented by this sim build at all, same root cause already documented for
+Enhancement Shaman's own failing ids. Checked all 9 of her other non-weapon candidate ids the same
+way - also absent from the DB, confirming this specific preset file's enchant ids are broadly
+unreliable for this build, not an isolated case.
+
+Real fix, not a guess: searched `db.json`'s own `enchants` collection by name for a real,
+DB-recognized caster weapon enchant (`grep`-style scan for "weapon"/"staff" in the name field) -
+found `2669, "Enchant Weapon - Major Spellpower"` (+40/+40 to the two spell-damage-family stat
+slots), matching real TBC game knowledge for what Balance Druid's actual BiS weapon enchant is.
+Verified via the same isolated-delta methodology as everything else: **+22.82 DPS at 30000
+iterations**, real and clear. Added to her `default_enchants.json` (now `{"mainhand": 2669}` - the
+other 10 slots stay genuinely empty, a disclosed gap, not silently filled with an unverified
+guess). All 4 of her existing reports (phase1-4) re-swept and re-verified
+(`check_ledger_consistency.py` clean on all 4) to pick up the corrected baseline and the new,
+real Missing Enchants entry: "Weapon | Merciless Gladiator's Spellblade | (none) -> Enchant Weapon
+- Major Spellpower | +22.8 DPS".
+
+Real lesson worth keeping: when a whole profile's raw preset enchant ids fail verification
+near-unanimously, that's a real signal to check `db.json` directly (not just re-run the same
+isolated-sim test again) - the fix usually isn't "these items are useless," it's "this specific
+id isn't the DB's real id for that effect," findable by searching the enchants collection by name
+for the class-appropriate keyword. See the new `CLASSES.md` for this and every other real
+class-profile gotcha found so far, kept as a standing checklist rather than left buried in a
+single session's NOTES.md entry.
+
+**Stage 6.3 (2026-08-25): 2H-without-weave comparison for weave-capable profiles.** The user asked
+directly whether the tool checks "would 2 one-handers get replaced by 1 two-hander even without
+weaving" - it didn't. Every 2H candidate for a weave profile (Survival Hunter today) was screened/
+resolved only against the weave-ON dual-wield baseline; the weave-OFF baseline was computed and
+printed for context but never used as a comparison point for any candidate. Fixed additively (the
+existing weave-on comparison and its own recorded rationale are untouched): `run_full_sweep_mv.py`'s
+2H section is now a reusable `run_2h_pass()` helper, called once against the weave-on baseline (or
+the plain baseline for a non-weave profile, unchanged) and, for a weave profile only, a second time
+against the real weave-OFF baseline (`SETTINGS_TEMPLATE`/`no_weave_result`). Each row is tagged a
+real boolean `weave` (`True`/`False`) rather than needing a second output list; a non-weave
+profile's rows carry no `weave` key at all, same shape as before this feature existed.
+`stage_sequence` gained three new conditional entries ("Screening 2H weapons (no weave)",
+"Resolving 2H (no weave)", "Resolving top 2H picks (no weave)") - `is_weave_profile` had to move
+earlier in `main()` (right after `SETTINGS_2H`/`SETTINGS_TEMPLATE` resolve) so the GUI's own
+"Stage X of Y" count knows about them upfront, rather than only being computed later at the 2H
+section itself where it used to live.
+
+`report_template.html` renders the two groups separately ("Weaving ON"/"Weaving OFF" sub-labels
+inside the existing `.slot-block` pattern, reusing `.slot-label` from the tier-slot rendering)
+rather than interleaving both scenarios by raw `mv` - a weave-on MV and a weave-off MV assume
+different fight contexts and were never meant to rank against each other on one shared list.
+`check_ledger_consistency.py` gained a matching real check: every `two_hand` row on a
+`weave_supported` profile must carry a real boolean `weave` tag, and none may on a profile without
+one - catches a `run_2h_pass()` call site disagreeing with itself about whether to tag.
+
+Real, live-verified checkpoint: ran a real sweep for Lerynia (Survival Hunter) - weave-on numbers
+came back byte-identical to the pre-existing values (Twinblade of the Phoenix +196.7, Halberd of
+Desolation +178.9, etc.), and the new weave-off pass ran correctly end to end, producing a real,
+legitimate finding: no 2H weapon beats her current DW gear with zero melee weaving at all (makes
+real sense - a pure-ranged rotation barely cares what's in the melee weapon slot). Rendered HTML
+confirmed live via browser: "top 5 weave-on, top 0 weave-off" with both groups correctly labeled
+and a real subtitle explaining both baseline numbers. `check_ledger_consistency.py`: 676/0 clean
+(up from 667, the new weave-tag assertions).
+
+**Stage 6.4 (2026-08-25): Beastmastery Hunter, real-verified.** `profiles/tbc/beastmastery_hunter/`
+built end to end from `sim/tbc-new/ui/hunter/dps/` (the same real UI dir Survival uses - BM/SV
+share one apl file, `default.apl.json`, and one candidate item universe).
+
+Real, non-obvious corrections found during research, worth remembering for the next Hunter-family
+profile: the `6p`/`9p` suffix in BM's real gear_sets filenames (`dw_6p.gear.json`, `2h_9p.gear.json`,
+etc) is a **hit-rating-target label ("6% hit"/"9% hit"), not a tier-set piece count** - easy to
+misread at a glance. Used the real "6%" variant (`dw_6p`) per CLAUDE.md's own already-decided
+default ("keep assuming 6% (moonkin present)... never silently switch to 9% without being asked").
+BM's real wowsims data ships BOTH `2h_*` and `dw_*` gear variants at every phase as equally
+legitimate builds, but `P1_BM_EP_PRESET` and `P1_SV_EP_PRESET` in the shared `presets.ts` are
+byte-identical, and both weapon variants embed the exact same real `TypeSimple` rotation JSON
+(`timeToWeave`/`useMulti`/`useArcane`/viper thresholds) - confirming BM has no real weave-style
+rotation mechanic the way Survival's own 2H side-analysis does. Built `weapon_topology:
+dual_wield` (matching Survival's own convention on this identical candidate pool), no
+`settings_template_2h.json`, `is_weave_profile=False` - the plain "2H Weapon Options" section
+(shared with Balance Druid's own non-weave path) handles "would a 2H weapon beat my DW gear" as a
+real side-comparison, same as everywhere else this pattern already exists.
+
+`settings_template.json` built by literally copying Survival's own (already real, already
+thousands-of-runs-verified) file and changing exactly two real, confirmed-different fields:
+`player.talentsString` (BM's real talents, `522002005150122431051-0550201205`, confirmed
+identical across all 4 phases' own real build.json files) and
+`player.hunter.options.classOptions.petType` (`"Ravager"`, confirmed from the raw preset builds -
+Survival's own file uses `"Owl"`). Verified this was safe by checking the real priorityList's own
+spell IDs (34026/34120/27021/27019 - Kill Command/Steady Shot/Arcane Shot/Multi-Shot, all
+class-generic core-rotation spells, nothing Survival-specific like Explosive Trap/Black Arrow)
+before assuming it transfers.
+
+`default_enchants.json`: 11/11 verified real (matches Survival's own strong hit rate, unlike
+Druid/Enhancement's earlier DB-coverage gaps) - `core/verify_default_enchants.py` run fresh, not
+inherited. `chase_bonus_gems.json`: reused Survival's own real, already-verified list rather than
+re-running the full 38-item `verify_gem_choices.py` pass - defensible because the socket-bonus-
+vs-pure-Agility question is purely a function of stat weights (confirmed byte-identical) and never
+touches rotation/pet/class mechanics; spot-checked BM's own real candidates not covered by the
+prior run (`Cursed Vision of Sargeras`, `Gronn-Stitched Girdle`, `Blade of the Unrequited`) with
+fresh real sim calls to confirm the same conclusion holds rather than trusting the inference
+blind - all three came back tied-or-loss for pure Agility, consistent.
+
+New `Test-Beastmastery-Synthetic` character (Orc, Engineering/Blacksmithing per the real wowsims
+`OtherDefaults`, seeded from `bm/dw_6p.gear.json` phase 3) - no real BM Hunter alt exists.
+Real, independent sanity check before the full sweep: `cli/gear.py preset` run directly against
+the raw wowsims phase3 BM build file (bypassing this project's own profile entirely) confirmed a
+real Ravager pet contributing 632.5 of 2078.3 combined DPS (~30%) - genuine proof the pet/BM
+subsystem fires, not just that settings parse. Full sweep then ran clean (no errors), real Achieved
+BiS (8 slots) and tiered upgrades with correct set-bonus/sidegrade notes, `check_ledger_
+consistency.py` 167/0. Regression: re-ran Survival Hunter's own Phase 3 sweep fresh afterward -
+baseline came back byte-identical (2689.3495110209305, matching the long-established value),
+672/0 clean.
+
+**Stage 6.5 (2026-08-25): Fury Warrior, real-verified.** `profiles/tbc/fury_warrior/` built from
+`sim/tbc-new/ui/warrior/dps/` (same real UI dir Arms uses, but a genuinely separate real
+`fury.apl.json` - unlike Hunter's Beastmastery/Survival, Warrior's two specs don't share one apl
+file). Real, confirmed-distinct EP weights from `warrior/dps/presets.ts`'s own
+`P2_FURY_EP_PRESET` ("P2, P3, P4 & P5 - Fury") - genuinely different Hit/Expertise/Haste priorities
+than Arms's own `P3_ARMS_EP_PRESET`, not inherited. `weapon_topology: dual_wield` confirmed via
+real `handType` data on the synthetic character's actual weapons (a real Warglaive of Azzinoth
+pair: handType=1 MainHand / handType=3 OffHand), not assumed from spec convention.
+
+Real gem verification run fresh, independent of Arms's own list (per CLASSES.md's own stated
+reasoning: dual_wield vs two_hand can shift the socket-bonus-vs-pure-Strength math) - all 30 of
+Fury's own real socketed candidates tested via `gopt.verify_gem_choice()` directly; 4 real winners
+found and adopted (`Vengeance Wrap` +7.1, `Onslaught Bracers` +6.8, `Grips of Silent Justice`
++11.3, `Leggings of the Immortal Night` +19.0 DPS, all clearly outside noise) - a genuinely
+different set than Arms's own verified list, confirming the "don't inherit" rule mattered here,
+not just theoretical caution. `default_enchants.json`: 10/10 verified real on the first pass (both
+weapon slots real - dual-wield needs two, both `2673` "Enchant Weapon - Mongoose").
+
+`settings_template.json` built via the real `core/build_profile_settings.py` pipeline (unlike
+Hunter's hand-copy approach) - Warrior's own real `TypeAPL` rotation system means `fury.apl.json`'s
+raw content is a complete, valid `player.rotation` value verbatim, same real finding Stage 6.1
+already established for Arms. `class_options.json`/`consumables.json`/`loot_eligibility.json`/
+`raid_buffs_overlay.json` all copied verbatim from Arms - confirmed via real source reading
+(`presets.ts`'s own shared `DefaultOptions`/`OtherDefaults` blocks) that these are genuinely
+class-level, not Arms-specific, before copying rather than assuming.
+
+New `Test-Fury-Synthetic` character (Orc, Engineering/Blacksmithing, seeded from `p3_fury.gear.json`,
+real `FuryTalents` string `3400502130201-05050005505012050115` confirmed from `presets.ts` directly
+- noted a real, separate "Arms - Kebab" hybrid-talent variant exists in the same file but is out of
+scope, not a real distinct profile per the confirmed spec inventory).
+
+Real, independent rotation verification - Warrior has no per-phase `.build.json` files like Hunter
+did, so `cli/gear.py preset` wasn't usable directly; instead built a real RaidSimRequest by hand
+(`valuation._build_raid_sim_request()`, the same real function the sweep pipeline itself uses) and
+ran it straight through `wowsimcli.exe`, bypassing the bridge translation step since the request
+was already in its target shape. The real combat log (a genuine per-event text log, `SpellID: N`
+entries) confirmed **Bloodthirst (spell 30335, real id cross-checked against
+`sim/warrior/talents_fury.go`'s own `registerBloodthirst()`) fired 214 times and Whirlwind (spell
+1680) fired 202 times** in a single real iteration - direct, unambiguous proof the real Fury
+rotation fires, not just that settings parse. Full sweep then ran clean, real Achieved BiS and
+"no real upgrades" tiers (a well-itemized synthetic BiS character, as expected),
+`check_ledger_consistency.py` 46/0. Regression: Arms Warrior's own Phase 3 sweep re-run fresh
+afterward - baseline byte-identical (1770.0316931322793), 1500/0 clean (same familiar
+achieved-BiS-empty warning as before, not a new issue).
+
+**Stage 6.6 (2026-08-25): Feral Cat Druid, real-verified.** `profiles/tbc/feral_cat_druid/` built
+from `sim/tbc-new/ui/druid/feralcat/` - the real gear-complexity outlier flagged in the staging
+plan (P1 alone splits into `bis`/`alt`/`realistic` x `6p`/`9p`) and the profile that surfaced this
+session's two most serious real bugs, both now documented in CLASSES.md.
+
+**`weapon_topology` initial assumption was wrong and caught before building further.** Blindly
+copying Balance Druid's own `one_hand_plus_offhand_item` precedent (same class) would have been
+wrong - checked real `handType` data on the actual BiS mainhand item at every phase (P1-P5:
+Terestian's Stranglestaff, Merciless Gladiator's Maul, Vengeful Gladiator's Staff x2, Stanchion of
+Primal Instinct) and found `handType=4` (TwoHand) consistently. Real TBC Feral mechanics scale
+cat-form damage directly off weapon DPS, making a 2H weapon's much higher DPS budget the
+consistent real BiS choice throughout - unlike Balance Druid's own genuinely phase-varying case.
+Fixed to `weapon_topology: "two_hand"` before `candidate_pool.json`/`reference_bis` were built.
+
+**Two real, sim-breaking bugs found and fixed, both silent (no error, just wrong output):**
+1. `class_options.json` initially used Balance's own `"balanceDruid"` key and `innervateTarget`
+   option - wrong proto oneof entirely. Real proto shows `feral_cat_druid = 13` with
+   `FeralCatDruid.options` (`classOptions: {}`, empty) AND a **separate real `Rotation` message**
+   (`finishingMove`/`biteweave`/`ripMinComboPoints`/`biteMinComboPoints`/`mangleTrick`/
+   `maintainFaerieFire`) that has no equivalent in the generic `player.rotation` (TypeAPL) field
+   every other profile built so far relies on exclusively. Added with real default values from
+   `presets.ts`'s own `DefaultRotation` block. This alone did NOT fix the sim (still 0 DPS).
+2. **Root cause, found via real combat-log debugging**: `core/settings_builder.py`'s
+   `"distanceFromTarget": profile.get("distance_from_target", 7)` - a hardcoded fallback of 7
+   yards (the pipeline's original Hunter/ranged-class default) that every profile before this one
+   got away with, since Hunter is genuinely ranged and Warrior's Charge closes the gap as a real
+   opener. Feral Cat has no gap-closer at all, so the silent 7-yard default put her out of melee
+   range for every ability - confirmed via a hand-built `RaidSimRequest` + direct `wowsimcli.exe`
+   call showing "Casting {SpellID: 768}" (Cat Form) looping and "[Player (#1)] No available
+   actions! Pausing rotation for 100ms due to resources / CDs." in the real log. Real Feral
+   `OtherDefaults` in `presets.ts` specifies `distanceFromTarget: 0` - added explicitly to
+   `profile.json` (`"distance_from_target": 0`), rebuilt `settings_template.json`, and the sim
+   immediately worked: `{'player_dps': 2233.929242315233, 'player_stdev': 78.4, 'combined':
+   2233.929242315233, 'ew_uptime': 0.9}`. Both CLASSES.md-documented now as required checks for
+   any future melee profile.
+
+Real EP weights from `P1_EP_PRESET` (`presets.ts`): `{"0":0.78,"1":1.16,"17":0.35,"19":0.35,
+"20":1.02,"21":0.77,"22":0.41,"23":0.16,"24":1.02,"41":3.13}` - index 19 (StatFeralAttackPower)
+and 41 (StatPhysicalDamage) cross-checked against `sim/tbc-new/proto/common.proto` since neither
+appears in any prior profile's own weight table. `consumables.json` matches Enhancement Shaman's
+real melee-package convention (potId 22838, flaskId 22854, etc.), not Balance's caster one -
+correct spec-appropriate sourcing, not a copy-paste leftover. `loot_eligibility.json` broadened
+from Balance's `[2,4,8]` to `[2,3,4,6,8]` (added Fist/Polearm, real Feral-eligible weapon types).
+
+`default_enchants.json` rebuilt fresh after the distance-from-target fix (the pre-fix run had
+produced a false all-`+0.00` result, itself a real reason the "when everything shows +0.00, the
+sim is broken, not the enchants" CLASSES.md entry is worth having) - clean 11/11 KEEP, real
+sensible deltas (head +18.56, shoulder +17.24, back +13.48, chest +19.03, wrist +8.13, hands
++17.21, legs +24.63, feet +6.62, ring1/ring2 +12.88 each, mainhand +39.37). Gem verification: all
+21 real socketed candidates in her own `candidate_pool.json` tested fresh via
+`gopt.verify_gem_choice()` - every single one showed a negative delta (matching the primary
+Agility gem always beats chasing a socket bonus), so `chase_bonus_gems.json` correctly stays
+empty, a real verified negative result, not an unfinished check.
+
+New `Test-FeralCat-Synthetic` character (NightElf, Engineering/Enchanting, seeded from
+`p3_6p.gear.json`, real Standard-talents string confirmed from `sim.ts`'s
+`Presets.StandardTalents.data`, used at 3 real call sites - a second real "Monocat" stay-in-cat-
+form variant exists but Standard is the confirmed default).
+
+Real rotation verification via the hand-built-RaidSimRequest + direct `wowsimcli.exe` technique
+(no per-phase `.build.json` for this class either): Shred's real spell ID is 27002
+(`sim/druid/shred.go`'s own `registerShredSpell()`), Rip's is 27008 (`sim/druid/rip.go`'s
+`registerRipSpell()`) - a 100-iteration real combat log showed **Shred firing 430 times and Rip
+firing 205 times**, direct proof the real cat-form rotation fires (not Wrath/Starfire). Full sweep
+then ran clean (real Achieved BiS across 10 slots, real Malorne Harness 2pc set-bonus math
+correctly flagged as a net -82.5/-86.4 DPS per-piece loss offset by a +91.4 2pc bonus, real upgrade
+candidates in T6/T4/TBC-Heroics/Other), `check_ledger_consistency.py` 117/0 clean with **no**
+achieved-BiS-empty warning (a fully-itemized synthetic BiS character, unlike every prior synthetic
+test char). Report built and validated via `check_ledger_consistency.py --html`, 121/0 clean
+(embedded DATA blob byte-matches `ledger_data_phase3.json`) - the Claude Browser tool's sandbox
+blocks `file://` access so a direct visual open wasn't possible, but the structural HTML check
+already verifies the embedded data byte-for-byte, matching the bar used for prior stages' own
+report verification. Regression: Balance Druid's own Phase 3 sweep re-run fresh - baseline
+byte-identical (1100.271068998754, full cache hit, 0.7s), `check_ledger_consistency.py` 1209/0
+clean (same familiar achieved-BiS-empty warning as before, not new).

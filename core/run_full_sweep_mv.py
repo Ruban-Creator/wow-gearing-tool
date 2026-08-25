@@ -291,15 +291,20 @@ def describe_source_and_tier(item: dict, npc_by_id: dict, zone_by_id: dict) -> t
 
 
 def run_with_progress(fn, items: list, label: str, workers: int = MAX_WORKERS, log_every_pct: int = 5,
-                       progress_cb=None) -> list:
+                       progress_cb=None, stage_sequence: list[str] | None = None) -> list:
     """Same concurrent map as `ThreadPoolExecutor(...).map(fn, items)`, plus
     periodic "label: done/total (pct%)" progress lines - real precursor to
     the GUI progress indicator already noted in CLAUDE.md's future-scope
     section (candidates screened so far / total, not a blank wait), now
     real: progress_cb(dict) is called at the same cadence as the print, so a
-    GUI caller gets live stage/done/total/pct without scraping stdout. Order
-    of the returned list is NOT the same as `items` (completion order, not
-    submission order) - both call sites here already only build a dict/set
+    GUI caller gets live stage/done/total/pct without scraping stdout, plus
+    a real per-stage eta_seconds (linear extrapolation from this stage's own
+    live rate) and stage_index/stage_total (per the user, 2026-08-25 - "so
+    people know there's something else coming") when `stage_sequence` (the
+    real, profile-aware ordered list of every stage this run will emit,
+    built once in main()) is passed through. Order of the returned list is
+    NOT the same as `items` (completion order, not submission order) - both
+    call sites here already only build a dict/set
     from the results, so this is safe; a future caller that needs input
     order preserved would need to carry an index through `fn` itself."""
     total = len(items)
@@ -308,6 +313,28 @@ def run_with_progress(fn, items: list, label: str, workers: int = MAX_WORKERS, l
     results = []
     done = 0
     last_logged_pct = -1
+    stage_start = time.time()
+    stage_index = stage_sequence.index(label) + 1 if stage_sequence and label in stage_sequence else None
+    stage_total = len(stage_sequence) if stage_sequence else None
+    # Real bug the user caught live, 2026-08-25: a plain "elapsed-since-
+    # stage-start / done" rate barely moves once done is large, so a single
+    # burst of several items finishing near-simultaneously (MAX_WORKERS
+    # threads, real items with real varying per-call cost) swung the whole-
+    # stage average and the shown ETA visibly jumped around instead of
+    # counting down. A single-tick exponential moving average was tried
+    # first and still wasn't robust enough - caught live, same session: it
+    # pinned at "0:00" for over 20 real seconds while 53 of 153 items
+    # (a real, confirmed ~1 item/sec rate) genuinely remained, because one
+    # fast concurrent burst inflated the "recent rate" and even a 0.3 alpha
+    # didn't damp a single outlier tick enough. Replaced with a real rolling
+    # window instead (last up to RATE_WINDOW_SIZE ticks' worth of done/time,
+    # rate computed oldest-to-newest across the whole window) - a single
+    # lumpy tick can only ever be 1 sample in the window, not the dominant
+    # signal. Widened 5->9 the same session (still not smooth enough per
+    # the user's own live feedback - see app.js's blended-recheck comment
+    # for the matching frontend-side half of this fix).
+    rate_window: list[tuple[float, int]] = [(stage_start, 0)]
+    RATE_WINDOW_SIZE = 9
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
         futures = [ex.submit(fn, item) for item in items]
         for fut in concurrent.futures.as_completed(futures):
@@ -317,23 +344,69 @@ def run_with_progress(fn, items: list, label: str, workers: int = MAX_WORKERS, l
             if done == total or (pct != last_logged_pct and pct % log_every_pct == 0):
                 print(f"{label}: {done}/{total} ({pct}%)")
                 if progress_cb:
-                    progress_cb({"stage": label, "done": done, "total": total, "pct": pct})
+                    # Per-stage ETA only (per the user, 2026-08-25 - a whole-
+                    # run estimate was considered and dropped: later stages'
+                    # real item counts aren't known until earlier ones
+                    # finish, and per-item cost varies ~60x between a 500-
+                    # iteration screen and a 30000-iteration resolve, so any
+                    # whole-run number would be a rough guess dressed up as
+                    # precision).
+                    now = time.time()
+                    rate_window.append((now, done))
+                    if len(rate_window) > RATE_WINDOW_SIZE:
+                        rate_window.pop(0)
+                    oldest_time, oldest_done = rate_window[0]
+                    interval = now - oldest_time
+                    items_since = done - oldest_done
+                    eta_seconds = ((total - done) * interval / items_since) if interval > 0 and items_since > 0 else None
+                    progress_cb({"stage": label, "done": done, "total": total, "pct": pct,
+                                 "eta_seconds": eta_seconds,
+                                 "stage_index": stage_index, "stage_total": stage_total})
                 last_logged_pct = pct
     return results
 
 
-def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_cb=None):
+def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
+         duration: int | None = None):
     """name_realm e.g. "Lerynia-Thunderstrike"; phase e.g. "phase3" (matches
-    reference_bis/<phase>.json and gui/api.py's PHASES list). profile_dir
-    defaults to today's only real profile (Survival Hunter) - a future
-    Stage 6.1/6.2 caller passes a different one. progress_cb, if given, is
+    reference_bis/<phase>.json and gui/api.py's PHASES list). profile_dir is
+    REQUIRED, no default - see core/character_profiles.py's docstring for
+    why: this used to default to Survival Hunter's own profile (a leftover
+    from before multi-profile support existed), and that silent default
+    twice caused a real, wrong sweep for a non-Hunter character (found live
+    2026-08-25, in both cli/gear.py and this session's own ad-hoc test
+    scripts) before either caller passed profile_dir explicitly. Resolve it
+    via core/character_profiles.py's SUPPORTED_CHARACTERS map, never guess.
+    progress_cb, if given, is
     called with {"stage", "done", "total", "pct"} at the same points this
     already prints progress to stdout (see run_with_progress) plus a few
     milestone-only stages (no done/total, just "stage") bracketing the parts
-    of the run that aren't a parallel item sweep."""
+    of the run that aren't a parallel item sweep.
+
+    duration: real fight-length override in seconds (None = use the
+    profile's own settings_template.json default, currently 180s for every
+    profile - see settings_builder.py's _ENCOUNTER). Per the user
+    (2026-08-25): real encounters vary a lot in length (some raid fights
+    run ~90s, others much longer), and which items rank best can genuinely
+    depend on fight length (their own real example: Teeth of Gruul's real
+    verdict for Béarforceone). Every sim_cache entry's key already includes
+    a hash of the full settings dict (settings_fingerprint(), excluding
+    only player.equipment.items) - a different duration is a different
+    fingerprint is a different cache entry, so overriding it here can never
+    silently serve a wrong-duration cached number."""
+    # Populated below once `profile` loads (weapon_topology decides whether
+    # the 2H section's two stages are even reachable this run) - a plain
+    # list mutated in place (`[:]=`), not reassigned, so this closure and
+    # every run_with_progress() call site that receives it by reference see
+    # the real, final sequence once it's built, even though milestone() and
+    # its first call ("Starting sweep") both fire before profile loads.
+    stage_sequence: list[str] = []
+
     def milestone(stage: str):
         if progress_cb:
-            progress_cb({"stage": stage, "done": None, "total": None, "pct": None})
+            idx = stage_sequence.index(stage) + 1 if stage in stage_sequence else None
+            progress_cb({"stage": stage, "done": None, "total": None, "pct": None, "eta_seconds": None,
+                         "stage_index": idx, "stage_total": len(stage_sequence) or None})
 
     phase_num = int(phase.removeprefix("phase"))
     milestone("Starting sweep")
@@ -369,11 +442,78 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
     SETTINGS_2H = _settings_2h_path if os.path.exists(_settings_2h_path) else SETTINGS_TEMPLATE
     POOL_PATH = os.path.join(profile_dir, "candidate_pool.json")
 
+    # Real fight-duration override (see main()'s own docstring for why this
+    # is safe re: sim_cache) - writes a real, distinct temp settings file
+    # per (profile, duration) rather than mutating the profile's own
+    # committed settings_template.json, so the on-disk file a human might
+    # be reading/diffing never silently changes. Unique per profile+duration
+    # (not per-run) so repeated runs at the same duration reuse the same
+    # temp file/cache entries instead of piling up garbage.
+    actual_duration = duration
+    if duration is not None:
+        cache_dir = os.path.join(REPO_ROOT, "data", "cache")
+        os.makedirs(cache_dir, exist_ok=True)
+        profile_tag = os.path.basename(os.path.normpath(profile_dir))
+        has_real_2h_settings = os.path.exists(_settings_2h_path)
+
+        def _override_duration(path: str, tag: str) -> str:
+            settings = json.load(open(path, encoding="utf-8"))
+            settings["encounter"]["duration"] = duration
+            out_path = os.path.join(cache_dir, f"_settings_{profile_tag}_{tag}_d{duration}.json")
+            with open(out_path, "w", encoding="utf-8") as f:
+                json.dump(settings, f)
+            return out_path
+
+        overridden_2h = _override_duration(SETTINGS_2H, "2h") if has_real_2h_settings else None
+        SETTINGS_TEMPLATE = _override_duration(SETTINGS_TEMPLATE, "main")
+        SETTINGS_2H = overridden_2h if overridden_2h else SETTINGS_TEMPLATE
+    else:
+        actual_duration = json.load(open(SETTINGS_TEMPLATE, encoding="utf-8"))["encounter"]["duration"]
+
     profile = json.load(open(os.path.join(profile_dir, "profile.json"), encoding="utf-8"))
+    # Real, ordered list of every stage this run will show, for the GUI's
+    # "Stage X of Y" indicator - the 2H section (its own two stages) is
+    # structurally unreachable for a two_hand profile (its mainhand IS the
+    # 2H slot already, routed through the normal candidates/tiers pipeline -
+    # see slot_for_item()'s own docstring), known upfront from
+    # weapon_topology alone. Whether weapon_2h_candidates then turns out
+    # non-empty for a dual_wield/one_hand_plus_offhand_item profile isn't
+    # knowable this early - an edge-case profile with zero real 2H
+    # candidates would slightly overcount Y, an accepted, honest
+    # simplification for an informational indicator, not a hard contract.
+    #
+    # is_weave_profile computed here (not just down at the 2H section
+    # itself, where it used to live) because the GUI's stage count needs to
+    # know upfront whether the real no-weave 2H comparison (Stage 6.3,
+    # 2026-08-25 - per the user, "we do want to build the 2 hand without
+    # weave for survival too") will run three EXTRA stages beyond the
+    # weave-on pair - real, distinct settings/APL only exists for a melee-
+    # weave-capable profile (Survival Hunter today; Beastmastery Hunter
+    # once built shares this same code path), same real/fallback
+    # distinction SETTINGS_2H already encodes.
+    is_weave_profile = SETTINGS_2H != SETTINGS_TEMPLATE
+    stage_sequence[:] = [
+        "Starting sweep", "Building candidate pool", "Computing baseline",
+        "Screening", "Confirming", "Resolving", "Sidegrade-checking", "Raid-AP lookups",
+    ]
+    if profile["weapon_topology"] != "two_hand":
+        stage_sequence.extend(["Screening 2H weapons", "Resolving 2H", "Resolving top 2H picks"])
+        if is_weave_profile:
+            stage_sequence.extend(["Screening 2H weapons (no weave)", "Resolving 2H (no weave)",
+                                    "Resolving top 2H picks (no weave)"])
+    stage_sequence.append("Done")
     stat_weights.set_active(stat_weights.load(profile_dir))
     time_horizon.set_current_phase(phase_num)
     time_horizon.set_active_ref_dir(os.path.join(profile_dir, "reference_bis"))
     gc.set_active_default_gem(profile["primary_gem_id"])
+    # Real, sim-verified per-slot BiS enchants (see gear_config.py's own
+    # comment on why this exists) - optional file, same "honest empty
+    # default" pattern as chase_bonus_gems.json for a profile that hasn't
+    # had this built yet.
+    _default_enchants_path = os.path.join(profile_dir, "default_enchants.json")
+    default_enchants = (json.load(open(_default_enchants_path, encoding="utf-8"))
+                         if os.path.exists(_default_enchants_path) else {})
+    gc.set_active_default_enchants(default_enchants)
     chase_bonus = json.load(open(os.path.join(profile_dir, "chase_bonus_gems.json"), encoding="utf-8"))
     gem_optimizer.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
     set_bonus.set_active_item_sets_go(os.path.join(REPO_ROOT, "sim", "tbc-new", profile["set_bonus_go_source"]))
@@ -459,10 +599,18 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
         if req_prof and req_prof not in known_professions:
             continue
 
+        # Same treatment as optimizer.py's load_candidates() (Missing
+        # Enchants fix, 2026-08-25): every candidate here - owned or not -
+        # unconditionally gets the real, sim-verified BiS enchant for the
+        # slot, never "whatever she currently has equipped there" or an
+        # owned-but-not-worn item's own literal enchant. DPS*(P) assumes
+        # the fully-optimal loadout, gems and enchants both.
+        default_enchants = gc.get_active_default_enchants()
+
         if slot == "weapon_2h":
             owned_here = owned_by_id.get(item["id"])
             gems = owned_here.get("gems") if owned_here else opt.gems_for_item(item, meta_gem_id)
-            enchant = owned_here.get("enchant", 0) if owned_here else 0
+            enchant = opt.achievable_enchant(default_enchants.get("mainhand", 0), known_professions)
             weapon_2h_candidates.append(opt.Candidate(item["name"], item["id"], enchant, gems))
             item_meta[item["id"]] = describe_source_and_tier(item, npc_by_id, zone_by_id)
             new_count += 1
@@ -474,19 +622,15 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
             "trinket": ["trinket1", "trinket2"],
         }.get(slot, [slot])
 
+        default_enchant = 0
+        for s in target_slots:
+            default_enchant = opt.achievable_enchant(default_enchants.get(s, 0), known_professions)
+            if default_enchant:
+                break
+
         owned_here = owned_by_id.get(item["id"])
-        if owned_here:
-            cand = opt.Candidate(item["name"], item["id"], owned_here.get("enchant", 0), owned_here.get("gems"))
-        else:
-            default_enchant = 0
-            for s in target_slots:
-                s_idx = gc.SLOT_ORDER.index(s)
-                oi = owned_items[s_idx] if s_idx < len(owned_items) else None
-                if oi and oi.get("enchant"):
-                    default_enchant = oi["enchant"]
-                    break
-            gems = opt.gems_for_item(item, meta_gem_id)
-            cand = opt.Candidate(item["name"], item["id"], default_enchant, gems)
+        gems = owned_here.get("gems") if owned_here else opt.gems_for_item(item, meta_gem_id)
+        cand = opt.Candidate(item["name"], item["id"], default_enchant, gems)
 
         for s in target_slots:
             candidates.setdefault(s, []).append(cand)
@@ -530,7 +674,7 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
 
     mv.set_slot_hints(candidates)
     milestone("Computing baseline")
-    baseline_config = opt.build_owned_config(owned_items)
+    baseline_config = opt.build_owned_config(owned_items, known_professions)
     baseline_screen = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, SCREEN_ITERATIONS, opt.SEED)
     # Real bug found and fixed Stage 6.1: this flag used to be dead config
     # (always computed regardless) - harmless for Warrior at first only by
@@ -649,7 +793,7 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
     def screen_one(c):
         return c, mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_screen, SCREEN_ITERATIONS, opt.SEED)
 
-    screened = run_with_progress(screen_one, all_candidates, "Screening", progress_cb=progress_cb)
+    screened = run_with_progress(screen_one, all_candidates, "Screening", progress_cb=progress_cb, stage_sequence=stage_sequence)
     print(f"[+{time.time()-start:.1f}s] Screened {len(screened)} candidates @ {SCREEN_ITERATIONS} iter")
 
     # --- Pick each (tier, slot) leaderboard from the screening results ---
@@ -754,7 +898,7 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
         return c.item_id, mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_confirm,
                                         CONFIRM_ITERATIONS, opt.SEED, baseline_agility=baseline_agility)
 
-    confirmed_pairs = run_with_progress(confirm_one, to_resolve, "Confirming", progress_cb=progress_cb)
+    confirmed_pairs = run_with_progress(confirm_one, to_resolve, "Confirming", progress_cb=progress_cb, stage_sequence=stage_sequence)
     confirmed_by_id = dict(confirmed_pairs)
 
     # Escalate to the full 30k pass only if still not clear at 5k's own noise
@@ -794,7 +938,7 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
         return c.item_id, mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_resolved,
                                         RESOLVE_ITERATIONS, opt.SEED, baseline_agility=baseline_agility)
 
-    resolved_pairs = run_with_progress(resolve_one, need_full_resolve, "Resolving", progress_cb=progress_cb)
+    resolved_pairs = run_with_progress(resolve_one, need_full_resolve, "Resolving", progress_cb=progress_cb, stage_sequence=stage_sequence)
     resolved_by_id = dict(resolved_pairs)
 
     for key, rows in by_tier_slot.items():
@@ -873,7 +1017,7 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
                                             baseline_config, candidates, RESOLVE_ITERATIONS, opt.SEED)
             return c.item_id, set_name, check
 
-        rescue_results = run_with_progress(rescue_one, rescue_candidates, "Sidegrade-checking", progress_cb=progress_cb)
+        rescue_results = run_with_progress(rescue_one, rescue_candidates, "Sidegrade-checking", progress_cb=progress_cb, stage_sequence=stage_sequence)
         for item_id, set_name, check in rescue_results:
             if check and not check["tied_within_noise"] and check["mv_if_set_broken"] > 0:
                 rescue_notes_by_item[item_id] = (
@@ -916,7 +1060,7 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
         return c.item_id, mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_screen,
                                         SCREEN_ITERATIONS, opt.SEED, baseline_agility=baseline_agility)
 
-    ap_only_pairs = run_with_progress(add_ap_only, screened_upgrades_needing_ap, "Raid-AP lookups", progress_cb=progress_cb)
+    ap_only_pairs = run_with_progress(add_ap_only, screened_upgrades_needing_ap, "Raid-AP lookups", progress_cb=progress_cb, stage_sequence=stage_sequence)
     ap_only_by_id = dict(ap_only_pairs)
 
     for key, rows in by_tier_slot.items():
@@ -963,6 +1107,90 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
                 items_here.append({"name": owned.get("name", "?"), "item_id": owned.get("id")})
         if items_here:
             achieved_bis.append({"slot": slot, "items": items_here})
+
+    # --- Missing Enchants: any real equipped slot with a real, sim-
+    # verified BiS enchant on file (profile's default_enchants.json) that
+    # she isn't actually wearing right now - per the user ("show the BiS
+    # enchants available for that slot... make sure unenchanted items
+    # never get compared to enchanted ones"). baseline_config already
+    # carries the real BiS enchant in every slot (build_owned_config()'s
+    # own unconditional-default policy, see optimizer.py) and
+    # baseline_resolved is its real RESOLVE_ITERATIONS-precision result -
+    # already computed above, reused here rather than re-run. Only the
+    # gap slot itself needs a second real sim call, with just that one
+    # slot's enchant reverted to what she's actually wearing (or none) -
+    # same "hold everything else constant, isolate the one real variable"
+    # methodology as set_bonus.isolate_bonus_value() and
+    # core/verify_default_enchants.py. Never a static "you're missing X"
+    # list with no sim number attached.
+    default_enchants = gc.get_active_default_enchants()
+    missing_enchants = []
+    for slot, raw_bis_enchant_id in default_enchants.items():
+        # Real gate (found live by the user, 2026-08-25): Ring enchants
+        # need the wearer's own Enchanting - no report should tell her to
+        # go chase one she structurally can't get. achievable_enchant()
+        # returns 0 for a gated id, same "no data" treatment as a slot
+        # with no default_enchants entry at all.
+        bis_enchant_id = opt.achievable_enchant(raw_bis_enchant_id, known_professions)
+        if not bis_enchant_id:
+            continue
+        idx = gc.SLOT_ORDER.index(slot)
+        owned = owned_items[idx] if idx < len(owned_items) else None
+        if not owned:
+            continue
+        current_enchant_id = owned.get("enchant") or None
+        if current_enchant_id == bis_enchant_id:
+            continue
+
+        current_trial = list(baseline_config)
+        current_trial[idx] = dict(current_trial[idx])
+        if current_enchant_id:
+            current_trial[idx]["enchant"] = current_enchant_id
+        else:
+            current_trial[idx].pop("enchant", None)
+        current_result = mv.valuation.evaluate(SETTINGS_TEMPLATE, current_trial, RESOLVE_ITERATIONS, opt.SEED)
+
+        delta = baseline_resolved["combined"] - current_result["combined"]
+        noise = mv.delta_noise(baseline_resolved, current_result, RESOLVE_ITERATIONS)
+        tied_within_noise = abs(delta) < 2 * noise
+        if tied_within_noise or delta <= 0:
+            # A real, verified BiS enchant that's indistinguishable from what
+            # she already has isn't a real actionable gap - same "never
+            # recommend chasing a gain indistinguishable from noise" ground
+            # rule the tiers list already applies (is_available_upgrade above).
+            #
+            # delta <= 0 is a real, separate finding, not just noise: it
+            # means her CURRENT enchant clearly beats the profile's assumed
+            # default_enchants.json value for this slot - proof the hand/
+            # preset-sourced "BiS" pick for that slot is actually wrong, not
+            # evidence of a gap to close. Caught live 2026-08-25 for
+            # Lerynia's own feet slot (Enchant Boots - Dexterity, her real
+            # current pick, verified +7.3 DPS over the file's old "Cat's
+            # Swiftness" assumption) - default_enchants.json corrected, but
+            # this check stays permanently: never show a downgrade as if it
+            # were a recommendation, no matter what the data file claims.
+            continue
+        current_enchant = idb.enchant_by_id(current_enchant_id) if current_enchant_id else None
+        bis_enchant = idb.enchant_by_id(bis_enchant_id)
+        missing_enchants.append({
+            "slot": SLOT_DISPLAY.get(slot, slot),
+            "item_name": owned.get("name", "?"),
+            "current_enchant_id": current_enchant_id,
+            "current_name": current_enchant["name"] if current_enchant else None,
+            "bis_enchant_id": bis_enchant_id,
+            "bis_name": bis_enchant["name"] if bis_enchant else f"Enchant {bis_enchant_id}",
+            "mv": delta,
+            "noise_stdev": noise,
+        })
+    missing_enchants.sort(key=lambda e: e["mv"], reverse=True)
+
+    if missing_enchants:
+        print(f"=== Missing Enchants (real BiS enchant available, not currently equipped) ===")
+        for e in missing_enchants:
+            current = e["current_name"] or "(none)"
+            print(f"  {e['slot']:<10} {e['item_name']:<35} {current} -> {e['bis_name']}  "
+                  f"+{e['mv']:.1f} DPS")
+        print()
 
     # Legend printed once, up front: Player and Raid are two distinct,
     # never-combined value dimensions (CLAUDE.md's Stage 2 ground rule).
@@ -1075,8 +1303,9 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
     # a profile with a real settings_template_2h.json has a real weave
     # mechanic to model; one that silently fell back to SETTINGS_TEMPLATE
     # does not, and running the "same settings twice" sim call there was
-    # pure waste on top of being mislabeled.
-    is_weave_profile = SETTINGS_2H != SETTINGS_TEMPLATE
+    # pure waste on top of being mislabeled. (is_weave_profile itself is
+    # now computed earlier, alongside stage_sequence's own construction -
+    # the GUI's stage count needs it before this point.)
     print(f"[+{time.time()-start:.1f}s] Tiered report built. Starting 2H weapon analysis...")
 
     two_hand_out: list[dict] = []
@@ -1120,56 +1349,85 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
         mh_idx = gc.SLOT_ORDER.index("mainhand")
         oh_idx = gc.SLOT_ORDER.index("offhand")
 
-        def screen_2h(c: opt.Candidate):
-            trial = list(baseline_config)
-            trial[mh_idx] = c.as_entry()
-            trial[oh_idx] = {}
-            r = mv.valuation.evaluate(SETTINGS_2H, trial, SCREEN_ITERATIONS, opt.SEED)
-            return c, trial, r
+        # Stage 6.3 (2026-08-25, per the user: "we do want to build the 2
+        # hand without weave for survival too"): the whole screen/resolve/
+        # top-N-picks sequence is now a reusable pass, run once against the
+        # profile's real primary baseline (weave-on for a weave profile,
+        # the plain baseline otherwise) and, for a weave profile ONLY, a
+        # SECOND time against the real weave-OFF baseline - "would a 2H
+        # weapon's raw stat budget alone beat my DW pair, with zero melee
+        # swings at all" was never actually answered before this (the
+        # weave-OFF baseline existed and was printed, but no candidate was
+        # ever compared against it). Each row is tagged `weave` so the
+        # report can group them without needing a second output list.
+        def run_2h_pass(settings_path: str, baseline_result: dict, stage_suffix: str, weave_tag: bool | None):
+            def screen_2h(c: opt.Candidate):
+                trial = list(baseline_config)
+                trial[mh_idx] = c.as_entry()
+                trial[oh_idx] = {}
+                r = mv.valuation.evaluate(settings_path, trial, SCREEN_ITERATIONS, opt.SEED)
+                return c, trial, r
 
-        screened_2h = run_with_progress(screen_2h, weapon_2h_candidates, "Screening 2H weapons", progress_cb=progress_cb)
+            screened_2h = run_with_progress(screen_2h, weapon_2h_candidates, f"Screening 2H weapons{stage_suffix}",
+                                             progress_cb=progress_cb, stage_sequence=stage_sequence)
 
-        rows_2h = []
-        for c, trial, r in screened_2h:
-            delta = r["combined"] - weave_dw_result["combined"]
-            noise = mv.delta_noise(weave_dw_result, r, SCREEN_ITERATIONS)
-            source, tier, craft_spell_id = item_meta.get(c.item_id, ("Source unclear", "Other", None))
-            arp = item_arp_rating(idb.by_id(c.item_id)) if arp_relevant else 0
-            rows_2h.append({"name": c.name, "item_id": c.item_id, "trial": trial,
-                             "mv": delta, "noise_stdev": noise,
-                             "tied_within_noise": abs(delta) < 2 * noise,
-                             "source": source, "tier": tier, "craft_spell_id": craft_spell_id,
-                             "resolved": False, "resolve_iterations": SCREEN_ITERATIONS,
-                             "arp_rating": arp or None,
-                             **time_horizon.lasts_until_phase(c.name, c.item_id)})
-        rows_2h.sort(key=lambda r: r["mv"], reverse=True)
+            rows_2h = []
+            for c, trial, r in screened_2h:
+                delta = r["combined"] - baseline_result["combined"]
+                noise = mv.delta_noise(baseline_result, r, SCREEN_ITERATIONS)
+                source, tier, craft_spell_id = item_meta.get(c.item_id, ("Source unclear", "Other", None))
+                arp = item_arp_rating(idb.by_id(c.item_id)) if arp_relevant else 0
+                row = {"name": c.name, "item_id": c.item_id, "trial": trial,
+                       "mv": delta, "noise_stdev": noise,
+                       "tied_within_noise": abs(delta) < 2 * noise,
+                       "source": source, "tier": tier, "craft_spell_id": craft_spell_id,
+                       "resolved": False, "resolve_iterations": SCREEN_ITERATIONS,
+                       "arp_rating": arp or None,
+                       **time_horizon.lasts_until_phase(c.name, c.item_id)}
+                if weave_tag is not None:
+                    row["weave"] = weave_tag
+                rows_2h.append(row)
+            rows_2h.sort(key=lambda r: r["mv"], reverse=True)
 
-        def resolve_2h_row(r):
-            resolved = mv.valuation.evaluate(SETTINGS_2H, r["trial"], RESOLVE_ITERATIONS, opt.SEED)
-            r["mv"] = resolved["combined"] - weave_dw_result["combined"]
-            r["noise_stdev"] = mv.delta_noise(weave_dw_result, resolved, RESOLVE_ITERATIONS)
-            r["tied_within_noise"] = abs(r["mv"]) < 2 * r["noise_stdev"]
-            r["resolved"] = True
-            r["resolve_iterations"] = RESOLVE_ITERATIONS
+            def resolve_2h_row(r):
+                resolved = mv.valuation.evaluate(settings_path, r["trial"], RESOLVE_ITERATIONS, opt.SEED)
+                r["mv"] = resolved["combined"] - baseline_result["combined"]
+                r["noise_stdev"] = mv.delta_noise(baseline_result, resolved, RESOLVE_ITERATIONS)
+                r["tied_within_noise"] = abs(r["mv"]) < 2 * r["noise_stdev"]
+                r["resolved"] = True
+                r["resolve_iterations"] = RESOLVE_ITERATIONS
 
-        to_resolve_2h = [r for r in rows_2h[:LEADERBOARD_SIZE]
-                          if abs(r["mv"]) < mv.CLEAR_MARGIN_MULTIPLE * r["noise_stdev"]]
-        run_with_progress(resolve_2h_row, to_resolve_2h, "Resolving 2H", progress_cb=progress_cb)
+            to_resolve_2h = [r for r in rows_2h[:LEADERBOARD_SIZE]
+                              if abs(r["mv"]) < mv.CLEAR_MARGIN_MULTIPLE * r["noise_stdev"]]
+            run_with_progress(resolve_2h_row, to_resolve_2h, f"Resolving 2H{stage_suffix}",
+                               progress_cb=progress_cb, stage_sequence=stage_sequence)
 
-        real_upgrades_2h = [r for r in rows_2h if not r["tied_within_noise"] and r["mv"] > 0]
-        top_2h = real_upgrades_2h[:TOP_N_2H]
+            real_upgrades_2h = [r for r in rows_2h if not r["tied_within_noise"] and r["mv"] > 0]
+            top_2h = real_upgrades_2h[:TOP_N_2H]
 
-        # Same rule as the main leaderboard: whatever's actually shown always
-        # gets the real resolve, regardless of margin - per the user, if a
-        # screened item ends up in the visible list, actually sim it.
-        for r in top_2h:
-            if not r["resolved"]:
-                resolve_2h_row(r)
-        top_2h.sort(key=lambda r: r["mv"], reverse=True)
-        two_hand_out = top_2h
+            # Same rule as the main leaderboard: whatever's actually shown
+            # always gets the real resolve, regardless of margin - per the
+            # user, if a screened item ends up in the visible list, actually
+            # sim it. Real bug, found live by the user 2026-08-25: this used
+            # to be a plain sequential `for` loop, not run_with_progress() -
+            # a genuinely decisive real upgrade (far enough from the noise
+            # floor that "Resolving 2H" above never needed to touch it)
+            # still lands in top_2h and still needs a real 30000-iteration
+            # resolve here, one at a time, with zero progress reporting -
+            # silently, while the UI sat frozen on "Screening 2H weapons
+            # ... 100%" the whole time (confirmed live: "stuck for a long
+            # time" at exactly that state).
+            run_with_progress(lambda r: resolve_2h_row(r) if not r["resolved"] else None, top_2h,
+                               f"Resolving top 2H picks{stage_suffix}", progress_cb=progress_cb, stage_sequence=stage_sequence)
+            top_2h.sort(key=lambda r: r["mv"], reverse=True)
 
-        for r in rows_2h:
-            r.pop("trial")
+            for r in rows_2h:
+                r.pop("trial")
+            return top_2h, len(real_upgrades_2h)
+
+        top_2h, real_upgrades_2h_count = run_2h_pass(SETTINGS_2H, weave_dw_result, "",
+                                                       True if is_weave_profile else None)
+        two_hand_out = list(top_2h)
 
         vs_text = "vs weaving with current DW gear" if is_weave_profile else "vs current gear"
         if top_2h:
@@ -1178,11 +1436,28 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
                 flag = "" if r["resolved"] else "  (screened only)"
                 horizon = horizon_tag(r)
                 print(f"    {r['name']:<36} Player: {r['mv']:>+7.1f} DPS  {r['tier']}: {r['source']}{flag}{horizon}")
-            if len(real_upgrades_2h) > len(top_2h):
-                print(f"    ...and {len(real_upgrades_2h) - len(top_2h)} more real upgrade(s) not shown.")
+            if real_upgrades_2h_count > len(top_2h):
+                print(f"    ...and {real_upgrades_2h_count - len(top_2h)} more real upgrade(s) not shown.")
         else:
             print(f"  No 2H weapon beats {vs_text.removeprefix('vs ')}.")
         print()
+
+        if is_weave_profile:
+            top_2h_no_weave, real_upgrades_2h_no_weave_count = run_2h_pass(
+                SETTINGS_TEMPLATE, no_weave_result, " (no weave)", False)
+            two_hand_out.extend(top_2h_no_weave)
+
+            print(f"  -- Top {len(top_2h_no_weave)} 2H upgrade(s), no weave, vs current DW gear (weave OFF) --")
+            if top_2h_no_weave:
+                for r in top_2h_no_weave:
+                    flag = "" if r["resolved"] else "  (screened only)"
+                    horizon = horizon_tag(r)
+                    print(f"    {r['name']:<36} Player: {r['mv']:>+7.1f} DPS  {r['tier']}: {r['source']}{flag}{horizon}")
+                if real_upgrades_2h_no_weave_count > len(top_2h_no_weave):
+                    print(f"    ...and {real_upgrades_2h_no_weave_count - len(top_2h_no_weave)} more real upgrade(s) not shown.")
+            else:
+                print("  No 2H weapon beats current DW gear without weaving.")
+            print()
     elif profile["weapon_topology"] != "two_hand":
         heading = "2H Weapon Options (melee weave rotation)" if is_weave_profile else "2H Weapon Options"
         print(f"=== {heading} ===\n  No eligible 2H weapons in the pool.\n")
@@ -1209,7 +1484,9 @@ def main(name_realm: str, phase: str, profile_dir: str = PROFILE_DIR, progress_c
     out_path = os.path.join(out_dir, f"tiered_report_{phase}.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump({"baseline_screened": baseline_screen["combined"], "achieved_bis": achieved_bis,
-                   "tiers": tiered_out, "two_hand": two_hand_out, "two_hand_meta": two_hand_meta}, f, indent=2)
+                   "missing_enchants": missing_enchants,
+                   "tiers": tiered_out, "two_hand": two_hand_out, "two_hand_meta": two_hand_meta,
+                   "fight_duration_seconds": actual_duration}, f, indent=2)
     print(f"Wrote {out_path}")
     milestone("Done")
     return out_path

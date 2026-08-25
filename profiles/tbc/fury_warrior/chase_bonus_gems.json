@@ -1,0 +1,4 @@
+{
+  "item_ids": [24259, 34441, 32278, 34188],
+  "source": "core/verify_gem_choices.py-equivalent real 3000-iteration sim comparisons against all 30 of Fury's own real socketed candidates, 2026-08-25 - independent from Arms Warrior's own list (dual_wield vs two_hand genuinely shifts the socket-bonus-vs-pure-Strength tradeoff, per CLASSES.md), not inherited."
+}

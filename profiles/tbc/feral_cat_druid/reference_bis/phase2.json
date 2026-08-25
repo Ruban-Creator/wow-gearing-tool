@@ -1,0 +1,112 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Wolfshead Helm",
+        "rank": "Best",
+        "source": "Crafted: Leatherworking"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Telonicus's Pendant of Mayhem",
+        "rank": "Best",
+        "source": "wowsims Phase 2 FeralCat preset"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Mantle of Malorne",
+        "rank": "Best",
+        "source": "wowsims Phase 2 FeralCat preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Thalassian Wildercloak",
+        "rank": "Best",
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Breastplate of Malorne",
+        "rank": "Best",
+        "source": "wowsims Phase 2 FeralCat preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Vambraces of Ending",
+        "rank": "Best",
+        "source": "Drop: High Astromancer Solarian (Tempest Keep)"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Gloves of the Searing Grip",
+        "rank": "Best",
+        "source": "Drop: Al'ar (Tempest Keep)"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of One-Hundred Deaths",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Leggings of Murderous Intent",
+        "rank": "Best",
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Edgewalker Longboots",
+        "rank": "Best",
+        "source": "Drop: Moroes (Karazhan)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Band of the Ranger-General",
+        "rank": "Best",
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
+      },
+      {
+        "item": "Ring of Lethality",
+        "rank": "Best",
+        "source": "Drop: Hydross the Unstable (Serpentshrine Cavern)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Tsunami Talisman",
+        "rank": "Best",
+        "source": "Drop: Leotheras the Blind (Serpentshrine Cavern)"
+      },
+      {
+        "item": "Bloodlust Brooch",
+        "rank": "Best",
+        "source": "wowsims Phase 2 FeralCat preset"
+      }
+    ],
+    "weapon_2h": [
+      {
+        "item": "Merciless Gladiator's Maul",
+        "rank": "Best",
+        "source": "wowsims Phase 2 FeralCat preset"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Idol of the Raven Goddess",
+        "rank": "Best",
+        "source": "wowsims Phase 2 FeralCat preset"
+      }
+    ]
+  }
+}

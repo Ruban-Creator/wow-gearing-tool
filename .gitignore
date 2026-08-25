@@ -9,3 +9,4 @@ wowsimcli*
 *.exe
 build/
 dist/
+.claude/

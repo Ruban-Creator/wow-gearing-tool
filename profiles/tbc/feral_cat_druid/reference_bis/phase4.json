@@ -1,0 +1,112 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Wolfshead Helm",
+        "rank": "Best",
+        "source": "Crafted: Leatherworking"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Choker of Endless Nightmares",
+        "rank": "Best",
+        "source": "Drop: Supremus (Black Temple)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Thunderheart Pauldrons",
+        "rank": "Best",
+        "source": "wowsims Phase 4 FeralCat preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Thalassian Wildercloak",
+        "rank": "Best",
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Thunderheart Chestguard",
+        "rank": "Best",
+        "source": "wowsims Phase 4 FeralCat preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Vindicator's Dragonhide Bracers",
+        "rank": "Best",
+        "source": "wowsims Phase 4 FeralCat preset"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Thunderheart Gauntlets",
+        "rank": "Best",
+        "source": "wowsims Phase 4 FeralCat preset"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of One-Hundred Deaths",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Thunderheart Leggings",
+        "rank": "Best",
+        "source": "wowsims Phase 4 FeralCat preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Shadowmaster's Boots",
+        "rank": "Best",
+        "source": "Drop: Mother Shahraz (Black Temple)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Band of the Eternal Champion",
+        "rank": "Best",
+        "source": "wowsims Phase 4 FeralCat preset"
+      },
+      {
+        "item": "Signet of Primal Wrath",
+        "rank": "Best",
+        "source": "Drop: (Zul'Aman)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Tsunami Talisman",
+        "rank": "Best",
+        "source": "Drop: Leotheras the Blind (Serpentshrine Cavern)"
+      },
+      {
+        "item": "Berserker's Call",
+        "rank": "Best",
+        "source": "Drop: Zul'jin (Zul'Aman)"
+      }
+    ],
+    "weapon_2h": [
+      {
+        "item": "Vengeful Gladiator's Staff",
+        "rank": "Best",
+        "source": "wowsims Phase 4 FeralCat preset"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Idol of the Raven Goddess",
+        "rank": "Best",
+        "source": "wowsims Phase 4 FeralCat preset"
+      }
+    ]
+  }
+}

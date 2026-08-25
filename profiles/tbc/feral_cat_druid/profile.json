@@ -1,0 +1,21 @@
+{
+  "class": "druid",
+  "spec": "feral_cat",
+  "weapon_topology": "two_hand",
+  "distance_from_target": 0,
+  "distance_from_target_note": "Real bug found and fixed 2026-08-25: core/settings_builder.py's own generic fallback for this field is 7 (matching Hunter/ranged convention, the pipeline's original single-profile default) - never explicitly overridden here at first, so this melee spec silently inherited a ranged distance, putting her out of melee range for every real ability and producing a genuine, confirmed 'No available actions! Pausing rotation' / 0 DPS result in a real combat log. Real Feral OtherDefaults in presets.ts explicitly sets distanceFromTarget: 0 (true melee range) - every future melee profile must set this explicitly too, never rely on the generic fallback.",
+  "primary_gem_stat_id": "1",
+  "primary_gem_id": 32194,
+  "raid_ap_contribution": {
+    "enabled": false,
+    "note": "No Expose-Weakness-style analytical raid-AP model for Druid - Faerie Fire is an enemy-side debuff a solo sim already benefits from directly (see CLAUDE.md's Stage 6 finding)."
+  },
+  "set_bonus_go_source": "sim/druid/item_sets.go",
+  "apl_source": "ui/druid/feralcat/apls/default.apl.json",
+  "apl_note": "Single shared apl regardless of weapon choice, same as Balance Druid - no melee-weave-style mechanic. Confirmed no settings_template_2h.json needed the same way (cat-form abilities are talent/form-driven, not weapon-stat-driven).",
+  "gear_variant_note": "Real, confirmed finding (2026-08-25): the '6p'/'9p' suffix in this class's own gear_sets filenames is a HIT-RATING-TARGET label ('6%'/'9%' in presets.ts's own real names, e.g. 'BiS 6%'), the same naming trap already found for Beastmastery Hunter - NOT a tier-piece-count axis. Used the real '6%' variant per CLAUDE.md's own already-decided default. P1 additionally splits into real 'BiS'/'Alt'/'Realistic' quality tiers - used 'BiS' (the canonical/best recommendation) over the other two.",
+  "weapon_topology_note": "two_hand, confirmed via real handType=4 (TwoHand) on the real BiS mainhand item at EVERY phase (P1-P5: Terestian's Stranglestaff, Merciless Gladiator's Maul, Vengeful Gladiator's Staff x2, Stanchion of Primal Instinct) - real, initial assumption of one_hand_plus_offhand_item (copying Balance Druid's own precedent blindly) was WRONG and caught before building further; real TBC Feral mechanics scale cat-form damage directly off weapon DPS, making a 2H weapon's much higher weapon-DPS budget the genuine, consistent BiS choice throughout, unlike Balance Druid's own real phase-varying case.",
+  "talents_note": "Real DEFAULT talents per sim/tbc-new/ui/druid/feralcat/sim.ts (Presets.StandardTalents.data, used at 3 real call sites) - a second real 'Monocat' talent variant also exists (a stay-in-cat-form-the-whole-fight build) but Standard is the confirmed real default, not Monocat.",
+  "synthetic_character": true,
+  "synthetic_character_note": "No real Feral Cat Druid alt exists - built via ingest/build_synthetic_character.py from the real wowsims p3_6p.gear.json (BiS, 6% hit) preset, same convention as the other synthetic test characters."
+}

@@ -1,0 +1,19 @@
+{
+  "class": "warrior",
+  "spec": "fury",
+  "weapon_topology": "dual_wield",
+  "primary_gem_stat_id": "0",
+  "primary_gem_id": 32193,
+  "distance_from_target": 25,
+  "raid_ap_contribution": {
+    "enabled": false,
+    "note": "Same as Arms Warrior - no Expose-Weakness-style analytical raid-AP model; Sunder Armor is enemy-side, already benefits a solo sim directly."
+  },
+  "set_bonus_go_source": "sim/warrior/items.go",
+  "apl_source": "ui/warrior/dps/apls/fury.apl.json",
+  "apl_note": "Real, separate APL from Arms's own arms.apl.json - unlike Hunter's Beastmastery/Survival, Warrior's two specs do NOT share one apl file.",
+  "weapon_topology_note": "Confirmed via real handType data on the actual p3_fury.gear.json weapon items (Warglaive of Azzinoth pair: handType=1 MainHand, handType=3 OffHand) - not assumed from class/spec convention alone.",
+  "stat_weights_note": "Real, sim-team EP weights from warrior/dps/presets.ts's P2_FURY_EP_PRESET ('P2, P3, P4 & P5 - Fury') - genuinely distinct from Arms's own preset (Fury's real MeleeHit/Expertise/Haste priorities differ meaningfully from Arms's two-hand values), not inherited.",
+  "synthetic_character": true,
+  "synthetic_character_note": "No real Fury Warrior alt exists - built via ingest/build_synthetic_character.py from the real wowsims p3_fury.gear.json preset, same convention as the other synthetic test characters."
+}

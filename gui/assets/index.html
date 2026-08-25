@@ -78,6 +78,10 @@
             <label class="settings-label" for="run-report-phase">Phase</label>
             <select id="run-report-phase" class="modal-select"></select>
           </div>
+          <div class="settings-row">
+            <label class="settings-label" for="run-report-duration">Fight Duration (seconds)</label>
+            <input id="run-report-duration" class="modal-select" type="number" min="1" step="1" value="180">
+          </div>
           <button id="run-report-start-btn" class="run-report-btn run-report-btn-wide">Run</button>
           <div id="run-report-error" class="run-report-error" hidden></div>
         </div>
@@ -87,6 +91,7 @@
             <div class="progress-bar-fill" id="run-report-bar"></div>
           </div>
           <div class="progress-elapsed" id="run-report-elapsed"></div>
+          <div class="progress-elapsed" id="run-report-stage-eta"></div>
         </div>
         <div id="run-report-done" hidden>
           <div class="progress-stage">Report ready.</div>

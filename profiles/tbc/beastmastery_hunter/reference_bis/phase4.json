@@ -1,0 +1,117 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Cursed Vision of Sargeras",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Choker of Serrated Blades",
+        "rank": "Best",
+        "source": "Drop: (Hyjal Summit)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Gronnstalker's Spaulders",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Beast Mastery preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Shadowmoon Destroyer's Drape",
+        "rank": "Best",
+        "source": "Drop: Teron Gorefiend (Black Temple)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Gronnstalker's Chestguard",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Beast Mastery preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Insidious Bands",
+        "rank": "Best",
+        "source": "Drop: Teron Gorefiend (Black Temple)"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Gronnstalker's Gloves",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Beast Mastery preset"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Don Alejandro's Money Belt",
+        "rank": "Best",
+        "source": "Drop: Anetheron (Hyjal Summit)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Gronnstalker's Leggings",
+        "rank": "Best",
+        "source": "wowsims Phase 4 Beast Mastery preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Shadowmaster's Boots",
+        "rank": "Best",
+        "source": "Drop: Mother Shahraz (Black Temple)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Signet of Primal Wrath",
+        "rank": "Best",
+        "source": "Drop: (Zul'Aman)"
+      },
+      {
+        "item": "Stormrage Signet Ring",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Berserker's Call",
+        "rank": "Best",
+        "source": "Drop: Zul'jin (Zul'Aman)"
+      },
+      {
+        "item": "Dragonspine Trophy",
+        "rank": "Best",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      }
+    ],
+    "weapon_dual_wield": [
+      {
+        "item": "Dagger of Bad Mojo",
+        "rank": "Best",
+        "source": "Drop: Hex Lord Malacrass (Zul'Aman)"
+      },
+      {
+        "item": "Dagger of Bad Mojo",
+        "rank": "Best",
+        "source": "Drop: Hex Lord Malacrass (Zul'Aman)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Bristleblitz Striker",
+        "rank": "Best",
+        "source": "Drop: Archimonde (Hyjal Summit)"
+      }
+    ]
+  }
+}

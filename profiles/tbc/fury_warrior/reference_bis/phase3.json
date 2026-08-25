@@ -1,0 +1,117 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Cursed Vision of Sargeras",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Choker of Endless Nightmares",
+        "rank": "Best",
+        "source": "Drop: Supremus (Black Temple)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Onslaught Shoulderblades",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Fury preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Shadowmoon Destroyer's Drape",
+        "rank": "Best",
+        "source": "Drop: Teron Gorefiend (Black Temple)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Midnight Chestguard",
+        "rank": "Best",
+        "source": "Drop: Archimonde (Hyjal Summit)"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Deadly Cuffs",
+        "rank": "Best",
+        "source": "Drop: Rage Winterchill (Hyjal Summit)"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Grips of Silent Justice",
+        "rank": "Best",
+        "source": "Drop: Shade of Akama (Black Temple)"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of One-Hundred Deaths",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Leggings of Divine Retribution",
+        "rank": "Best",
+        "source": "Drop: Gurtogg Bloodboil (Black Temple)"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Dreadboots of the Legion",
+        "rank": "Best",
+        "source": "Drop: Reliquary of the Lost (Black Temple)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Stormrage Signet Ring",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      },
+      {
+        "item": "Unstoppable Aggressor's Ring",
+        "rank": "Best",
+        "source": "Drop: Gurtogg Bloodboil (Black Temple)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Madness of the Betrayer",
+        "rank": "Best",
+        "source": "Drop: The Illidari Council (Black Temple)"
+      },
+      {
+        "item": "Dragonspine Trophy",
+        "rank": "Best",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      }
+    ],
+    "weapon_dual_wield": [
+      {
+        "item": "Warglaive of Azzinoth",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      },
+      {
+        "item": "Warglaive of Azzinoth",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Serpent Spine Longbow",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      }
+    ]
+  }
+}

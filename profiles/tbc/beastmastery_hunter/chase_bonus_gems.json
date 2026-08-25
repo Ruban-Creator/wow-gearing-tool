@@ -1,0 +1,4 @@
+{
+  "item_ids": [25685, 28827, 29081, 30142, 30143, 30724, 30739, 31005, 32508],
+  "source": "Reused from profiles/tbc/survival_hunter/chase_bonus_gems.json (core/verify_gem_choices.py, 2026-08-24 real 30k-iteration sim comparisons) rather than re-run - defensible, not guessed: presets.ts's real P1_BM_EP_PRESET and P1_SV_EP_PRESET are byte-identical, and a socket-bonus-vs-pure-Agility comparison is purely a function of stat weights (never rotation/pet/class mechanics), confirmed by spot-checking data/cache/gem_choice_verification.json's real per-item deltas against Beastmastery's own candidate_pool.json - every one of BM's 24 real socketed candidates that overlaps with that prior run shows the same sign (loss or tie for pure Agility) as Survival's own result. An item ID here that isn't actually in BM's candidate pool is simply inert."
+}

@@ -33,6 +33,10 @@ set bonuses, stacked procs, weapon-speed rotation changes. If ranking by EP alon
   STOP and wait for review.
 - **Keep `NOTES.md` current** — real CLI flags, schema quirks, addon format details, anything
   surprising. Commit to git as you go.
+- **Before building or touching a class/spec profile, check `CLASSES.md`** — a checklist of real,
+  previously-hit gotchas (gem/enchant verification methodology, weapon_topology handling,
+  set_bonus.py's three Go source forms, profile_dir footguns, etc). Update it when a new class
+  surfaces a new one; don't let the lesson live only in a session's own NOTES.md entry.
 
 ## Architecture
 

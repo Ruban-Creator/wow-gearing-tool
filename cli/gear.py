@@ -51,10 +51,24 @@ def cmd_best(args):
     question (now the "Debuff" column, per-attacker) and a real gear
     export. Thin wrapper - run_full_sweep_mv.main(name_realm, phase) reads
     data/characters/<name_realm>/character.json and writes
-    data/characters/<name_realm>/cache/tiered_report_<phase>.json."""
+    data/characters/<name_realm>/cache/tiered_report_<phase>.json.
+
+    profile_dir is resolved explicitly via character_profiles.py, never left
+    to run_full_sweep_mv.main()'s own default - a real bug, found 2026-08-25:
+    that default silently points at Survival Hunter's profile (its
+    historical single-character value), so this command previously swept
+    any non-Hunter character's real gear against Hunter's whole profile
+    (candidate pool, enchants, stat weights, settings) without erroring.
+    See core/character_profiles.py's own docstring for how this was caught."""
     phase = _normalize_phase(args.phase)
     import run_full_sweep_mv
-    run_full_sweep_mv.main(args.character, phase)
+    import character_profiles
+    if args.character not in character_profiles.SUPPORTED_CHARACTERS:
+        print(f"'{args.character}' has no known profile yet - supported: "
+              f"{', '.join(character_profiles.SUPPORTED_CHARACTERS)}")
+        return
+    profile_dir = character_profiles.SUPPORTED_CHARACTERS[args.character]
+    run_full_sweep_mv.main(args.character, phase, profile_dir=profile_dir, duration=args.duration)
 
 
 def cmd_character_list(args):
@@ -151,6 +165,8 @@ def main():
     p_best = sub.add_parser("best", help="full MV sweep against the owned pool - writes data/characters/<character>/cache/tiered_report_<phase>.json")
     p_best.add_argument("character", nargs="?", default="Lerynia-Thunderstrike")
     p_best.add_argument("phase", nargs="?", default="phase3")
+    p_best.add_argument("--duration", type=int, default=None,
+                         help="fight length override in seconds (default: profile's own settings_template.json value, currently 180s)")
     p_best.set_defaults(func=cmd_best)
 
     p_preset = sub.add_parser("preset", help="run a shipped .build.json preset through the sim")

@@ -1,0 +1,15 @@
+{
+  "feralCatDruid": {
+    "options": {
+      "classOptions": {}
+    },
+    "rotation": {
+      "finishingMove": "Rip",
+      "biteweave": true,
+      "ripMinComboPoints": 5,
+      "biteMinComboPoints": 5,
+      "mangleTrick": true,
+      "maintainFaerieFire": true
+    }
+  }
+}

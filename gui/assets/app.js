@@ -23,6 +23,18 @@ let selectedNameRealm = null;
 let selectedHasProfile = false;
 let runReportPollTimer = null;
 let runReportStartedAt = null;
+// Smooth client-side countdown for "Stage finishes in" (per the user,
+// 2026-08-25: "the number should always count down while working, it can
+// be fixed on a recheck" - rather than replacing the displayed number with
+// a fresh, possibly-noisier backend estimate on every 1.5s poll tick, a
+// separate 1s ticker counts this down locally, and each new poll response
+// just "rechecks"/corrects it to the latest real backend value for the
+// SAME stage. A stage change (or the backend having no estimate yet)
+// resets it outright - no reason to count down toward a now-irrelevant
+// number.
+let runReportEtaTicker = null;
+let runReportEtaSeconds = null;
+let runReportEtaStage = null;
 
 const charListEl = document.getElementById("char-list");
 const refreshBtn = document.getElementById("refresh-btn");
@@ -43,6 +55,7 @@ const runReportBtn = document.getElementById("run-report-btn");
 const runReportModal = document.getElementById("run-report-modal");
 const runReportCharacter = document.getElementById("run-report-character");
 const runReportPhaseSelect = document.getElementById("run-report-phase");
+const runReportDurationInput = document.getElementById("run-report-duration");
 const runReportStartBtn = document.getElementById("run-report-start-btn");
 const runReportForm = document.getElementById("run-report-form");
 const runReportError = document.getElementById("run-report-error");
@@ -50,6 +63,7 @@ const runReportProgress = document.getElementById("run-report-progress");
 const runReportStage = document.getElementById("run-report-stage");
 const runReportBar = document.getElementById("run-report-bar");
 const runReportElapsed = document.getElementById("run-report-elapsed");
+const runReportStageEta = document.getElementById("run-report-stage-eta");
 const runReportDone = document.getElementById("run-report-done");
 const runReportViewBtn = document.getElementById("run-report-view-btn");
 
@@ -231,17 +245,48 @@ function resetRunReportModal() {
   runReportStartBtn.disabled = false;
   runReportBar.classList.remove("indeterminate");
   runReportBar.style.width = "0%";
+  runReportStageEta.textContent = "";
   if (runReportPollTimer) {
     clearInterval(runReportPollTimer);
     runReportPollTimer = null;
   }
+  if (runReportEtaTicker) {
+    clearInterval(runReportEtaTicker);
+    runReportEtaTicker = null;
+  }
+  runReportEtaSeconds = null;
+  runReportEtaStage = null;
 }
 
-runReportBtn.addEventListener("click", () => {
+runReportBtn.addEventListener("click", async () => {
   if (!selectedNameRealm || !selectedHasProfile) return;
+
+  // Real bug, found live by the user 2026-08-25: the modal's "x" only ever
+  // hid the dialog (closeModal() is just `el.hidden = true`) - it never
+  // stopped the real background job, which keeps running server-side
+  // regardless of whether anything is polling it. Reopening used to always
+  // call resetRunReportModal() unconditionally, which tore down the poll
+  // timers that WERE still tracking that live job and put the plain form
+  // back up - so clicking Run again just hit Api.run_report()'s own "a
+  // report is already running" guard, with no way back into the real
+  // progress view. Now checks for a still-active job first and reattaches
+  // to it instead of assuming a fresh form is always correct.
+  const st = await window.pywebview.api.get_run_status();
+  if (st.active) {
+    resetRunReportModal();
+    runReportCharacter.textContent = st.name_realm;
+    runReportForm.hidden = true;
+    runReportProgress.hidden = false;
+    runReportStartedAt = Date.now();
+    openModal(runReportModal);
+    pollRunStatus();
+    return;
+  }
+
   resetRunReportModal();
   runReportCharacter.textContent = selectedNameRealm;
   runReportPhaseSelect.innerHTML = PHASES.map((p) => `<option value="${p}">${PHASE_LABELS[p]}</option>`).join("");
+  runReportDurationInput.value = 180;
   openModal(runReportModal);
 });
 
@@ -252,26 +297,89 @@ function formatElapsed(ms) {
   return `${m}:${String(s).padStart(2, "0")} elapsed`;
 }
 
+// Per-stage only, not a whole-run estimate (per the user, 2026-08-25) - see
+// run_with_progress()'s own comment for why a whole-run number was dropped
+// as more guess than estimate. null covers both "this stage has no
+// done/total at all" (a milestone) and "too early in this stage to trust
+// the rate yet" (run_with_progress only starts sending eta_seconds once
+// done > 0).
+function formatStageEta(seconds) {
+  if (seconds === null || seconds === undefined) return "";
+  // Real bug, caught live via a user screenshot, 2026-08-25: showed
+  // "Stage finishes in: -1:-1". Math.floor/modulo both round toward
+  // negative infinity for a negative input (Math.floor(-0.02) is -1, not
+  // 0; -1 % 60 is -1, not 59) - a small negative seconds value (see the
+  // ticker fix below for how one snuck through) produced exactly that
+  // "-1:-1" text. Clamped here too, not just at the source, since a
+  // display formatter should never trust its input is already valid.
+  const secs = Math.max(0, Math.round(seconds));
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `Stage finishes in: ${m}:${String(s).padStart(2, "0")}`;
+}
+
 function pollRunStatus() {
+  runReportEtaTicker = setInterval(() => {
+    if (runReportEtaSeconds !== null && runReportEtaSeconds > 0) {
+      // Real bug: this used to be a bare `-= 1`, which overshoots below
+      // zero whenever the current value is already under 1 (e.g. 0.5
+      // ticks to -0.5) - the `> 0` guard above only checks BEFORE the
+      // subtraction, not after. Clamping the result at 0 is what actually
+      // stops the countdown there instead of running through it.
+      runReportEtaSeconds = Math.max(0, runReportEtaSeconds - 1);
+      runReportStageEta.textContent = formatStageEta(runReportEtaSeconds);
+    }
+  }, 1000);
+
   runReportPollTimer = setInterval(async () => {
     const st = await window.pywebview.api.get_run_status();
 
-    runReportStage.textContent = st.stage || "Working…";
+    // "(Stage X of Y)" so people know there's something else coming, not
+    // just a bare label that could as easily be the whole run (per the
+    // user, 2026-08-25). Y is a real, profile-aware count built once per
+    // run (see run_full_sweep_mv.py's own stage_sequence) - not shown at
+    // all for the handful of non-progress stages (syncing, building the
+    // report) that sit outside that sequence.
+    const stageCount = (st.stage_index && st.stage_total) ? ` (Stage ${st.stage_index} of ${st.stage_total})` : "";
+    runReportStage.textContent = (st.stage || "Working…") + stageCount;
     if (st.detail) {
       const m = st.detail.match(/\((\d+)%\)/);
       if (m) {
         runReportBar.classList.remove("indeterminate");
         runReportBar.style.width = m[1] + "%";
       }
-      runReportStage.textContent = `${st.stage} — ${st.detail}`;
+      runReportStage.textContent = `${st.stage}${stageCount} — ${st.detail}`;
     } else {
       runReportBar.classList.add("indeterminate");
     }
     runReportElapsed.textContent = formatElapsed(Date.now() - runReportStartedAt);
 
+    // "Recheck": a stage change (or no estimate yet) resets the countdown
+    // outright - a new stage's number has nothing to do with the old one.
+    // Same stage: just take the backend's fresh value directly. A blended
+    // "move partway toward it" correction was tried first and made things
+    // worse, not better - root-caused live from a screen recording,
+    // 2026-08-25 (see gui/api.py's _get_status() docstring): the backend
+    // value used to go stale for many real seconds between actual progress
+    // ticks (run_with_progress() only calls back every ~5% of items), so
+    // blending toward that same frozen number every 1.5s was fighting the
+    // local ticker's own countdown instead of filling the gap between real
+    // updates. Now that _get_status() itself age-adjusts for time elapsed
+    // since the last real measurement, the backend value is always live -
+    // a direct set is both simpler and correct.
+    if (st.stage !== runReportEtaStage) {
+      runReportEtaStage = st.stage;
+      runReportEtaSeconds = st.eta_seconds;
+    } else if (st.eta_seconds !== null && st.eta_seconds !== undefined) {
+      runReportEtaSeconds = st.eta_seconds;
+    }
+    runReportStageEta.textContent = formatStageEta(runReportEtaSeconds);
+
     if (st.done) {
       clearInterval(runReportPollTimer);
       runReportPollTimer = null;
+      clearInterval(runReportEtaTicker);
+      runReportEtaTicker = null;
       runReportProgress.hidden = true;
 
       if (st.error) {
@@ -296,7 +404,8 @@ runReportStartBtn.addEventListener("click", async () => {
   runReportStartBtn.disabled = true;
   runReportError.hidden = true;
 
-  const res = await window.pywebview.api.run_report(selectedNameRealm, phase);
+  const duration = parseInt(runReportDurationInput.value, 10) || 180;
+  const res = await window.pywebview.api.run_report(selectedNameRealm, phase, duration);
   if (!res.started) {
     runReportStartBtn.disabled = false;
     runReportError.hidden = false;

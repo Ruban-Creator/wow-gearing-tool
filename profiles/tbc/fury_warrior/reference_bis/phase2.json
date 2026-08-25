@@ -1,0 +1,117 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Destroyer Battle-Helm",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Fury preset"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Pendant of the Perilous",
+        "rank": "Best",
+        "source": "Drop: (Serpentshrine Cavern)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Destroyer Shoulderblades",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Fury preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Vengeance Wrap",
+        "rank": "Best",
+        "source": "Crafted: Tailoring"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Destroyer Breastplate",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Fury preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Bracers of Eradication",
+        "rank": "Best",
+        "source": "Drop: The Lurker Below (Serpentshrine Cavern)"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Destroyer Gauntlets",
+        "rank": "Best",
+        "source": "wowsims Phase 2 Fury preset"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Belt of One-Hundred Deaths",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Leggings of Murderous Intent",
+        "rank": "Best",
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Warboots of Obliteration",
+        "rank": "Best",
+        "source": "Drop: Morogrim Tidewalker (Serpentshrine Cavern)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Band of the Ranger-General",
+        "rank": "Best",
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
+      },
+      {
+        "item": "Ring of a Thousand Marks",
+        "rank": "Best",
+        "source": "Drop: Prince Malchezaar (Karazhan)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Badge of the Swarmguard",
+        "rank": "Best",
+        "source": "Drop: Battleguard Sartura (Ahn'Qiraj)"
+      },
+      {
+        "item": "Dragonspine Trophy",
+        "rank": "Best",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      }
+    ],
+    "weapon_dual_wield": [
+      {
+        "item": "Dragonstrike",
+        "rank": "Best",
+        "source": "Crafted: Blacksmithing"
+      },
+      {
+        "item": "Talon of Azshara",
+        "rank": "Best",
+        "source": "Drop: Morogrim Tidewalker (Serpentshrine Cavern)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Serpent Spine Longbow",
+        "rank": "Best",
+        "source": "Drop: Lady Vashj (Serpentshrine Cavern)"
+      }
+    ]
+  }
+}

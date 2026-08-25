@@ -37,6 +37,34 @@ def get_active_default_gem() -> int:
     return _active_default_gem
 
 
+# Real per-slot BiS enchant ids, same "set once, read by many functions"
+# pattern as _active_default_gem above. Added 2026-08-25, per the user:
+# optimizer.py used to default a non-owned candidate's enchant to whatever
+# she currently has equipped in that slot - meaning an under-enchanted (or
+# unenchanted) current item silently understated every candidate for that
+# slot too. Real, sim-verified per-profile data (never a raw, untested
+# wowsims-preset id - see core/verify_default_enchants.py) lives in each
+# profile's default_enchants.json; a slot with no real verified entry
+# simply isn't in the dict, and lookups fall back to 0 (no enchant) same
+# as before this existed.
+_active_default_enchants: dict[str, int] | None = None
+
+
+def set_active_default_enchants(enchants: dict[str, int]) -> None:
+    global _active_default_enchants
+    _active_default_enchants = enchants
+
+
+def get_active_default_enchants() -> dict[str, int]:
+    if _active_default_enchants is None:
+        raise RuntimeError(
+            "gear_config.set_active_default_enchants() was never called - a pipeline "
+            "entry point must load a profile's default_enchants.json and call "
+            "set_active_default_enchants() before any enchant-choice code runs."
+        )
+    return _active_default_enchants
+
+
 def item_entry(item_id: int, enchant: int = 0, gems: list[int] | None = None,
                variant: str | None = None) -> dict:
     """`variant` distinguishes same-item_id itemization variants (e.g. WotLK's

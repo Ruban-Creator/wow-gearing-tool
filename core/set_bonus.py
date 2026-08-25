@@ -251,9 +251,14 @@ def best_four_of_five(settings_path: str, set_name: str, candidates: dict[str, l
         if owned_entry:
             owned_db_item = idb.by_id(owned_entry["id"])
             if owned_db_item and owned_db_item.get("setName") == set_name:
+                # Real BiS enchant for the slot, not her literal current one
+                # (Missing Enchants fix, 2026-08-25) - same unconditional
+                # treatment as optimizer.py's build_owned_config()/
+                # load_candidates().
+                enchant = gc.get_active_default_enchants().get(slot, 0)
                 tier_item_by_slot[slot] = opt.Candidate(
                     owned_db_item["name"], owned_entry["id"],
-                    owned_entry.get("enchant", 0), owned_entry.get("gems"))
+                    enchant, owned_entry.get("gems"))
     for slot, cand in set_pieces_in_pool(set_name, candidates):
         if slot in ARMOR_SET_SLOTS:
             tier_item_by_slot[slot] = cand  # pool entry (real gems/enchant already resolved) wins if both exist

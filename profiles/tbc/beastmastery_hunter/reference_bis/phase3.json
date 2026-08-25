@@ -1,0 +1,117 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Cursed Vision of Sargeras",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Choker of Serrated Blades",
+        "rank": "Best",
+        "source": "Drop: (Hyjal Summit)"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Gronnstalker's Spaulders",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Beast Mastery preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Thalassian Wildercloak",
+        "rank": "Best",
+        "source": "Drop: Kael'thas Sunstrider (Tempest Keep)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Gronnstalker's Chestguard",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Beast Mastery preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Insidious Bands",
+        "rank": "Best",
+        "source": "Drop: Teron Gorefiend (Black Temple)"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Gronnstalker's Gloves",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Beast Mastery preset"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Don Alejandro's Money Belt",
+        "rank": "Best",
+        "source": "Drop: Anetheron (Hyjal Summit)"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Gronnstalker's Leggings",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Beast Mastery preset"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Shadowmaster's Boots",
+        "rank": "Best",
+        "source": "Drop: Mother Shahraz (Black Temple)"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Band of the Eternal Champion",
+        "rank": "Best",
+        "source": "wowsims Phase 3 Beast Mastery preset"
+      },
+      {
+        "item": "Stormrage Signet Ring",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Madness of the Betrayer",
+        "rank": "Best",
+        "source": "Drop: The Illidari Council (Black Temple)"
+      },
+      {
+        "item": "Dragonspine Trophy",
+        "rank": "Best",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      }
+    ],
+    "weapon_dual_wield": [
+      {
+        "item": "Boundless Agony",
+        "rank": "Best",
+        "source": "Drop: Azgalor (Hyjal Summit)"
+      },
+      {
+        "item": "Blade of Infamy",
+        "rank": "Best",
+        "source": "Drop: Anetheron (Hyjal Summit)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Bristleblitz Striker",
+        "rank": "Best",
+        "source": "Drop: Archimonde (Hyjal Summit)"
+      }
+    ]
+  }
+}

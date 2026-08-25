@@ -1,0 +1,117 @@
+{
+  "slots": {
+    "head": [
+      {
+        "item": "Coif of Alleria",
+        "rank": "Best",
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
+      }
+    ],
+    "neck": [
+      {
+        "item": "Hard Khorium Choker",
+        "rank": "Best",
+        "source": "Crafted: Jewelcrafting"
+      }
+    ],
+    "shoulder": [
+      {
+        "item": "Demontooth Shoulderpads",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Fury preset"
+      }
+    ],
+    "back": [
+      {
+        "item": "Cloak of Unforgivable Sin",
+        "rank": "Best",
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
+      }
+    ],
+    "chest": [
+      {
+        "item": "Bladed Chaos Tunic",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Fury preset"
+      }
+    ],
+    "wrist": [
+      {
+        "item": "Onslaught Bracers",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Fury preset"
+      }
+    ],
+    "hands": [
+      {
+        "item": "Thalassian Ranger Gauntlets",
+        "rank": "Best",
+        "source": "Drop: Kil'jaeden (Sunwell Plateau)"
+      }
+    ],
+    "waist": [
+      {
+        "item": "Onslaught Belt",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Fury preset"
+      }
+    ],
+    "legs": [
+      {
+        "item": "Leggings of the Immortal Night",
+        "rank": "Best",
+        "source": "Drop: Felmyst (Sunwell Plateau)"
+      }
+    ],
+    "feet": [
+      {
+        "item": "Onslaught Treads",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Fury preset"
+      }
+    ],
+    "ring": [
+      {
+        "item": "Angelista's Revenge",
+        "rank": "Best",
+        "source": "wowsims Phase 5 Fury preset"
+      },
+      {
+        "item": "Band of Ruinous Delight",
+        "rank": "Best",
+        "source": "Drop: Eredar Twins (Sunwell Plateau)"
+      }
+    ],
+    "trinket": [
+      {
+        "item": "Dragonspine Trophy",
+        "rank": "Best",
+        "source": "Drop: Gruul the Dragonkiller (Gruul's Lair)"
+      },
+      {
+        "item": "Blackened Naaru Sliver",
+        "rank": "Best",
+        "source": "Drop: M'uru (Sunwell Plateau)"
+      }
+    ],
+    "weapon_dual_wield": [
+      {
+        "item": "Warglaive of Azzinoth",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      },
+      {
+        "item": "Warglaive of Azzinoth",
+        "rank": "Best",
+        "source": "Drop: Illidan Stormrage (Black Temple)"
+      }
+    ],
+    "ranged": [
+      {
+        "item": "Golden Bow of Quel'Thalas",
+        "rank": "Best",
+        "source": "Drop: Eredar Twins (Sunwell Plateau)"
+      }
+    ]
+  }
+}

@@ -55,7 +55,8 @@ if __name__ == "__main__":
     REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     name_realm, phase = "Lerynia-Thunderstrike", "phase3"
     character = json.load(open(os.path.join(REPO_ROOT, "data", "characters", name_realm, "character.json"), encoding="utf-8"))
-    ledger_data = build_ledger_data.build(name_realm, phase)
+    profile_dir = os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter")
+    ledger_data = build_ledger_data.build(name_realm, phase, profile_dir)
     html = render(ledger_data, character, phase)
 
     out_dir = os.path.join(REPO_ROOT, "data", "characters", name_realm, "reports")

@@ -46,6 +46,9 @@ def main():
     stat_weights.set_active(stat_weights.load(PROFILE_DIR))
     profile = json.load(open(os.path.join(PROFILE_DIR, "profile.json"), encoding="utf-8"))
     gc.set_active_default_gem(profile["primary_gem_id"])
+    _default_enchants_path = os.path.join(PROFILE_DIR, "default_enchants.json")
+    gc.set_active_default_enchants(json.load(open(_default_enchants_path, encoding="utf-8"))
+                                    if os.path.exists(_default_enchants_path) else {})
     chase_bonus = json.load(open(os.path.join(PROFILE_DIR, "chase_bonus_gems.json"), encoding="utf-8"))
     gopt.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
 

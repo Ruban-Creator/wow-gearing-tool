@@ -45,6 +45,16 @@ def gem_by_id(gem_id: int) -> dict | None:
     return gem_by_id._index.get(gem_id)
 
 
+def enchant_by_id(effect_id: int) -> dict | None:
+    """db.json's enchants collection is keyed by effectId (not itemId) -
+    a display/name lookup, not proof the Go sim engine implements the
+    effect (see core/verify_default_enchants.py for the real check)."""
+    db = _load()
+    if not hasattr(enchant_by_id, "_index"):
+        enchant_by_id._index = {e["effectId"]: e for e in db.get("enchants", [])}
+    return enchant_by_id._index.get(effect_id)
+
+
 # proto/common.proto GemColor enum (read directly, not guessed - color 8 is
 # Prismatic, not Meta; got this wrong on a first pass before checking source).
 META_GEM_COLOR = 1
@@ -59,6 +69,25 @@ PROFESSION_NAMES = {
 
 def required_profession_name(item: dict) -> str | None:
     prof = item.get("requiredProfession")
+    if not prof:
+        return None
+    return PROFESSION_NAMES.get(prof, f"Unknown({prof})")
+
+
+def enchant_required_profession_name(effect_id: int) -> str | None:
+    """Real, found 2026-08-25 (user flagged it live): unlike every other
+    enchant slot, Ring enchants in this game can only be self-applied by a
+    character who personally has Enchanting - there's no "pay any enchanter
+    to do it for you" option the way there is for every other slot. db.json
+    already encodes this distinction for free: ordinary tradeable enchants
+    (cloak/chest/weapon/etc.) carry requiredProfession=None, while ring
+    enchants carry a real requiredProfession - confirmed by direct
+    comparison, not assumed. Mirrors required_profession_name() above,
+    applied to enchant effects instead of items."""
+    enchant = enchant_by_id(effect_id)
+    if not enchant:
+        return None
+    prof = enchant.get("requiredProfession")
     if not prof:
         return None
     return PROFESSION_NAMES.get(prof, f"Unknown({prof})")

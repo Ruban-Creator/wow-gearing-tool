@@ -456,12 +456,102 @@ subprocess call sites across the codebase with `CREATE_NO_WINDOW`, rebuilt the e
 live: ran a real uncached sweep and watched the process list the whole time - no stray windows,
 real report still generated correctly. See NOTES.md for the full list of files touched.
 
-## TODO for you: manually verify "Teeth of Gruul" as a real DPS upgrade for Béarforceone
+## RESOLVED: "Teeth of Gruul" confirmed a real DPS upgrade for Béarforceone
 
 You flagged confusion (2026-08-25) that a "healing" neck, Teeth of Gruul, shows as a +20.4 DPS
 upgrade for Béarforceone despite being healing-leaning (Healing Power 46 is its largest stat,
-contributing zero to her DPS). I re-ran the exact sim comparison and it's real and reproducible
-(+20.4 DPS, far outside noise) - it's a higher-ilvl epic with a bigger total stat budget than her
+contributing zero to her DPS). I re-ran the exact sim comparison and it was real and reproducible
+(+20.4 DPS, far outside noise) - a higher-ilvl epic with a bigger total stat budget than her
 current neck plus real Intellect/Spirit/MP5 her current piece has none of, likely a mana-sustain
 nonlinearity a flat EP weight doesn't capture. You said you'd rather confirm this yourself once
-home rather than just take my sim re-run as the final word - this is that flag, so it isn't lost.
+home rather than just take my sim re-run as the final word - you did, and confirmed it: "I stand
+corrected teeth of gruul is actually a DPS increase on a 180 second fight." Closed.
+
+## Missing Enchants feature (2026-08-25): real DB-coverage gap disclosed, not hidden
+
+Per your ask ("show the real BiS enchants available... make sure unenchanted items never get
+compared to enchanted ones"), I reversed an old design call - enchants now always assume the
+real, sim-verified best choice for the slot, matching how gems already work, never "whatever
+she currently has equipped there." Full writeup in NOTES.md's 2026-08-25 entry.
+
+Two things worth your eyes specifically:
+- **Balance Druid's own preset enchant data verified 0/11 real, Enhancement Shaman only 3/10** -
+  every other id from those profiles' own real wowsims preset files produced a ~0.00 DPS delta
+  in an isolated sim test (not a bug in this tool, a real coverage gap in what this sim build
+  recognizes). Their `default_enchants.json` files are correspondingly small - those slots just
+  have no assumed enchant right now, same as before this feature existed. Not blocking (Béarforceone
+  is a real character; Enhancement is still synthetic), but worth knowing before trusting either
+  profile's baseline DPS as "fully enchanted." **Update, same day**: you flagged Béarforceone's real
+  weapon specifically as unenchanted - re-investigated and fixed. Her preset's weapon id wasn't in
+  the sim DB at all; found the real, DB-recognized equivalent ("Enchant Weapon - Major Spellpower")
+  by searching `db.json` directly, verified +22.8 DPS, now live in her Missing Enchants list on all
+  4 of her reports. Her other 10 slots are still the same disclosed gap - the same DB-search fix
+  would likely work for those too if you want me to chase them down.
+- **Lerynia's own hand-researched enchant list was missing her ranged weapon scope entirely**
+  (Stabilitzed Eternium Scope, +17.37 DPS, real and verified) - caught live by the Stage 2 sim
+  checkpoint, not by re-reading the source guide. Fixed; her file is 13/13 verified now.
+
+**Real bug you caught yourself, same day**: you flagged that the Missing Enchants section
+recommended a Ring enchant for Lerynia even though ring enchants can only be self-applied by a
+character with Enchanting - she only has Herbalism/Mining. Real, confirmed gap, not modeled
+anywhere before - `db.json` itself distinguishes exactly this (a real `requiredProfession` field
+on the enchant, set only on the 4 real Ring enchants, unset on every other enchant in the game).
+Fixed generically off that field rather than hardcoding "rings are special" - now correctly
+suppressed for any character without Enchanting, in every place a default enchant gets assumed
+(baseline, candidates, and the Missing Enchants list itself). Full writeup in NOTES.md.
+
+## Stage 6.4 (Beastmastery Hunter): real judgment calls worth your eyes
+
+`profiles/tbc/beastmastery_hunter/` is done and real-verified (full writeup in NOTES.md). Three
+calls I made autonomously, per the plan's own guidance, worth a look when there's time:
+
+- **`weapon_topology: dual_wield`, not `two_hand`** - BM's real wowsims data ships equally
+  legitimate 2H and DW builds at every phase, with no rotation difference between them (confirmed:
+  identical `TypeSimple` rotation JSON in both). Picked DW to match Survival Hunter's own existing
+  convention on this identical item pool, with 2H handled as a real side-comparison (same as
+  everywhere else). If you'd rather 2H be the canonical build, that's a real, easy swap.
+- **`settings_template.json` built by copying Survival's real file and changing only talents +
+  pet type**, not via the newer `build_profile_settings.py` pipeline - Survival's own file
+  predates that pipeline (hand-built), so there was no clean "generate fresh" path; copying was
+  the safer option given BM and Survival share the exact same real rotation/apl data.
+- **`chase_bonus_gems.json` reused from Survival rather than re-verified from scratch** - real EP
+  weights are confirmed byte-identical between the two specs, and I spot-checked the handful of
+  BM-only candidates a prior verification pass never covered. Full 38-item re-verification wasn't
+  run; flag if you'd rather have that done properly instead of the spot-check.
+
+## Stage 6.5 (Fury Warrior): done, real-verified, no open judgment calls to flag
+
+Unlike Beastmastery Hunter, Fury didn't need any real judgment calls this time - everything was
+either directly confirmed from real source data (weapon topology via actual `handType`, gem/enchant
+choices via fresh sim verification, `class_options.json`/`consumables.json` confirmed genuinely
+class-level before reuse) or built via the same real pipeline Arms already used
+(`build_profile_settings.py`). Full writeup in NOTES.md, including a real, non-obvious spell-ID
+correction (Bloodthirst is really 30335, not the commonly-cited 23881) found while independently
+verifying the rotation actually fires.
+
+## Stage 6.6 (Feral Cat Druid): real judgment calls worth your eyes
+
+`profiles/tbc/feral_cat_druid/` is done and real-verified (full writeup in NOTES.md). This was the
+messiest stage yet - two genuinely sim-breaking bugs, both silent - so a few calls worth a look:
+
+- **P1's real `bis`/`alt`/`realistic` x `6p`/`9p` gear-variant matrix** - used `bis` (the canonical
+  best recommendation) at the real "6%" hit-target variant, matching the standing 6%
+  moonkin-present default from CLAUDE.md/CLASSES.md's own already-documented naming trap. Didn't
+  build `alt`/`realistic` variants at all (same "one profile, one canonical build" convention every
+  other profile uses) - flag if you'd rather see the more-attainable `realistic` tier represented
+  somewhere too.
+- **`chase_bonus_gems.json` stays genuinely empty** - all 21 real socketed candidates tested fresh,
+  every one showed a negative delta vs pure Agility. This is a real, verified "no" answer, not an
+  unfinished check, but it's the first profile where the answer came back completely empty across
+  the board (every prior profile found at least one real winner) - flagging in case that pattern
+  itself seems worth double-checking rather than trusting at face value.
+- **`consumables.json` sourced from Enhancement Shaman's melee-package convention** (potId 22838,
+  flaskId 22854, etc.) rather than hand-verified from Feral's own real `presets.ts` input list -
+  reasonable given both are melee specs needing the same consumable *categories*, but the exact
+  item ids weren't independently cross-checked against Feral-specific presets the way, e.g.,
+  `default_enchants.json` was. Worth a real verification pass if it matters for absolute accuracy.
+- **No visual browser check of the rendered HTML report** - the Claude Browser tool's sandbox
+  blocks `file://` access, so verification relied entirely on `check_ledger_consistency.py --html`
+  (121/0, confirms the embedded DATA blob byte-matches `ledger_data_phase3.json`) rather than an
+  actual look at the rendered page. Same structural bar used for every prior stage's report, but
+  flagging since "looks right when opened" was never actually confirmed for this one specifically.
