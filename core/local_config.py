@@ -46,3 +46,23 @@ def report_output_path(name_realm: str, phase: str) -> str:
     if root:
         return os.path.join(root, name_realm, f"{phase}.html")
     return os.path.join(REPO_ROOT, "data", "characters", name_realm, "reports", f"{phase}.html")
+
+
+def debug_mode() -> bool:
+    """Off by default - the GUI's real, addon-sourced character picker
+    (ingest/list_characters.py) never includes the synthetic test
+    characters built for profile verification (Test-*-Synthetic), since
+    they have no real WowSimsExporter/GearingToolCompanion SavedVariables
+    entry to be discovered from. Debug mode opts into also listing those,
+    so a new profile can be smoke-tested through the actual GUI instead of
+    only ever the CLI/direct-Python path - per the user, 2026-08-26."""
+    return bool(load().get("debug_mode", False))
+
+
+def set_debug_mode(enabled: bool) -> None:
+    config = load()
+    if enabled:
+        config["debug_mode"] = True
+    else:
+        config.pop("debug_mode", None)
+    save(config)

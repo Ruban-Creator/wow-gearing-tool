@@ -204,9 +204,18 @@ def _run_report_job(name_realm: str, phase: str, duration: int) -> None:
 class Api:
     def list_characters(self) -> list[dict]:
         chars = list_characters.list_all_characters()
+        if local_config.debug_mode():
+            chars = chars + list_characters.list_synthetic_characters()
         for c in chars:
             c["has_profile"] = c["name_realm"] in SUPPORTED_CHARACTERS
         return chars
+
+    def get_debug_mode(self) -> bool:
+        return local_config.debug_mode()
+
+    def set_debug_mode(self, enabled: bool) -> bool:
+        local_config.set_debug_mode(bool(enabled))
+        return local_config.debug_mode()
 
     def get_reports(self, name_realm: str) -> dict:
         path = os.path.join(REPO_ROOT, "data", "characters", name_realm, "reports.json")

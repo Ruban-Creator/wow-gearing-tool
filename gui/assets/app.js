@@ -50,6 +50,7 @@ const settingsModal = document.getElementById("settings-modal");
 const settingsOutputDir = document.getElementById("settings-output-dir");
 const settingsChangeBtn = document.getElementById("settings-change-btn");
 const settingsResetBtn = document.getElementById("settings-reset-btn");
+const settingsDebugToggle = document.getElementById("settings-debug-toggle");
 
 const runReportBtn = document.getElementById("run-report-btn");
 const runReportModal = document.getElementById("run-report-modal");
@@ -96,6 +97,8 @@ function classColor(className) {
   return CLASS_COLORS[className.toLowerCase()] || "var(--class-default)";
 }
 
+const SOURCE_LABELS = { wse: "WSE", gtcompanion: "GT Companion", synthetic: "Synthetic" };
+
 function renderCharList() {
   if (characters.length === 0) {
     charListEl.innerHTML = `<div class="empty-state">No characters found.<br><br>
@@ -123,10 +126,10 @@ function renderCharList() {
         <span>${escapeHtml(raceClass)}</span>
       </div>
       <div class="char-meta-row">
-        <span class="badge source-${c.source_used}">${c.source_used === "wse" ? "WSE" : "GT Companion"}</span>
+        <span class="badge source-${c.source_used}">${SOURCE_LABELS[c.source_used] || c.source_used}</span>
         ${c.has_profile ? "" : `<span class="badge no-profile">No profile</span>`}
       </div>
-      <div class="staleness">saved ${relativeTime(staleTs)}</div>
+      <div class="staleness">${c.synthetic ? "synthetic test character" : `saved ${relativeTime(staleTs)}`}</div>
     `;
     card.addEventListener("click", () => selectCharacter(c.name_realm));
     charListEl.appendChild(card);
@@ -218,6 +221,7 @@ refreshBtn.addEventListener("click", loadCharacters);
 async function refreshSettingsDisplay() {
   const dir = await window.pywebview.api.get_report_output_dir();
   settingsOutputDir.textContent = dir || "(default) data/characters/<character>/reports/";
+  settingsDebugToggle.checked = await window.pywebview.api.get_debug_mode();
 }
 
 settingsBtn.addEventListener("click", async () => {
@@ -233,6 +237,11 @@ settingsChangeBtn.addEventListener("click", async () => {
 settingsResetBtn.addEventListener("click", async () => {
   await window.pywebview.api.reset_report_output_dir();
   await refreshSettingsDisplay();
+});
+
+settingsDebugToggle.addEventListener("change", async () => {
+  await window.pywebview.api.set_debug_mode(settingsDebugToggle.checked);
+  await loadCharacters();
 });
 
 // ---- Run Report modal ----

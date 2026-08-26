@@ -17,7 +17,10 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from build_character import find_savedvariables, parse_lua_savedvariables  # noqa: E402
+from build_character import REPO_ROOT, find_savedvariables, parse_lua_savedvariables  # noqa: E402
+
+sys.path.insert(0, os.path.join(REPO_ROOT, "core"))
+import character_profiles  # noqa: E402
 
 # TBC Anniversary's real, fixed level cap for the whole expansion (already
 # assumed throughout this codebase - every real character.json/profile is
@@ -89,6 +92,44 @@ def list_gtcompanion_characters() -> dict[str, dict]:
                 "timestamp": ts,
             }
     return result
+
+
+def list_synthetic_characters() -> list[dict]:
+    """Debug-mode-only entries for the synthetic test characters built this
+    session to verify a new class/spec profile (Test-*-Synthetic - see
+    profile.json's own synthetic_character flag) - these have no real
+    WowSimsExporter/GearingToolCompanion SavedVariables entry to be
+    discovered from at all, so list_all_characters() alone can never surface
+    them. Shaped to match that function's own merged-entry dict so the GUI's
+    existing rendering code needs no special-casing beyond the synthetic
+    flag itself. Never invents a character - only lists one whose real
+    profile.json declares itself synthetic AND whose real character.json
+    already exists on disk (built via ingest/build_synthetic_character.py)."""
+    result = []
+    for name_realm, profile_dir in character_profiles.SUPPORTED_CHARACTERS.items():
+        profile_path = os.path.join(profile_dir, "profile.json")
+        if not os.path.exists(profile_path):
+            continue
+        with open(profile_path, encoding="utf-8") as f:
+            profile = json.load(f)
+        if not profile.get("synthetic_character"):
+            continue
+        char_path = os.path.join(REPO_ROOT, "data", "characters", name_realm, "character.json")
+        if not os.path.exists(char_path):
+            continue
+        with open(char_path, encoding="utf-8") as f:
+            char = json.load(f)["character"]
+        result.append({
+            "name_realm": name_realm,
+            "source_used": "synthetic",
+            "identity": char,
+            "wse_timestamp": None,
+            "gt_timestamp": None,
+            "has_wse": False,
+            "has_gtcompanion": False,
+            "synthetic": True,
+        })
+    return sorted(result, key=lambda c: c["name_realm"])
 
 
 def _is_empty_identity(identity: dict) -> bool:
