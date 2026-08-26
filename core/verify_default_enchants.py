@@ -34,7 +34,8 @@ import time_horizon  # noqa: E402
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "adapters", "tbc"))
 import valuation  # noqa: E402
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import repo_root  # noqa: E402
+REPO_ROOT = repo_root.REPO_ROOT
 CLEAR_THRESHOLD = 1.0  # DPS - below this, treat as noise/no real effect, not a genuine gain
 ITERATIONS = 3000
 

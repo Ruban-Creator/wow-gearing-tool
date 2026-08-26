@@ -6,6 +6,7 @@ C:\\Users\\Matthias\\.claude\\plans\\staged-purring-lynx.md).
 """
 import json
 import os
+import sys
 
 TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "report_template.html")
 
@@ -52,7 +53,9 @@ def render(ledger_data: dict, character: dict, phase: str) -> str:
 if __name__ == "__main__":
     import build_ledger_data
 
-    REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import repo_root
+    REPO_ROOT = repo_root.REPO_ROOT
     name_realm, phase = "Lerynia-Thunderstrike", "phase3"
     character = json.load(open(os.path.join(REPO_ROOT, "data", "characters", name_realm, "character.json"), encoding="utf-8"))
     profile_dir = os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter")

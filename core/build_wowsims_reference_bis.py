@@ -25,7 +25,8 @@ import run_full_sweep_mv as sweep  # noqa: E402 - reuses describe_source_and_tie
 # to actually get the item (real bug found 2026-08-25: 12 of Rubán's 16
 # preset-sourced items had real DB drop data being silently discarded).
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import repo_root  # noqa: E402
+REPO_ROOT = repo_root.REPO_ROOT
 DB_PATH = os.path.join(REPO_ROOT, "sim", "tbc-new", "assets", "database", "db.json")
 _db = json.load(open(DB_PATH, encoding="utf-8"))
 NPC_BY_ID = {n["id"]: n["name"] for n in _db.get("npcs", [])}

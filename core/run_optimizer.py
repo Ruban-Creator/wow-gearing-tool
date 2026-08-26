@@ -10,7 +10,8 @@ import item_db as idb  # noqa: E402
 import gem_optimizer as gopt  # noqa: E402
 import stat_weights  # noqa: E402
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import repo_root  # noqa: E402
+REPO_ROOT = repo_root.REPO_ROOT
 PROFILE_DIR = os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter")
 SETTINGS_TEMPLATE = os.path.join(PROFILE_DIR, "settings_template.json")
 POOL_PATH = os.path.join(PROFILE_DIR, "candidate_pool.json")

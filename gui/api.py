@@ -26,18 +26,34 @@ from pathlib import Path
 # find the repo root crashed with "No module named 'list_characters'" the
 # first time the exe was actually double-clicked, because it was sitting in
 # dist/ (where the build puts it) rather than the repo root, and Windows'
-# double-click cwd didn't line up with either. Fixed by walking up from the
-# exe's own real on-disk location (sys.executable, not cwd - correct
-# regardless of what launched it or what the working directory happens to
-# be) looking for a directory that actually has ingest/list_characters.py -
-# works whether the exe stays in dist/ (repo root is one level up) or gets
-# copied to the repo root directly, with no "Start in" folder configuration
-# required from the user at all.
-def _find_repo_root(start: str) -> str:
+# double-click cwd didn't line up with either. The real fix (walk up from
+# sys.executable's own on-disk location, not cwd) now lives once in
+# core/repo_root.py instead of duplicated in every core/ingest/cli module
+# (2026-08-26, prompted by the user asking whether the tool was actually
+# ready for a bundled installer - it wasn't, every one of those had the
+# exact same latent bug).
+#
+# REAL BUG #2, hit live 2026-08-26 building that same fix: gui/api.py
+# itself IS bundled/compiled into the frozen exe (PyInstaller's static
+# analyzer traces `from api import Api` in gui/app.py just fine, unlike the
+# dynamic sys.path.insert()+bare-import pattern used for core/ingest below),
+# so THIS file's own __file__ genuinely does resolve inside the temp
+# extraction dir when frozen. A first fix attempt used sys.executable's own
+# directory directly as "core"'s parent - still wrong, confirmed by a real
+# launch of the packaged exe still crashing the same way: the real exe
+# lives in dist/, one level BELOW the real repo root (core/ is a sibling of
+# dist/'s PARENT, not of dist/ itself) - exactly the same one-level-too-shallow
+# mistake the ORIGINAL _find_repo_root() (before today's consolidation) was
+# written to avoid by walking up multiple levels, not just one. This one
+# bootstrap step can't yet delegate to repo_root.py (that's the very thing
+# being located), so it keeps its own small copy of that same walk-up
+# search - every other real REPO_ROOT usage in this file and everywhere
+# else in the codebase still goes through repo_root.py alone.
+def _find_core_dir(start: str) -> str:
     d = start
-    for _ in range(6):  # a handful of parent levels is plenty; never walk to the disk root
+    for _ in range(6):
         if os.path.isfile(os.path.join(d, "ingest", "list_characters.py")):
-            return d
+            return os.path.join(d, "core")
         parent = os.path.dirname(d)
         if parent == d:
             break
@@ -50,9 +66,13 @@ def _find_repo_root(start: str) -> str:
 
 
 if getattr(sys, "frozen", False):
-    REPO_ROOT = _find_repo_root(os.path.dirname(os.path.abspath(sys.executable)))
+    _core_dir = _find_core_dir(os.path.dirname(os.path.abspath(sys.executable)))
 else:
-    REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _core_dir = _find_core_dir(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _core_dir)
+import repo_root  # noqa: E402
+
+REPO_ROOT = repo_root.REPO_ROOT
 sys.path.insert(0, os.path.join(REPO_ROOT, "ingest"))
 import list_characters  # noqa: E402
 import build_character  # noqa: E402
@@ -259,8 +279,23 @@ class Api:
     def get_run_status(self) -> dict:
         return _get_status()
 
-    def get_report_output_dir(self) -> str | None:
-        return local_config.report_output_root()
+    def get_report_output_dir(self) -> dict:
+        """Real resolved absolute path either way, same shape as
+        get_wow_root() - was returning None for "use the default" and
+        letting the frontend paper over that with a vague, non-resolved
+        template string ("data/characters/<character>/reports/"), unlike
+        the WoW-folder row's own always-a-real-path display. Real problem
+        this masked (found while answering the user's own "is this ready
+        for the bundled installer" question, 2026-08-26): that default is
+        REPO_ROOT-relative, and REPO_ROOT is computed differently (and,
+        for every module except this file, INCORRECTLY under a frozen
+        PyInstaller build - see REPO_ROOT's own comment above) depending on
+        where it's computed - showing the real resolved path here at least
+        makes it possible to notice when it points somewhere wrong."""
+        configured = local_config.report_output_root()
+        if configured:
+            return {"path": configured, "is_configured": True}
+        return {"path": os.path.join(REPO_ROOT, "data", "characters", "<character>", "reports"), "is_configured": False}
 
     def pick_report_folder(self) -> str | None:
         import webview

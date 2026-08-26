@@ -17,7 +17,8 @@ import optimizer as opt  # noqa: E402
 import marginal_value as mv  # noqa: E402
 import stat_weights  # noqa: E402
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import repo_root  # noqa: E402
+REPO_ROOT = repo_root.REPO_ROOT
 STAT_VECTOR_LEN = 42
 
 # Per-profile since Stage 6 (multi-class support) - real source path VERIFIED

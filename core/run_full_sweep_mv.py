@@ -36,7 +36,8 @@ import stat_weights  # noqa: E402
 import gem_optimizer  # noqa: E402
 import sweep_all_loot  # noqa: E402
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import repo_root  # noqa: E402
+REPO_ROOT = repo_root.REPO_ROOT
 # This file is still Survival Hunter's own sweep script (Stage 6.1+ gives
 # Warrior/Druid their own equivalent entry points) - paths point at the
 # migrated profiles/tbc/survival_hunter/ layout, but PROFILE_DIR/PROFILE

@@ -44,7 +44,8 @@ import item_db as idb  # noqa: E402
 import gear_config as gc  # noqa: E402
 import stat_weights  # noqa: E402
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import repo_root  # noqa: E402
+REPO_ROOT = repo_root.REPO_ROOT
 DB_PATH = os.path.join(REPO_ROOT, "sim", "tbc-new", "assets", "database", "db.json")
 
 sys.path.insert(0, os.path.join(REPO_ROOT, "adapters", "tbc"))

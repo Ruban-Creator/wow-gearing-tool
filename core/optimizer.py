@@ -43,7 +43,8 @@ import gem_optimizer  # noqa: E402
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "adapters", "tbc"))
 import valuation  # noqa: E402
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import repo_root  # noqa: E402
+REPO_ROOT = repo_root.REPO_ROOT
 SCREEN_ITERATIONS = 2000
 RESOLVE_ITERATIONS = 30000
 SEED = 1

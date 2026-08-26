@@ -6,9 +6,12 @@ could read/write it too, not just the GUI.
 """
 import json
 import os
+import sys
 import string
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import repo_root  # noqa: E402
+REPO_ROOT = repo_root.REPO_ROOT
 CONFIG_PATH = os.path.join(REPO_ROOT, "data", "local_config.json")
 
 

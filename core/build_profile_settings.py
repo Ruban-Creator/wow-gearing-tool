@@ -21,7 +21,8 @@ import gear_config as gc  # noqa: E402
 import gem_optimizer  # noqa: E402
 import stat_weights  # noqa: E402
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import repo_root  # noqa: E402
+REPO_ROOT = repo_root.REPO_ROOT
 
 
 def build(name_realm: str, profile_dir: str) -> dict:

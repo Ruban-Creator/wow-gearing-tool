@@ -7,8 +7,11 @@ Stalker Armor - see NOTES.md for the confirmed 4pc bonus).
 """
 import json
 import os
+import sys
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import repo_root  # noqa: E402
+REPO_ROOT = repo_root.REPO_ROOT
 # Kept as the default for Survival Hunter (this script's original real
 # usage); Stage 6 (multi-class support) generalized build_pool() itself to
 # take ref_dir/phase_files as real parameters instead of module constants,

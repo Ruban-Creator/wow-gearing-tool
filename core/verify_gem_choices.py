@@ -20,7 +20,9 @@ import os
 import sys
 import time
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import repo_root  # noqa: E402
+REPO_ROOT = repo_root.REPO_ROOT
 sys.path.insert(0, os.path.join(REPO_ROOT, "core"))
 import optimizer as opt  # noqa: E402
 import gear_config as gc  # noqa: E402

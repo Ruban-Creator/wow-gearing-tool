@@ -23,11 +23,19 @@ _NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 
 from slpp import slpp as lua
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SIM_SUBMODULE = os.path.join(REPO_ROOT, "sim", "tbc-new")
-
-sys.path.insert(0, os.path.join(REPO_ROOT, "core"))
+# core/ is always this file's own sibling directory (ingest/ and core/ are
+# both direct children of the repo root) - true whether running from source
+# or from inside a frozen PyInstaller build's extraction dir, since that
+# preserves the bundled tree's relative layout. Only the ABSOLUTE meaning
+# of REPO_ROOT itself differs between those two cases (see core/repo_root.py
+# for why), which is exactly why real REPO_ROOT resolution is delegated
+# there instead of computed here.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "core"))
+import repo_root  # noqa: E402
 import local_config  # noqa: E402
+
+REPO_ROOT = repo_root.REPO_ROOT
+SIM_SUBMODULE = os.path.join(REPO_ROOT, "sim", "tbc-new")
 
 
 def find_savedvariables(addon_folder_name: str) -> list[str]:

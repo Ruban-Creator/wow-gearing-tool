@@ -6,10 +6,16 @@ import re
 import sys
 from datetime import datetime, timezone
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# core/ is always this file's own sibling directory - see
+# ingest/build_character.py's own comment on why this lookup (not REPO_ROOT
+# itself) is what's safe to compute directly here.
+_REPO_ROOT_GUESS = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(_REPO_ROOT_GUESS, "core"))
+import repo_root  # noqa: E402
+
+REPO_ROOT = repo_root.REPO_ROOT
 sys.path.insert(0, os.path.join(REPO_ROOT, "ingest"))
 sys.path.insert(0, os.path.join(REPO_ROOT, "adapters", "tbc"))
-sys.path.insert(0, os.path.join(REPO_ROOT, "core"))
 
 import build_character  # noqa: E402
 import list_characters  # noqa: E402

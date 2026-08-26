@@ -24,7 +24,9 @@ import os
 import re
 import sys
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import repo_root  # noqa: E402
+REPO_ROOT = repo_root.REPO_ROOT
 DEFAULT_HTML = r"E:\Claude\Temp\Gearing-Tool\phase3_ledger.html"
 TOP_N_SHOWN = 5  # must match build_ledger_data.py
 

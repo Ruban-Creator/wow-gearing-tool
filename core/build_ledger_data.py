@@ -32,7 +32,8 @@ import run_full_sweep_mv as sweep_mv  # noqa: E402 - source of truth for the rea
 # Windows pops a new visible one for this git call unless told not to.
 _NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import repo_root  # noqa: E402
+REPO_ROOT = repo_root.REPO_ROOT
 TOP_N_SHOWN = 5
 
 

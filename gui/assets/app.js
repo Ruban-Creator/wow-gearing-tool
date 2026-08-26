@@ -222,8 +222,8 @@ refreshBtn.addEventListener("click", loadCharacters);
 // ---- Settings modal ----
 
 async function refreshSettingsDisplay() {
-  const dir = await window.pywebview.api.get_report_output_dir();
-  settingsOutputDir.textContent = dir || "(default) data/characters/<character>/reports/";
+  const outputDir = await window.pywebview.api.get_report_output_dir();
+  settingsOutputDir.textContent = outputDir.path + (outputDir.is_configured ? "" : " (default)");
   settingsDebugToggle.checked = await window.pywebview.api.get_debug_mode();
 
   const wowRoot = await window.pywebview.api.get_wow_root();

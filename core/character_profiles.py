@@ -24,8 +24,11 @@ ingest/list_characters.py), so this stays a literal mapping rather than
 derived logic - add a line here once a new profile is proven, same as
 every existing one was."""
 import os
+import sys
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import repo_root  # noqa: E402
+REPO_ROOT = repo_root.REPO_ROOT
 
 SUPPORTED_CHARACTERS = {
     "Lerynia-Thunderstrike": os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter"),

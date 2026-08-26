@@ -3,8 +3,11 @@ character.json into one JSON structure for the loot ledger artifact.
 """
 import json
 import os
+import sys
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import repo_root  # noqa: E402
+REPO_ROOT = repo_root.REPO_ROOT
 
 mv = json.load(open(os.path.join(REPO_ROOT, "data", "cache", "mv_report.json"), encoding="utf-8"))
 pool = json.load(open(os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter", "candidate_pool.json"), encoding="utf-8"))

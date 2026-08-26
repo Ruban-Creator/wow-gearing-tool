@@ -18,7 +18,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import settings_builder  # noqa: E402
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import repo_root  # noqa: E402
+REPO_ROOT = repo_root.REPO_ROOT
 PROFILE_DIR = os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter")
 
 

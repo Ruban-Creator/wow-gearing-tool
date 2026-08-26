@@ -35,7 +35,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import item_db as idb  # noqa: E402
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import repo_root  # noqa: E402
+REPO_ROOT = repo_root.REPO_ROOT
 
 # Which profile's reference_bis/ to read - settable per run (Stage 6.1's
 # first real second-profile test), same set_active()/get_active() pattern as

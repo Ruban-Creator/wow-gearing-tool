@@ -22,9 +22,7 @@ import sys
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from build_character import load_item_db, resolve_items, sim_commit_sha  # noqa: E402
-
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from build_character import REPO_ROOT, load_item_db, resolve_items, sim_commit_sha  # noqa: E402
 
 
 def build(name_realm: str, race: str, class_name: str, spec: str,
