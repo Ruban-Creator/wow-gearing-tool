@@ -51,6 +51,9 @@ const settingsOutputDir = document.getElementById("settings-output-dir");
 const settingsChangeBtn = document.getElementById("settings-change-btn");
 const settingsResetBtn = document.getElementById("settings-reset-btn");
 const settingsDebugToggle = document.getElementById("settings-debug-toggle");
+const settingsWowRoot = document.getElementById("settings-wow-root");
+const settingsWowRootChangeBtn = document.getElementById("settings-wow-root-change-btn");
+const settingsWowRootResetBtn = document.getElementById("settings-wow-root-reset-btn");
 
 const runReportBtn = document.getElementById("run-report-btn");
 const runReportModal = document.getElementById("run-report-modal");
@@ -222,6 +225,9 @@ async function refreshSettingsDisplay() {
   const dir = await window.pywebview.api.get_report_output_dir();
   settingsOutputDir.textContent = dir || "(default) data/characters/<character>/reports/";
   settingsDebugToggle.checked = await window.pywebview.api.get_debug_mode();
+
+  const wowRoot = await window.pywebview.api.get_wow_root();
+  settingsWowRoot.textContent = wowRoot.path + (wowRoot.is_configured ? "" : " (auto-detected)");
 }
 
 settingsBtn.addEventListener("click", async () => {
@@ -241,6 +247,18 @@ settingsResetBtn.addEventListener("click", async () => {
 
 settingsDebugToggle.addEventListener("change", async () => {
   await window.pywebview.api.set_debug_mode(settingsDebugToggle.checked);
+  await loadCharacters();
+});
+
+settingsWowRootChangeBtn.addEventListener("click", async () => {
+  await window.pywebview.api.pick_wow_root_folder();
+  await refreshSettingsDisplay();
+  await loadCharacters();
+});
+
+settingsWowRootResetBtn.addEventListener("click", async () => {
+  await window.pywebview.api.reset_wow_root();
+  await refreshSettingsDisplay();
   await loadCharacters();
 });
 

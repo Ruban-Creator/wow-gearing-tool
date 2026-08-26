@@ -24,12 +24,18 @@ _NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 from slpp import slpp as lua
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-WOW_ROOT = r"C:\Games\World of Warcraft\_anniversary_"
 SIM_SUBMODULE = os.path.join(REPO_ROOT, "sim", "tbc-new")
+
+sys.path.insert(0, os.path.join(REPO_ROOT, "core"))
+import local_config  # noqa: E402
 
 
 def find_savedvariables(addon_folder_name: str) -> list[str]:
-    pattern = os.path.join(WOW_ROOT, "WTF", "Account", "*", "SavedVariables", f"{addon_folder_name}.lua")
+    # WOW_ROOT used to be a hardcoded module constant here - now sourced
+    # from local_config.wow_root() (configured > real autodetection > the
+    # one legacy hardcoded fallback), per the user, 2026-08-26: the original
+    # hardcoded path was real for the dev machine but nobody else's.
+    pattern = os.path.join(local_config.wow_root(), "WTF", "Account", "*", "SavedVariables", f"{addon_folder_name}.lua")
     return glob.glob(pattern)
 
 

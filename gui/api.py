@@ -272,3 +272,22 @@ class Api:
 
     def reset_report_output_dir(self) -> None:
         local_config.set_report_output_root(None)
+
+    def get_wow_root(self) -> dict:
+        """Returns both the effective path (whatever wow_root() resolves to
+        right now) and whether it came from an explicit user override, so
+        the settings UI can show "auto-detected" vs a user's own choice
+        rather than always looking the same."""
+        configured = local_config.load().get("wow_root")
+        return {"path": local_config.wow_root(), "is_configured": bool(configured)}
+
+    def pick_wow_root_folder(self) -> str | None:
+        import webview
+        result = webview.windows[0].create_file_dialog(webview.FOLDER_DIALOG)
+        if not result:
+            return None
+        local_config.set_wow_root(result[0])
+        return result[0]
+
+    def reset_wow_root(self) -> None:
+        local_config.set_wow_root(None)
