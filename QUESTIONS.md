@@ -640,3 +640,27 @@ combat-log technique used for every other profile, not a guess. Following on fro
 keep going stage-to-stage without stopping (2026-08-25): per your same message, this file and
 NOTES.md are being kept current every stage for tomorrow's review, and I'll also prepare the
 "what's untested" reminder and the overview document you asked for once the remaining stages land.
+
+## OPEN, real bug found 2026-08-26 (Lerynia's own Phase 2 ledger) - not fixed, ran out of session time
+
+Reported live: her real Phase 2 "Achieved BiS" section shows 10 slots but never Weapon, even though
+her real dual-wield pair may genuinely be maxed. Root cause, confirmed by reading the real source
+(`core/run_full_sweep_mv.py:144-155`, `SLOT_DISPLAY`): `mainhand` and `offhand` both map to ONE
+shared display bucket ("Weapon"). The achieved-BiS check (`slots_with_upgrades`) operates at the
+DISPLAY-slot level - so if EITHER of her two real weapon slots has ANY real upgrade candidate in
+the standard tiered pool, the WHOLE "Weapon" row is hidden from Achieved BiS, even if the OTHER
+weapon slot is independently maxed. This is a real, separate issue from the 2H-weave comparison
+(which lives in its own "2H Weapon Options" section entirely, per Stage 6.3 - it never feeds into
+`slots_with_upgrades` at all, so it can't be why Weapon disappears either).
+
+The user's own suggested direction (their explicit judgment call, not yet built): don't silently
+hide the whole Weapon row - either split mainhand/offhand into two independent Achieved-BiS rows
+(matching how ring1/ring2 already display as two separate cards under one "Ring" label - real
+precedent for exactly this shape already exists in the same function) or, for weave profiles
+specifically, show the achieved DW pair as BiS with an explicit note below it that a 2H weapon is a
+real, separate potential upgrade (pointing at the "2H Weapon Options" section rather than duplicating
+its number). NOT implemented - the real fix needs a scoped decision (which of the two directions,
+or a third) plus real testing against a live sweep before landing in `run_full_sweep_mv.py`/
+`build_ledger_data.py`/the report template, none of which there was time for before the session's
+hard stop. Real next step: revisit this with a fresh sweep to test against, not a rushed same-session
+edit to a core scoring file with no time to verify.
