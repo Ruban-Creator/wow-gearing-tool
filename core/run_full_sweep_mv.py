@@ -751,8 +751,10 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
                                              baseline_config, owned_items, SCREEN_ITERATIONS)
         if combo is not None:
             if combo["excluded_slot"] is not None:
+                alt = combo["excluded_slot_alt"]
+                alt_text = f", {alt['name']}" if alt else " (her current gear)"
                 print(f"  Best combo for {set_name}: {', '.join(combo['best_combo_slots'])} "
-                      f"(leave {combo['excluded_slot']} non-tier) - "
+                      f"(leave {combo['excluded_slot']} non-tier{alt_text}) - "
                       f"full 5pc is {combo['full_five_dps'] - combo['combined_dps']:+.1f} vs this (screened)")
             else:
                 print(f"  Best combo for {set_name}: all 5 pieces ({combo['combined_dps']:.1f})")

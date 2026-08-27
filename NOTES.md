@@ -3716,3 +3716,53 @@ session's 8 new-profile stages (6.4-6.13). The staging plan at
 `C:\Users\Matthias\.claude\plans\staged-purring-lynx.md` is now fully executed - every stage's own
 STOP checkpoint met, every profile's report built and validated, every real finding documented here
 and in QUESTIONS.md/CLASSES.md for review.
+
+**Fixed 2026-08-27/28: `set_bonus.best_four_of_five()` silently kept her current gear in the
+excluded slot instead of testing its real best alternative, unless her current item there already
+happened to belong to the same set being evaluated.** Found by the user cross-checking Lerynia's
+own real Phase 3 report against a real wowsims.com reference build: their reference kept
+Gronnstalker's Helmet and swapped Legs for Bow-stitched Leggings; this tool's own (pre-fix) report
+did the opposite (kept current gear in every excluded slot, since her current gear is Rift Stalker
+Armor throughout - a different set entirely, so the old code's `current_item.get("setName") ==
+set_name` gate never fired). Verified live via real sim (30000 iter): her current legs (Void Reaver
+Greaves) understated the "leave legs out" combo by ~46 DPS relative to Bow-stitched Leggings, which
+she wasn't even wearing.
+
+Two real layers fixed, not one, per the user's explicit "no time constraints, go for a real proper
+fix" (2026-08-27):
+1. The excluded slot now ALWAYS gets a real "keep current gear" sim AND a real "swap to the best
+   non-set alternative" sim, regardless of what her current gear there happens to be - the existing
+   max-by-real-DPS selection picks whichever's actually better, honestly, per slot.
+2. A second, deeper gap found while building (1): the single-candidate crude-EP-score prefilter
+   that used to pick "the" alternative (`best_non_set_alt()`) isn't reliable enough to trust alone -
+   confirmed live, it picked "Shady Dealer's Pantaloons" over the real, decisively-better
+   "Bow-stitched Leggings" for Lerynia's own legs slot (exactly the socket-bonus/threshold-blind-spot
+   class of error CLAUDE.md's own ground rules already warn a linear score will make). Real,
+   decisive fix: `all_non_set_alts()` replaces the single crude-score guess - now real-sims EVERY
+   real non-set candidate in the slot's own pool (drawn from the SAME merged curated+full-sweep
+   `candidates` dict `run_full_sweep_mv.py` already builds by the time it calls this function, not
+   a narrower pool) and lets the actual DPS numbers decide.
+
+Real, final, production-verified answer for Lerynia's own Gronnstalker's Armor (fresh full sweep,
+fix applied, full real candidate pool): **leave Head out, use Cursed Vision of Sargeras there**
+(not her current Rift Stalker Helm, not Gronnstalker's Helmet) - beats the full 5-piece set by
++30.2 DPS (screened). This ties back to her own separate Q1 about Cursed Vision of Sargeras: its
+own solo MV really is bad (-51.8 DPS alone, a real downgrade) - but it's the objectively correct
+piece for THIS specific set-transition combo, once she's already committed to breaking Rift
+Stalker Armor via the other 4 Gronnstalker pieces. Both of her questions resolved to the same real
+underlying mechanic once verified properly, not two unrelated findings.
+
+`best_four_of_five()`'s own return dict gained `excluded_slot_alt` (the real winning alternative's
+name/id, or `None` when keeping current gear won) replacing the removed, never-used
+`excluded_slot_uses_alt` boolean from an intermediate fix pass; `run_full_sweep_mv.py`'s own
+console print now names the real winning alternative item, not just "non-tier". `best_non_set_alt()`
+(single-guess) kept unchanged for `rescue_check()`'s own, narrower, already-self-verifying use (it
+runs its own confirming sim on top of the guess) - only `best_four_of_five()`'s own use of it was
+replaced.
+
+Regression, real not assumed: `check_ledger_consistency.py` clean for Lerynia (653/0). Re-ran Arms
+Warrior (no real 5pc set qualifies for her - no "Best combo" line, matching prior sessions) and
+Balance Druid (real "Best combo for Moonglade Raiment" line, correctly names a real alternative,
+Thunderheart Vest) - both profiles' own `baseline_screened` values stayed byte-identical to their
+long-established known-good figures, confirming this change only affects set-bonus-combo selection
+and its printed/reported alternative, never the underlying per-item MV numbers.

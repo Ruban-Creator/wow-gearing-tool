@@ -208,15 +208,38 @@ def count_set_pieces_in_config(set_name: str, config: list[dict]) -> int:
 ARMOR_SET_SLOTS = ["head", "shoulder", "chest", "hands", "legs"]
 
 
+def all_non_set_alts(slot: str, set_name: str,
+                      candidates: dict[str, list["opt.Candidate"]]) -> list["opt.Candidate"]:
+    """Every real candidate for `slot` that ISN'T part of set_name - real,
+    non-set alternatives for a slot that currently holds (or might hold) a
+    set piece, since leaving that slot untouched wouldn't be a real
+    exclusion at all.
+
+    REAL BUG, found live 2026-08-27: a single best-by-crude-score pick
+    (this function's own real predecessor) isn't reliable enough to trust
+    as THE alternative - confirmed live on Lerynia's own real legs slot,
+    where the crude linear EP-style score picked "Shady Dealer's
+    Pantaloons" over "Bow-stitched Leggings", but a real sim showed
+    Bow-stitched Leggings decisively (~46 DPS) ahead. Exactly the class of
+    case CLAUDE.md's own ground rules warn a linear score will get wrong -
+    a socket-bonus/threshold interaction a linear sum can't see. Per the
+    user (2026-08-27, "no time constraints, go for a real proper fix"):
+    don't shortlist by crude score at all here - real sim EVERY real
+    non-set candidate in the slot's own pool and let the actual DPS numbers
+    decide, the same real-not-estimated standard this whole tool holds
+    every other reported number to."""
+    return [cand for cand in candidates.get(slot, [])
+            if (item := idb.by_id(cand.item_id) if cand.item_id else None) and item.get("setName") != set_name]
+
+
 def best_non_set_alt(slot: str, set_name: str,
                       candidates: dict[str, list["opt.Candidate"]]) -> "opt.Candidate | None":
-    """Best candidate for `slot` that ISN'T part of set_name, by the same
-    disclosed crude-score prefilter used elsewhere in this codebase
-    (STAT_WEIGHTS) - a real, non-set alternative for a slot that currently
-    holds a set piece, since leaving that slot untouched wouldn't be a
-    real exclusion at all. Extracted from best_four_of_five() so other
-    callers (e.g. a "what if this set weren't active" rescue check) can
-    reuse it instead of re-deriving the same crude score a third time."""
+    """Single best-by-crude-score candidate - a cheap, disclosed PREFILTER
+    guess only, not a real sim result. Kept as-is for rescue_check() below,
+    which already runs its own real sim on top of this pick to confirm the
+    result before reporting anything; best_four_of_five() no longer uses
+    this (see all_non_set_alts() above for why one guess wasn't enough
+    there)."""
     best, best_score = None, None
     for cand in candidates.get(slot, []):
         item = idb.by_id(cand.item_id) if cand.item_id else None
@@ -238,13 +261,32 @@ def best_four_of_five(settings_path: str, set_name: str, candidates: dict[str, l
     numbers, not assumed from guide convention or a fixed add-order.
 
     Per the user: BiS guides almost always recommend 4 of 5 tier pieces,
-    occasionally all 5 (rare) or fewer (when the bonuses are weak) - the
-    excluded slot keeps whatever real, non-tier item is already in
-    baseline_config for it (her current gear there, which the rest of
-    this pipeline has already separately confirmed/optimized), not a
-    guessed alternative. Returns None if fewer than 5 of the 5 canonical
-    armor slots have a real tier piece available (owned or in the pool) -
-    the leave-one-out comparison isn't meaningful for an incomplete set."""
+    occasionally all 5 (rare) or fewer (when the bonuses are weak).
+
+    REAL BUG, found live 2026-08-27 by the user cross-checking Lerynia's own
+    real Phase 3 report against wowsims.com's own posted reference build:
+    this function used to only ever substitute the excluded slot's real
+    best non-set alternative (best_non_set_alt()) when her CURRENT item in
+    that slot already belonged to set_name itself - i.e. only for "should I
+    keep transitioning away from a set I'm already partway into." For any
+    slot whose current item belongs to a DIFFERENT set (or no set at all -
+    Lerynia's own case: her real current gear is Rift Stalker Armor, not
+    Gronnstalker's), the excluded slot silently kept her literal current
+    item untouched, no matter how far from optimal it was. Concretely: her
+    real current legs (Void Reaver Greaves) stayed in every "leave legs out"
+    combo instead of the real, decisively-better Bow-stitched Leggings she
+    wasn't even wearing - understating that combo by ~46 DPS at high
+    precision (30000 iter) and picking "leave head out" as the false
+    winner. Real, decisive fix: no more guessing which substitution to try
+    - every excluded slot gets BOTH a "keep current gear" AND a "swap to
+    the real best non-set alternative" variant real-simmed, and the
+    existing max-by-real-DPS selection below picks whichever's actually
+    better, honestly, per slot - not assumed from whether that slot already
+    happened to hold a piece of the same set.
+
+    Returns None if fewer than 5 of the 5 canonical armor slots have a real
+    tier piece available (owned or in the pool) - the leave-one-out
+    comparison isn't meaningful for an incomplete set."""
     tier_item_by_slot: dict[str, "opt.Candidate"] = {}
     for slot in ARMOR_SET_SLOTS:
         idx = gc.SLOT_ORDER.index(slot)
@@ -267,46 +309,68 @@ def best_four_of_five(settings_path: str, set_name: str, candidates: dict[str, l
     if len(tier_item_by_slot) < 5:
         return None
 
-    def build_config(included_slots: frozenset[str]) -> list[dict]:
+    def build_config(included_slots: frozenset[str], excluded_alt: dict[str, "opt.Candidate"]) -> list[dict]:
         cfg = list(baseline_config)
         for slot in ARMOR_SET_SLOTS:
             idx = gc.SLOT_ORDER.index(slot)
             if slot in included_slots:
                 cfg[idx] = tier_item_by_slot[slot].as_entry()
-            else:
-                current = baseline_config[idx]
-                current_item = idb.by_id(current["id"]) if current and current.get("id") else None
-                if current_item and current_item.get("setName") == set_name:
-                    alt = best_non_set_alt(slot, set_name, candidates)
-                    if alt is not None:
-                        cfg[idx] = alt.as_entry()
-                    # else: no real non-set alternative found in the pool at
-                    # all - leave the tier piece as a last resort rather
-                    # than inventing a substitute; this combo's number will
-                    # then honestly reflect "still 5pc effectively" for
-                    # that slot, not a false 4pc claim.
+            elif slot in excluded_alt:
+                cfg[idx] = excluded_alt[slot].as_entry()
+            # else: no real non-set alternative found in the pool at all
+            # (or this is the "keep current gear" variant) - cfg[idx]
+            # already carries baseline_config's real current item from the
+            # list(baseline_config) copy above.
         return cfg
 
     all_five = frozenset(ARMOR_SET_SLOTS)
-    combos = {all_five: build_config(all_five)}
+    # Keyed by (four_included_slots, variant_label) rather than just the
+    # frozenset, since one excluded slot now real-sims MULTIPLE candidate
+    # variants ("current" gear, plus every real non-set alternative in that
+    # slot's own pool - see all_non_set_alts()'s own docstring for why a
+    # single crude-score guess wasn't trustworthy enough to stop at). Each
+    # variant gets its own real sim result; nothing silently overwrites
+    # another.
+    variant_configs: dict[tuple[frozenset, str], list[dict]] = {
+        (all_five, "full"): build_config(all_five, {}),
+    }
+    variant_item: dict[tuple[frozenset, str], "opt.Candidate | None"] = {(all_five, "full"): None}
     for leave_out in ARMOR_SET_SLOTS:
         four = all_five - {leave_out}
-        combos[four] = build_config(four)
+        variant_configs[(four, "current")] = build_config(four, {})
+        variant_item[(four, "current")] = None
+        for alt in all_non_set_alts(leave_out, set_name, candidates):
+            label = f"alt:{alt.item_id}"
+            variant_configs[(four, label)] = build_config(four, {leave_out: alt})
+            variant_item[(four, label)] = alt
+        # A slot with zero real non-set candidates in the pool only gets
+        # the "current" variant - same honest fallback the original code
+        # had (no invented substitute).
 
-    results = {}
-    for combo_slots, cfg in combos.items():
+    results: dict[tuple[frozenset, str], float] = {}
+    for key, cfg in variant_configs.items():
         r = mv.valuation.evaluate(settings_path, cfg, iterations, opt.SEED)
-        results[combo_slots] = r["combined"]
+        results[key] = r["combined"]
 
-    best_combo = max(results, key=results.get)
+    best_key = max(results, key=results.get)
+    best_combo, best_variant = best_key
     excluded = sorted(all_five - best_combo)
+    winning_alt = variant_item[best_key]
+    # Collapse back to one number per real 4-piece combo (the best of all
+    # its variants) for all_options, so callers that only care about "which
+    # 4 slots" don't need to know about the variant split underneath.
+    combo_best: dict[frozenset, float] = {}
+    for (combo_slots, _variant), dps in results.items():
+        if combo_slots not in combo_best or dps > combo_best[combo_slots]:
+            combo_best[combo_slots] = dps
     return {
         "set_name": set_name,
         "best_combo_slots": sorted(best_combo),
         "excluded_slot": excluded[0] if excluded else None,
-        "combined_dps": results[best_combo],
-        "full_five_dps": results[all_five],
-        "all_options": {tuple(sorted(k)): v for k, v in results.items()},
+        "excluded_slot_alt": {"name": winning_alt.name, "item_id": winning_alt.item_id} if winning_alt else None,
+        "combined_dps": results[best_key],
+        "full_five_dps": results[(all_five, "full")],
+        "all_options": {tuple(sorted(k)): v for k, v in combo_best.items()},
     }
 
 
