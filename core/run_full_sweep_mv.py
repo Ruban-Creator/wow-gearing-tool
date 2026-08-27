@@ -952,6 +952,7 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
                 r["noise_stdev"] = res["noise_stdev"]
                 r["tied_within_noise"] = res["tied_within_noise"]
                 r["raid_ap_per_attacker"] = res.get("raid_ap_per_attacker")
+                r["best_slot"] = res.get("best_slot", r.get("best_slot"))
                 r["resolved"] = True
                 r["resolve_iterations"] = RESOLVE_ITERATIONS
             elif c.item_id in confirmed_by_id:
@@ -960,6 +961,7 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
                 r["noise_stdev"] = res["noise_stdev"]
                 r["tied_within_noise"] = res["tied_within_noise"]
                 r["raid_ap_per_attacker"] = res.get("raid_ap_per_attacker")
+                r["best_slot"] = res.get("best_slot", r.get("best_slot"))
                 r["resolved"] = True
                 r["resolve_iterations"] = CONFIRM_ITERATIONS
             else:
@@ -1089,10 +1091,30 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
         gate = r.get("gate")
         return gate is None or gate["satisfied"]
 
-    slots_with_upgrades = set()
+    # Real bug, found live 2026-08-27 by the user comparing Lerynia's own
+    # real report against a wowsims.com reference: mainhand/offhand (and
+    # equally, ring1/ring2 and trinket1/trinket2) share ONE display bucket
+    # ("Weapon"/"Ring"/"Trinket" - see SLOT_DISPLAY above), but this used to
+    # gate the WHOLE bucket on ANY real upgrade found anywhere in it - so a
+    # real upgrade candidate for offhand alone hid mainhand's own real,
+    # independently-BiS status from Achieved BiS too, even though nothing
+    # about mainhand itself was actually beatable. Fixed by tracking real
+    # upgrades per REAL slot instead of per display bucket, using each
+    # candidate's own best_slot (marginal_value.py's mv_single() now reports
+    # which specific real slot its own best trial substituted into - not
+    # arbitrary: replacing whichever of a shared-pool item's two real slots
+    # is weaker always gives the bigger DPS gain, so best_slot correctly
+    # identifies which real slot a rational player would actually put a
+    # given candidate in). A single-real-slot display bucket (Head, Neck,
+    # ...) is unaffected either way - best_slot there is always that one
+    # real slot, no ambiguity to begin with.
+    real_slots_with_upgrades = set()
     for (tier, slot), rows in by_tier_slot.items():
-        if any(is_available_upgrade(r) for _, r in rows):
-            slots_with_upgrades.add(slot)
+        for _c, r in rows:
+            if is_available_upgrade(r):
+                real_slot = r.get("best_slot")
+                if real_slot:
+                    real_slots_with_upgrades.add(real_slot)
 
     display_to_real_slots = {}
     for real, disp in SLOT_DISPLAY.items():
@@ -1100,10 +1122,10 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
 
     achieved_bis = []
     for slot in SLOT_DISPLAY_ORDER:
-        if slot in slots_with_upgrades:
-            continue
         items_here = []
         for real in display_to_real_slots.get(slot, []):
+            if real in real_slots_with_upgrades:
+                continue
             idx = gc.SLOT_ORDER.index(real)
             owned = owned_items[idx] if idx < len(owned_items) else None
             if owned:

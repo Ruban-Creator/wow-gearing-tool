@@ -3766,3 +3766,36 @@ Balance Druid (real "Best combo for Moonglade Raiment" line, correctly names a r
 Thunderheart Vest) - both profiles' own `baseline_screened` values stayed byte-identical to their
 long-established known-good figures, confirming this change only affects set-bonus-combo selection
 and its printed/reported alternative, never the underlying per-item MV numbers.
+
+**Fixed 2026-08-28: Achieved-BiS Weapon row (and, same root cause, Ring/Trinket too) hidden whenever
+EITHER real slot in a shared display bucket had any upgrade candidate.** Real bug logged in
+`TODO.md`/`QUESTIONS.md` since 2026-08-26, picked back up per the user's explicit "start with 1"
+after the `best_four_of_five()` fix landed. User's chosen direction: split into independent rows
+per real slot (matching ring1/ring2's own existing precedent), not a single-row-plus-note.
+
+Root cause, same shape as the `best_four_of_five()` bug: `mainhand`/`offhand` (and `ring1`/`ring2`,
+`trinket1`/`trinket2`) share one display bucket (`SLOT_DISPLAY`), but the exclusion check
+(`slots_with_upgrades`) operated at the DISPLAY level - any real upgrade candidate anywhere in the
+bucket hid the WHOLE bucket, even when one of the two real slots was independently, genuinely
+maxed. Real, decisive fix: `marginal_value.mv_single()` now returns `best_slot` - which specific
+real slot its own best trial substituted into. Not arbitrary: for a shared-pool item, replacing
+whichever of the two real slots is weaker always gives the bigger DPS gain, so `best_slot` reliably
+identifies which real slot a rational player would actually put a given candidate in. The
+achieved-BiS loop now tracks `real_slots_with_upgrades` (real slot names) instead of display-bucket
+names, and only excludes the SPECIFIC real slot each qualifying candidate's own `best_slot` points
+at - a single-real-slot bucket (Head, Neck, ...) is unaffected either way, no ambiguity there to
+begin with. `best_slot` also gets carried through the confirm/resolve merge-back (previously only
+`mv`/`noise_stdev`/`tied_within_noise`/`raid_ap_per_attacker` were copied over at higher precision),
+for full consistency even though a slot flip between precision tiers is very unlikely in practice.
+
+Real, live confirmation the fix does real work, not just theoretical: Arms Warrior's own fresh
+Phase 3 report now shows `Ring: [Garona's Signet Ring]` and `Trinket: [Bloodlust Brooch]` as
+single-item Achieved-BiS rows - previously these buckets would have shown either BOTH items or
+NEITHER, never a genuine partial result. `baseline_screened` stayed byte-identical
+(1770.0316931322793) for Arms Warrior and (2110.8092691624342) for Retribution Paladin, confirming
+zero impact on the underlying MV numbers - only the Achieved-BiS display logic changed.
+`check_ledger_consistency.py` clean for Lerynia (653/0) and Arms Warrior (1506/0). Retribution
+Paladin (a real `two_hand`-topology profile, single real weapon slot) spot-checked too, confirming
+the fix correctly no-ops for single-real-slot buckets.
+
+`TODO.md`'s own entry for this is now resolved - removed.

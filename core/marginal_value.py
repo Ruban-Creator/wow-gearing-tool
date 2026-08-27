@@ -111,6 +111,7 @@ def mv_single(settings_path: str, baseline_config: list[dict], candidate: "opt.C
 
     best = None
     best_trial = None
+    best_slot = None
     sim_error = None
     for slot in slots:
         slot_idx = gc.SLOT_ORDER.index(slot)
@@ -140,6 +141,7 @@ def mv_single(settings_path: str, baseline_config: list[dict], candidate: "opt.C
         if best is None or result["combined"] > best["combined"]:
             best = result
             best_trial = trial
+            best_slot = slot
 
     if best is None:
         reason = f"sim error: {sim_error}" if sim_error else "unique conflict in every candidate slot"
@@ -178,6 +180,19 @@ def mv_single(settings_path: str, baseline_config: list[dict], candidate: "opt.C
         # attacker count for a total. None when baseline_agility wasn't
         # supplied.
         "raid_ap_per_attacker": raid_ap_per_attacker,
+        # Which REAL slot (e.g. "ring1" not "Ring") this candidate's own
+        # best trial actually substituted into - for a shared-pool item
+        # this is genuinely meaningful, not arbitrary: replacing whichever
+        # of her two current items is weaker always gives the bigger DPS
+        # gain, so "best_slot" correctly identifies which specific real
+        # slot a rational player would actually put this item in. Added
+        # 2026-08-28 so a per-real-slot Achieved-BiS check (run_full_sweep_
+        # mv.py) can tell "ring1 has a real upgrade" apart from "ring2
+        # does" instead of only knowing "the Ring display bucket does,
+        # somewhere" - real bug found live by the user, confirmed for the
+        # Weapon bucket specifically but structurally identical for Ring/
+        # Trinket too.
+        "best_slot": best_slot,
     }
 
 

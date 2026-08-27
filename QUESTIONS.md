@@ -580,6 +580,11 @@ it. Worth keeping in mind for any future pet-heavy spec sharing a class-level bo
 non-pet spec: don't extend the CLASSES.md gem-reuse exception to a spec whose own pet contributes a
 meaningfully different share of total DPS, even if the raw EP weights match on paper.
 
+## RESOLVED 2026-08-28: keep the literal wowsims default talents (no UA respec)
+
+Per the user - the profile stays as-is, matching the real, sourced wowsims default exactly. No
+change made.
+
 ## Stage 6.11 (Affliction Warlock): real finding worth your eyes
 
 `profiles/tbc/affliction_warlock/` is done and real-verified (full writeup in NOTES.md). One real,
@@ -590,6 +595,11 @@ combat log showing 0 UA casts) - despite the APL script referencing it and the s
 strongly implying otherwise. If you'd rather this profile spec into UA (a real, valid alternate
 Affliction build some players prefer), that's a real, deliberate deviation from the literal wowsims
 default I used here, not a bug to fix - flag if you want that swap made.
+
+## RESOLVED 2026-08-28: leave the cosmetic DB bug (garbled "Isalien" NPC name) alone
+
+Per the user - purely cosmetic, doesn't affect any DPS number, not worth touching vendored DB data
+for. No change made, not reported upstream either.
 
 ## Stage 6.10 (Retribution Paladin): done, real-verified, one cosmetic data bug to flag
 
@@ -641,7 +651,16 @@ keep going stage-to-stage without stopping (2026-08-25): per your same message, 
 NOTES.md are being kept current every stage for tomorrow's review, and I'll also prepare the
 "what's untested" reminder and the overview document you asked for once the remaining stages land.
 
-## OPEN, real bug found 2026-08-26 (Lerynia's own Phase 2 ledger) - not fixed, ran out of session time
+## RESOLVED 2026-08-28: Achieved-BiS Weapon row hidden whenever either weapon slot had an upgrade
+
+Fixed - see NOTES.md's 2026-08-28 entry for the full writeup. User picked "split into independent
+rows" (matching ring1/ring2's own existing precedent) over the single-row-plus-note alternative.
+Real fix required tracking which specific real slot each candidate's own best trial targets
+(`marginal_value.mv_single()`'s new `best_slot` field), not just approximated at the display-bucket
+level. Live-confirmed doing real work: Arms Warrior's own Ring/Trinket rows now correctly show
+single items instead of always-both-or-neither. Kept below for the original real bug report.
+
+## Original report, now resolved (2026-08-26 - Lerynia's own Phase 2 ledger)
 
 Reported live: her real Phase 2 "Achieved BiS" section shows 10 slots but never Weapon, even though
 her real dual-wield pair may genuinely be maxed. Root cause, confirmed by reading the real source
