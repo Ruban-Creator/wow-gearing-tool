@@ -32,9 +32,10 @@
     "drums": "LesserDrumsOfBattle",
     "graceOfAirTotem": "TristateEffectImproved",
     "strengthOfEarthTotem": "TristateEffectImproved",
-    "windfuryTotem": "TristateEffectRegular",
+    "windfuryTotem": "TristateEffectImproved",
     "totemTwisting": true,
-    "battleShout": "TristateEffectImproved"
+    "battleShout": "TristateEffectImproved",
+    "braidedEterniumChain": true
   },
   "player": {
     "apiVersion": 14,

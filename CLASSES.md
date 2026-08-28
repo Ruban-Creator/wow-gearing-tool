@@ -158,7 +158,18 @@ source tree for the new class rather than assuming the Hunter path pattern.
   (missing rotation config) before the actual cause was found. **Every new melee profile must set
   `distance_from_target` explicitly in `profile.json`** (0 for true melee range, matching the
   class's own real `OtherDefaults` in `presets.ts`) - never rely on the generic fallback, even if
-  the number "sounds about right."
+  the number "sounds about right." **Not just a new-profile check - a real, confirmed miss on a
+  profile that predates this entry**: Enhancement Shaman shipped before this gotcha was written
+  and was never swept for it retroactively, silently running at 7 yards instead of her real
+  preset's `distanceFromTarget: 5` for weeks - unlike Feral Cat's total "No available actions"
+  failure, a melee spec whose out-of-range value happens to still permit non-melee actions
+  (Windfury Weapon procs, shocks, totems) doesn't fail loudly at all: it just quietly loses every
+  white-melee-swing hit (confirmed via a direct action-log pull - `OtherActionAttack` showed zero
+  hits/misses/dodges for the whole fight, not just low damage), producing a real-looking but
+  roughly-halved DPS number that passes every existing check (sim exits 0, consistency check
+  clean) because nothing about it looks broken from the outside. **Whenever this checklist gains a
+  new item, re-audit every EXISTING profile against it, not just profiles built afterward** - the
+  audit that introduced this entry only checked profiles that didn't exist yet.
 - **A class/spec can define its own separate real proto `Rotation` message, entirely distinct from
   the generic `player.rotation` (TypeAPL) field** - found for Feral Cat Druid:
   `FeralCatDruid.rotation` (`finishingMove`/`biteweave`/`ripMinComboPoints`/`biteMinComboPoints`/

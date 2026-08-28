@@ -1,6 +1,11 @@
 {
   "raidBuffs": {},
   "debuffs": {},
-  "partyBuffs": {},
+  "partyBuffs": {
+    "ferociousInspiration": 2,
+    "braidedEterniumChain": true,
+    "windfuryTotem": "TristateEffectImproved",
+    "leaderOfThePack": "TristateEffectRegular"
+  },
   "playerBuffs": {}
 }

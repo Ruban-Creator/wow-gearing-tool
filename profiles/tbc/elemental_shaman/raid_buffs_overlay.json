@@ -1,6 +1,16 @@
 {
   "raidBuffs": {},
   "debuffs": {},
-  "partyBuffs": {},
+  "partyBuffs": {
+    "graceOfAirTotem": "TristateEffectMissing",
+    "strengthOfEarthTotem": "TristateEffectMissing",
+    "windfuryTotem": "TristateEffectMissing",
+    "battleShout": "TristateEffectMissing",
+    "leaderOfThePack": "TristateEffectMissing",
+    "totemTwisting": false,
+    "moonkinAura": "TristateEffectImproved",
+    "chainOfTheTwilightOwl": true,
+    "eyeOfTheNight": true
+  },
   "playerBuffs": {}
 }

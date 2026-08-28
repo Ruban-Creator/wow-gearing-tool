@@ -3799,3 +3799,97 @@ Paladin (a real `two_hand`-topology profile, single real weapon slot) spot-check
 the fix correctly no-ops for single-real-slot buckets.
 
 `TODO.md`'s own entry for this is now resolved - removed.
+
+## 2026-08-28 — Raid-buffs class-realism rework, all 15 profiles (sim commit `3267f8d`)
+
+Per the user's AskUserQuestion choice ("Make each class-realistic"), replaced the shared,
+Hunter-shaped raid-buffs baseline (`profiles/tbc/_shared/raid_buffs_received.json`, still every
+profile's default) with a real, per-class `raid_buffs_overlay.json` for all 15 profiles - sourced
+directly from each class's own real `DefaultPartyBuffs`/`DefaultRaidBuffs` in its
+`sim/tbc-new/ui/<class>/<spec>/presets.ts` (or the class-level `presets.ts` for Warrior, which
+keeps `WarriorPresets.DefaultPartyBuffs` shared across Arms/Fury rather than per-spec), never
+invented or assumed. The `{**shared, **overlay}` merge in `settings_builder.py` is additive-only -
+a caster profile that doesn't receive a melee totem has to EXPLICITLY set it to
+`"TristateEffectMissing"` (or `false`), not just omit the key, since omitting never removes a key
+already present in the shared baseline. A `_MELEE_TOTEMS_OFF` constant (used in the batch-apply
+script, not committed as its own file) covers the 8 non-melee profiles' shared explicit-off set:
+`graceOfAirTotem`/`strengthOfEarthTotem`/`windfuryTotem`/`battleShout`/`leaderOfThePack`/
+`totemTwisting`, all `TristateEffectMissing`/`false`.
+
+Real per-class content landed (party/player buffs only - `raidBuffs`/`debuffs` stay empty, out of
+scope for this pass): Survival/Beastmastery Hunter (Braided Eternium Chain, Improved Windfury from
+a party shaman); Arms/Fury Warrior (Ferocious Inspiration 2, Braided Eternium Chain, Improved
+Windfury, Leader of the Pack); Retribution Paladin (Regular Mana Spring, Improved Windfury,
+explicit Sanctity Aura=Missing since she provides her own); Enhancement Shaman (Ferocious
+Inspiration 2, Braided Eternium Chain, Leader of the Pack - Grace of Air/Strength of Earth/Windfury
+Totem explicitly Missing, matching the real preset's own omission, since Enhancement casts her own
+Windfury Totem via her APL's "Totems" action group, not via a partyBuffs setting); Combat Rogue and
+Feral Cat Druid left at `{}` (confirmed: no real wowsims-authored preset exists for either, nothing
+to source); Balance Druid, Elemental Shaman, Shadow Priest, Arcane Mage, and the Warlock triad all
+get `_MELEE_TOTEMS_OFF` plus their own real caster buffs (Moonkin Aura, Wrath of Air Totem, Chain
+of the Twilight Owl, Eye of the Night, Totem of Wrath, Mana Spring/Mana Tide as appropriate).
+
+**Real, measured effect, not assumed**: a direct A/B on Balance Druid (Béarforceone) with the old
+empty overlay vs the new one showed a real **+204.6 DPS** shift from the buffs alone - this was
+never a cosmetic change.
+
+**Real sequencing bug found and fixed during verification** (Béarforceone/Elemental Shaman, "batch
+1"): both showed byte-identical `baseline_screened` to their PRE-overlay values despite genuinely
+different settings fingerprints and 548 fresh `sim_cache.json` entries under the new fingerprint -
+looked exactly like a caching bug at first. Root cause, found via `ls -la --time-style=full-iso`:
+`tiered_report_phase3.json` was written at 00:22:35, but `raid_buffs_overlay.json`/
+`settings_template.json` weren't rebuilt until 00:37:51/00:38:12 - the sweep had genuinely run
+BEFORE the settings rebuild in the original batch launch, a pure launch-ordering mistake, not a
+bug in the fingerprint/cache mechanism itself (which is confirmed correct). Fixed by simply
+re-running both sweeps against the now-current files.
+
+**Real, more serious bug found during verification** (Enhancement Shaman, "batch 2" - see
+CLASSES.md's new entry): her sweep completed cleanly (exit 0, consistency check clean) but
+`baseline_screened` came back at a suspiciously low 885.7 DPS against melee peers all in the
+2400-3900 range. Diagnosed via a direct action-log pull (`adapter.run()` on her exact baseline
+gear config, per-action `targets[].hits/damage` summed) - her white melee auto-attack action
+(`OtherActionAttack`, both mainhand and offhand) showed **zero hits, zero misses, zero dodges**
+across the entire fight; all her real damage came only from Windfury Weapon procs and
+shocks/totems. Root cause: `profiles/tbc/enhancement_shaman/profile.json` never declared
+`distance_from_target`, so `core/settings_builder.py`'s `profile.get("distance_from_target", 7)`
+silently used the ranged-class fallback (7 yards) instead of her real preset's
+`distanceFromTarget: 5` (`sim/tbc-new/ui/shaman/enhancement/presets.ts:139`) - 7 yards is outside
+real melee weapon reach, so she could never land a swing. This is the exact bug class CLASSES.md
+already documented from the Feral Cat Druid stage (a melee spec with no gap-closer silently
+starting out of range) - but Enhancement Shaman predates that audit and was never swept for it
+retroactively. Fixed: added `"distance_from_target": 5` to her `profile.json`, rebuilt
+`settings_template.json` via `build_profile_settings.py`, re-ran her sweep -
+`baseline_screened` corrected to **2435.7**, now in line with her melee peers. Checked all 14
+other profiles' `profile.json` for the same gap: Survival Hunter, Beastmastery Hunter, Balance
+Druid, and Elemental Shaman also have no explicit `distance_from_target`, but all four are
+genuinely ranged/caster specs where the 7-yard fallback never mattered (ranged weapon range and
+spell range both comfortably exceed 7 yards) - confirmed safe, not just assumed. Every real melee
+profile (Arms/Fury Warrior=25 opener range via Charge, Feral Cat=0, Combat Rogue=5, Retribution
+Paladin=5) already had it explicitly set. Enhancement Shaman was the one genuine gap.
+
+**Final verified `baseline_screened` (Phase 3, `SCREEN_ITERATIONS`), all 15 profiles, this pass**:
+
+| Profile | Character | DPS |
+|---|---|---|
+| Survival Hunter | Lerynia-Thunderstrike | 2740.09 |
+| Arms Warrior | Rubán-Thunderstrike | 1844.12 |
+| Balance Druid | Béarforceone-Thunderstrike | 1303.45 |
+| Elemental Shaman | Test-Elemental-Synthetic | 2176.55 |
+| Enhancement Shaman | Test-Enhancement-Synthetic | 2435.74 |
+| Beastmastery Hunter | Test-Beastmastery-Synthetic | 3901.63 |
+| Fury Warrior | Test-Fury-Synthetic | 2763.54 |
+| Feral Cat Druid | Test-FeralCat-Synthetic | 2428.29 |
+| Combat Rogue | Test-CombatRogue-Synthetic | 2534.03 |
+| Shadow Priest | Test-ShadowPriest-Synthetic | 1720.93 |
+| Arcane Mage | Test-ArcaneMage-Synthetic | 2468.31 |
+| Retribution Paladin | Test-RetPaladin-Synthetic | 2193.36 |
+| Affliction Warlock | Test-Affliction-Synthetic | 2366.07 |
+| Demonology Warlock | Test-Demonology-Synthetic | 2860.43 |
+| Destruction Warlock | Test-Destruction-Synthetic | 2517.42 |
+
+Every profile's `ledger_data_phaseN.json`/HTML ledger rebuilt after its sweep and
+`check_ledger_consistency.py --html` run clean (0 failures, 0 warnings) - Enhancement Shaman
+re-verified a second time after the `distance_from_target` fix (200/0). `data/characters/` and
+`data/cache/` are both gitignored, so the report/cache artifacts themselves are never committed -
+only the profile source files (`raid_buffs_overlay.json`, `settings_template.json`,
+`profile.json`) are.

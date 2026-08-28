@@ -1,6 +1,10 @@
 {
   "raidBuffs": {},
   "debuffs": {},
-  "partyBuffs": {},
+  "partyBuffs": {
+    "manaSpringTotem": "TristateEffectRegular",
+    "windfuryTotem": "TristateEffectImproved",
+    "sanctityAura": "TristateEffectMissing"
+  },
   "playerBuffs": {}
 }

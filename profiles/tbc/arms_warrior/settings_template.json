@@ -27,14 +27,15 @@
     "insectSwarm": true
   },
   "partyBuffs": {
-    "ferociousInspiration": 1,
-    "leaderOfThePack": "TristateEffectImproved",
+    "ferociousInspiration": 2,
+    "leaderOfThePack": "TristateEffectRegular",
     "drums": "LesserDrumsOfBattle",
     "graceOfAirTotem": "TristateEffectImproved",
     "strengthOfEarthTotem": "TristateEffectImproved",
-    "windfuryTotem": "TristateEffectRegular",
+    "windfuryTotem": "TristateEffectImproved",
     "totemTwisting": true,
-    "battleShout": "TristateEffectImproved"
+    "battleShout": "TristateEffectImproved",
+    "braidedEterniumChain": true
   },
   "player": {
     "apiVersion": 14,
@@ -59,7 +60,7 @@
         },
         {
           "id": 33173,
-          "enchant": 2983,
+          "enchant": 2986,
           "gems": [
             32193,
             32193
@@ -71,7 +72,7 @@
         },
         {
           "id": 30486,
-          "enchant": 2933,
+          "enchant": 2661,
           "gems": [
             32193,
             32193,
@@ -94,11 +95,11 @@
         },
         {
           "id": 30489,
-          "enchant": 3010
+          "enchant": 3012
         },
         {
           "id": 28997,
-          "enchant": 2841
+          "enchant": 2939
         },
         {
           "id": 28553

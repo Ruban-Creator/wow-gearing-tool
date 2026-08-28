@@ -32,9 +32,11 @@
     "drums": "LesserDrumsOfBattle",
     "graceOfAirTotem": "TristateEffectImproved",
     "strengthOfEarthTotem": "TristateEffectImproved",
-    "windfuryTotem": "TristateEffectRegular",
+    "windfuryTotem": "TristateEffectImproved",
     "totemTwisting": true,
-    "battleShout": "TristateEffectImproved"
+    "battleShout": "TristateEffectImproved",
+    "manaSpringTotem": "TristateEffectRegular",
+    "sanctityAura": "TristateEffectMissing"
   },
   "player": {
     "apiVersion": 14,

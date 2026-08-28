@@ -27,14 +27,15 @@
     "insectSwarm": true
   },
   "partyBuffs": {
-    "ferociousInspiration": 1,
-    "leaderOfThePack": "TristateEffectImproved",
+    "ferociousInspiration": 2,
+    "leaderOfThePack": "TristateEffectRegular",
     "drums": "LesserDrumsOfBattle",
     "graceOfAirTotem": "TristateEffectImproved",
     "strengthOfEarthTotem": "TristateEffectImproved",
-    "windfuryTotem": "TristateEffectRegular",
+    "windfuryTotem": "TristateEffectImproved",
     "totemTwisting": true,
-    "battleShout": "TristateEffectImproved"
+    "battleShout": "TristateEffectImproved",
+    "braidedEterniumChain": true
   },
   "player": {
     "apiVersion": 14,
@@ -86,8 +87,8 @@
           "id": 32278,
           "enchant": 684,
           "gems": [
-            32193,
-            32193
+            33131,
+            33131
           ]
         },
         {

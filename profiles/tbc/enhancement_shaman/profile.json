@@ -4,6 +4,7 @@
   "weapon_topology": "dual_wield",
   "primary_gem_stat_id": "0",
   "primary_gem_id": 32193,
+  "distance_from_target": 5,
   "raid_ap_contribution": {
     "enabled": false,
     "note": "Shaman has no Expose-Weakness-style analytical raid-AP model - same reasoning as Warrior's/Druid's/Elemental Shaman's profile.json."

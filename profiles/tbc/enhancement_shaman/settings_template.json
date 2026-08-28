@@ -27,14 +27,15 @@
     "insectSwarm": true
   },
   "partyBuffs": {
-    "ferociousInspiration": 1,
-    "leaderOfThePack": "TristateEffectImproved",
+    "ferociousInspiration": 2,
+    "leaderOfThePack": "TristateEffectRegular",
     "drums": "LesserDrumsOfBattle",
-    "graceOfAirTotem": "TristateEffectImproved",
-    "strengthOfEarthTotem": "TristateEffectImproved",
-    "windfuryTotem": "TristateEffectRegular",
+    "graceOfAirTotem": "TristateEffectMissing",
+    "strengthOfEarthTotem": "TristateEffectMissing",
+    "windfuryTotem": "TristateEffectMissing",
     "totemTwisting": true,
-    "battleShout": "TristateEffectImproved"
+    "battleShout": "TristateEffectImproved",
+    "braidedEterniumChain": true
   },
   "player": {
     "apiVersion": 14,
@@ -45,7 +46,6 @@
       "items": [
         {
           "id": 32235,
-          "enchant": 29192,
           "gems": [
             32409,
             30550
@@ -55,8 +55,7 @@
           "id": 32260
         },
         {
-          "id": 32575,
-          "enchant": 28888
+          "id": 32575
         },
         {
           "id": 32323,
@@ -64,7 +63,6 @@
         },
         {
           "id": 30905,
-          "enchant": 24003,
           "gems": [
             30550,
             32193,
@@ -88,7 +86,6 @@
         },
         {
           "id": 30900,
-          "enchant": 29535,
           "gems": [
             32193,
             32193,
@@ -96,8 +93,7 @@
           ]
         },
         {
-          "id": 32510,
-          "enchant": 28279
+          "id": 32510
         },
         {
           "id": 29997
@@ -112,12 +108,10 @@
           "id": 29383
         },
         {
-          "id": 32262,
-          "enchant": 22559
+          "id": 32262
         },
         {
-          "id": 32262,
-          "enchant": 22559
+          "id": 32262
         },
         {
           "id": 27815
@@ -1432,7 +1426,7 @@
       ]
     },
     "reactionTimeMs": 100,
-    "distanceFromTarget": 7,
+    "distanceFromTarget": 5,
     "healingModel": {}
   },
   "encounter": {

@@ -28,13 +28,16 @@
   },
   "partyBuffs": {
     "ferociousInspiration": 1,
-    "leaderOfThePack": "TristateEffectImproved",
+    "leaderOfThePack": "TristateEffectMissing",
     "drums": "LesserDrumsOfBattle",
-    "graceOfAirTotem": "TristateEffectImproved",
-    "strengthOfEarthTotem": "TristateEffectImproved",
-    "windfuryTotem": "TristateEffectRegular",
-    "totemTwisting": true,
-    "battleShout": "TristateEffectImproved"
+    "graceOfAirTotem": "TristateEffectMissing",
+    "strengthOfEarthTotem": "TristateEffectMissing",
+    "windfuryTotem": "TristateEffectMissing",
+    "totemTwisting": false,
+    "battleShout": "TristateEffectMissing",
+    "moonkinAura": "TristateEffectImproved",
+    "chainOfTheTwilightOwl": true,
+    "eyeOfTheNight": true
   },
   "player": {
     "apiVersion": 14,
@@ -63,8 +66,7 @@
           ]
         },
         {
-          "id": 32331,
-          "enchant": 2621
+          "id": 32331
         },
         {
           "id": 31017,
@@ -100,7 +102,6 @@
         },
         {
           "id": 32352,
-          "enchant": 2940,
           "gems": [
             32196,
             32196

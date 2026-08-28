@@ -28,13 +28,16 @@
   },
   "partyBuffs": {
     "ferociousInspiration": 1,
-    "leaderOfThePack": "TristateEffectImproved",
+    "leaderOfThePack": "TristateEffectMissing",
     "drums": "LesserDrumsOfBattle",
-    "graceOfAirTotem": "TristateEffectImproved",
-    "strengthOfEarthTotem": "TristateEffectImproved",
-    "windfuryTotem": "TristateEffectRegular",
-    "totemTwisting": true,
-    "battleShout": "TristateEffectImproved"
+    "graceOfAirTotem": "TristateEffectMissing",
+    "strengthOfEarthTotem": "TristateEffectMissing",
+    "windfuryTotem": "TristateEffectMissing",
+    "totemTwisting": false,
+    "battleShout": "TristateEffectMissing",
+    "manaSpringTotem": "TristateEffectImproved",
+    "manaTideTotems": 1,
+    "wrathOfAirTotem": "TristateEffectRegular"
   },
   "player": {
     "apiVersion": 14,
@@ -313,7 +316,8 @@
       "blessingOfSalvation": true,
       "blessingOfWisdom": "TristateEffectImproved",
       "blessingOfMight": "TristateEffectImproved",
-      "unleashedRage": true
+      "unleashedRage": true,
+      "innervates": 1
     },
     "mage": {
       "options": {

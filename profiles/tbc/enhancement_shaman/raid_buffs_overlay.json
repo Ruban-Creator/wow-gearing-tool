@@ -1,6 +1,13 @@
 {
   "raidBuffs": {},
   "debuffs": {},
-  "partyBuffs": {},
+  "partyBuffs": {
+    "ferociousInspiration": 2,
+    "braidedEterniumChain": true,
+    "leaderOfThePack": "TristateEffectRegular",
+    "graceOfAirTotem": "TristateEffectMissing",
+    "strengthOfEarthTotem": "TristateEffectMissing",
+    "windfuryTotem": "TristateEffectMissing"
+  },
   "playerBuffs": {}
 }

@@ -1,6 +1,9 @@
 {
   "raidBuffs": {},
   "debuffs": {},
-  "partyBuffs": {},
+  "partyBuffs": {
+    "braidedEterniumChain": true,
+    "windfuryTotem": "TristateEffectImproved"
+  },
   "playerBuffs": {}
 }

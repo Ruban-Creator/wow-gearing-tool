@@ -1,6 +1,18 @@
 {
   "raidBuffs": {},
   "debuffs": {},
-  "partyBuffs": {},
-  "playerBuffs": {}
+  "partyBuffs": {
+    "graceOfAirTotem": "TristateEffectMissing",
+    "strengthOfEarthTotem": "TristateEffectMissing",
+    "windfuryTotem": "TristateEffectMissing",
+    "battleShout": "TristateEffectMissing",
+    "leaderOfThePack": "TristateEffectMissing",
+    "totemTwisting": false,
+    "manaSpringTotem": "TristateEffectImproved",
+    "manaTideTotems": 1,
+    "wrathOfAirTotem": "TristateEffectRegular"
+  },
+  "playerBuffs": {
+    "innervates": 1
+  }
 }
