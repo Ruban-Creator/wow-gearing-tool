@@ -1,7 +1,11 @@
 # Gearing Tool
 
-Local, personal tool that drives `wowsims/tbc-new` in batch to price gear upgrades for a TBC
-Anniversary Survival Hunter (Nightelf, Herbalism/Mining, Phase 3) by **marginal value**:
+Drives `wowsims/tbc-new` in batch to price TBC Anniversary gear upgrades by **marginal value**,
+across any of the 15 real class/spec profiles it currently supports (see "Staging" below) - not
+scoped to one character. Started as the user's own personal tool (originally built for a single
+Survival Hunter) but is now, per the user (2026-08-30), headed toward public release through the
+installer/versioning work in progress - keep that audience in mind for anything user-facing (GUI
+copy, defaults, first-run behavior), not just this one dev machine's own convenience:
 
 ```
 MV(i) = DPS*(P ∪ {i}) − DPS*(P)
@@ -176,6 +180,92 @@ Day to day:
 python cli/gear.py sync                                    # re-read addon export -> USER_DATA_DIR/character.json
 python cli/gear.py preset <path/to/*.build.json>            # sanity-check the sim pipeline
 ```
+
+## Sim update procedure (runbook for the scheduled update agent)
+
+Written 2026-08-30 for a future scheduled Claude Code agent (per the user: a dedicated dev
+machine, running a daily check against `https://github.com/wowsims/tbc-new`, rebuilding and
+pushing when a new version is available) to follow with no memory of any prior session. Every
+step below was actually run once, live, on this machine before being written down - not a
+speculative plan. If a step here stops matching reality, trust what you observe and fix this
+section, the same as any other doc in this repo.
+
+**1. Check for a new version.** Watch the latest `v0.0.NNN` git tag on `origin` (`git -C
+sim/tbc-new fetch --tags --quiet && git -C sim/tbc-new tag --sort=-v:refname | head -1`), not raw
+`master` HEAD - tags are real, deliberate release cuts the wowsims team makes directly off
+`master` (confirmed 2026-08-30: the then-latest tag was only 4 commits behind `master`'s own tip),
+so they're a cleaner "is there something worth picking up" signal than every merged branch.
+Compare against the currently pinned commit (`git -C sim/tbc-new rev-parse HEAD`, or
+`repo_root.sim_version_label()` for the human-readable form). Nothing to do if they match.
+
+**2. Assess risk before touching anything** - a real `git diff --name-only <old-tag> <new-tag>`
+against the submodule, checked for:
+- `proto/*.proto` changes → the protobuf Go bindings need regenerating (see step 4's protoc
+  command) before anything will even build.
+- `go.mod`/`go.sum` changes → new/updated Go dependencies; `go build` will fail clearly if a
+  `go mod download` is needed first.
+- `sim/<class>/item_sets.go` changes for any of the 15 profiled classes → `core/set_bonus.py`'s
+  regex-based parser handles three known Go source forms (inline map, bare variable reference,
+  function call - see `CLASSES.md`) but a fourth form is real, flagged risk there. Check
+  `check_ledger_consistency.py`'s set-bonus assertions catch it if the parser silently returns
+  nothing instead of erroring.
+- `sim/core/buffs.go` / `sim/core/consumes.go` changes → could shift `raid_buffs_overlay.json`/
+  `consumables.json` field names or semantics for any profile; a real, structural verification
+  failure (not a crash) is the likely symptom, not necessarily a build error.
+- Per-profile `ui/<class>/<spec>/apls/*.json` or `presets.ts` changes → **never treated as a
+  problem to fix** - per this file's own ground rules, the sim's model is trusted, not
+  regression-diffed. A rewritten rotation or changed EP preset is exactly what "update the sim"
+  means to pick up. Just note it in the update's own summary so a human sees what changed.
+- `assets/database/db.bin`/`db.json` changes → already committed inside the submodule itself, so
+  bumping the submodule pulls the new DB automatically. No separate `db2tool`/`gen_db` step needed
+  (see this file's own "Local setup" section for the real exception case).
+
+**3. Bump the submodule**: `cd sim/tbc-new && git checkout <new-tag>`. This is a real, visible
+change to the parent repo's own tracked submodule pointer - `git add sim/tbc-new` stages it, but
+don't commit yet.
+
+**4. Rebuild.** Regenerate protobuf bindings ONLY if step 2 found `.proto` changes (the exact
+command is in "Local setup" above). Always rebuild all three binaries into `build/bin/` (same
+commands as "Local setup") and re-bake `build/bin/sim_commit_sha.txt` /
+`sim_version_label.txt` (`git -C sim/tbc-new rev-parse HEAD` / `git -C sim/tbc-new describe --tags
+--exact-match HEAD`, redirected to those files respectively).
+
+**5. Kill stale processes before verifying.** `simserver.exe` runs as a persistent pool
+(`adapters/tbc/simserver_client.py`) - if old instances are still alive when you replace
+`build/bin/simserver.exe`, verification would silently test the OLD binary still resident in
+memory, not the new one. Check `Get-Process simserver` (PowerShell) and kill any survivors before
+step 6.
+
+**6. Verify - structural correctness, never the sim's own math.** The cache is already safe
+across a version bump with no manual clearing needed: `adapters/tbc/valuation.py`'s
+`_fingerprint_settings()` folds `repo_root.sim_commit_sha()` into the cache key, so every entry
+under the old SHA is automatically bypassed (real bug found and fixed 2026-08-30, before this
+runbook's own first real use - see NOTES.md). Run, in order:
+- An import-sanity sweep of every module touching the sim (see NOTES.md's own "ALL N MODULES
+  IMPORTED CLEAN" pattern for the exact list - `core/`, `adapters/tbc/`, `ingest/`, `gui/api.py`).
+- A real, live sim call for at least one profile per weapon topology actually in use (confirms
+  `bridge.exe`/`wowsimcli.exe`/`simserver.exe` chain runs end to end, not just imports).
+- `check_ledger_consistency.py --skip-html` for all 15 profiles - fast, structural (assertion
+  counts, not DPS values), catches a broken candidate pool, a set-bonus parse failure, a missing
+  raid-AP field, etc. Not a full 30k-iteration production sweep for every profile - that's for a
+  real upgrade decision, not a routine version-bump smoke test.
+- Re-run `verify_default_enchants.py`/`verify_gem_choices.py` per profile if step 2 flagged
+  `enchants.go`/DB changes - a previously-verified enchant/gem choice can legitimately stop
+  verifying under new sim math without that being a bug in this tool.
+
+**7. On any real failure**: do not commit or push a broken build. Leave the submodule bump and
+rebuilt binaries in the working tree (so a human or the next agent run can pick up the diagnosis
+with the state visible), and write what broke into a new dated NOTES.md entry the same way every
+other real finding in this file gets recorded - specific enough that "why did this fail" doesn't
+need re-deriving from scratch.
+
+**8. On success**: commit the submodule bump (`git add sim/tbc-new`, message naming the old and
+new tags) and push. `build/bin/*` itself is gitignored (Build Output, never committed - see Repo
+Layout) - what a real end-user install pulls from is a separate, not-yet-built release/distribution
+mechanism (see NOTES.md's "still to design" note on this), not this repo's own git history
+directly. Write a NOTES.md entry: what changed upstream (the real `git diff --name-only` summary
+from step 2), what was verified, and anything genuinely surprising - matching every other dated
+entry in that file.
 
 ## Stage 2 decision: Expose Weakness raid contribution (analytical)
 

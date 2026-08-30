@@ -41,8 +41,10 @@ bundling them into the exe, and needs `build/bin/wowsimcli.exe`/`bridge.exe`/
 `simserver.exe` (the Go build output, see the repo root's own `build/README.md`
 if one exists, or `CLAUDE.md`'s Local Setup section) as real siblings too.
 Moving just the `.exe` file out to somewhere with no repo around it won't
-work; that's a real, deliberate v1 scope decision (a personal single-repo
-tool), not an oversight.
+work; that's a real, deliberate v1 scope decision, not an oversight - a
+proper installer (the actual goal, per `CLAUDE.md`'s own framing since this
+project is headed toward public release) is expected to lay out the full
+checkout for the user, not just drop a bare exe.
 
 Production Data (character caches, reports, `local_config.json`) is NOT
 repo-relative, though - since the 2026-08-29 folder-structure rework it
