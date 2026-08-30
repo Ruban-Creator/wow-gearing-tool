@@ -76,6 +76,17 @@ const updateBannerViewBtn = document.getElementById("update-banner-view-btn");
 const updateBannerDismissBtn = document.getElementById("update-banner-dismiss-btn");
 let updateBannerDismissed = false;
 
+const toastBanner = document.getElementById("toast-banner");
+const toastBannerText = document.getElementById("toast-banner-text");
+let toastHideTimer = null;
+
+function showToast(text, ms = 3500) {
+  toastBannerText.textContent = text;
+  toastBanner.hidden = false;
+  if (toastHideTimer) clearTimeout(toastHideTimer);
+  toastHideTimer = setTimeout(() => { toastBanner.hidden = true; }, ms);
+}
+
 const runReportBtn = document.getElementById("run-report-btn");
 const runReportModal = document.getElementById("run-report-modal");
 const runReportCharacter = document.getElementById("run-report-character");
@@ -362,9 +373,10 @@ async function checkAddonBanner() {
 settingsAddonInstallBtn.addEventListener("click", async () => {
   settingsAddonInstallBtn.disabled = true;
   try {
-    await window.pywebview.api.install_companion_addon();
+    const result = await window.pywebview.api.install_companion_addon();
     await refreshAddonStatus();
     await checkAddonBanner();
+    showToast(result.success ? "GT Companion installed successfully." : `Install failed: ${result.error}`);
   } finally {
     settingsAddonInstallBtn.disabled = false;
   }
@@ -373,8 +385,9 @@ settingsAddonInstallBtn.addEventListener("click", async () => {
 addonBannerInstallBtn.addEventListener("click", async () => {
   addonBannerInstallBtn.disabled = true;
   try {
-    await window.pywebview.api.install_companion_addon();
+    const result = await window.pywebview.api.install_companion_addon();
     await checkAddonBanner();
+    showToast(result.success ? "GT Companion installed successfully." : `Install failed: ${result.error}`);
   } finally {
     addonBannerInstallBtn.disabled = false;
   }

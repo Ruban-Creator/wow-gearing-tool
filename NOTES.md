@@ -4328,3 +4328,15 @@ this mechanism (best_four_of_five's own "try every real alternative for the excl
 deliberately trades a wider search for a real risk of conflating unrelated value, and any FUTURE
 change to this function should re-check that the isolated/gating number and the
 best-achievable/reporting number stay clearly separated, not silently reunified.
+
+## 2026-08-31 — GUI: confirm addon install with a real success/failure toast
+
+Real UX gap the user hit directly: clicked "Install now" on the addon banner, the banner
+disappeared, and they weren't sure anything actually happened. Added a small auto-dismissing toast
+(`#toast-banner`, green success styling, 3.5s) shown from BOTH install entry points (the Settings
+row's Install/Reinstall/Update button and the banner's own "Install now") - reads the real
+`{success, error}` result from `install_companion_addon()` rather than assuming success just
+because the call didn't throw, so a real failure (e.g. a permissions error) shows an honest
+"Install failed: ..." message instead of a false "success" toast. Verified live in the browser
+preview harness: toast appears with the right text and color, stacks cleanly above the other
+banners (reuses the same `.banner-stack` container), and auto-hides on its own.

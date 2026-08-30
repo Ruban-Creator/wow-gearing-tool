@@ -602,3 +602,11 @@ html, body {
 .addon-banner[hidden] {
   display: none;
 }
+
+.toast-banner {
+  border-color: rgba(107, 191, 107, 0.4);
+}
+.toast-banner span {
+  color: var(--good);
+  font-weight: 600;
+}
