@@ -4220,3 +4220,66 @@ session's shell tooling, or a genuine Inno Setup behavior difference with `Licen
 `/VERYSILENT` specifically) - flagged here rather than smoothed over, since a future scheduled
 agent trying a real silent/unattended install (for automated testing) needs to know this isn't
 reliable yet, not discover it fresh.
+
+## 2026-08-30 — Full branding rename: "Ruban's Gearing Tool" (RGT)
+
+Per the user, this is no longer a placeholder/internal name - real commissioned art existed
+(`branding/source/icon_sheet.png`, `hero_image.png`, both provided directly, not generated here)
+naming the product "Ruban's Gearing Tool" with "RGT" as the short mark. Scope, confirmed with the
+user first (AskUserQuestion): app-level branding only - the GitHub repo (`Ruban-Creator/wow-gearing-tool`)
+and this local folder path stay unchanged, real risk (breaking shared clone URLs, this session's
+own path references) wasn't worth taking for a rename that's cosmetic at the git-remote level.
+Deeper internal Python file-naming clarity (the OTHER thing CLAUDE.md's old "Future scope" note
+bundled with "the rename") stays explicitly deferred too - real, separate scope, not done here.
+
+**Real assets extracted, not re-generated**: `branding/app_icon.png`/`.ico` (the square helmet+RGT
+lockup, cropped from the provided sheet, verified pixel-clean via iterative crop+view rather than
+guessed coordinates), `branding/addon_icon.png` (the plain circular badge, unused for now),
+`addons/GearingToolCompanion/icon.tga` (the compass-top circular badge specifically - per the
+user's own follow-up ask, mid-rename - real 32-bit uncompressed TGA, confirmed via reading its own
+header bytes rather than assumed, since WoW addon textures need that specific format and PIL could
+have silently written a differently-encoded file), `branding/wizard_image.bmp`/
+`wizard_small_image.bmp` (the square hero image letterboxed onto Inno Setup's tall 192x386 wizard
+banner shape - checked by rendering and viewing the actual composited result, not assumed to look
+right just because the math worked out).
+
+**Real, live-verified changes**:
+- `gui/app.py`: window title -> "Ruban's Gearing Tool"; `webview.start(icon=...)` now passes the
+  real .ico (checked `webview.create_window()`'s own signature first - no icon param there, only
+  on `start()` - so this isn't a guessed API surface). `packaging/gearing_tool_gui.spec` ALSO sets
+  `icon=` on the PyInstaller `EXE()` call - belt-and-suspenders since which one actually controls
+  the taskbar icon can vary by pywebview's active backend, not just one or the other.
+- Exe renamed `gearing-tool-gui.exe` -> `RGT.exe` (PyInstaller spec's `name=`) - rebuilt, real
+  window title confirmed via `Get-Process | Select MainWindowTitle` ("Ruban's Gearing Tool").
+- GUI sidebar: the old plain-letter "R" badge (`<span class="brand-mark">R</span>`) replaced with
+  the real icon image; a real CSS bug avoided by checking first, not by luck - the old
+  `.brand-mark` was styled as a colored-background text badge, would have looked broken (visible
+  background square behind a transparent-background PNG) if left unchanged rather than restyled
+  for an `<img>`. Verified live in the browser preview harness, including that "Ruban's Gearing
+  Tool" (longer than "Gearing Tool") doesn't overflow the 280px sidebar.
+- `packaging/installer.iss`: `AppName`, `DefaultDirName`, `OutputBaseFilename` all renamed;
+  `SetupIconFile`/`WizardImageFile`/`WizardSmallImageFile` wired to the real branding art. Real
+  end-to-end retest after rebuild (same install-to-a-separate-location method as the first
+  installer test) - the Setup window's own title bar showed "Setup - Ruban's Gearing Tool version
+  v0.0.124" live, confirming `AppName`/`AppVersion` both resolved correctly, not just that the
+  compile succeeded.
+
+**Addon versioning, added per the user's own follow-up question** ("we probably need versioning
+for the update mechanism or?") - real gap: `GearingToolCompanion.toc` had no `## Version:` field at
+all before this (confirmed - `get_addon_status()`'s whole content-hash design exists specifically
+because of that gap). Added `## Version: 1.0.0` and `## IconTexture:` (pointing at the new
+`icon.tga`) to the `.toc`. Real design decision: the hash comparison STAYS the source of truth for
+`up_to_date` (a real edit with a forgotten version bump would otherwise report falsely clean) -
+the new `## Version:` field is surfaced as a DISPLAY-only value alongside it
+(`shipped_version`/`installed_version` in `get_addon_status()`'s return, read fresh from each
+side's own `.toc` via a new `_addon_version()` helper, never invented if the field's missing).
+`## Title:` tightened to "GT Companion" to match the branding art's own "INCLUDES ADDON: GT
+COMPANION" badge - the addon's folder name/SavedVariables names are untouched (breaking those
+would orphan any already-configured real install).
+
+**Deliberately NOT done**: the minimap button's icon itself was almost left as the existing
+hand-drawn "R" FontString badge (a real, reasoned prior decision - "no external texture file
+needed") until the user explicitly asked for the real round logo there instead; done once asked,
+real 20x20 texture swap (`SetTexture("Interface\AddOns\GearingToolCompanion\icon.tga")` replacing
+the old `iconBg`/`iconLetter` pair), the tracking-ring overlay code untouched since it never
+referenced the old badge.

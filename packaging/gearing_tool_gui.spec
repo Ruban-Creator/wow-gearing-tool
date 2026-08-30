@@ -1,14 +1,19 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller spec for the Gearing Tool GUI (picker + report viewer, v1).
+"""PyInstaller spec for Ruban's Gearing Tool (RGT) GUI (picker + report
+viewer, v1). Filename kept as gearing_tool_gui.spec - the 2026-08-30
+branding rename touched the exe's own name/icon/window title, not this
+spec file's own filename (no functional reason to, and repo_root.py's
+walk-up logic keys off ingest/list_characters.py existing, never the exe's
+name).
 
 Build from the repo root:
     python -m PyInstaller packaging/gearing_tool_gui.spec
 
-Output: dist/gearing-tool-gui.exe. Run it with the repo root as its working
+Output: build/dist/RGT.exe. Run it with the repo root as its working
 directory (e.g. a shortcut with "Start in: <repo root>") - it reads
-data/characters/<name-realm>/ and your real WoW SavedVariables files, not
-anything bundled into the exe itself. See gui/api.py's REPO_ROOT/sys.frozen
-handling and gui/app.py's ASSETS_DIR for exactly why.
+USER_DATA_DIR/characters/<name-realm>/ and your real WoW SavedVariables
+files, not anything bundled into the exe itself. See gui/api.py's
+REPO_ROOT/sys.frozen handling and gui/app.py's ASSETS_DIR for exactly why.
 
 `slpp` is a required hidden-import: it's a real runtime dependency (used by
 ingest/build_character.py to parse Lua SavedVariables), but it's several
@@ -27,6 +32,11 @@ import os
 # regardless of where the repo is checked out.
 REPO_ROOT = os.path.dirname(SPECPATH)
 ASSETS_SRC = os.path.join(REPO_ROOT, "gui", "assets")
+# Real branding art (2026-08-30) - same source file gui/app.py's own
+# webview.start(icon=...) call uses at runtime, so the exe's own Explorer/
+# taskbar icon and the actual window icon are guaranteed to match, not two
+# separately-maintained copies.
+ICON_FILE = os.path.join(ASSETS_SRC, "app_icon.ico")
 # Build Output (5th bucket, 2026-08-29 folder-structure rework) - the final
 # packaged exe lands in build/dist/ and PyInstaller's own intermediate work
 # dir in build/_pyinstaller_work/, both under build/ alongside build/bin/'s
@@ -63,7 +73,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name="gearing-tool-gui",
+    name="RGT",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -76,4 +86,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=ICON_FILE,
 )

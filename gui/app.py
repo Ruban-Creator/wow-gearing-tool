@@ -25,7 +25,7 @@ else:
 def main():
     api = Api()
     webview.create_window(
-        "Gearing Tool",
+        "Ruban's Gearing Tool",
         url=os.path.join(ASSETS_DIR, "index.html"),
         js_api=api,
         width=900,
@@ -33,7 +33,13 @@ def main():
         min_size=(700, 500),
         background_color="#14161a",
     )
-    webview.start()
+    # Real per-window icon, not just the exe's own embedded resource -
+    # create_window() itself has no icon param (checked its signature
+    # directly), but start() does. Belt-and-suspenders with the PyInstaller
+    # spec's own icon= (packaging/gearing_tool_gui.spec) rather than relying
+    # on either alone, since which one actually controls the taskbar/window
+    # icon can vary by pywebview's active GUI backend.
+    webview.start(icon=os.path.join(ASSETS_DIR, "app_icon.ico"))
 
 
 if __name__ == "__main__":

@@ -75,20 +75,17 @@ html, body {
   width: 26px;
   height: 26px;
   border-radius: 6px;
-  background: #1a1611;
-  color: var(--accent);
-  font-weight: 700;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--accent-dim);
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .brand-name {
   font-weight: 600;
-  font-size: 15px;
+  font-size: 14px;
   letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .icon-btn {

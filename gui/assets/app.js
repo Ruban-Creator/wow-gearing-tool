@@ -331,14 +331,16 @@ for (const link of [creditsGithubLink, creditsPatreonLink, creditsDiscordLink]) 
 
 async function refreshAddonStatus() {
   const status = await window.pywebview.api.get_addon_status();
+  const shippedV = status.shipped_version ? ` (v${status.shipped_version})` : "";
+  const installedV = status.installed_version ? ` (v${status.installed_version})` : "";
   if (!status.installed) {
-    settingsAddonStatus.textContent = "Not installed";
+    settingsAddonStatus.textContent = `Not installed${shippedV ? " - latest is v" + status.shipped_version : ""}`;
     settingsAddonInstallBtn.textContent = "Install";
   } else if (status.up_to_date) {
-    settingsAddonStatus.textContent = "Installed, up to date";
+    settingsAddonStatus.textContent = `Installed, up to date${installedV}`;
     settingsAddonInstallBtn.textContent = "Reinstall";
   } else {
-    settingsAddonStatus.textContent = "Installed, but out of date";
+    settingsAddonStatus.textContent = `Installed${installedV}, but out of date${shippedV ? " - latest is v" + status.shipped_version : ""}`;
     settingsAddonInstallBtn.textContent = "Update";
   }
   return status;

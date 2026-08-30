@@ -132,6 +132,26 @@ def _addon_file_hashes(dir_path: str) -> dict[str, str] | None:
     return hashes
 
 
+_TOC_VERSION_RE = re.compile(r"^##\s*Version:\s*(.+)$", re.MULTILINE)
+
+
+def _addon_version(dir_path: str) -> str | None:
+    """Real `## Version:` field from GearingToolCompanion.toc, added
+    2026-08-30 alongside the icon/branding pass (previously absent -
+    get_addon_status()'s hash comparison exists precisely because this
+    didn't used to be available). None if the .toc is missing/has no such
+    line - never invent a version. This is a DISPLAY value only; the hash
+    comparison below stays the real "up to date" source of truth, since a
+    real edit with a forgotten version bump would otherwise report clean
+    when it isn't."""
+    toc_path = os.path.join(dir_path, "GearingToolCompanion.toc")
+    if not os.path.isfile(toc_path):
+        return None
+    with open(toc_path, encoding="utf-8") as f:
+        m = _TOC_VERSION_RE.search(f.read())
+    return m.group(1).strip() if m else None
+
+
 # Where the scheduled sim-update agent (designed 2026-08-30, not built yet -
 # see CLAUDE.md's "Sim update procedure") is expected to publish a new
 # GitHub Release, tagged to match the sim's own version, whenever it
@@ -390,13 +410,16 @@ class Api:
 
     def get_addon_status(self) -> dict:
         """GearingToolCompanion isn't on CurseForge yet (per the user,
-        2026-08-30) - installing it today means manually copying two files
-        into the right WoW folder, easy to get wrong or forget after an
-        update. Real, content-hash-based comparison (the .toc has no
-        `## Version:` field to compare instead - never invent one) so
-        "up to date" actually means "these exact bytes", not just "a folder
-        with this name exists". install_path is always returned (even when
-        not installed yet) so the UI can show where it WOULD go."""
+        2026-08-30) - installing it today means manually copying files into
+        the right WoW folder, easy to get wrong or forget after an update.
+        `up_to_date` stays real, content-hash-based (never a version-string
+        comparison alone) - a real edit with a forgotten version bump would
+        otherwise report clean when it isn't. `shipped_version`/
+        `installed_version` (added once the .toc gained a real `##
+        Version:` field, 2026-08-30) are DISPLAY values only, read straight
+        from each side's own .toc - never invented if missing. install_path
+        is always returned (even when not installed yet) so the UI can show
+        where it WOULD go."""
         install_path = os.path.join(local_config.wow_root(), "Interface", "AddOns", "GearingToolCompanion")
         shipped = _addon_file_hashes(ADDON_SRC_DIR)
         installed = _addon_file_hashes(install_path)
@@ -404,6 +427,8 @@ class Api:
             "install_path": install_path,
             "installed": installed is not None,
             "up_to_date": installed is not None and installed == shipped,
+            "shipped_version": _addon_version(ADDON_SRC_DIR),
+            "installed_version": _addon_version(install_path) if installed is not None else None,
         }
 
     def install_companion_addon(self) -> dict:

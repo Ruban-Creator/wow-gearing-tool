@@ -636,24 +636,17 @@ minimapButton:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 minimapButton:RegisterForDrag("LeftButton")
 minimapButton:SetMovable(true)
 
--- Custom badge instead of a stock icon texture. The bow icon was already
--- picked up correctly by the minimap-button collector addon, so this
--- isn't a detection problem - but a plain "R" reads clearer at icon size
--- and is harder to mistake for someone else's button in a crowded
--- popout. No external texture file needed - just a solid background
--- plus a FontString, both plain Lua/UI, nothing to ship.
-local iconBg = minimapButton:CreateTexture(nil, "BACKGROUND")
-iconBg:SetSize(20, 20)
-iconBg:SetPoint("CENTER", minimapButton, "CENTER", 0, 0)
-iconBg:SetColorTexture(0.10, 0.09, 0.07, 1)
-
-local iconLetter = minimapButton:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
--- "R" has no descender, so a FontString's CENTER anchor (which centers the
--- whole line-height box, descender space included) leaves the visible
--- glyph sitting slightly above true center - nudged down 1px to compensate.
-iconLetter:SetPoint("CENTER", minimapButton, "CENTER", 0, -1)
-iconLetter:SetText("R")
-iconLetter:SetTextColor(0.90, 0.70, 0.25, 1)
+-- Real RGT badge icon (icon.tga, shipped with the addon) - 2026-08-30,
+-- once real branding art existed to use. Before this, a hand-drawn "R"
+-- FontString badge stood in on purpose (see git history) specifically
+-- because no real icon art existed yet, not because a texture was hard to
+-- ship - a real 32-bit uncompressed TGA (WoW loads addon-supplied TGA
+-- textures directly, no BLP conversion needed) replaces both the
+-- background texture and the letter FontString below.
+local iconTex = minimapButton:CreateTexture(nil, "BACKGROUND")
+iconTex:SetSize(20, 20)
+iconTex:SetPoint("CENTER", minimapButton, "CENTER", 0, 0)
+iconTex:SetTexture("Interface\\AddOns\\GearingToolCompanion\\icon.tga")
 
 local overlay = minimapButton:CreateTexture(nil, "OVERLAY")
 overlay:SetSize(53, 53)

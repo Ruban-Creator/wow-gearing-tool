@@ -1,4 +1,4 @@
-# Gearing Tool
+# Ruban's Gearing Tool (RGT)
 
 Drives `wowsims/tbc-new` in batch to price TBC Anniversary gear upgrades by **marginal value**,
 across any of the 15 real class/spec profiles it currently supports (see "Staging" below) - not
@@ -103,7 +103,7 @@ Build Output (5th bucket, gitignored, disposable/regenerable — never committed
                          tool calls as subprocesses at runtime. Source lives in sim/tbc-new/ and
                          adapters/tbc/{bridge,simserver}/ respectively; the compiled binaries land
                          here instead of nested inside either source tree.
-  build/dist/            gearing-tool-gui.exe - PyInstaller's final packaged output (see
+  build/dist/            RGT.exe - PyInstaller's final packaged output (see
                          packaging/README.md)
 
 Production Data (generated per-user, lives OUTSIDE this repo entirely):

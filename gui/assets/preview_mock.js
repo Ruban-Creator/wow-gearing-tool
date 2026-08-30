@@ -57,6 +57,8 @@ window.pywebview = {
       install_path: "C:\\Games\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\GearingToolCompanion",
       installed: mockAddonInstalled,
       up_to_date: mockAddonInstalled,
+      shipped_version: "1.0.0",
+      installed_version: mockAddonInstalled ? "1.0.0" : null,
     }),
     install_companion_addon: async () => {
       mockAddonInstalled = true;

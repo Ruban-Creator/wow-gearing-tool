@@ -1,7 +1,7 @@
 # Packaging the GUI
 
-Builds `build/dist/gearing-tool-gui.exe` - a single-file, double-clickable
-app (picker + report viewer, v1 - see `CLAUDE.md`'s multi-character GUI
+Builds `build/dist/RGT.exe` - Ruban's Gearing Tool, a single-file,
+double-clickable app (picker + report viewer, v1 - see `CLAUDE.md`'s multi-character GUI
 section and the approved plan referenced there).
 
 ## Build
@@ -12,7 +12,7 @@ pip install pyinstaller
 python -m PyInstaller packaging/gearing_tool_gui.spec --distpath build/dist --workpath build/_pyinstaller_work
 ```
 
-Output: `build/dist/gearing-tool-gui.exe` (~13 MB). The `--distpath`/
+Output: `build/dist/RGT.exe` (~13 MB). The `--distpath`/
 `--workpath` flags are real, required arguments here, not optional style -
 PyInstaller's spec files can't set these themselves (its own `DISTPATH`/
 `WORKPATH` spec globals are read-only convenience references, resolved
@@ -66,7 +66,7 @@ same failure mode and the same fix.
 ## Building the installer (Inno Setup)
 
 `packaging/installer.iss` builds the real, shareable installer -
-`packaging/output/GearingTool-Setup.exe`. Requires the exe (above) and all three `build/bin/`
+`packaging/output/RGT-Setup.exe`. Requires the exe (above) and all three `build/bin/`
 binaries (`CLAUDE.md`'s Local Setup section) already built first.
 
 ```
@@ -132,8 +132,8 @@ be watching for a dialog.
 - **Installer, 2026-08-30**: real end-to-end test, not just a compile check
   - installed to a real, separate test location
   (`%TEMP%\GearingToolInstallTest`, nothing to do with the dev repo) via the
-  compiled `GearingTool-Setup.exe`, confirmed every expected file landed
-  (both `build/bin/*.exe` and `build/dist/gearing-tool-gui.exe`, the trimmed
+  compiled `RGT-Setup.exe`, confirmed every expected file landed
+  (both `build/bin/*.exe` and `build/dist/RGT.exe`, the trimmed
   `sim/tbc-new/` subset, `profiles/tbc/`, `addons/`), then launched the
   installed exe directly - real "Gearing Tool" window title confirmed, alive
   for 15+ seconds with no crash, running entirely from the fresh install

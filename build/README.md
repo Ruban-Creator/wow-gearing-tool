@@ -16,7 +16,7 @@ build/bin/sim_commit_sha.txt   The sim submodule's commit SHA, baked at build ti
               (a packaged install has no `.git`) - see CLAUDE.md's Local Setup section for the
               one-line command that writes it. Not needed for dev-machine use (the live git call
               always wins when it's available) but keep it current before packaging.
-build/dist/   gearing-tool-gui.exe - PyInstaller's final packaged output. Rebuild via
+build/dist/   RGT.exe - PyInstaller's final packaged output. Rebuild via
               packaging/README.md's Build section.
 ```
 
