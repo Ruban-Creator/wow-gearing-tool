@@ -56,6 +56,10 @@ const settingsWowRootChangeBtn = document.getElementById("settings-wow-root-chan
 const settingsWowRootResetBtn = document.getElementById("settings-wow-root-reset-btn");
 const settingsAddonStatus = document.getElementById("settings-addon-status");
 const settingsAddonInstallBtn = document.getElementById("settings-addon-install-btn");
+const creditsVersion = document.getElementById("credits-version");
+const creditsGithubLink = document.getElementById("credits-github-link");
+const creditsPatreonLink = document.getElementById("credits-patreon-link");
+const creditsDiscordLink = document.getElementById("credits-discord-link");
 
 const addonBanner = document.getElementById("addon-banner");
 const addonBannerText = document.getElementById("addon-banner-text");
@@ -238,6 +242,23 @@ async function refreshSettingsDisplay() {
   settingsWowRoot.textContent = wowRoot.path + (wowRoot.is_configured ? "" : " (auto-detected)");
 
   await refreshAddonStatus();
+  await refreshSimCredits();
+}
+
+// ---- Sim credits (real links from sim/tbc-new/README.md - see
+// gui/api.py's get_sim_credits() docstring for why this exists) ----
+
+async function refreshSimCredits() {
+  const credits = await window.pywebview.api.get_sim_credits();
+  creditsVersion.textContent = `(${credits.version_label})`;
+  creditsVersion.title = credits.commit_sha;
+}
+
+for (const link of [creditsGithubLink, creditsPatreonLink, creditsDiscordLink]) {
+  link.addEventListener("click", (e) => {
+    e.preventDefault();
+    window.pywebview.api.open_url(link.href);
+  });
 }
 
 // ---- Companion addon install (not on CurseForge yet - see gui/api.py's

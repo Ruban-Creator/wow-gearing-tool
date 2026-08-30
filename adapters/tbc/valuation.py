@@ -134,11 +134,24 @@ def _fingerprint_settings(settings: dict) -> str:
     - the fixed background gear runs must hold constant. Takes the dict
     directly (not a file) so callers that mutate settings first (e.g.
     evaluate()'s per-config weapon imbue selection) get a fingerprint that
-    actually reflects what's about to run, not the un-mutated file."""
+    actually reflects what's about to run, not the un-mutated file.
+
+    Real bug found and fixed 2026-08-30, before ever actually updating the
+    sim for the first time: this hash never accounted for which sim BINARY
+    ran the request. Swapping wowsimcli.exe/bridge.exe/simserver.exe for a
+    new sim version, with the exact same gear+settings, would have silently
+    served a stale DPS number computed under the OLD sim's math - the cache
+    key had no way to know anything changed. Folding the sim's own commit
+    SHA into the hashed content means a sim update invalidates every cache
+    entry automatically; no caller needs to change since every real caller
+    (marginal_value.py, run_full_sweep_mv.py, interaction_matrix.py, ...)
+    already reaches this one fingerprinting function, never sim_cache.key()
+    directly."""
     template = json.loads(json.dumps(settings))  # deep copy, don't mutate caller's dict
     template["player"]["equipment"] = None
     canonical = json.dumps(template, sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
+    payload = canonical + "|" + repo_root.sim_commit_sha()
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
 def settings_fingerprint(settings_path: str) -> str:

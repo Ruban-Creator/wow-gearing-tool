@@ -380,3 +380,20 @@ class Api:
         except OSError as e:
             return {"success": False, "error": str(e), "install_path": install_path}
         return {"success": True, "error": None, "install_path": install_path}
+
+    def get_sim_credits(self) -> dict:
+        """Real links pulled straight from sim/tbc-new/README.md, not
+        invented - that file's own license section explicitly asks anyone
+        using the project to keep "a user visible link back to the
+        original project" (real quote), so this exists to satisfy that,
+        not just as a nice-to-have. version_label prefers a real tag
+        (e.g. "v0.0.119"); commit_sha is always the real full SHA
+        underneath it, shown too since a label can legitimately be a
+        fallback short-SHA instead of a tag."""
+        return {
+            "version_label": repo_root.sim_version_label(),
+            "commit_sha": repo_root.sim_commit_sha(),
+            "github_url": "https://github.com/wowsims/tbc-new",
+            "patreon_url": "https://www.patreon.com/wowsims",
+            "discord_url": "https://discord.gg/jJMPr9JWwx",
+        }

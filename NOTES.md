@@ -4041,3 +4041,54 @@ This was the one real remaining installer blocker identified when scoping what a
 actually needs (see the 2026-08-29 folder-structure entry above) - what's left now is picking an
 installer tool (NSIS vs Inno Setup, neither installed on this machine yet) and building the actual
 wizard.
+
+## 2026-08-30 — Real bug caught before the first-ever sim update: cache key never tracked sim version
+
+Found while scoping "how do we ever update the sim" (the user's own concern, confirmed real:
+pinned commit at the time was exactly tag `v0.0.119`, upstream's latest tag was `v0.0.124` -
+22 commits/5 tagged releases behind, on an actively-tagging upstream where the latest tag was
+only 4 commits behind `master`'s own tip). `sim_cache.json`'s key
+(`gear_hash:settings_fingerprint:iterations:seed`, `core/sim_cache.py`) never accounted for which
+sim BINARY actually produced a cached result - swapping `wowsimcli.exe`/`bridge.exe`/
+`simserver.exe` for a new sim version, then running the exact same gear+settings, would have
+silently served a stale DPS number computed under the OLD sim's math, with no way to tell.
+
+Fixed in `adapters/tbc/valuation.py`'s `_fingerprint_settings()` - folds `repo_root.sim_commit_sha()`
+into the hashed payload, so a sim version change invalidates every cache entry automatically. No
+caller needed to change (every real caller reaches this one fingerprinting function already, never
+`sim_cache.key()` directly). Verified directly: same settings dict fingerprints identically across
+repeated calls (stable/deterministic), and differently when `sim_commit_sha()` is monkeypatched to
+a different value (confirmed a real, different SHA256 output, not just "probably works").
+
+This was found and fixed BEFORE ever actually updating the sim for the first time - would have
+been a real, silent correctness bug the very first time this project's own "update the sim" idea
+got exercised for real.
+
+Real, verified wowsims/tbc-new release facts to inform the update-automation design (per the
+user's AskUserQuestion answers: a scheduled Claude Code agent, not a dumb script, and do the real
+v0.0.119→v0.0.124 update now as this mechanism's first real run):
+- Tags are real (`v0.0.NNN`), cut directly off `master` (confirmed `v0.0.124` is a real ancestor
+  of `master`, only 4 commits behind its tip at check time) - a stable, deliberate release signal
+  to watch, better than raw `master` HEAD (which includes every merged branch, no curation).
+- `core/repo_root.py` gains `sim_version_label()` (mirrors `sim_commit_sha()`'s own live-git +
+  baked-fallback + never-invent-data pattern) - `git describe --tags --exact-match HEAD` inside
+  the submodule, e.g. `"v0.0.119"`, falling back to the baked `sim_version_label.txt` if git isn't
+  usable, then to the raw short SHA if even that's missing. Unlike `sim_commit_sha()` this never
+  raises - a missing pretty label is cosmetic, not a broken provenance stamp.
+
+## 2026-08-30 — GUI: wowsims credits + running version, per the license's own request
+
+`sim/tbc-new/README.md`'s license section explicitly asks: "we request that anyone using this
+software in their own project make sure there is a user visible link back to the original
+project" - not just a nice-to-have, the one real condition attached to using it. Added a credits
+block to the bottom of the Settings modal: a link to `github.com/wowsims/tbc-new`, the running
+version (`sim_version_label()`, e.g. "v0.0.119"), a thank-you line, and real Patreon
+(`patreon.com/wowsims`) and Discord (`discord.gg/jJMPr9JWwx`) links - all three URLs pulled
+directly from the README, not guessed. `gui/api.py`'s new `get_sim_credits()` is the one real
+source for all of it.
+
+Links route through the existing `window.pywebview.api.open_url()` pattern (real `webbrowser.open()`
+call, already used for report links) rather than plain `<a target="_blank">` - a native pywebview
+window doesn't reliably support that the way a browser tab does. Verified live in the browser
+preview harness: clicking a credits link calls `open_url` with the exact real URL and the page
+itself never navigates away from the Settings modal.

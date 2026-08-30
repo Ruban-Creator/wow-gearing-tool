@@ -462,6 +462,40 @@ html, body {
 }
 .settings-toggle input { cursor: pointer; }
 
+.credits-block {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.credits-label {
+  font-weight: 600;
+  color: var(--text);
+}
+.credits-label a, .credits-links a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.credits-label a:hover, .credits-links a:hover { text-decoration: underline; }
+#credits-version {
+  color: var(--text-faint);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.credits-thanks {
+  margin-top: 6px;
+  color: var(--text-faint);
+  line-height: 1.5;
+}
+.credits-links {
+  margin-top: 8px;
+}
+.credits-sep {
+  color: var(--text-faint);
+  margin: 0 6px;
+}
+
 .modal-btn {
   background: var(--bg-card);
   border: 1px solid var(--border);

@@ -61,6 +61,13 @@ window.pywebview = {
       mockAddonInstalled = true;
       return { success: true, error: null, install_path: "C:\\Games\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\GearingToolCompanion" };
     },
+    get_sim_credits: async () => ({
+      version_label: "v0.0.119",
+      commit_sha: "3267f8dfa4a20746d4982c1522fdec1d4eb77f4c",
+      github_url: "https://github.com/wowsims/tbc-new",
+      patreon_url: "https://www.patreon.com/wowsims",
+      discord_url: "https://discord.gg/jJMPr9JWwx",
+    }),
   }
 };
 setTimeout(() => window.dispatchEvent(new Event("pywebviewready")), 50);

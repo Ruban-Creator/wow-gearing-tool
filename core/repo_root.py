@@ -121,4 +121,41 @@ def sim_commit_sha() -> str:
     )
 
 
+# Same fallback pattern as SIM_COMMIT_SHA_FALLBACK_PATH, one file over -
+# see sim_version_label()'s own docstring.
+SIM_VERSION_LABEL_FALLBACK_PATH = os.path.join(REPO_ROOT, "build", "bin", "sim_version_label.txt")
+
+
+def sim_version_label() -> str:
+    """A human-readable version for the GUI's credits/about section (e.g.
+    "v0.0.119") - wowsims/tbc-new tags real, frequent releases directly off
+    master (confirmed 2026-08-30: the pinned commit at the time was exactly
+    tag v0.0.119, and the latest tag then was only 4 commits behind
+    master's own tip - these aren't stale/rare tags). Falls back to the raw
+    short SHA (still a real, correct identifier, just less friendly) if the
+    current commit isn't exactly tagged, or if git/the baked fallback file
+    are both unavailable - never raises, unlike sim_commit_sha(), since a
+    missing pretty label is a cosmetic downgrade, not a broken provenance
+    stamp (sim_commit_sha() is still the real source of truth everywhere
+    that matters)."""
+    sim_dir = os.path.join(REPO_ROOT, "sim", "tbc-new")
+    try:
+        out = subprocess.run(
+            ["git", "-C", sim_dir, "describe", "--tags", "--exact-match", "HEAD"],
+            capture_output=True, text=True, check=True, creationflags=_NO_WINDOW,
+        )
+        return out.stdout.strip()
+    except (subprocess.CalledProcessError, OSError):
+        pass
+    if os.path.isfile(SIM_VERSION_LABEL_FALLBACK_PATH):
+        with open(SIM_VERSION_LABEL_FALLBACK_PATH, encoding="utf-8") as f:
+            label = f.read().strip()
+        if label:
+            return label
+    try:
+        return sim_commit_sha()[:10]
+    except RuntimeError:
+        return "unknown"
+
+
 USER_DATA_DIR = _user_data_dir()
