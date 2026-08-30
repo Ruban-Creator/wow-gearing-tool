@@ -83,7 +83,7 @@ The Tool (this repo, git-tracked source):
   ingest/                addon SavedVariables reader (slpp Lua parser) -> character.json
   cli/                   `gear sync`, `gear best` entry points
   gui/                   pywebview picker + report-viewer app
-  packaging/             PyInstaller spec + build docs
+  packaging/             PyInstaller spec + Inno Setup installer script (installer.iss) + build docs
   addons/GearingToolCompanion/  companion addon (bank/bags/reputation/arena export) - mirrored
                                  here so a fresh machine can install it without a live WoW client;
                                  source of truth is whichever copy was most recently edited in a

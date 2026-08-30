@@ -4178,3 +4178,45 @@ larger feature (fetching a release asset, verifying it, replacing running `build
 restarting the app) intentionally out of scope for "the logic" as asked - this pass makes the
 check/compare/notify real and correct, which the actual install action can build on later without
 redesigning the detection side.
+
+## 2026-08-30 — First real installer (Inno Setup), for sharing tomorrow
+
+Installed via `winget install --id JRSoftware.InnoSetup` - lands under
+`%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe`, NOT `Program Files` (worth knowing before
+hunting for it again). Per-user install target (`{localappdata}\Programs\GearingTool`,
+`PrivilegesRequired=lowest`) - no admin/UAC prompt, matches an early-stage personal tool being
+shared casually rather than an enterprise deployment.
+
+**Real payload-size finding, checked not assumed**: `sim/tbc-new`'s real working-tree size is
+237MB, but grepping `core/`/`adapters/tbc/`/`gui/` for actual file reads at runtime found the
+running app only ever touches two things from the whole submodule: `assets/database/db.json`
+(Python-side item lookups - `db.bin` is embedded into `wowsimcli.exe`/`simserver.exe` at BUILD
+time via `go:embed`, never read from disk at runtime, confirmed via a clean `grep -rln "db\.bin"`
+across every Python module coming up empty) and `sim/**/*.go` (`core/set_bonus.py`'s own per-class
+text parser, real paths confirmed by reading every profile's `set_bonus_go_source` field). `ui/`,
+`proto/`, `cmd/`, `docs/`, `tools/`, `.github/`, `.vscode/` are only touched by dev-only
+profile-building scripts (`build_profile_settings.py`, `build_wowsims_reference_bis.py`) that a
+real end-user install never runs - confirmed via `apl_source` (the one field that looked like it
+might need `ui/*/apls/`) only appearing in those two files, never in any runtime sweep path, and
+`settings_template.json` already carrying the resolved rotation baked in. Real result: the
+installer's `sim/tbc-new/` payload is ~8.5MB, not 237MB.
+
+`packaging/installer.iss` reads `build/bin/sim_version_label.txt` at COMPILE time
+(`#define AppVersion Trim(FileRead(...))`) so the installer's own displayed version always matches
+whatever sim build it actually contains - never hand-maintained separately, same "single source of
+truth" principle as everything else in this rework. Ships: `build/dist/gearing-tool-gui.exe`,
+`build/bin/*` (all 3 exes + the two baked version files), `core/*.py` + `report_template.html`,
+`ingest/*.py`, `adapters/tbc/*.py` (NOT `bridge/`/`simserver/` - those are Go source, build-time
+only, already compiled into `build/bin/`), `profiles/tbc/*`, the trimmed `sim/tbc-new/` subset
+above, `addons/GearingToolCompanion/*` (needed for the in-app addon-installer feature to have a
+real source to copy from), `LICENSE`.
+
+First real compile succeeded clean: 33.5MB output (`packaging/output/GearingTool-Setup.exe`).
+**Real, unexpected finding while test-installing**: `/VERYSILENT /SUPPRESSMSGBOXES` did NOT
+actually suppress the License Agreement page - a real installer window popped up requiring manual
+interaction despite the silent flags, confirmed live (the user saw and clicked through it, not a
+guess). Not yet root-caused (candidates: something about how the flags were passed through this
+session's shell tooling, or a genuine Inno Setup behavior difference with `LicenseFile` set under
+`/VERYSILENT` specifically) - flagged here rather than smoothed over, since a future scheduled
+agent trying a real silent/unattended install (for automated testing) needs to know this isn't
+reliable yet, not discover it fresh.

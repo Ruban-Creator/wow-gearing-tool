@@ -63,6 +63,42 @@ before `hiddenimports=["slpp"]` was added to the spec file. If a future
 change adds another dependency reached the same indirect way, expect the
 same failure mode and the same fix.
 
+## Building the installer (Inno Setup)
+
+`packaging/installer.iss` builds the real, shareable installer -
+`packaging/output/GearingTool-Setup.exe`. Requires the exe (above) and all three `build/bin/`
+binaries (`CLAUDE.md`'s Local Setup section) already built first.
+
+```
+"%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" packaging\installer.iss
+```
+
+Inno Setup installs via `winget install --id JRSoftware.InnoSetup` and lands under
+`%LOCALAPPDATA%\Programs\Inno Setup 6\` - NOT `Program Files`, despite that being Inno Setup's own
+usual convention; check there first before assuming it's missing.
+
+**Payload is a real, checked subset of the repo, not the whole thing** - `installer.iss`'s own
+top comment has the full reasoning, but in short: `sim/tbc-new`'s real working tree is 237MB, but
+grepping every Python module for actual file reads found the running app only ever touches
+`assets/database/db.json` and `sim/**/*.go` from that whole submodule (confirmed, not assumed -
+`db.bin` is embedded into the Go binaries at build time via `go:embed`, never read from disk at
+runtime; `ui/`/`proto/`/`cmd/`/`docs/`/`tools/` are only touched by dev-only profile-building
+scripts a real end-user install never runs). Real installer payload: ~8.5MB from the submodule,
+not 237MB. If a future profile-building session needs something from `ui/`/`proto/` at genuine
+*runtime* (not just to build a new profile), that's a real installer scope change, not something
+to silently work around - check before assuming today's exclusion list is stale.
+
+`#define AppVersion Trim(FileRead(SourcePath + "..\build\bin\sim_version_label.txt"))` reads the
+baked sim version at COMPILE time so the installer's own displayed version always matches the sim
+build it actually contains - never hand-maintained separately.
+
+**Real, unresolved finding**: `/VERYSILENT /SUPPRESSMSGBOXES` did NOT suppress the License
+Agreement page on install, nor the confirmation prompt on uninstall - both popped up requiring
+real manual interaction, reproduced twice (install and uninstall, both live-verified by the user
+clicking through). Not yet root-caused. Don't assume a scripted/unattended install or uninstall
+actually runs silently until this is understood - verify interactively, or expect a human/agent to
+be watching for a dialog.
+
 ## Verification done so far
 
 - Console build (`console=True` variant) launched clean, no traceback.
@@ -93,3 +129,15 @@ same failure mode and the same fix.
   against the real `gui/assets/` files running under a plain browser with
   pywebview's API mocked out (see the plan's Stage 6 note) - that covers
   the JS/HTML/CSS logic, not the packaged exe's own native window chrome.
+- **Installer, 2026-08-30**: real end-to-end test, not just a compile check
+  - installed to a real, separate test location
+  (`%TEMP%\GearingToolInstallTest`, nothing to do with the dev repo) via the
+  compiled `GearingTool-Setup.exe`, confirmed every expected file landed
+  (both `build/bin/*.exe` and `build/dist/gearing-tool-gui.exe`, the trimmed
+  `sim/tbc-new/` subset, `profiles/tbc/`, `addons/`), then launched the
+  installed exe directly - real "Gearing Tool" window title confirmed, alive
+  for 15+ seconds with no crash, running entirely from the fresh install
+  location with no dev-repo relationship at all. Uninstaller
+  (`unins000.exe`) also real-tested. Same "still not done by a human" gap
+  as above still applies to the installed copy specifically - starting
+  clean isn't the same as every feature working end to end.
