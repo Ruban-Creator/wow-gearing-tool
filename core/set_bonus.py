@@ -363,12 +363,38 @@ def best_four_of_five(settings_path: str, set_name: str, candidates: dict[str, l
     for (combo_slots, _variant), dps in results.items():
         if combo_slots not in combo_best or dps > combo_best[combo_slots]:
             combo_best[combo_slots] = dps
+
+    # Real bug, caught by the user (2026-08-31): `combined_dps` (below) is
+    # the BEST achievable 5-slot layout for this transition - which, for the
+    # excluded slot, is free to pick ANY real non-set alternative in the
+    # pool, not just her current item there. That's the right number for
+    # "what's the best gear once I'm committing to this set" (the console
+    # print's own "full 5pc is X vs this" comparison), but it is NOT a fair
+    # number to gate the set_note on: comparing it against her untouched
+    # baseline conflates two independent value sources - the 4 set pieces'
+    # own net worth (bonus included) AND whichever unrelated excluded-slot
+    # upgrade happened to win, which she may not even own yet and would
+    # want regardless of this set. A real, live case: Beast Lord Armor's
+    # winning combo substituted Bow-stitched Leggings (not currently worn)
+    # into the excluded legs slot - the resulting "beats baseline" verdict
+    # was really "4 Beast Lord pieces + a real, independent leg upgrade
+    # beats baseline", not "Beast Lord Armor's own 4pc bonus is worth it."
+    # `combined_dps_isolated` holds the same winning 4-piece combo's DPS
+    # with her CURRENT gear kept in the excluded slot instead (the
+    # "current" variant, always computed above regardless of which variant
+    # actually won) - a true DPS*(P ∪ {4 set pieces}) − DPS*(P) comparison,
+    # holding everything else equal. Falls back to `combined_dps` itself
+    # when there's no excluded slot at all (the "all 5 pieces" case has no
+    # substitution to isolate away).
+    combined_dps_isolated = results[(best_combo, "current")] if excluded else results[best_key]
+
     return {
         "set_name": set_name,
         "best_combo_slots": sorted(best_combo),
         "excluded_slot": excluded[0] if excluded else None,
         "excluded_slot_alt": {"name": winning_alt.name, "item_id": winning_alt.item_id} if winning_alt else None,
         "combined_dps": results[best_key],
+        "combined_dps_isolated": combined_dps_isolated,
         "full_five_dps": results[(all_five, "full")],
         "all_options": {tuple(sorted(k)): v for k, v in combo_best.items()},
     }

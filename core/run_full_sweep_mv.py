@@ -774,7 +774,23 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
         # `best_four_of_five` couldn't evaluate (fewer than 5 real tier
         # pieces available) still gets the note, since there's no real
         # transition number to compare against baseline in that case.
-        if combo is not None and combo["combined_dps"] <= baseline_screen["combined"]:
+        #
+        # Second real bug, same mechanism, caught by the user (2026-08-31):
+        # `combined_dps` lets the excluded slot pick ANY real non-set
+        # alternative, not just her current item there - gating on it
+        # conflates "is this 4pc set worth it" with "is whatever unrelated
+        # item won the excluded slot also worth it", which she'd want
+        # regardless of this set. Real, live case: Beast Lord Armor's
+        # winning combo swapped in Bow-stitched Leggings (not currently
+        # worn) for the excluded legs slot - the gate said "beats baseline"
+        # when the honest story was "4 Beast Lord pieces + an unrelated legs
+        # upgrade beats baseline", not "the 4pc bonus is worth it". Gate on
+        # `combined_dps_isolated` instead - same winning 4-piece combo, her
+        # CURRENT gear held in the excluded slot - a true isolated
+        # DPS*(P ∪ {4 set pieces}) − DPS*(P) comparison. `combined_dps`
+        # itself is untouched and still used for the "best achievable
+        # layout" console print/report just below.
+        if combo is not None and combo["combined_dps_isolated"] <= baseline_screen["combined"]:
             continue
 
         note = f"part of {set_name}: " + " · ".join(parts)

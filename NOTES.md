@@ -4283,3 +4283,48 @@ needed") until the user explicitly asked for the real round logo there instead; 
 real 20x20 texture swap (`SetTexture("Interface\AddOns\GearingToolCompanion\icon.tga")` replacing
 the old `iconBg`/`iconLetter` pair), the tracking-ring overlay code untouched since it never
 referenced the old badge.
+
+## 2026-08-31 — Real bug: set-bonus gate compared an unrelated item's value, not just the set's own
+
+Caught live by the user looking at Lerynia's real Phase 3 ledger: Beast Lord Armor's 5 pieces were
+showing up with a `set_note` again, looking exactly like the 2026-08-24 bug's own signature (every
+piece a deep individual downgrade, -30 to -73 DPS, annotated "part of Beast Lord Armor... 4pc bonus
++75.8"). The 2026-08-24 fix (gate the note on whether the SET's own `best_four_of_five` combo
+actually beats baseline) was confirmed still intact and correct in the code - this was a genuinely
+different, second bug hiding behind the same symptom.
+
+**Real root cause**, found via a live diagnostic (temporary print added, real numbers captured,
+reverted before committing): `best_four_of_five()`'s winning combo picks whichever variant gives
+the highest DPS across the 4 tier-piece slots AND every real option for the excluded 5th slot -
+including every real non-set alternative in the pool, not just "keep her current item there". For
+Beast Lord Armor, the winning combo swapped Bow-stitched Leggings (a real item she does NOT
+currently own) into the excluded legs slot. The user's own catch, verbatim and correct: **the gate
+was comparing "baseline with her current [worse] legs" against "4 Beast Lord pieces + a real,
+independent legs upgrade she'd want regardless of Beast Lord" - an apples-to-oranges comparison**,
+not "is the 4pc bonus itself worth it." Confirmed with real numbers: `combined_dps=2752.8` vs
+`baseline=2740.1` (+12.7, gate FAILS = note shown) - looked like a real, if narrow, win, but that
++12.7 was smuggling in Bow-stitched Leggings' own independent value, not measuring the set alone.
+
+**Fix**: `set_bonus.best_four_of_five()` now returns a second field, `combined_dps_isolated` - the
+SAME winning 4-piece combo's DPS, but with her CURRENT gear held in the excluded slot instead of
+whichever alternative won the wider search (the `(four, "current")` variant, already computed for
+every real 4-piece combo regardless of which variant ultimately wins - no extra sim calls needed).
+This is the honest `DPS*(P ∪ {4 set pieces}) − DPS*(P)` comparison, holding everything else equal.
+`run_full_sweep_mv.py`'s gate now checks `combined_dps_isolated` instead of `combined_dps` -
+`combined_dps` itself is untouched and still drives the "best achievable layout" console print/
+report (a legitimately different, still-useful question: "once I'm committed to this set, what's
+the best 5th-slot pick").
+
+**Verified with real before/after numbers, not just code review**: re-ran the sweep after the fix
+(same cached sim results, so this was fast) - `Set-bonus check: 5 item(s) flagged across 18 set(s)`,
+down from 15 before the fix. Beast Lord Armor's own 5 pieces are gone from the flagged set entirely;
+`check_ledger_consistency.py`'s own structural checks (does every downgrade shown have a note
+explaining why) are unaffected by this change, since it only changes WHICH items get a note, not
+whether shown-without-a-note downgrades are still caught.
+
+Same class of bug as 2026-08-24's own fix (comparing the wrong two things), found the same way (the
+user reading a real ledger and noticing something that shouldn't be possible) - worth remembering
+this mechanism (best_four_of_five's own "try every real alternative for the excluded slot")
+deliberately trades a wider search for a real risk of conflating unrelated value, and any FUTURE
+change to this function should re-check that the isolated/gating number and the
+best-achievable/reporting number stay clearly separated, not silently reunified.
