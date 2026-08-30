@@ -4010,3 +4010,34 @@ thrown on load rather than just silently under-rendering). Rebuilt `preview.html
 `index.html`'s real body exactly, and `preview_mock.js` to stub every `window.pywebview.api.*`
 method `app.js` actually calls (previously only 3 of 16 were mocked) - worth keeping current for
 any future GUI work, not a one-off fix just for this feature.
+
+## 2026-08-30 — Fixed the last real installer blocker: baked sim commit SHA fallback
+
+Three real call sites (`adapters/tbc/adapter.py`'s `version()`, `ingest/build_character.py`'s
+`sim_commit_sha()`, `core/build_ledger_data.py`) each independently ran `git -C sim/tbc-new
+rev-parse HEAD` - the exact same pre-REPO_ROOT-consolidation mistake (three copies of the same
+logic) and a real installer blocker: a flat installer copy has no `.git` for any of them to read,
+so every one of these would raise `CalledProcessError` on a packaged install with no error message
+pointing at the real cause.
+
+Consolidated into `core/repo_root.py`'s new `sim_commit_sha()` - prefers the live git call (still
+correct immediately after a local submodule bump, no rebuild needed - this repo's own real dev
+workflow) and falls back to a static file baked at build time
+(`build/bin/sim_commit_sha.txt`, written via `git -C sim/tbc-new rev-parse HEAD >
+build/bin/sim_commit_sha.txt`, now documented in `CLAUDE.md`'s Local Setup section) only when git
+itself isn't usable. Raises a clear `RuntimeError` if both fail, rather than a fake/empty SHA -
+"never invent data" applies to provenance stamps too. All three real paths verified directly, not
+assumed: live git call (matches `git -C sim/tbc-new rev-parse HEAD` exactly), the fallback path
+(git call monkeypatched to raise `FileNotFoundError`, confirmed it reads the same real SHA from
+the baked file), and the clean-failure path (both unavailable, confirmed a real `RuntimeError`
+with a message naming both the git command that failed and the missing fallback path). The three
+original call sites now just delegate - `ingest/build_character.py`'s own `sim_commit_sha()` is
+kept as a thin re-export (existing callers `from build_character import ..., sim_commit_sha`
+don't need to change). Two files (`ingest/build_character.py`, `core/build_ledger_data.py`) had
+`subprocess`/`_NO_WINDOW ` become fully dead after this and were cleaned up rather than left as
+unused imports.
+
+This was the one real remaining installer blocker identified when scoping what an installer
+actually needs (see the 2026-08-29 folder-structure entry above) - what's left now is picking an
+installer tool (NSIS vs Inno Setup, neither installed on this machine yet) and building the actual
+wizard.

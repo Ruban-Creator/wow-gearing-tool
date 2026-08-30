@@ -19,7 +19,6 @@ everything past "Achieved BiS" silently went blank.
 """
 import json
 import os
-import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -27,13 +26,7 @@ import time_horizon  # noqa: E402
 import stat_weights  # noqa: E402
 import run_full_sweep_mv as sweep_mv  # noqa: E402 - source of truth for the real iteration counts (see report_template.html's footer)
 
-# See adapters/tbc/valuation.py's own copy of this comment - the packaged
-# (windowed, console-less) GUI has nowhere to attach a child console, so
-# Windows pops a new visible one for this git call unless told not to.
-_NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
-
 import repo_root  # noqa: E402
-REPO_ROOT = repo_root.REPO_ROOT
 USER_DATA_DIR = repo_root.USER_DATA_DIR
 TOP_N_SHOWN = 5
 
@@ -69,9 +62,7 @@ def build(name_realm: str, phase: str, profile_dir: str):
             })
         tiers_list.append({"name": tier_name, "slots": slots_list})
 
-    sim_commit_sha = subprocess.run(
-        ["git", "-C", os.path.join(REPO_ROOT, "sim", "tbc-new"), "rev-parse", "HEAD"],
-        capture_output=True, text=True, check=True, creationflags=_NO_WINDOW).stdout.strip()
+    sim_commit_sha = repo_root.sim_commit_sha()
 
     return {
         "baseline_dps": report["baseline_screened"],

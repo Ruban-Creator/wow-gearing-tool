@@ -40,11 +40,7 @@ _NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 
 
 def version() -> dict:
-    out = subprocess.run(
-        ["git", "-C", SIM_DIR, "rev-parse", "HEAD"],
-        capture_output=True, text=True, check=True, creationflags=_NO_WINDOW,
-    )
-    return {"repo": "wowsims/tbc-new", "commit_sha": out.stdout.strip()}
+    return {"repo": "wowsims/tbc-new", "commit_sha": repo_root.sim_commit_sha()}
 
 
 def run(individual_sim_settings_path: str, iterations: int, seed: int) -> dict:

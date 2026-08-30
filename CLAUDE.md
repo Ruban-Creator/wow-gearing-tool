@@ -155,6 +155,16 @@ cd sim/tbc-new && go build -o ../../build/bin/wowsimcli.exe --tags=with_db ./cmd
 cd ../adapters/tbc/bridge && go build -o ../../../build/bin/bridge.exe .
 cd ../simserver && go build -o ../../../build/bin/simserver.exe .
 ```
+Also bake the sim's commit SHA into a static file (`core/repo_root.py`'s `sim_commit_sha()` falls
+back to this when `git rev-parse` itself isn't available — a flat installer copy has no `.git`):
+```
+git -C sim/tbc-new rev-parse HEAD > build/bin/sim_commit_sha.txt
+```
+This is a real, required step before packaging for anyone besides this dev machine — every report/
+character.json output must carry this SHA (the ground rule at the top of this file), and it's the
+one piece `git rev-parse` genuinely can't produce once `.git` isn't shipped alongside the app. On
+this dev machine specifically it's optional (the live git call is always tried first and always
+succeeds here), but keep it current anyway so a packaged build is never a surprise.
 If a future submodule bump ever does need a DB rebuild: `tools/database/generator-settings.local.json`
 (untracked, not committed) is a copy of `generator-settings.json` with `BaseDir` pointed at the
 local WoW install root — see NOTES.md ("Building wowsimcli: real prerequisite chain") for the

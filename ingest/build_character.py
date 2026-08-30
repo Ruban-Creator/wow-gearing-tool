@@ -13,14 +13,8 @@ from __future__ import annotations
 import glob
 import json
 import os
-import subprocess
 import sys
 from datetime import datetime, timezone
-
-# See adapters/tbc/valuation.py's own copy of this comment - the packaged
-# (windowed, console-less) GUI has nowhere to attach a child console, so
-# Windows pops a new visible one for this git call unless told not to.
-_NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 
 from slpp import slpp as lua
 
@@ -59,11 +53,12 @@ def parse_lua_savedvariables(path: str) -> dict:
 
 
 def sim_commit_sha() -> str:
-    out = subprocess.run(
-        ["git", "-C", SIM_SUBMODULE, "rev-parse", "HEAD"],
-        capture_output=True, text=True, check=True, creationflags=_NO_WINDOW,
-    )
-    return out.stdout.strip()
+    """Thin re-export - repo_root.sim_commit_sha() is the one real
+    implementation (handles the git-unavailable/packaged-install fallback
+    too, see its own docstring). Kept as a function here, not just a
+    reassignment, so existing callers (`from build_character import
+    ..., sim_commit_sha`) don't need to change."""
+    return repo_root.sim_commit_sha()
 
 
 def load_item_db() -> dict[int, dict]:

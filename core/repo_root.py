@@ -17,6 +17,7 @@ one REPO_ROOT resolution to get right, not 27 copies that can silently
 drift out of sync with each other.
 """
 import os
+import subprocess
 import sys
 
 
@@ -65,6 +66,59 @@ def _user_data_dir() -> str:
     if not base:
         return os.path.join(REPO_ROOT, "data")
     return os.path.join(base, "GearingTool")
+
+
+# Real, permanent fallback location for a baked commit SHA (see
+# sim_commit_sha()'s own docstring) - build/bin/ already holds every other
+# piece of real Build Output this project produces (wowsimcli.exe,
+# bridge.exe, simserver.exe), so a small text file lands there too rather
+# than inventing a second Build Output location for one file.
+SIM_COMMIT_SHA_FALLBACK_PATH = os.path.join(REPO_ROOT, "build", "bin", "sim_commit_sha.txt")
+
+_NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+
+
+def sim_commit_sha() -> str:
+    """The sim submodule's real commit SHA - CLAUDE.md's ground rule
+    requires this on every output ("so 'ranking changed because I got
+    gear' is told apart from 'ranking changed because the sim updated'").
+    Three call sites (adapters/tbc/adapter.py's version(),
+    ingest/build_character.py's sim_commit_sha(), core/build_ledger_data.py)
+    used to each run their own `git -C sim/tbc-new rev-parse HEAD` -
+    consolidated here (2026-08-30, the real installer-blocker prompted by
+    the user) since a flat installer copy has no `.git` for any of them to
+    read, and having three independent copies of the same fallback logic
+    would just be the pre-REPO_ROOT-consolidation mistake again.
+
+    Prefers the live git call (correct immediately after a local submodule
+    bump, no rebuild step needed - real, not hypothetical, this repo's own
+    dev workflow bumps the pinned submodule commit directly sometimes) and
+    falls back to a static file baked at build time
+    (SIM_COMMIT_SHA_FALLBACK_PATH) only when git itself isn't usable -
+    exactly the packaged-install case this exists for. Raises rather than
+    returning a fake/empty SHA if both fail - "never invent data" applies
+    to provenance stamps as much as to item stats."""
+    sim_dir = os.path.join(REPO_ROOT, "sim", "tbc-new")
+    try:
+        out = subprocess.run(
+            ["git", "-C", sim_dir, "rev-parse", "HEAD"],
+            capture_output=True, text=True, check=True, creationflags=_NO_WINDOW,
+        )
+        return out.stdout.strip()
+    except (subprocess.CalledProcessError, OSError):
+        pass
+    if os.path.isfile(SIM_COMMIT_SHA_FALLBACK_PATH):
+        with open(SIM_COMMIT_SHA_FALLBACK_PATH, encoding="utf-8") as f:
+            sha = f.read().strip()
+        if sha:
+            return sha
+    raise RuntimeError(
+        f"Could not determine the sim's commit SHA - `git -C {sim_dir!r} rev-parse HEAD` "
+        f"failed (no .git? git not installed?) and no baked fallback exists at "
+        f"{SIM_COMMIT_SHA_FALLBACK_PATH!r}. In a real git checkout this should never happen; "
+        f"for a packaged install, run the build-time step that writes the fallback file "
+        f"(see packaging/README.md) before packaging."
+    )
 
 
 USER_DATA_DIR = _user_data_dir()
