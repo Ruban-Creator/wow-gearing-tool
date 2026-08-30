@@ -534,3 +534,33 @@ html, body {
   color: var(--text-faint);
   font-variant-numeric: tabular-nums;
 }
+
+.addon-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 560px;
+  background: var(--bg-raised);
+  border: 1px solid rgba(217, 140, 58, 0.35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 12.5px;
+  color: var(--text);
+  z-index: 50;
+}
+.addon-banner span { flex: 1; }
+.addon-banner .modal-btn { flex-shrink: 0; }
+.addon-banner .icon-btn { flex-shrink: 0; width: 22px; height: 22px; font-size: 14px; }
+
+/* Same real bug as .modal-overlay's own fix above (found 2026-08-25) -
+   the bare .addon-banner{display:flex} rule beats the UA's [hidden]
+   rule at equal specificity, so toggling `hidden` alone would have no
+   visual effect. This selector's extra attribute clause outranks it. */
+.addon-banner[hidden] {
+  display: none;
+}

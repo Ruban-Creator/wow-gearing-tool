@@ -6,8 +6,10 @@ real sweep + renders a local HTML report on demand.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import shutil
 import sys
 import threading
 import time
@@ -102,6 +104,29 @@ SUPPORTED_CHARACTERS = character_profiles.SUPPORTED_CHARACTERS
 # change needed") - this was genuinely only ever a missing-data gap, not a
 # code gap, confirmed by that loop needing zero changes here.
 PHASES = ["phase1", "phase2", "phase3", "phase4", "phase5"]
+
+# GearingToolCompanion isn't published on CurseForge yet (per the user,
+# 2026-08-30) - this repo's own mirrored copy (see CLAUDE.md's "Addon sync"
+# section) IS the real, current addon source, so installing FROM here is
+# installing the real thing, not a stand-in.
+ADDON_SRC_DIR = os.path.join(REPO_ROOT, "addons", "GearingToolCompanion")
+
+
+def _addon_file_hashes(dir_path: str) -> dict[str, str] | None:
+    """None if the directory doesn't exist at all (never-installed case,
+    distinct from "installed but different files"). sha256 per file, not a
+    single combined hash, so a future partial-install/corruption case could
+    still be diagnosed file-by-file if it ever comes up - not needed today,
+    but cheap to keep."""
+    if not os.path.isdir(dir_path):
+        return None
+    hashes = {}
+    for fname in sorted(os.listdir(dir_path)):
+        fpath = os.path.join(dir_path, fname)
+        if os.path.isfile(fpath):
+            with open(fpath, "rb") as f:
+                hashes[fname] = hashlib.sha256(f.read()).hexdigest()
+    return hashes
 
 # One global job slot, not per-character concurrency - the real sim-call
 # concurrency ceiling (valuation.SIMSERVER_POOL_SIZE=2) means two
@@ -327,3 +352,31 @@ class Api:
 
     def reset_wow_root(self) -> None:
         local_config.set_wow_root(None)
+
+    def get_addon_status(self) -> dict:
+        """GearingToolCompanion isn't on CurseForge yet (per the user,
+        2026-08-30) - installing it today means manually copying two files
+        into the right WoW folder, easy to get wrong or forget after an
+        update. Real, content-hash-based comparison (the .toc has no
+        `## Version:` field to compare instead - never invent one) so
+        "up to date" actually means "these exact bytes", not just "a folder
+        with this name exists". install_path is always returned (even when
+        not installed yet) so the UI can show where it WOULD go."""
+        install_path = os.path.join(local_config.wow_root(), "Interface", "AddOns", "GearingToolCompanion")
+        shipped = _addon_file_hashes(ADDON_SRC_DIR)
+        installed = _addon_file_hashes(install_path)
+        return {
+            "install_path": install_path,
+            "installed": installed is not None,
+            "up_to_date": installed is not None and installed == shipped,
+        }
+
+    def install_companion_addon(self) -> dict:
+        install_path = os.path.join(local_config.wow_root(), "Interface", "AddOns", "GearingToolCompanion")
+        try:
+            os.makedirs(install_path, exist_ok=True)
+            for fname in os.listdir(ADDON_SRC_DIR):
+                shutil.copy2(os.path.join(ADDON_SRC_DIR, fname), os.path.join(install_path, fname))
+        except OSError as e:
+            return {"success": False, "error": str(e), "install_path": install_path}
+        return {"success": True, "error": None, "install_path": install_path}

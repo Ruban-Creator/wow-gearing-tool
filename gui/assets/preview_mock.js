@@ -3,6 +3,8 @@
 // a running pywebview backend. Not loaded by index.html / the real app -
 // referenced only from a separate preview harness. Delete once visual
 // verification is done, or keep for future quick iteration - not shipped.
+let mockAddonInstalled = false; // flip to true to preview the "up to date" / no-banner state
+
 window.pywebview = {
   api: {
     list_characters: async () => ([
@@ -39,6 +41,26 @@ window.pywebview = {
       return {};
     },
     open_url: async (url) => { console.log("open_url:", url); },
+    get_supported_phases: async () => (["phase1", "phase2", "phase3", "phase4", "phase5"]),
+    get_debug_mode: async () => false,
+    set_debug_mode: async (enabled) => enabled,
+    get_report_output_dir: async () => ({ path: "C:\\Users\\Matthias\\AppData\\Local\\GearingTool\\characters\\<character>\\reports", is_configured: false }),
+    pick_report_folder: async () => null,
+    reset_report_output_dir: async () => {},
+    get_wow_root: async () => ({ path: "C:\\Games\\World of Warcraft\\_anniversary_", is_configured: false }),
+    pick_wow_root_folder: async () => null,
+    reset_wow_root: async () => {},
+    get_run_status: async () => ({ active: false, done: false, error: null }),
+    run_report: async () => ({ started: true }),
+    get_addon_status: async () => ({
+      install_path: "C:\\Games\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\GearingToolCompanion",
+      installed: mockAddonInstalled,
+      up_to_date: mockAddonInstalled,
+    }),
+    install_companion_addon: async () => {
+      mockAddonInstalled = true;
+      return { success: true, error: null, install_path: "C:\\Games\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\GearingToolCompanion" };
+    },
   }
 };
 setTimeout(() => window.dispatchEvent(new Event("pywebviewready")), 50);

@@ -3976,3 +3976,37 @@ prerequisite folder-structure work, not the installer itself. First-run behavior
 `USER_DATA_DIR`, auto-detect the WoW folder and confirm with the user rather than blind-prompting)
 is designed and the underlying `autodetect_wow_root()` already exists and works, but isn't wired
 into an actual setup flow yet, since there's no installer UI for it to live in.
+
+## 2026-08-30 — GUI feature: install GearingToolCompanion from the tool itself
+
+Prompted by scoping the installer: GearingToolCompanion isn't published on CurseForge yet, so
+there was no way for a user to get it onto their machine except a manual file copy. Per the user,
+both entry points (a Settings-panel button, always available, and a banner shown whenever it's
+missing/stale - functionally covers "first run" without needing a separate one-time-only flag,
+since a fresh install simply hasn't installed it yet).
+
+`gui/api.py`'s `ADDON_SRC_DIR` points at this repo's own `addons/GearingToolCompanion/` mirror
+(the real, current source per CLAUDE.md's "Addon sync" section) - installing FROM here is
+installing the real thing. `get_addon_status()`/`install_companion_addon()` compare via real
+per-file SHA256 hashes, not a version string - the `.toc` has no `## Version:` field to compare
+instead, and inventing one would violate the "never invent data" ground rule. Real, live-verified
+against this machine's actual installed copy (not just a mock): `get_addon_status()` correctly
+reported `installed: true, up_to_date: true`, and a direct `diff` confirmed the real installed
+`.lua`/`.toc` files ARE byte-identical to the repo's own mirror - a true positive, not a
+coincidence of the test setup.
+
+**Real, pre-existing CSS bug hit again, not a new one**: the banner (`.addon-banner{display:flex}`)
+rendered permanently regardless of its `hidden` attribute - the exact same specificity conflict
+already documented and fixed for `.modal-overlay` on 2026-08-25 (a bare class rule with its own
+`display` declaration beats the UA's `[hidden]` rule at equal specificity). Fixed the same way
+(`.addon-banner[hidden] { display: none; }`), caught by actually testing in a browser (the
+existing `gui/assets/preview.html`/`preview_mock.js` mock harness), not by re-reading the diff -
+the screenshot after clicking "Install" still showed the banner despite `hidden` reading `true` in
+the DOM, which is exactly what this class of bug looks like from the outside.
+
+**`preview.html`/`preview_mock.js` were themselves stale** (predated the Settings modal, Run
+Report modal, and now the addon banner - missing half of `index.html`'s real DOM, which would have
+thrown on load rather than just silently under-rendering). Rebuilt `preview.html` to mirror
+`index.html`'s real body exactly, and `preview_mock.js` to stub every `window.pywebview.api.*`
+method `app.js` actually calls (previously only 3 of 16 were mocked) - worth keeping current for
+any future GUI work, not a one-off fix just for this feature.

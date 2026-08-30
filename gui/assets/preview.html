@@ -13,7 +13,10 @@
           <span class="brand-mark">R</span>
           <span class="brand-name">Gearing Tool</span>
         </div>
-        <button id="refresh-btn" class="icon-btn" title="Refresh">&#8635;</button>
+        <div class="sidebar-head-actions">
+          <button id="settings-btn" class="icon-btn" title="Settings">&#9881;</button>
+          <button id="refresh-btn" class="icon-btn" title="Refresh">&#8635;</button>
+        </div>
       </div>
       <div id="char-list" class="char-list">
         <div class="empty-state">Loading...</div>
@@ -31,10 +34,101 @@
         <div id="profile-banner" class="profile-banner" hidden>
           No sim profile yet for this character - multi-class support is still being built.
         </div>
+        <div class="reports-head">
+          <h2>Reports</h2>
+          <button id="run-report-btn" class="run-report-btn">Run Report</button>
+        </div>
         <div id="reports-grid" class="reports-grid"></div>
       </div>
     </main>
   </div>
+
+  <div id="settings-modal" class="modal-overlay" hidden>
+    <div class="modal">
+      <div class="modal-head">
+        <h2>Settings</h2>
+        <button class="modal-close" data-close="settings-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-row">
+          <div class="settings-label">WoW install folder (the _anniversary_ folder itself)</div>
+          <div class="settings-value" id="settings-wow-root">–</div>
+          <div class="settings-actions">
+            <button id="settings-wow-root-change-btn" class="modal-btn">Change…</button>
+            <button id="settings-wow-root-reset-btn" class="modal-btn modal-btn-ghost">Reset to auto-detect</button>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-label">Report output folder</div>
+          <div class="settings-value" id="settings-output-dir">–</div>
+          <div class="settings-actions">
+            <button id="settings-change-btn" class="modal-btn">Change…</button>
+            <button id="settings-reset-btn" class="modal-btn modal-btn-ghost">Reset to default</button>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-label">Debug mode</div>
+          <label class="settings-toggle">
+            <input type="checkbox" id="settings-debug-toggle">
+            <span>Show synthetic test characters (no real in-game export)</span>
+          </label>
+        </div>
+        <div class="settings-row">
+          <div class="settings-label">Companion addon (GearingToolCompanion)</div>
+          <div class="settings-value" id="settings-addon-status">–</div>
+          <div class="settings-actions">
+            <button id="settings-addon-install-btn" class="modal-btn">Install</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="addon-banner" class="addon-banner" hidden>
+    <span id="addon-banner-text">GearingToolCompanion isn't installed yet - it's not on CurseForge, so this tool ships it directly.</span>
+    <button id="addon-banner-install-btn" class="modal-btn">Install now</button>
+    <button id="addon-banner-dismiss-btn" class="icon-btn" title="Dismiss">&times;</button>
+  </div>
+
+  <div id="run-report-modal" class="modal-overlay" hidden>
+    <div class="modal">
+      <div class="modal-head">
+        <h2>Run Report</h2>
+        <button class="modal-close" data-close="run-report-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="run-report-form">
+          <div class="settings-row">
+            <div class="settings-label">Character</div>
+            <div class="settings-value" id="run-report-character">–</div>
+          </div>
+          <div class="settings-row">
+            <label class="settings-label" for="run-report-phase">Phase</label>
+            <select id="run-report-phase" class="modal-select"></select>
+          </div>
+          <div class="settings-row">
+            <label class="settings-label" for="run-report-duration">Fight Duration (seconds)</label>
+            <input id="run-report-duration" class="modal-select" type="number" min="1" step="1" value="180">
+          </div>
+          <button id="run-report-start-btn" class="run-report-btn run-report-btn-wide">Run</button>
+          <div id="run-report-error" class="run-report-error" hidden></div>
+        </div>
+        <div id="run-report-progress" hidden>
+          <div class="progress-stage" id="run-report-stage">Starting…</div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="run-report-bar"></div>
+          </div>
+          <div class="progress-elapsed" id="run-report-elapsed"></div>
+          <div class="progress-elapsed" id="run-report-stage-eta"></div>
+        </div>
+        <div id="run-report-done" hidden>
+          <div class="progress-stage">Report ready.</div>
+          <button id="run-report-view-btn" class="run-report-btn run-report-btn-wide">View Report</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="preview_mock.js"></script>
   <script src="app.js"></script>
 </body>

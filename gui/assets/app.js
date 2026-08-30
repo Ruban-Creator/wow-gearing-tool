@@ -54,6 +54,14 @@ const settingsDebugToggle = document.getElementById("settings-debug-toggle");
 const settingsWowRoot = document.getElementById("settings-wow-root");
 const settingsWowRootChangeBtn = document.getElementById("settings-wow-root-change-btn");
 const settingsWowRootResetBtn = document.getElementById("settings-wow-root-reset-btn");
+const settingsAddonStatus = document.getElementById("settings-addon-status");
+const settingsAddonInstallBtn = document.getElementById("settings-addon-install-btn");
+
+const addonBanner = document.getElementById("addon-banner");
+const addonBannerText = document.getElementById("addon-banner-text");
+const addonBannerInstallBtn = document.getElementById("addon-banner-install-btn");
+const addonBannerDismissBtn = document.getElementById("addon-banner-dismiss-btn");
+let addonBannerDismissed = false;
 
 const runReportBtn = document.getElementById("run-report-btn");
 const runReportModal = document.getElementById("run-report-modal");
@@ -228,7 +236,66 @@ async function refreshSettingsDisplay() {
 
   const wowRoot = await window.pywebview.api.get_wow_root();
   settingsWowRoot.textContent = wowRoot.path + (wowRoot.is_configured ? "" : " (auto-detected)");
+
+  await refreshAddonStatus();
 }
+
+// ---- Companion addon install (not on CurseForge yet - see gui/api.py's
+// own comment on why this ships directly from the repo instead) ----
+
+async function refreshAddonStatus() {
+  const status = await window.pywebview.api.get_addon_status();
+  if (!status.installed) {
+    settingsAddonStatus.textContent = "Not installed";
+    settingsAddonInstallBtn.textContent = "Install";
+  } else if (status.up_to_date) {
+    settingsAddonStatus.textContent = "Installed, up to date";
+    settingsAddonInstallBtn.textContent = "Reinstall";
+  } else {
+    settingsAddonStatus.textContent = "Installed, but out of date";
+    settingsAddonInstallBtn.textContent = "Update";
+  }
+  return status;
+}
+
+async function checkAddonBanner() {
+  if (addonBannerDismissed) return;
+  const status = await window.pywebview.api.get_addon_status();
+  if (status.installed && status.up_to_date) {
+    addonBanner.hidden = true;
+    return;
+  }
+  addonBannerText.textContent = status.installed
+    ? "A newer version of GearingToolCompanion is available - it's not on CurseForge, so this tool ships it directly."
+    : "GearingToolCompanion isn't installed yet - it's not on CurseForge, so this tool ships it directly.";
+  addonBanner.hidden = false;
+}
+
+settingsAddonInstallBtn.addEventListener("click", async () => {
+  settingsAddonInstallBtn.disabled = true;
+  try {
+    await window.pywebview.api.install_companion_addon();
+    await refreshAddonStatus();
+    await checkAddonBanner();
+  } finally {
+    settingsAddonInstallBtn.disabled = false;
+  }
+});
+
+addonBannerInstallBtn.addEventListener("click", async () => {
+  addonBannerInstallBtn.disabled = true;
+  try {
+    await window.pywebview.api.install_companion_addon();
+    await checkAddonBanner();
+  } finally {
+    addonBannerInstallBtn.disabled = false;
+  }
+});
+
+addonBannerDismissBtn.addEventListener("click", () => {
+  addonBannerDismissed = true;
+  addonBanner.hidden = true;
+});
 
 settingsBtn.addEventListener("click", async () => {
   await refreshSettingsDisplay();
@@ -449,6 +516,7 @@ runReportStartBtn.addEventListener("click", async () => {
 async function init() {
   PHASES = await window.pywebview.api.get_supported_phases();
   await loadCharacters();
+  await checkAddonBanner();
 }
 
 window.addEventListener("pywebviewready", init);

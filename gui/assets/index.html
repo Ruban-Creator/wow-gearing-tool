@@ -73,8 +73,21 @@
             <span>Show synthetic test characters (no real in-game export)</span>
           </label>
         </div>
+        <div class="settings-row">
+          <div class="settings-label">Companion addon (GearingToolCompanion)</div>
+          <div class="settings-value" id="settings-addon-status">–</div>
+          <div class="settings-actions">
+            <button id="settings-addon-install-btn" class="modal-btn">Install</button>
+          </div>
+        </div>
       </div>
     </div>
+  </div>
+
+  <div id="addon-banner" class="addon-banner" hidden>
+    <span id="addon-banner-text">GearingToolCompanion isn't installed yet - it's not on CurseForge, so this tool ships it directly.</span>
+    <button id="addon-banner-install-btn" class="modal-btn">Install now</button>
+    <button id="addon-banner-dismiss-btn" class="icon-btn" title="Dismiss">&times;</button>
   </div>
 
   <div id="run-report-modal" class="modal-overlay" hidden>
