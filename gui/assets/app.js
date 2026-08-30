@@ -67,6 +67,15 @@ const addonBannerInstallBtn = document.getElementById("addon-banner-install-btn"
 const addonBannerDismissBtn = document.getElementById("addon-banner-dismiss-btn");
 let addonBannerDismissed = false;
 
+const settingsUpdateStatus = document.getElementById("settings-update-status");
+const settingsUpdateCheckBtn = document.getElementById("settings-update-check-btn");
+const settingsUpdateViewBtn = document.getElementById("settings-update-view-btn");
+const updateBanner = document.getElementById("update-banner");
+const updateBannerText = document.getElementById("update-banner-text");
+const updateBannerViewBtn = document.getElementById("update-banner-view-btn");
+const updateBannerDismissBtn = document.getElementById("update-banner-dismiss-btn");
+let updateBannerDismissed = false;
+
 const runReportBtn = document.getElementById("run-report-btn");
 const runReportModal = document.getElementById("run-report-modal");
 const runReportCharacter = document.getElementById("run-report-character");
@@ -243,6 +252,7 @@ async function refreshSettingsDisplay() {
 
   await refreshAddonStatus();
   await refreshSimCredits();
+  await refreshUpdateStatus();
 }
 
 // ---- Sim credits (real links from sim/tbc-new/README.md - see
@@ -253,6 +263,61 @@ async function refreshSimCredits() {
   creditsVersion.textContent = `(${credits.version_label})`;
   creditsVersion.title = credits.commit_sha;
 }
+
+// ---- Sim update check (against this repo's own GitHub Releases - see
+// gui/api.py's check_for_sim_update() docstring; no release exists yet,
+// since the scheduled update agent isn't running yet, so "no release
+// published" is the real, honest, expected state today) ----
+
+let lastUpdateCheck = null;
+
+function describeUpdateStatus(r) {
+  if (!r.checked) return `Check failed (${r.error}) - you're on ${r.current_version}`;
+  if (r.update_available === true) return `Update available: ${r.latest_version} (you have ${r.current_version})`;
+  if (r.update_available === null) return `Can't compare versions - you have ${r.current_version}, latest release is ${r.latest_version}`;
+  if (r.latest_version) return `Up to date (${r.current_version})`;
+  return r.note ? `${r.note} You're on ${r.current_version}.` : `You're on ${r.current_version}.`;
+}
+
+async function refreshUpdateStatus() {
+  settingsUpdateStatus.textContent = "Checking…";
+  const r = await window.pywebview.api.check_for_sim_update();
+  lastUpdateCheck = r;
+  settingsUpdateStatus.textContent = describeUpdateStatus(r);
+  settingsUpdateViewBtn.hidden = !r.release_url;
+  return r;
+}
+
+async function checkUpdateBanner() {
+  if (updateBannerDismissed) return;
+  const r = await window.pywebview.api.check_for_sim_update();
+  lastUpdateCheck = r;
+  if (r.update_available !== true) {
+    updateBanner.hidden = true;
+    return;
+  }
+  updateBannerText.textContent = `Sim update available: ${r.latest_version} (you have ${r.current_version}).`;
+  updateBanner.hidden = false;
+}
+
+settingsUpdateCheckBtn.addEventListener("click", () => refreshUpdateStatus());
+
+settingsUpdateViewBtn.addEventListener("click", () => {
+  if (lastUpdateCheck && lastUpdateCheck.release_url) {
+    window.pywebview.api.open_url(lastUpdateCheck.release_url);
+  }
+});
+
+updateBannerViewBtn.addEventListener("click", () => {
+  if (lastUpdateCheck && lastUpdateCheck.release_url) {
+    window.pywebview.api.open_url(lastUpdateCheck.release_url);
+  }
+});
+
+updateBannerDismissBtn.addEventListener("click", () => {
+  updateBannerDismissed = true;
+  updateBanner.hidden = true;
+});
 
 for (const link of [creditsGithubLink, creditsPatreonLink, creditsDiscordLink]) {
   link.addEventListener("click", (e) => {
@@ -538,6 +603,7 @@ async function init() {
   PHASES = await window.pywebview.api.get_supported_phases();
   await loadCharacters();
   await checkAddonBanner();
+  await checkUpdateBanner();
 }
 
 window.addEventListener("pywebviewready", init);

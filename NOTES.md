@@ -4147,3 +4147,34 @@ Submodule bumped and committed (`sim/tbc-new` now at `v0.0.124`, `7963eeac179ecb
 `build/bin/sim_commit_sha.txt`/`sim_version_label.txt` re-baked to match. `build/bin/*.exe`
 themselves stay gitignored (Build Output, never committed) - only the submodule pointer and doc
 fixes are.
+
+## 2026-08-30 — GUI: sim update-check logic (no releases exist yet - that's correct, not a bug)
+
+Per the user: build the CHECK/notify logic now, even though nothing will actually be available
+until the scheduled update agent (designed, not running yet) starts publishing releases.
+`gui/api.py`'s `check_for_sim_update()` hits this repo's own real GitHub Releases API
+(`GET /repos/Ruban-Creator/wow-gearing-tool/releases/latest`, unauthenticated - public repo, 60
+req/hr is plenty for a periodic per-launch check) and compares against `repo_root.sim_version_label()`.
+Every real failure mode is a distinct, honest state, never silently folded into "no update":
+`checked: false` for a real network/HTTP failure, `update_available: null` when a comparison
+genuinely can't be made (e.g. the local version fell back to a raw short-SHA, not a clean tag -
+`_version_is_newer()` returns `None` rather than guessing), and a real 404 (no release published
+yet - today's actual state, verified live against the real repo) reported with its own `note`
+field rather than looking identical to "you're current."
+
+GUI surface mirrors the addon-install pattern exactly: a Settings-modal row (manual "Check for
+updates" + a "View release" button that only appears when a real `release_url` exists) and a
+dismissible launch-time banner, shown only when `update_available === true`. Real UI bug caught
+and fixed before it shipped: with both the addon-install banner and this new update banner able to
+be visible at once, the addon banner's own `position: fixed` on itself would have made a second
+banner render exactly on top of the first. Wrapped both in a shared `.banner-stack` container
+(`flex-direction: column-reverse`, the container itself fixed-positioned) instead - verified live
+in the browser preview harness with both banners visible simultaneously, correctly stacked with no
+overlap.
+
+The actual update ACTION today is "open the release page" (`open_url()`, same pattern as every
+other external link) - not an in-app download-and-replace-binaries flow. That's a real, separate,
+larger feature (fetching a release asset, verifying it, replacing running `build/bin/*.exe`,
+restarting the app) intentionally out of scope for "the logic" as asked - this pass makes the
+check/compare/notify real and correct, which the actual install action can build on later without
+redesigning the detection side.

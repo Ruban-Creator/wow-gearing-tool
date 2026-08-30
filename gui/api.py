@@ -9,11 +9,14 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shutil
 import sys
 import threading
 import time
 import traceback
+import urllib.error
+import urllib.request
 import webbrowser
 from datetime import datetime, timezone
 from pathlib import Path
@@ -127,6 +130,38 @@ def _addon_file_hashes(dir_path: str) -> dict[str, str] | None:
             with open(fpath, "rb") as f:
                 hashes[fname] = hashlib.sha256(f.read()).hexdigest()
     return hashes
+
+
+# Where the scheduled sim-update agent (designed 2026-08-30, not built yet -
+# see CLAUDE.md's "Sim update procedure") is expected to publish a new
+# GitHub Release, tagged to match the sim's own version, whenever it
+# rebuilds. This repo's own real remote - not invented. No release exists
+# yet, so every real check today legitimately reports "none published" -
+# that's the correct, honest state until the agent actually runs, not a bug.
+GITHUB_REPO = "Ruban-Creator/wow-gearing-tool"
+
+_VERSION_RE = re.compile(r"v?(\d+)\.(\d+)\.(\d+)")
+
+
+def _parse_version(label: str) -> tuple[int, int, int] | None:
+    """None for anything that isn't a clean vX.Y.Z tag - e.g. a raw short
+    SHA (sim_version_label()'s own fallback when git can't resolve a real
+    tag). Never guess a comparison for that case; callers must treat it as
+    "can't tell, but show the human the raw label anyway"."""
+    m = _VERSION_RE.fullmatch(label.strip())
+    if not m:
+        return None
+    return tuple(int(g) for g in m.groups())
+
+
+def _version_is_newer(candidate: str, current: str) -> bool | None:
+    """None if either side isn't a clean vX.Y.Z - real ambiguity, not a
+    false negative. True/False only when both parse."""
+    c, cur = _parse_version(candidate), _parse_version(current)
+    if c is None or cur is None:
+        return None
+    return c > cur
+
 
 # One global job slot, not per-character concurrency - the real sim-call
 # concurrency ceiling (valuation.SIMSERVER_POOL_SIZE=2) means two
@@ -396,4 +431,43 @@ class Api:
             "github_url": "https://github.com/wowsims/tbc-new",
             "patreon_url": "https://www.patreon.com/wowsims",
             "discord_url": "https://discord.gg/jJMPr9JWwx",
+        }
+
+    def check_for_sim_update(self) -> dict:
+        """Real GitHub Releases check against this repo's own remote
+        (GITHUB_REPO) - the scheduled sim-update agent (designed, not yet
+        running) is expected to publish a new release there, tagged to
+        match the sim's own version, whenever it rebuilds. Every real
+        failure mode (offline, GitHub down, rate-limited, no release
+        published yet) is reported as a distinct, honest state - never
+        silently treated as "no update", which would be indistinguishable
+        from a real, successful "you're current" check. `update_available`
+        is None (not False) when a comparison genuinely can't be made
+        (e.g. the local version is a fallback short-SHA, not a clean tag) -
+        the UI must show that as "can't tell", not claim you're current."""
+        current = repo_root.sim_version_label()
+        try:
+            req = urllib.request.Request(
+                f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest",
+                headers={"Accept": "application/vnd.github+json", "User-Agent": "GearingTool"},
+            )
+            with urllib.request.urlopen(req, timeout=6) as resp:
+                data = json.loads(resp.read())
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return {"checked": True, "error": None, "current_version": current,
+                        "latest_version": None, "update_available": False, "release_url": None,
+                        "note": "No release has been published yet."}
+            return {"checked": False, "error": f"HTTP {e.code}", "current_version": current,
+                    "latest_version": None, "update_available": None, "release_url": None}
+        except (urllib.error.URLError, OSError, ValueError) as e:
+            return {"checked": False, "error": str(e), "current_version": current,
+                    "latest_version": None, "update_available": None, "release_url": None}
+
+        latest_tag = data.get("tag_name")
+        return {
+            "checked": True, "error": None,
+            "current_version": current, "latest_version": latest_tag,
+            "update_available": _version_is_newer(latest_tag, current) if latest_tag else False,
+            "release_url": data.get("html_url"),
         }

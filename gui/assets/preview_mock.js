@@ -4,6 +4,7 @@
 // referenced only from a separate preview harness. Delete once visual
 // verification is done, or keep for future quick iteration - not shipped.
 let mockAddonInstalled = false; // flip to true to preview the "up to date" / no-banner state
+let mockUpdateAvailable = true; // flip to false to preview the "up to date" / no-banner state
 
 window.pywebview = {
   api: {
@@ -62,11 +63,18 @@ window.pywebview = {
       return { success: true, error: null, install_path: "C:\\Games\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\GearingToolCompanion" };
     },
     get_sim_credits: async () => ({
-      version_label: "v0.0.119",
-      commit_sha: "3267f8dfa4a20746d4982c1522fdec1d4eb77f4c",
+      version_label: "v0.0.124",
+      commit_sha: "7963eeac179ecbc61dce4e40be945e8fe0fd2204",
       github_url: "https://github.com/wowsims/tbc-new",
       patreon_url: "https://www.patreon.com/wowsims",
       discord_url: "https://discord.gg/jJMPr9JWwx",
+    }),
+    check_for_sim_update: async () => (mockUpdateAvailable ? {
+      checked: true, error: null, current_version: "v0.0.124", latest_version: "v0.0.125",
+      update_available: true, release_url: "https://github.com/Ruban-Creator/wow-gearing-tool/releases/tag/v0.0.125",
+    } : {
+      checked: true, error: null, current_version: "v0.0.124", latest_version: null,
+      update_available: false, release_url: null, note: "No release has been published yet.",
     }),
   }
 };

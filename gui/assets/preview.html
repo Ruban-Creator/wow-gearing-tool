@@ -80,6 +80,14 @@
             <button id="settings-addon-install-btn" class="modal-btn">Install</button>
           </div>
         </div>
+        <div class="settings-row">
+          <div class="settings-label">Sim update</div>
+          <div class="settings-value" id="settings-update-status">–</div>
+          <div class="settings-actions">
+            <button id="settings-update-check-btn" class="modal-btn">Check for updates</button>
+            <button id="settings-update-view-btn" class="modal-btn" hidden>View release</button>
+          </div>
+        </div>
         <div class="credits-block">
           <div class="credits-label">Powered by <a id="credits-github-link" href="https://github.com/wowsims/tbc-new">wowsims/tbc-new</a> <span id="credits-version">–</span></div>
           <div class="credits-thanks">This tool exists entirely because of the wowsims team's own simulation engine - huge thanks to them and every contributor.</div>
@@ -93,10 +101,17 @@
     </div>
   </div>
 
-  <div id="addon-banner" class="addon-banner" hidden>
-    <span id="addon-banner-text">GearingToolCompanion isn't installed yet - it's not on CurseForge, so this tool ships it directly.</span>
-    <button id="addon-banner-install-btn" class="modal-btn">Install now</button>
-    <button id="addon-banner-dismiss-btn" class="icon-btn" title="Dismiss">&times;</button>
+  <div id="banner-stack" class="banner-stack">
+    <div id="addon-banner" class="addon-banner" hidden>
+      <span id="addon-banner-text">GearingToolCompanion isn't installed yet - it's not on CurseForge, so this tool ships it directly.</span>
+      <button id="addon-banner-install-btn" class="modal-btn">Install now</button>
+      <button id="addon-banner-dismiss-btn" class="icon-btn" title="Dismiss">&times;</button>
+    </div>
+    <div id="update-banner" class="addon-banner" hidden>
+      <span id="update-banner-text">A new sim version is available.</span>
+      <button id="update-banner-view-btn" class="modal-btn">View release</button>
+      <button id="update-banner-dismiss-btn" class="icon-btn" title="Dismiss">&times;</button>
+    </div>
   </div>
 
   <div id="run-report-modal" class="modal-overlay" hidden>
