@@ -23,6 +23,7 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
+USER_DATA_DIR = repo_root.USER_DATA_DIR
 sys.path.insert(0, os.path.join(REPO_ROOT, "core"))
 import optimizer as opt  # noqa: E402
 import gear_config as gc  # noqa: E402
@@ -54,7 +55,7 @@ def main():
     chase_bonus = json.load(open(os.path.join(PROFILE_DIR, "chase_bonus_gems.json"), encoding="utf-8"))
     gopt.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
 
-    char = json.load(open(os.path.join(REPO_ROOT, "data", "character.json"), encoding="utf-8"))
+    char = json.load(open(os.path.join(USER_DATA_DIR, "character.json"), encoding="utf-8"))
     owned_items = char["equipped"]["items"]
     meta_gem_id = opt.find_owned_meta_gem(owned_items)
     baseline_config = opt.build_owned_config(owned_items)
@@ -117,7 +118,7 @@ def main():
 
     print(f"\nPure Agility clearly still wins: {len(real_losses)} of {len(results)} checked")
 
-    out_path = os.path.join(REPO_ROOT, "data", "cache", "gem_choice_verification.json")
+    out_path = os.path.join(USER_DATA_DIR, "cache", "gem_choice_verification.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump([r[3] for r in results], f, indent=2)
     print(f"\nWrote {out_path}")

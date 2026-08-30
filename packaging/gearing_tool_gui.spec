@@ -27,6 +27,20 @@ import os
 # regardless of where the repo is checked out.
 REPO_ROOT = os.path.dirname(SPECPATH)
 ASSETS_SRC = os.path.join(REPO_ROOT, "gui", "assets")
+# Build Output (5th bucket, 2026-08-29 folder-structure rework) - the final
+# packaged exe lands in build/dist/ and PyInstaller's own intermediate work
+# dir in build/_pyinstaller_work/, both under build/ alongside build/bin/'s
+# Go binaries, instead of a top-level dist/ + a top-level build/ that
+# collides in name with this project's own "Build Output" bucket.
+# NOTE: DISTPATH/WORKPATH are NOT settable from inside a spec file -
+# PyInstaller already resolves and creates them from --distpath/--workpath
+# (or its own hardcoded defaults) BEFORE this spec is ever exec'd
+# (confirmed against PyInstaller 6.22.2's own build_main.py - CONF['distpath']/
+# CONF['workpath'] are fixed at line ~1146-1151, this spec's code doesn't
+# run until line ~1213). Assigning DISTPATH/WORKPATH here would silently be
+# a no-op, not a real override - the actual redirect has to be the
+# --distpath/--workpath flags on the build command itself. See
+# packaging/README.md's Build section for the real command.
 
 a = Analysis(
     [os.path.join(REPO_ROOT, "gui", "app.py")],

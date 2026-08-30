@@ -4,10 +4,11 @@ import sys
 
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
+USER_DATA_DIR = repo_root.USER_DATA_DIR
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import gap_analysis as ga  # noqa: E402
 
-char = json.load(open(os.path.join(REPO_ROOT, "data", "character.json"), encoding="utf-8"))
+char = json.load(open(os.path.join(USER_DATA_DIR, "character.json"), encoding="utf-8"))
 ref_p3 = json.load(open(
     os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter", "reference_bis", "phase3.json"),
     encoding="utf-8",

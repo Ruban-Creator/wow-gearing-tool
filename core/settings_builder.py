@@ -59,7 +59,7 @@ def build_settings(character: dict, profile: dict, raid_buffs_received: dict,
                     rotation: dict, class_options: dict, consumables: dict) -> dict:
     """Assembles a full settings dict.
 
-    character: the "character" block of data/characters/<name>/character.json
+    character: the "character" block of USER_DATA_DIR/characters/<name>/character.json
       (real race/equipment/talentsString/profession1-2 - equipment must
       already be in gear_config.item_entry() shape, one entry per SLOT_ORDER
       position).

@@ -1,12 +1,8 @@
 __pycache__/
 *.pyc
 .venv/
-data/cache/
-data/character.json
-data/characters/
-data/local_config.json
 wowsimcli*
 *.exe
-build/
-dist/
+build/*
+!build/README.md
 .claude/

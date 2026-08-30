@@ -27,7 +27,14 @@ import re
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
-STATUS_PATH = os.path.join(REPO_ROOT, "data", "acquisition_status.json")
+USER_DATA_DIR = repo_root.USER_DATA_DIR
+# rating_requirements is a fixed, character-independent game-mechanic table
+# (not per-character state) - lives with the tool's own curated reference
+# data, versioned in git, never in Production Data. Everything else here
+# (reputation standings, current arena rating) is real per-character state
+# and lives under USER_DATA_DIR/characters/<name_realm>/ instead - see
+# ingest/build_character.py's update_acquisition_status().
+RATING_REQUIREMENTS_PATH = os.path.join(REPO_ROOT, "profiles", "tbc", "reference", "arena_rating_requirements.json")
 
 REPUTATION_TIERS = [
     "Hated", "Hostile", "Unfriendly", "Neutral", "Friendly", "Honored", "Revered", "Exalted",
@@ -35,11 +42,23 @@ REPUTATION_TIERS = [
 _REP_PATTERN = re.compile(r"\b(" + "|".join(REPUTATION_TIERS) + r")\s+(.+)$")
 
 
-def load_status() -> dict:
-    if not os.path.exists(STATUS_PATH):
-        return {"reputation": {}, "arena": {}}
-    with open(STATUS_PATH, encoding="utf-8") as f:
-        return json.load(f)
+def load_status(name_realm: str) -> dict:
+    """Merges this character's own per-character acquisition state (real
+    reputation/arena data, Production Data) with the shared, versioned
+    arena.rating_requirements table (Data We Have) into the same in-memory
+    shape gate_for_item() always expected, so that function needs no
+    changes for the split."""
+    status_path = os.path.join(USER_DATA_DIR, "characters", name_realm, "acquisition_status.json")
+    if os.path.exists(status_path):
+        with open(status_path, encoding="utf-8") as f:
+            status = json.load(f)
+    else:
+        status = {"reputation": {}, "arena": {}}
+    status.setdefault("arena", {})
+    if os.path.exists(RATING_REQUIREMENTS_PATH):
+        with open(RATING_REQUIREMENTS_PATH, encoding="utf-8") as f:
+            status["arena"]["rating_requirements"] = json.load(f)
+    return status
 
 
 def gate_for_item(source_text: str, slot_label: str, status: dict) -> dict | None:

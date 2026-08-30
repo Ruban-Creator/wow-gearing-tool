@@ -27,6 +27,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
+USER_DATA_DIR = repo_root.USER_DATA_DIR
 DEFAULT_HTML = r"E:\Claude\Temp\Gearing-Tool\phase3_ledger.html"
 TOP_N_SHOWN = 5  # must match build_ledger_data.py
 
@@ -237,7 +238,7 @@ def check_html(ledger_data: dict, html_path: str, rep: Report) -> None:
         # into the HTML silently drifting from the real ledger_data.json it
         # was supposed to be a copy of.
         rep.check(html_data == ledger_data,
-                   f"{html_path}: embedded DATA blob does not match data/cache/ledger_data.json - "
+                   f"{html_path}: embedded DATA blob does not match the character cache's ledger_data.json - "
                    f"the ledger was published from stale or hand-edited data")
 
     # Guards against the rescue_note-never-rendered bug class: the render
@@ -256,7 +257,7 @@ def main():
 
     rep = Report()
 
-    char_cache_dir = os.path.join(REPO_ROOT, "data", "characters", args.character, "cache")
+    char_cache_dir = os.path.join(USER_DATA_DIR, "characters", args.character, "cache")
     tiered_path = os.path.join(char_cache_dir, f"tiered_report_{args.phase}.json")
     ledger_path = os.path.join(char_cache_dir, f"ledger_data_{args.phase}.json")
 

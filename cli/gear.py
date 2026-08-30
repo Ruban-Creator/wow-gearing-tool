@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.join(_REPO_ROOT_GUESS, "core"))
 import repo_root  # noqa: E402
 
 REPO_ROOT = repo_root.REPO_ROOT
+USER_DATA_DIR = repo_root.USER_DATA_DIR
 sys.path.insert(0, os.path.join(REPO_ROOT, "ingest"))
 sys.path.insert(0, os.path.join(REPO_ROOT, "adapters", "tbc"))
 
@@ -23,14 +24,14 @@ import adapter  # noqa: E402
 
 
 def character_dir(name_realm: str) -> str:
-    path = os.path.join(REPO_ROOT, "data", "characters", name_realm)
+    path = os.path.join(USER_DATA_DIR, "characters", name_realm)
     os.makedirs(path, exist_ok=True)
     return path
 
 
 def cmd_sync(args):
     data = build_character.build(args.character)
-    out_path = os.path.join(REPO_ROOT, "data", "character.json")
+    out_path = os.path.join(USER_DATA_DIR, "character.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
@@ -56,8 +57,8 @@ def cmd_best(args):
     on are long resolved: Stage 2's Expose Weakness raid-vs-personal
     question (now the "Debuff" column, per-attacker) and a real gear
     export. Thin wrapper - run_full_sweep_mv.main(name_realm, phase) reads
-    data/characters/<name_realm>/character.json and writes
-    data/characters/<name_realm>/cache/tiered_report_<phase>.json.
+    USER_DATA_DIR/characters/<name_realm>/character.json and writes
+    USER_DATA_DIR/characters/<name_realm>/cache/tiered_report_<phase>.json.
 
     profile_dir is resolved explicitly via character_profiles.py, never left
     to run_full_sweep_mv.main()'s own default - a real bug, found 2026-08-25:
@@ -164,11 +165,11 @@ def main():
     parser = argparse.ArgumentParser(prog="gear")
     sub = parser.add_subparsers(required=True)
 
-    p_sync = sub.add_parser("sync", help="re-read addon export, write data/character.json")
+    p_sync = sub.add_parser("sync", help="re-read addon export, write USER_DATA_DIR/character.json")
     p_sync.add_argument("character", nargs="?", default="Lerynia-Thunderstrike")
     p_sync.set_defaults(func=cmd_sync)
 
-    p_best = sub.add_parser("best", help="full MV sweep against the owned pool - writes data/characters/<character>/cache/tiered_report_<phase>.json")
+    p_best = sub.add_parser("best", help="full MV sweep against the owned pool - writes USER_DATA_DIR/characters/<character>/cache/tiered_report_<phase>.json")
     p_best.add_argument("character", nargs="?", default="Lerynia-Thunderstrike")
     p_best.add_argument("phase", nargs="?", default="phase3")
     p_best.add_argument("--duration", type=int, default=None,

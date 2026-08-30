@@ -1,8 +1,9 @@
-"""Local, per-machine config that shouldn't travel via git (see
-.gitignore's data/local_config.json entry) - today just where the GUI's Run
-Report writes finished HTML reports. Plain load()/save() rather than a
-class, and kept at core/ level rather than gui/ - a future CLI command
-could read/write it too, not just the GUI.
+"""Local, per-machine config that never travels via git - lives under
+repo_root.USER_DATA_DIR (%LOCALAPPDATA%\\GearingTool\\ on a real install,
+never repo-relative - see repo_root.py's own docstring for why). Today
+just where the GUI's Run Report writes finished HTML reports. Plain
+load()/save() rather than a class, and kept at core/ level rather than
+gui/ - a future CLI command could read/write it too, not just the GUI.
 """
 import json
 import os
@@ -12,7 +13,8 @@ import string
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
-CONFIG_PATH = os.path.join(REPO_ROOT, "data", "local_config.json")
+USER_DATA_DIR = repo_root.USER_DATA_DIR
+CONFIG_PATH = os.path.join(USER_DATA_DIR, "local_config.json")
 
 
 def load() -> dict:
@@ -29,7 +31,7 @@ def save(config: dict) -> None:
 
 
 def report_output_root() -> str | None:
-    """None means "use the default" (data/characters/<name>/reports/) - a
+    """None means "use the default" (USER_DATA_DIR/characters/<name>/reports/) - a
     user-configured root overrides that entirely, e.g. if they'd rather the
     HTML files live somewhere they'll actually browse to day to day."""
     return load().get("report_output_root")
@@ -49,7 +51,7 @@ def report_output_path(name_realm: str, phase: str) -> str:
     root = report_output_root()
     if root:
         return os.path.join(root, name_realm, f"{phase}.html")
-    return os.path.join(REPO_ROOT, "data", "characters", name_realm, "reports", f"{phase}.html")
+    return os.path.join(USER_DATA_DIR, "characters", name_realm, "reports", f"{phase}.html")
 
 
 # The only hardcoded fallback left once wow_root() has no configured value

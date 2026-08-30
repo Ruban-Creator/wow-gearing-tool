@@ -3893,3 +3893,86 @@ re-verified a second time after the `distance_from_target` fix (200/0). `data/ch
 `data/cache/` are both gitignored, so the report/cache artifacts themselves are never committed -
 only the profile source files (`raid_buffs_overlay.json`, `settings_template.json`,
 `profile.json`) are.
+
+## 2026-08-29 — Folder-structure rework: five physically separated buckets, ahead of a real installer
+
+Prompted by "is this ready for our bundled installer" turning up real gaps twice already
+(REPO_ROOT under a frozen PyInstaller build, then this). User's own framing: split the repo into
+**The Tool** (source), **The Sim we downloaded** (`sim/tbc-new/` submodule), **The Data we have**
+(curated, versioned - `profiles/tbc/`), and **The Production Data we generated** (per-user, was
+`data/`) - plus a 5th bucket I proposed and the user approved: **Build Output** (compiled
+binaries, gitignored, disposable). Full target layout is now `CLAUDE.md`'s own "Repo layout"
+section, kept current rather than duplicated here.
+
+**Build Output (`build/`)**: `wowsimcli.exe`, `bridge.exe`, `simserver.exe` moved out of
+`sim/tbc-new/`, `adapters/tbc/bridge/`, and `adapters/tbc/simserver/` respectively into
+`build/bin/` - one predictable place instead of three, each nested inside its own source tree.
+`dist/gearing-tool-gui.exe` moved to `build/dist/`. Real naming collision caught before it bit:
+PyInstaller's own default work directory IS `build/` - reusing that name for this project's own
+bucket would silently let a bare `pyinstaller` invocation dump its intermediate cache into the
+same place. Fixed via `--distpath build/dist --workpath build/_pyinstaller_work` on the build
+command (documented in `packaging/README.md`) - confirmed (not assumed) that a spec file's own
+`DISTPATH`/`WORKPATH` globals are read-only convenience references PyInstaller resolves *before*
+exec'ing the spec (`build_main.py` line ~1146-1213 in the installed 6.22.2), so setting them
+inside the spec file itself would have been a silent no-op, not a real override - would have
+looked like it worked (no error) while quietly doing nothing. `build/README.md` is the one
+tracked file inside an otherwise fully gitignored directory (`build/*` + `!build/README.md` in
+`.gitignore` - confirmed via `git add --dry-run` that this actually works, not just assumed from
+the glob syntax).
+
+**Production Data leaves the repo entirely**: `core/repo_root.py` gains `USER_DATA_DIR`
+(`%LOCALAPPDATA%\GearingTool\`, falling back to `REPO_ROOT/data` only if `LOCALAPPDATA` genuinely
+isn't set) - the same trusted-single-source pattern as `REPO_ROOT` itself, not a config value (an
+app's own storage location can't be configured via a file stored... at that location). ~30 call
+sites across `core/`, `adapters/tbc/`, `cli/gear.py`, `gui/api.py`, `ingest/` batch-migrated from
+`os.path.join(REPO_ROOT, "data", ...)` to `os.path.join(USER_DATA_DIR, ...)`. Two files
+(`adapters/tbc/adapter.py`, `adapters/tbc/valuation.py`, `adapters/tbc/simserver_client.py`) had
+never been through the original REPO_ROOT consolidation pass at all - each computed its own naive
+`__file__`-relative REPO_ROOT, working correctly today only because `adapters/` isn't
+PyInstaller-bundled, but a second, uncoordinated copy of the same logic all the same. Routed
+through the canonical `repo_root.py` while already touching these files for the exe relocation.
+
+**Real, non-mechanical fix found only by actually testing, not just grepping**: two files
+(`ingest/list_characters.py`, `ingest/build_synthetic_character.py`) import `REPO_ROOT` via `from
+build_character import REPO_ROOT, ...` rather than `import repo_root` directly - a batch
+find/replace that assumed every file has `repo_root` as a bound name left both referencing
+`repo_root.USER_DATA_DIR` with `repo_root` never imported, a `NameError` that only surfaced when
+`list_characters.list_synthetic_characters()` was actually called, not at import time (the bad
+line only runs inside a function body). Fixed by adding `USER_DATA_DIR` to the existing
+`from build_character import ...` line instead, mirroring how `REPO_ROOT` was already being
+shared - caught by running the real function, not by re-reading the diff.
+
+**`data/acquisition_status.json` split, per the user's own catch** ("isn't that per character
+data? looks like Lerynia data" - correct, but incompletely fixed by just moving it): it was two
+things sharing one file. `reputation` and `arena.current_rating`/`brackets` are real per-character
+generated state (`ingest/build_character.py`'s `update_acquisition_status()` now takes
+`name_realm` and writes to `USER_DATA_DIR/characters/<name_realm>/acquisition_status.json`,
+creating it fresh if absent rather than requiring it pre-exist as the old code silently did).
+`arena.rating_requirements` is a fixed, character-independent game-mechanic table - moved to
+`profiles/tbc/reference/arena_rating_requirements.json` (new `reference/` subfolder under Data We
+Have, alongside the per-class profile dirs). `core/acquisition_gate.py`'s `load_status(name_realm)`
+merges both back into the exact in-memory shape `gate_for_item()` always expected, so that
+function needed zero changes. Real content preserved during migration, not regenerated from
+scratch - Lerynia's own real 40-faction reputation table and arena rating history copied forward
+byte-for-byte.
+
+**Verified end to end, not just import-clean**: a real `gear sync` + `gear best` run (Feral Cat
+Druid) against the new locations reproduced the exact known-good cached baseline (2428.3,
+byte-identical to the pre-restructuring value) - proof the sim_cache migration round-trips
+correctly and the whole bridge.exe/simserver.exe/wowsimcli.exe chain resolves and runs from
+`build/bin/`. `check_ledger_consistency.py --skip-html` clean (118/0). `acquisition_gate.py`'s
+split verified directly (Lerynia's real 40-faction reputation + arena rating loaded from the new
+per-character file, `rating_requirements` merged in correctly from the new shared reference file).
+`gui/api.py`'s `get_report_output_dir()`/`get_wow_root()` both resolve through the new
+`USER_DATA_DIR` correctly. All 24 touched modules import clean as a batch, not just individually
+(catches import-order issues a one-at-a-time check would miss).
+
+Old `data/` directory removed from the repo entirely (`git rm -r --cached data/` + real content
+migrated to `%LOCALAPPDATA%\GearingTool\` first, not discarded) - `.gitignore`'s `data/*` entries
+are gone since there's no `data/` left to ignore.
+
+**Not done in this pass**: the actual installer wizard (NSIS/Inno Setup) - this was the
+prerequisite folder-structure work, not the installer itself. First-run behavior (auto-create
+`USER_DATA_DIR`, auto-detect the WoW folder and confirm with the user rather than blind-prompting)
+is designed and the underlying `autodetect_wow_root()` already exists and works, but isn't wired
+into an actual setup flow yet, since there's no installer UI for it to live in.

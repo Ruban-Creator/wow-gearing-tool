@@ -56,13 +56,14 @@ if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import repo_root
     REPO_ROOT = repo_root.REPO_ROOT
+    USER_DATA_DIR = repo_root.USER_DATA_DIR
     name_realm, phase = "Lerynia-Thunderstrike", "phase3"
-    character = json.load(open(os.path.join(REPO_ROOT, "data", "characters", name_realm, "character.json"), encoding="utf-8"))
+    character = json.load(open(os.path.join(USER_DATA_DIR, "characters", name_realm, "character.json"), encoding="utf-8"))
     profile_dir = os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter")
     ledger_data = build_ledger_data.build(name_realm, phase, profile_dir)
     html = render(ledger_data, character, phase)
 
-    out_dir = os.path.join(REPO_ROOT, "data", "characters", name_realm, "reports")
+    out_dir = os.path.join(USER_DATA_DIR, "characters", name_realm, "reports")
     os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, f"{phase}.html")
     with open(out_path, "w", encoding="utf-8") as f:

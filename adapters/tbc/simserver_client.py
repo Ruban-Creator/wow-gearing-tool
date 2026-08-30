@@ -14,8 +14,14 @@ import subprocess
 import sys
 import threading
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SIMSERVER_EXE = os.path.join(REPO_ROOT, "adapters", "tbc", "simserver", "simserver.exe")
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "core"))
+import repo_root  # noqa: E402
+
+REPO_ROOT = repo_root.REPO_ROOT
+# Build Output (see adapter.py's own copy of this comment) - compiled from
+# adapters/tbc/simserver/main.go, but the binary itself lives in build/bin/
+# alongside wowsimcli.exe/bridge.exe, not nested inside its own source dir.
+SIMSERVER_EXE = os.path.join(REPO_ROOT, "build", "bin", "simserver.exe")
 
 # See valuation.py's own copy of this comment - the packaged (windowed,
 # console-less) GUI has nowhere to attach a child console, so Windows pops

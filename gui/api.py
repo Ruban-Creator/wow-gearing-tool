@@ -73,6 +73,7 @@ sys.path.insert(0, _core_dir)
 import repo_root  # noqa: E402
 
 REPO_ROOT = repo_root.REPO_ROOT
+USER_DATA_DIR = repo_root.USER_DATA_DIR
 sys.path.insert(0, os.path.join(REPO_ROOT, "ingest"))
 import list_characters  # noqa: E402
 import build_character  # noqa: E402
@@ -153,7 +154,7 @@ def _run_report_job(name_realm: str, phase: str, duration: int) -> None:
     .build() raises it when no WSE export exists) is caught and surfaced
     through _run_status instead of hanging the GUI's polling forever."""
     try:
-        char_dir = os.path.join(REPO_ROOT, "data", "characters", name_realm)
+        char_dir = os.path.join(USER_DATA_DIR, "characters", name_realm)
         profile = json.load(open(os.path.join(SUPPORTED_CHARACTERS[name_realm], "profile.json"), encoding="utf-8"))
         if profile.get("synthetic_character"):
             # Real gap found and fixed (Stage 6.3, Shaman): a synthetic test
@@ -238,7 +239,7 @@ class Api:
         return local_config.debug_mode()
 
     def get_reports(self, name_realm: str) -> dict:
-        path = os.path.join(REPO_ROOT, "data", "characters", name_realm, "reports.json")
+        path = os.path.join(USER_DATA_DIR, "characters", name_realm, "reports.json")
         if not os.path.exists(path):
             return {}
         with open(path, encoding="utf-8") as f:
@@ -283,7 +284,7 @@ class Api:
         """Real resolved absolute path either way, same shape as
         get_wow_root() - was returning None for "use the default" and
         letting the frontend paper over that with a vague, non-resolved
-        template string ("data/characters/<character>/reports/"), unlike
+        template string ("USER_DATA_DIR/characters/<character>/reports/"), unlike
         the WoW-folder row's own always-a-real-path display. Real problem
         this masked (found while answering the user's own "is this ready
         for the bundled installer" question, 2026-08-26): that default is
@@ -295,7 +296,7 @@ class Api:
         configured = local_config.report_output_root()
         if configured:
             return {"path": configured, "is_configured": True}
-        return {"path": os.path.join(REPO_ROOT, "data", "characters", "<character>", "reports"), "is_configured": False}
+        return {"path": os.path.join(USER_DATA_DIR, "characters", "<character>", "reports"), "is_configured": False}
 
     def pick_report_folder(self) -> str | None:
         import webview

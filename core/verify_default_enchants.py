@@ -36,6 +36,7 @@ import valuation  # noqa: E402
 
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
+USER_DATA_DIR = repo_root.USER_DATA_DIR
 CLEAR_THRESHOLD = 1.0  # DPS - below this, treat as noise/no real effect, not a genuine gain
 ITERATIONS = 3000
 
@@ -55,7 +56,7 @@ def verify(profile_dir: str, name_realm: str) -> dict[str, int]:
     gem_optimizer.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
     set_bonus.set_active_item_sets_go(os.path.join(REPO_ROOT, "sim", "tbc-new", profile["set_bonus_go_source"]))
 
-    character = json.load(open(os.path.join(REPO_ROOT, "data", "characters", name_realm, "character.json"),
+    character = json.load(open(os.path.join(USER_DATA_DIR, "characters", name_realm, "character.json"),
                                 encoding="utf-8"))
     known_professions = {p["name"] for p in character["character"]["professions"]}
     baseline_config = opt.build_owned_config(character["equipped"]["items"], known_professions)

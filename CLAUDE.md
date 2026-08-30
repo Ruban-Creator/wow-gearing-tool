@@ -69,18 +69,44 @@ If any file under `core/` mentions a class, spec, talent, or expansion by name, 
 
 ## Repo layout
 
+Four buckets, physically separated (2026-08-29 folder-structure rework, done ahead of a real
+bundled installer — see NOTES.md's own entry for the full rationale/migration):
+
 ```
-sim/tbc-new/          git submodule, pinned commit — the vendored simulator
-core/                  MV optimizer, engine-agnostic, dict-based
-adapters/tbc/          SimAdapter impl: subprocess -> wowsimcli, dict in/out
-profiles/tbc/          spec profile data (survival-hunter.yaml)
-ingest/                addon SavedVariables reader (slpp Lua parser) -> character.json
-addons/GearingToolCompanion/  companion addon (bank/bags/reputation/arena export) - mirrored
-                               here so a fresh machine can install it without a live WoW client;
-                               source of truth is whichever copy was most recently edited in a
-                               session (see "Addon sync" below), not automatically kept in sync
-cli/                   `gear sync`, `gear best` entry points
-data/                  character.json, sim-result cache (keyed by gear-config hash), history
+The Tool (this repo, git-tracked source):
+  core/                  MV optimizer, engine-agnostic, dict-based
+  adapters/tbc/          SimAdapter impl: subprocess -> wowsimcli, dict in/out
+  ingest/                addon SavedVariables reader (slpp Lua parser) -> character.json
+  cli/                   `gear sync`, `gear best` entry points
+  gui/                   pywebview picker + report-viewer app
+  packaging/             PyInstaller spec + build docs
+  addons/GearingToolCompanion/  companion addon (bank/bags/reputation/arena export) - mirrored
+                                 here so a fresh machine can install it without a live WoW client;
+                                 source of truth is whichever copy was most recently edited in a
+                                 session (see "Addon sync" below), not automatically kept in sync
+
+The Sim we downloaded (git submodule, pinned commit, its own history):
+  sim/tbc-new/           the vendored simulator - db.bin committed inside it; wowsimcli.exe itself
+                         is a local build output, not committed (see Build Output below)
+
+The Data we have (curated, versioned, ships with the tool):
+  profiles/tbc/          spec profile data (candidate pools, reference BiS, stat weights, raid
+                         buffs, per-class settings) + reference/ (fixed game-mechanic tables that
+                         aren't per-character, e.g. arena_rating_requirements.json)
+
+Build Output (5th bucket, gitignored, disposable/regenerable — never committed):
+  build/bin/             wowsimcli.exe, bridge.exe, simserver.exe - Go build output the Python
+                         tool calls as subprocesses at runtime. Source lives in sim/tbc-new/ and
+                         adapters/tbc/{bridge,simserver}/ respectively; the compiled binaries land
+                         here instead of nested inside either source tree.
+  build/dist/            gearing-tool-gui.exe - PyInstaller's final packaged output (see
+                         packaging/README.md)
+
+Production Data (generated per-user, lives OUTSIDE this repo entirely):
+  %LOCALAPPDATA%\GearingTool\   character caches/reports, sim_cache.json, local_config.json - see
+                                core/repo_root.py's USER_DATA_DIR. Auto-created on first run, never
+                                repo-relative (an installed copy in Program Files can't write next
+                                to itself). The old data/ directory is gone.
 ```
 
 ## Addon sync
@@ -120,11 +146,14 @@ automatically in this git-bash environment — see NOTES.md for the exact PATH p
 One-time build (from repo root). `assets/database/db.bin` (the item DB) is already **committed**
 in the submodule — do NOT run `db2tool`/`gen_db`/`make db` unless `git status` inside
 `sim/tbc-new` shows it's actually missing or you've bumped to a commit that changed it. The only
-genuinely-generated, gitignored-upstream piece is the protobuf Go bindings:
+genuinely-generated, gitignored-upstream piece is the protobuf Go bindings. Every compiled binary
+lands in `build/bin/` (the Build Output bucket, see Repo Layout above), not inside its own source
+tree — `mkdir -p build/bin` once, first:
 ```
 protoc -I=./sim/tbc-new/proto --go_opt=Mgoogle/protobuf/descriptor.proto=google.golang.org/protobuf/types/descriptorpb --go_out=./sim/tbc-new/sim/core ./sim/tbc-new/proto/*.proto
-cd sim/tbc-new && go build -o wowsimcli.exe --tags=with_db ./cmd/wowsimcli/cli_main.go
-cd ../../adapters/tbc/bridge && go build -o bridge.exe .
+cd sim/tbc-new && go build -o ../../build/bin/wowsimcli.exe --tags=with_db ./cmd/wowsimcli/cli_main.go
+cd ../adapters/tbc/bridge && go build -o ../../../build/bin/bridge.exe .
+cd ../simserver && go build -o ../../../build/bin/simserver.exe .
 ```
 If a future submodule bump ever does need a DB rebuild: `tools/database/generator-settings.local.json`
 (untracked, not committed) is a copy of `generator-settings.json` with `BaseDir` pointed at the
@@ -134,7 +163,7 @@ submodule and `git checkout -- .` anything that shouldn't have changed before re
 
 Day to day:
 ```
-python cli/gear.py sync                                    # re-read addon export -> data/character.json
+python cli/gear.py sync                                    # re-read addon export -> USER_DATA_DIR/character.json
 python cli/gear.py preset <path/to/*.build.json>            # sanity-check the sim pipeline
 ```
 

@@ -46,3 +46,25 @@ else:
     # location - core/repo_root.py's immediate parent directory already
     # contains ingest/list_characters.py, so this resolves in one step.
     REPO_ROOT = _find_repo_root(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _user_data_dir() -> str:
+    """Where Production Data (per-character caches/reports, sim_cache.json,
+    local_config.json) actually lives - 2026-08-29 folder-structure rework,
+    prompted by the "is this ready for a bundled installer" question. Used
+    to be REPO_ROOT/data/, which only works for a dev checkout: an installed
+    copy sitting in Program Files can't write there without admin rights,
+    and a reinstall/update would wipe it if it lived next to the tool's own
+    source. %LOCALAPPDATA%\\GearingTool\\ on Windows - created on first use,
+    not at install time, so a fresh install "just works" with no separate
+    installer-side data step. Falls back to REPO_ROOT/data only if
+    LOCALAPPDATA genuinely isn't set (never happens on real Windows; kept
+    only so this doesn't hard-crash in some exotic environment instead of
+    degrading to the old dev-checkout behavior)."""
+    base = os.environ.get("LOCALAPPDATA")
+    if not base:
+        return os.path.join(REPO_ROOT, "data")
+    return os.path.join(base, "GearingTool")
+
+
+USER_DATA_DIR = _user_data_dir()

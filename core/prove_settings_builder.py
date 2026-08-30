@@ -5,7 +5,7 @@ doesn't come out byte-identical, the builder has a real bug, not a design
 flaw to hand-wave past.
 
 Character (race/equipment/talents/professions) is extracted from the
-EXISTING settings_template.json itself, not data/characters/Lerynia-
+EXISTING settings_template.json itself, not USER_DATA_DIR/characters/Lerynia-
 Thunderstrike/character.json - that file's WSE export currently has 0
 equipped items (a real, already-flagged, unrelated data-staleness issue,
 not a settings_builder bug - see QUESTIONS.md). Testing the builder's own

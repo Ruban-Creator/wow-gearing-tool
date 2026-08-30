@@ -1,18 +1,24 @@
 # Packaging the GUI
 
-Builds `dist/gearing-tool-gui.exe` - a single-file, double-clickable app
-(picker + report viewer, v1 - see `CLAUDE.md`'s multi-character GUI section
-and the approved plan referenced there).
+Builds `build/dist/gearing-tool-gui.exe` - a single-file, double-clickable
+app (picker + report viewer, v1 - see `CLAUDE.md`'s multi-character GUI
+section and the approved plan referenced there).
 
 ## Build
 
 ```
 pip install -r requirements.txt -r requirements-gui.txt
 pip install pyinstaller
-python -m PyInstaller packaging/gearing_tool_gui.spec
+python -m PyInstaller packaging/gearing_tool_gui.spec --distpath build/dist --workpath build/_pyinstaller_work
 ```
 
-Output: `dist/gearing-tool-gui.exe` (~13 MB).
+Output: `build/dist/gearing-tool-gui.exe` (~13 MB). The `--distpath`/
+`--workpath` flags are real, required arguments here, not optional style -
+PyInstaller's spec files can't set these themselves (its own `DISTPATH`/
+`WORKPATH` spec globals are read-only convenience references, resolved
+*before* the spec runs - see the spec file's own comment); omitting the
+flags puts a stray top-level `dist/`/`build/<specname>/` back, colliding in
+name with this project's own `build/` (Build Output) bucket.
 
 `pyinstaller` is a build-time-only tool - not listed in `requirements-gui.txt`,
 since the GUI itself doesn't import it at runtime.
@@ -22,18 +28,27 @@ since the GUI itself doesn't import it at runtime.
 Just double-click it - no working-directory setup needed. It finds the real
 repo root itself by walking up from its own on-disk location
 (`sys.executable`, not `os.getcwd()`) looking for `ingest/list_characters.py`,
-so it works whether it's sitting in `dist/` or copied to the repo root
+so it works whether it's sitting in `build/dist/` or copied to the repo root
 directly (real bug hit and fixed 2026-08-24: the original `os.getcwd()`-based
 version crashed with `ModuleNotFoundError: No module named 'list_characters'`
 on the very first real double-click, since Windows' double-click cwd didn't
 line up with either location - see `gui/api.py`'s `_find_repo_root()`).
 
-It does still need to be *somewhere inside* (or in `dist/` directly under) a
-real Gearing-Tool checkout - it reads `data/characters/<name-realm>/` and
-imports `ingest/list_characters.py`/`ingest/build_character.py` as real
-source files rather than bundling them into the exe. Moving just the `.exe`
-file out to somewhere with no repo around it won't work; that's a real,
-deliberate v1 scope decision (a personal single-repo tool), not an oversight.
+It does still need to be *somewhere inside* (or in `build/dist/` directly
+under) a real Gearing-Tool checkout - it imports `ingest/list_characters.py`/
+`ingest/build_character.py`/`core/*.py` as real source files rather than
+bundling them into the exe, and needs `build/bin/wowsimcli.exe`/`bridge.exe`/
+`simserver.exe` (the Go build output, see the repo root's own `build/README.md`
+if one exists, or `CLAUDE.md`'s Local Setup section) as real siblings too.
+Moving just the `.exe` file out to somewhere with no repo around it won't
+work; that's a real, deliberate v1 scope decision (a personal single-repo
+tool), not an oversight.
+
+Production Data (character caches, reports, `local_config.json`) is NOT
+repo-relative, though - since the 2026-08-29 folder-structure rework it
+lives under `%LOCALAPPDATA%\GearingTool\` regardless of where the exe or
+its repo checkout sit, auto-created on first run. See `core/repo_root.py`'s
+`USER_DATA_DIR`.
 
 ## Known real gotcha already resolved here, not guessed
 

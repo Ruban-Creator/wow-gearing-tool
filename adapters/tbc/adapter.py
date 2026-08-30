@@ -12,11 +12,26 @@ import subprocess
 import sys
 import uuid
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# core/ is always this file's own great-grandparent's child (adapters/tbc/
+# -> repo root -> core/) - true whether running from source or from inside
+# a frozen PyInstaller build's extraction dir. Delegated to repo_root.py
+# rather than computed naively here so this module shares the same single
+# REPO_ROOT/USER_DATA_DIR resolution as everything else - see that module's
+# own docstring for why a naive __file__-based guess is real risk.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "core"))
+import repo_root  # noqa: E402
+
+REPO_ROOT = repo_root.REPO_ROOT
+USER_DATA_DIR = repo_root.USER_DATA_DIR
 SIM_DIR = os.path.join(REPO_ROOT, "sim", "tbc-new")
-BRIDGE_EXE = os.path.join(REPO_ROOT, "adapters", "tbc", "bridge", "bridge.exe")
-WOWSIMCLI_EXE = os.path.join(SIM_DIR, "wowsimcli.exe")
-CACHE_DIR = os.path.join(REPO_ROOT, "data", "cache")
+# Build Output (the 5th bucket, 2026-08-29 folder-structure rework) - these
+# two are compiled from the Go sources under adapters/tbc/bridge/ and
+# sim/tbc-new/ respectively, but the compiled binaries themselves live in
+# one predictable place (build/bin/) rather than nested inside either
+# source tree, so an installer/build script never has to hunt for them.
+BRIDGE_EXE = os.path.join(REPO_ROOT, "build", "bin", "bridge.exe")
+WOWSIMCLI_EXE = os.path.join(REPO_ROOT, "build", "bin", "wowsimcli.exe")
+CACHE_DIR = os.path.join(USER_DATA_DIR, "cache")
 
 # See valuation.py's own copy of this comment - the packaged (windowed,
 # console-less) GUI has nowhere to attach a child console, so Windows pops

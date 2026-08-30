@@ -24,6 +24,7 @@ import simserver_client  # noqa: E402
 import expose_weakness  # noqa: E402
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "core"))
+import repo_root  # noqa: E402
 import sim_cache  # noqa: E402
 import gear_config  # noqa: E402
 import item_db  # noqa: E402
@@ -66,8 +67,9 @@ def _apply_weapon_imbues(settings: dict, items: list[dict]) -> None:
             if item and item.get("weaponType") == FIST_WEAPON_TYPE:
                 consumables[field] = FIST_WEAPON_IMBUE_ID
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-CACHE_DIR = os.path.join(REPO_ROOT, "data", "cache")
+REPO_ROOT = repo_root.REPO_ROOT
+USER_DATA_DIR = repo_root.USER_DATA_DIR
+CACHE_DIR = os.path.join(USER_DATA_DIR, "cache")
 
 USE_SIMSERVER = True
 # Real root cause found and fixed 2026-08-24 (with the user present to

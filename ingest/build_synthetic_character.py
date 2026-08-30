@@ -22,7 +22,7 @@ import sys
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from build_character import REPO_ROOT, load_item_db, resolve_items, sim_commit_sha  # noqa: E402
+from build_character import REPO_ROOT, USER_DATA_DIR, load_item_db, resolve_items, sim_commit_sha  # noqa: E402
 
 
 def build(name_realm: str, race: str, class_name: str, spec: str,
@@ -67,7 +67,7 @@ if __name__ == "__main__":
      gear_set_path, talents) = sys.argv[1:9]
     character = build(name_realm, race, class_name, spec, profession1, profession2,
                        gear_set_path, talents)
-    out_dir = os.path.join(REPO_ROOT, "data", "characters", name_realm)
+    out_dir = os.path.join(USER_DATA_DIR, "characters", name_realm)
     os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, "character.json")
     with open(out_path, "w", encoding="utf-8") as f:

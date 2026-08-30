@@ -8,11 +8,12 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
+USER_DATA_DIR = repo_root.USER_DATA_DIR
 
-mv = json.load(open(os.path.join(REPO_ROOT, "data", "cache", "mv_report.json"), encoding="utf-8"))
+mv = json.load(open(os.path.join(USER_DATA_DIR, "cache", "mv_report.json"), encoding="utf-8"))
 pool = json.load(open(os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter", "candidate_pool.json"), encoding="utf-8"))
 p3 = json.load(open(os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter", "reference_bis", "phase3.json"), encoding="utf-8"))
-char = json.load(open(os.path.join(REPO_ROOT, "data", "character.json"), encoding="utf-8"))
+char = json.load(open(os.path.join(USER_DATA_DIR, "character.json"), encoding="utf-8"))
 
 mv_by_name = {it["name"]: it for it in mv["items"]}
 
@@ -67,7 +68,7 @@ out["package"] = {
             "the set bonus is what makes the full swap this large, not any single piece.",
 }
 
-out_path = os.path.join(REPO_ROOT, "data", "cache", "loot_ledger_data.json")
+out_path = os.path.join(USER_DATA_DIR, "cache", "loot_ledger_data.json")
 with open(out_path, "w", encoding="utf-8") as f:
     json.dump(out, f, indent=2)
 print("wrote", out_path)

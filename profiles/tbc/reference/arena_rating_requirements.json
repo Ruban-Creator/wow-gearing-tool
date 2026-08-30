@@ -1,0 +1,6 @@
+{
+  "_comment": "TBC Anniversary ruleset, as stated by the user - not the retail/classic-progression values, which differ. Fixed, character-independent game-mechanic thresholds (arena vendor gear is rating-gated the same way for every player), not per-character state - split out of the old flat data/acquisition_status.json (2026-08-29 folder-structure rework) into Data We Have, versioned with the tool.",
+  "Weapon": 1700,
+  "Ranged": 1700,
+  "Shoulder": 2000
+}

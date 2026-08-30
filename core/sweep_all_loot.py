@@ -33,6 +33,7 @@ import set_bonus  # noqa: E402
 
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
+USER_DATA_DIR = repo_root.USER_DATA_DIR
 DB_PATH = os.path.join(REPO_ROOT, "sim", "tbc-new", "assets", "database", "db.json")
 
 ITEM_TYPE_WEAPON = 13
@@ -225,7 +226,7 @@ def run(max_phase: int, profile_dir: str) -> str:
     print(f"\nTotal shortlisted for real sim: {len(shortlisted)}")
 
     profile_name = os.path.basename(os.path.normpath(profile_dir))
-    out_path = os.path.join(REPO_ROOT, "data", "cache", f"full_sweep_candidates_{profile_name}_phase{max_phase}.json")
+    out_path = os.path.join(USER_DATA_DIR, "cache", f"full_sweep_candidates_{profile_name}_phase{max_phase}.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(shortlisted, f, indent=2)
     print(f"Wrote {out_path}")

@@ -17,7 +17,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from build_character import REPO_ROOT, find_savedvariables, parse_lua_savedvariables  # noqa: E402
+from build_character import REPO_ROOT, USER_DATA_DIR, find_savedvariables, parse_lua_savedvariables  # noqa: E402
 
 sys.path.insert(0, os.path.join(REPO_ROOT, "core"))
 import character_profiles  # noqa: E402
@@ -114,7 +114,7 @@ def list_synthetic_characters() -> list[dict]:
             profile = json.load(f)
         if not profile.get("synthetic_character"):
             continue
-        char_path = os.path.join(REPO_ROOT, "data", "characters", name_realm, "character.json")
+        char_path = os.path.join(USER_DATA_DIR, "characters", name_realm, "character.json")
         if not os.path.exists(char_path):
             continue
         with open(char_path, encoding="utf-8") as f:

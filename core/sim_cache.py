@@ -12,7 +12,8 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
-CACHE_PATH = os.path.join(REPO_ROOT, "data", "cache", "sim_cache.json")
+USER_DATA_DIR = repo_root.USER_DATA_DIR
+CACHE_PATH = os.path.join(USER_DATA_DIR, "cache", "sim_cache.json")
 
 _lock = threading.Lock()
 _memory_cache: dict | None = None

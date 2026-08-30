@@ -34,6 +34,7 @@ _NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
+USER_DATA_DIR = repo_root.USER_DATA_DIR
 TOP_N_SHOWN = 5
 
 
@@ -47,7 +48,7 @@ def build(name_realm: str, phase: str, profile_dir: str):
     like raid_ap_contribution's enabled flag, not the DPS numbers
     themselves), but the same "resolve it via character_profiles.py, never
     guess" rule applies regardless of severity."""
-    report_path = os.path.join(REPO_ROOT, "data", "characters", name_realm, "cache", f"tiered_report_{phase}.json")
+    report_path = os.path.join(USER_DATA_DIR, "characters", name_realm, "cache", f"tiered_report_{phase}.json")
     report = json.load(open(report_path, encoding="utf-8"))
     current_phase_num = int(phase.removeprefix("phase"))
     profile = json.load(open(os.path.join(profile_dir, "profile.json"), encoding="utf-8"))
@@ -117,7 +118,7 @@ def build(name_realm: str, phase: str, profile_dir: str):
 if __name__ == "__main__":
     name_realm, phase = "Lerynia-Thunderstrike", "phase3"
     data = build(name_realm, phase)
-    out_dir = os.path.join(REPO_ROOT, "data", "characters", name_realm, "cache")
+    out_dir = os.path.join(USER_DATA_DIR, "characters", name_realm, "cache")
     os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, f"ledger_data_{phase}.json")
     with open(out_path, "w", encoding="utf-8") as f:

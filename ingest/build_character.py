@@ -1,6 +1,7 @@
 """Read WowSimsExporter + GearingToolCompanion SavedVariables straight off disk
-(no clipboard) and build data/character.json (+ update data/acquisition_status.json's
-reputation standings).
+(no clipboard) and build character.json (+ update this character's own
+acquisition_status.json reputation standings), both under
+repo_root.USER_DATA_DIR - never repo-relative.
 
 Ground truth for the shapes parsed here lives in NOTES.md ("SavedVariables
 located" and the WowSimsExporter source reading) - this file doesn't invent
@@ -35,7 +36,9 @@ import repo_root  # noqa: E402
 import local_config  # noqa: E402
 
 REPO_ROOT = repo_root.REPO_ROOT
+USER_DATA_DIR = repo_root.USER_DATA_DIR
 SIM_SUBMODULE = os.path.join(REPO_ROOT, "sim", "tbc-new")
+ARENA_RATING_REQUIREMENTS_PATH = os.path.join(REPO_ROOT, "profiles", "tbc", "reference", "arena_rating_requirements.json")
 
 
 def find_savedvariables(addon_folder_name: str) -> list[str]:
@@ -109,9 +112,11 @@ def find_gt_companion(name_realm: str) -> dict | None:
     return None
 
 
-def update_acquisition_status(reputation: dict, arena_teams: list) -> None:
-    """Merges fresh reputation standings and arena rating into
-    data/acquisition_status.json - safe to overwrite, both are now read
+def update_acquisition_status(name_realm: str, reputation: dict, arena_teams: list) -> None:
+    """Merges fresh reputation standings and arena rating into this
+    character's own acquisition_status.json (under
+    USER_DATA_DIR/characters/<name_realm>/ - per-character Production Data,
+    not shared across characters) - safe to overwrite, both are now read
     from confirmed, unambiguous sources: C_Reputation's `reaction` field
     for standing, GetPersonalRatedInfo's `rating` per bracket for arena
     (this client has no persistent "arena team" object at all - TBC
@@ -121,12 +126,20 @@ def update_acquisition_status(reputation: dict, arena_teams: list) -> None:
     arena vendor gating is "reach X rating in ANY bracket", not tied to
     one specific bracket, a stable, long-documented game mechanic (not
     server-specific data), unlike the API-field question above which
-    genuinely needed confirming."""
-    path = os.path.join(REPO_ROOT, "data", "acquisition_status.json")
-    if not os.path.exists(path):
-        return
-    with open(path, encoding="utf-8") as f:
-        status = json.load(f)
+    genuinely needed confirming.
+
+    rating_requirements (a fixed, character-independent game-mechanic
+    table, not per-character state) lives separately in
+    profiles/tbc/reference/arena_rating_requirements.json - curated Data
+    We Have, versioned with the tool - and is never written here."""
+    char_dir = os.path.join(USER_DATA_DIR, "characters", name_realm)
+    os.makedirs(char_dir, exist_ok=True)
+    path = os.path.join(char_dir, "acquisition_status.json")
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            status = json.load(f)
+    else:
+        status = {"reputation": {}, "arena": {}}
     if reputation:
         status.setdefault("reputation", {}).update(reputation)
     if arena_teams:
@@ -197,7 +210,7 @@ def build(name_realm: str) -> dict:
 
     unresolved = equipped_unresolved + bags_unresolved + bank_unresolved
 
-    update_acquisition_status(gt.get("reputation", {}), gt.get("arena", []))
+    update_acquisition_status(name_realm, gt.get("reputation", {}), gt.get("arena", []))
 
     return {
         "meta": {
@@ -230,7 +243,8 @@ def main():
     name_realm = sys.argv[1] if len(sys.argv) > 1 else "Lerynia-Thunderstrike"
     data = build(name_realm)
 
-    out_path = os.path.join(REPO_ROOT, "data", "character.json")
+    out_path = os.path.join(USER_DATA_DIR, "character.json")
+    os.makedirs(USER_DATA_DIR, exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
@@ -244,7 +258,7 @@ def main():
         for it in data["unresolved"]:
             print(f"    - id={it.get('id')} (not found in sim DB)")
 
-    status_path = os.path.join(REPO_ROOT, "data", "acquisition_status.json")
+    status_path = os.path.join(USER_DATA_DIR, "characters", name_realm, "acquisition_status.json")
     if os.path.exists(status_path):
         with open(status_path, encoding="utf-8") as f:
             status = json.load(f)

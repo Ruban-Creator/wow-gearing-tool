@@ -23,10 +23,11 @@ import stat_weights  # noqa: E402
 
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
+USER_DATA_DIR = repo_root.USER_DATA_DIR
 
 
 def build(name_realm: str, profile_dir: str) -> dict:
-    char_path = os.path.join(REPO_ROOT, "data", "characters", name_realm, "character.json")
+    char_path = os.path.join(USER_DATA_DIR, "characters", name_realm, "character.json")
     char_data = json.load(open(char_path, encoding="utf-8"))
     c = char_data["character"]
 

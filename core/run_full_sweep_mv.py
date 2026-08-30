@@ -38,6 +38,7 @@ import sweep_all_loot  # noqa: E402
 
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
+USER_DATA_DIR = repo_root.USER_DATA_DIR
 # This file is still Survival Hunter's own sweep script (Stage 6.1+ gives
 # Warrior/Druid their own equivalent entry points) - paths point at the
 # migrated profiles/tbc/survival_hunter/ layout, but PROFILE_DIR/PROFILE
@@ -416,7 +417,7 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     npc_by_id = {n["id"]: n["name"] for n in db.get("npcs", [])}
     zone_by_id = {z["id"]: z["name"] for z in db.get("zones", [])}
 
-    char_path = os.path.join(REPO_ROOT, "data", "characters", name_realm, "character.json")
+    char_path = os.path.join(USER_DATA_DIR, "characters", name_realm, "character.json")
     char = json.load(open(char_path, encoding="utf-8"))
 
     # Stage 6 (multi-class support): load this profile's real manifest and
@@ -452,7 +453,7 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     # temp file/cache entries instead of piling up garbage.
     actual_duration = duration
     if duration is not None:
-        cache_dir = os.path.join(REPO_ROOT, "data", "cache")
+        cache_dir = os.path.join(USER_DATA_DIR, "cache")
         os.makedirs(cache_dir, exist_ok=True)
         profile_tag = os.path.basename(os.path.normpath(profile_dir))
         has_real_2h_settings = os.path.exists(_settings_2h_path)
@@ -531,7 +532,7 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     owned_all_ids |= {it["id"] for it in char["owned"]["bags"] if it}
     owned_all_ids |= {it["id"] for it in char["owned"]["bank"] if it}
 
-    acquisition_status = acquisition_gate.load_status()
+    acquisition_status = acquisition_gate.load_status(name_realm)
 
     candidates = opt.load_candidates(POOL_PATH, owned_items, known_professions, pool_key_to_slots)
     # Real bug found 2026-08-25: candidate_pool.json for a wowsims-preset-
@@ -1504,7 +1505,7 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     elapsed = time.time() - start
     print(f"Elapsed: {elapsed:.1f}s")
 
-    out_dir = os.path.join(REPO_ROOT, "data", "characters", name_realm, "cache")
+    out_dir = os.path.join(USER_DATA_DIR, "characters", name_realm, "cache")
     os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, f"tiered_report_{phase}.json")
     with open(out_path, "w", encoding="utf-8") as f:
