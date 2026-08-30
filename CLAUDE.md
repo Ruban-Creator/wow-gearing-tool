@@ -157,8 +157,21 @@ tree — `mkdir -p build/bin` once, first:
 protoc -I=./sim/tbc-new/proto --go_opt=Mgoogle/protobuf/descriptor.proto=google.golang.org/protobuf/types/descriptorpb --go_out=./sim/tbc-new/sim/core ./sim/tbc-new/proto/*.proto
 cd sim/tbc-new && go build -o ../../build/bin/wowsimcli.exe --tags=with_db ./cmd/wowsimcli/cli_main.go
 cd ../adapters/tbc/bridge && go build -o ../../../build/bin/bridge.exe .
-cd ../simserver && go build -o ../../../build/bin/simserver.exe .
+cd ../simserver && go build -o ../../../build/bin/simserver.exe --tags=with_db .
 ```
+`--tags=with_db` is REQUIRED on `simserver.exe` too, not just `wowsimcli.exe` - real bug found
+2026-08-30 during the first-ever sim version bump (v0.0.119→v0.0.124): this exact command, minus
+that flag, was what this file itself documented beforehand, and rebuilding from it produced a
+`simserver.exe` with a completely empty in-memory item DB (`sim/core/database_load.go`'s
+DB-loading `init()` is gated behind `//go:build with_db` - omit the tag and that whole file, and
+the `ItemsByID` population it does, is silently excluded from the build). Every real sim call
+through `simserver.exe` then panicked with `"No item with id: <N>"` for literally any real item -
+looked exactly like a sim-version DB regression at first (a whole afternoon's worth of diagnosis:
+confirmed the item genuinely exists in `db.bin`/`db.json`, confirmed `database.Load()` finds it
+via a standalone Go test program, before finally checking the actual build command used and
+finding the missing flag). `bridge.exe` genuinely doesn't need the tag - its own job (expanding
+`IndividualSimSettings`->`RaidSimRequest`) never looks up an item, confirmed by its own source
+setting `player.Database = nil` unconditionally.
 Also bake the sim's commit SHA into a static file (`core/repo_root.py`'s `sim_commit_sha()` falls
 back to this when `git rev-parse` itself isn't available — a flat installer copy has no `.git`):
 ```
@@ -226,9 +239,13 @@ don't commit yet.
 
 **4. Rebuild.** Regenerate protobuf bindings ONLY if step 2 found `.proto` changes (the exact
 command is in "Local setup" above). Always rebuild all three binaries into `build/bin/` (same
-commands as "Local setup") and re-bake `build/bin/sim_commit_sha.txt` /
-`sim_version_label.txt` (`git -C sim/tbc-new rev-parse HEAD` / `git -C sim/tbc-new describe --tags
---exact-match HEAD`, redirected to those files respectively).
+commands as "Local setup" - **`wowsimcli.exe` AND `simserver.exe` both need `--tags=with_db`,
+`bridge.exe` does not** - see that section's own real, hard-won note on why) and re-bake
+`build/bin/sim_commit_sha.txt` / `sim_version_label.txt` (`git -C sim/tbc-new rev-parse HEAD` /
+`git -C sim/tbc-new describe --tags --exact-match HEAD`, redirected to those files respectively).
+If verification (step 6) panics with `"No item with id: <N>"` for an item you can otherwise
+confirm is real (check `core.item_db.by_id()` / grep `db.bin` for its name) - don't assume the sim
+version broke something, check the build tag first.
 
 **5. Kill stale processes before verifying.** `simserver.exe` runs as a persistent pool
 (`adapters/tbc/simserver_client.py`) - if old instances are still alive when you replace

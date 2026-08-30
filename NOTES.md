@@ -4092,3 +4092,58 @@ call, already used for report links) rather than plain `<a target="_blank">` - a
 window doesn't reliably support that the way a browser tab does. Verified live in the browser
 preview harness: clicking a credits link calls `open_url` with the exact real URL and the page
 itself never navigates away from the Settings modal.
+
+## 2026-08-30 — First real sim update: v0.0.119 → v0.0.124, and a real `simserver.exe` build bug found doing it
+
+The tool's first-ever sim version bump, following the runbook written earlier the same day (see
+CLAUDE.md's "Sim update procedure"). Real diff assessed first (`git diff --name-only` between the
+two tags): no `.proto` changes, no `go.mod`/`go.sum` changes, no `item_sets.go` changes for any of
+the 15 profiled classes. Real, meaningful changes found: Feral Cat Druid's entire default rotation
+was rewritten upstream (`ui/druid/feralcat/apls/default.apl.json`, whole-file replacement, not a
+tweak), `sim/core/buffs.go`/`consumes.go` changed moderately (32/24 lines), `sim/common/tbc/
+enchants.go` gained 17 lines (a pure addition, no existing lines touched). `assets/database/
+db.bin`/`db.json` both updated (already committed inside the submodule, pulled automatically by
+the bump - no separate DB regen needed).
+
+**Real bug found during verification, not a sim regression**: rebuilt all three binaries using
+this file's OWN documented commands (`wowsimcli.exe --tags=with_db`, `bridge.exe` and
+`simserver.exe` both WITHOUT the tag, exactly as previously written here) - every real sim call
+through the rebuilt `simserver.exe` then panicked with `"No item with id: <N>"` for literally any
+real item, across 12 different profiles/item IDs. Looked exactly like upstream had dropped items
+from the DB. Real diagnosis, not assumed: confirmed `db.json`'s Python-side lookup found every
+"missing" item fine (`core.item_db.by_id()`); confirmed the item's name string is genuinely present
+in `db.bin` via `grep -a`; wrote a standalone Go program (`sim/tbc-new/cmd/dbcheck/`, deleted after
+use, never committed) importing `assets/database` directly and confirmed `database.Load()` finds
+all 6 "missing" items with no issue. Root cause: `sim/core/database_load.go` (the file that
+actually populates the global `ItemsByID` map used by every sim call) is gated behind `//go:build
+with_db` - this repo's own documented `simserver.exe` build command never carried that tag, so
+`simserver.exe`'s in-memory item database has ALWAYS started completely empty. This only surfaced
+now because rebuilding `simserver.exe` from source is itself new (this is the tool's first real
+sim update - the standing `simserver.exe` binary before today had presumably been built by hand at
+some earlier point with the correct flag, and the docs just never caught up). `bridge.exe` genuinely
+doesn't need the tag - confirmed via its own source (`player.Database = nil`, unconditional - it
+never looks up an item, only expands the request shape). Fixed: `CLAUDE.md`'s Local Setup section
+and the sim-update runbook both corrected to require `--tags=with_db` on `simserver.exe` too, with
+the real symptom (`"No item with id"` despite the item genuinely existing) called out explicitly so
+a future run - human or the scheduled agent - recognizes it immediately instead of re-deriving this
+whole diagnosis.
+
+**Verified after the fix, not just claimed**: a real, live low-iteration (200) sim call for all 15
+profiles - 12/15 succeeded with sane DPS numbers close to their known pre-update values (Elemental
+Shaman 2178.8 vs 2176.55, Enhancement Shaman 2435.6 vs 2435.74, Beastmastery Hunter 3895.6 vs
+3901.63, Fury Warrior 2767.5 vs 2763.54, Feral Cat Druid 2432.2 vs 2428.29 - despite the whole
+rotation rewrite, Combat Rogue 2522.7 vs 2534.03, Shadow Priest 1719.4 vs 1720.93, Arcane Mage
+2474.8 vs 2468.31, Retribution Paladin 2193.1 vs 2193.36, Affliction Warlock 2365.6 vs 2366.07,
+Demonology Warlock 2851.2 vs 2860.43, Destruction Warlock 2516.2 vs 2517.42 - small deltas fully
+explained by 200 vs 500-1000 screening iterations, no outliers). The 3 real characters (Lerynia,
+Rubán, Béarforceone) failed with `IndexError: list index out of range` in `optimizer.
+build_owned_config()` - confirmed this is the pre-existing, already-documented empty-`equipped`
+staleness issue (`len(char['equipped']['items']) == 0` for Lerynia, matching earlier session notes
+on `data/character.json` needing a fresh in-game re-export), NOT a sim-update regression - the
+same 3 characters would fail identically under the OLD sim version too. `check_ledger_consistency.py
+--skip-html` re-run clean for two profiles post-update.
+
+Submodule bumped and committed (`sim/tbc-new` now at `v0.0.124`, `7963eeac179ecbc61dce4e40be945e8fe0fd2204`),
+`build/bin/sim_commit_sha.txt`/`sim_version_label.txt` re-baked to match. `build/bin/*.exe`
+themselves stay gitignored (Build Output, never committed) - only the submodule pointer and doc
+fixes are.
