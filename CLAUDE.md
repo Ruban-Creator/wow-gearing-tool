@@ -660,10 +660,13 @@ attribute so the tooltip shows the fully-optimized item, not just the base item 
 doesn't currently carry gem/enchant ids per row, so this would need real plumbing through the
 pipeline; flag if wanted.
 
-**Version 2 / a separate future feature build (explicitly not this build)**: a Google Sheets
-export function for the results.csv/winner.json outputs from §8 - per the user, this would be
-nice but isn't part of the current build; noted here only so the idea isn't lost, not scoped or
-planned yet.
+**Decided 2026-08-31: no Google Sheets export, ever - drop the idea entirely.** Per the user, once
+real Wowhead tooltips landed in the local HTML report (see the entry directly above) with zero
+hosting needed, a Sheets export stopped being a real improvement over what the local ledger already
+gives - real in-game-style item tooltips on hover beats a spreadsheet unconditionally, not just
+narrowly. Originally scoped as "results.csv/winner.json outputs from §8" - both of those were
+already effectively superseded by the real HTML ledger long before this decision, so there was no
+real remaining case for a Sheets export to begin with.
 
 **Idea collection, not decided — discuss before building**: speeding up a re-sweep after a raid
 week nets 1-2 new items. Rough thinking, for discussion, not a plan:
