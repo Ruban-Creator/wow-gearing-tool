@@ -591,7 +591,12 @@ messiest stage yet - two genuinely sim-breaking bugs, both silent - so a few cal
   flagging since "looks right when opened" was never actually confirmed for this one specifically.
 </details>
 
-## Stage 6.13 (Destruction Warlock, PLAN CLOSED): real judgment call worth your eyes
+## RESOLVED 2026-08-31: Destro-Fire stays unswept, no phase1 sweep built
+
+Asked directly (this question had never actually been raised before, despite the "worth your eyes"
+framing below) - per the user, leave as-is. Destro-Fire stays verified-working but not sweepable.
+
+<details><summary>Original entry, 2026-08-25 (Stage 6.13, Destruction Warlock, PLAN CLOSED)</summary>
 
 `profiles/tbc/destruction_warlock/` is done and real-verified, closing out the full 6.3-6.13
 staging plan (full writeup in NOTES.md). One real scoping call:
@@ -604,6 +609,7 @@ staging plan (full writeup in NOTES.md). One real scoping call:
   directory and is real/working (confirmed Incinerate-primary casts), but there's no `gear best`
   entry point wired up for it specifically. If you'd want a real, lighter-weight phase1 sweep for
   this alternate build specifically, that's a genuine, scoped follow-up - not built here.
+</details>
 
 ## Stage 6.12 (Demonology Warlock): real finding worth your eyes (not really a "call" - the data spoke)
 
