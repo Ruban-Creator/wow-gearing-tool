@@ -306,6 +306,34 @@ candidates per slot plus any candidate carrying nonzero Hit/Expertise Rating; re
 sims, not estimates; a pair is only a "package" if it's a genuinely high-interaction pair — no
 rollup into named bundles beyond that, per the user).
 
+**`core/interaction_matrix.py` real invocation status, checked directly (2026-08-31, code review
+§5.1 - flagged as the one real module worth a note here, 634 lines, imported by nothing):**
+`compute()` is real, working code (the 2026-08-23 first run found 47 real set-bonus-accounting
+artifacts among 50 candidate interactions - see NOTES.md's own dated entry) but has **no checked-in
+entry point** - no `if __name__ == "__main__":` block, no CLI wrapper, nothing imports it. It was
+run via an ad-hoc inline script written into that session's own Bash call, the exact anti-pattern
+`core/build_ledger_data.py`'s own docstring/NOTES.md entry (same date) explicitly names as a lesson
+already learned elsewhere ("any one-off transform... needs to be a checked-in script, not an ad-hoc
+snippet in that turn's Bash call - otherwise the next session has no way to know it was ever
+needed") - just not yet applied here. `compute()`'s own real signature
+(`settings_path, by_tier_slot, baseline_config, screen_iterations, resolve_iterations, seed`) needs
+`by_tier_slot` - `run_full_sweep_mv.py`'s full screened candidate pool, a complex in-memory
+structure never persisted to disk - so a real reusable wrapper isn't a trivial argv-parsing
+addition; it needs `run_full_sweep_mv.main()` itself to optionally call into this (or expose that
+pool) rather than a fully standalone script. Not built this pass - flagging precisely so the next
+time Stage 5 is actually needed, a real wrapper gets written and checked in rather than another
+one-off snippet.
+
+The rest of `core/`'s never-imported modules (`add_gear_variant_to_pool.py`,
+`build_candidate_pool.py`, `build_default_enchants.py`, `build_profile_settings.py`,
+`check_ledger_consistency.py`, `prove_settings_builder.py`, `run_mv_report.py`,
+`run_optimizer.py`, `verify_default_enchants.py`, `verify_gem_choices.py`) are real, working,
+standalone maintenance/verification tools run directly (`python core/<name>.py ...`), not dead code
+- same real pattern the code review itself confirmed is fine to leave in place. Each has its own
+usage docstring; `check_ledger_consistency.py` specifically is the one run constantly throughout
+this project's own real sessions (every profile-data change in this file's own dated entries gets
+regression-checked through it).
+
 Still open from §8 (Outputs): `results.csv`/`winner.json` as literal files (currently substituted
 by `data/cache/tiered_report.json` + the HTML ledger, not the spec'd files themselves). Package
 goals are effectively covered by Stage 5's interaction matrix now that it's built.
