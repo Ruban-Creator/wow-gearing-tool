@@ -4903,3 +4903,33 @@ rule: the baseline DPS itself stays her real, literal equipped-gear number (hone
 geared for a different spec) - that's a separate, real "wrong spec equipped" data-quality signal
 worth surfacing to a reader some day, not something to silently paper over by reconstructing a
 hypothetical "best owned gear" baseline instead of her real one.
+
+## 2026-08-31 — Real follow-up: mana/OOM investigation, Destruction Potion confirmed correct
+
+Same live investigation, continued: the user noticed a lot of healer (MP5/Spirit) items still
+showing as real upgrades even after the bags/bank and tier-bucketing fixes above, and correctly
+guessed why - real, live A/B confirmation: re-running the same character at 120s instead of 180s
+made almost all of them disappear. This is genuine sim behavior, not a bug - at 180s a mana-
+inefficient caster (her real casts-per-DPS ratio is worse than a properly-geared Elemental Shaman's,
+same root cause as everything else in this report) starts running into real mana constraints, so
+MP5/Spirit stats start showing genuine DPS value by preventing/delaying OOM. Not something to "fix"
+- it's the sim correctly modeling a real trade-off, just amplified by the same wrong-gear-equipped
+issue already on file above.
+
+Checked whether the profile's consumables are realistic for that scenario (per the user's own
+real-world knowledge: "Destro pot first, then mana pots when available" is genuine TBC raiding
+practice). Confirmed via the real vendored Go source (`sim/tbc-new/sim/core/consumes.go`'s
+`registerPotionCD()`), not assumed: this sim version's `ConsumesSpec.PotId` is the ONLY potion used
+for an entire encounter - the `Potions` (plural) proto field looks like a real usage sequence but
+functions only as a whitelist/filter, not "try these in order." **No potion-swapping mid-fight is
+possible through the standard consumables config in this sim version.** A possible workaround
+(scripting an explicit "use Mana Potion" APL action, mirroring the existing `currentManaPercent`
+gate already used for spell selection) was identified but not investigated further or built - real
+uncertainty whether the APL system even supports casting a potion as a generic action.
+
+Real, deliberate decision, per the user directly: keep `elemental_shaman/consumables.json`'s
+`potId` as Destruction Potion (id 22839), not a Mana Potion. Reasoning: for a properly-itemized
+Elemental Shaman (not the Resto-gear edge case that surfaced this whole investigation), the real
+mana constraint is much less severe, so the burst-damage potion is still the correct real choice -
+the OOM problem here is an artifact of the specific bad-report scenario, not evidence the profile's
+own default consumable choice is wrong. No config change made - already matched this decision.
