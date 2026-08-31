@@ -173,6 +173,32 @@ TIER_ZONES = {
     "Vanilla carryover": {1583, 1584, 1977, 2017, 2057, 2159, 2557, 2677, 2717, 3428, 3429, 3456},
 }
 
+# Real, data-derived fallback (found and fixed 2026-08-31, live user report:
+# real Elemental Shaman T6 tier pieces - Skyshatter Regalia - were showing
+# up bucketed under "Other" instead of "T6"). Root cause, confirmed via a
+# direct DB query, not assumed: 200+ real item sets across every class have
+# `sources: None` for EVERY piece - not just Skyshatter/Cyclone Regalia,
+# a genuine, widespread gap in the sim's own DB, not a bug in this file.
+# Real raid tier sets (Skyshatter/Cyclone/Thunderheart/Lightbringer/
+# Malefic/Onslaught/Gronnstalker's/Vestments of Absolution, etc.) have NO
+# sibling piece with resolvable source data to borrow a real zone from
+# either - every single piece of the same set is equally missing it.
+# item["phase"] IS still real, present DB data though, and confirmed via a
+# direct query (not assumed) to correspond 1:1 with TIER_ZONES's own real
+# zone-resolvable items: every real item with a zoneId in the T4 bucket is
+# phase 1, every T5-bucket item is phase 2, every T6-bucket item is phase 3
+# - so phase alone is enough to bucket a sourceless item into the correct
+# real tier, without claiming a specific zone/boss this DB doesn't actually
+# know. Only ever reached for CURATED-pool items (sweep_all_loot.eligible()
+# already requires real `sources` before a SWEPT item is even considered),
+# so this never risks bucketing a random unvetted item - only real,
+# already-curated BiS candidates missing this one DB field.
+PHASE_TO_TIER_ZONE_KEY = {
+    1: "T4 (Karazhan / Gruul's Lair / Magtheridon's Lair)",
+    2: "T5 (Serpentshrine Cavern / Tempest Keep)",
+    3: "T6 (Black Temple / Mount Hyjal)",
+}
+
 
 def horizon_tag(r: dict) -> str:
     """'[BiS through P5]' when it's the guide's genuine top pick all the
@@ -299,6 +325,13 @@ def describe_source_and_tier(item: dict, npc_by_id: dict, zone_by_id: dict) -> t
             return f"Crafted: {prof}", "Crafted", s["crafted"].get("spellId")
         if "rep" in s:
             return "Reputation reward", "Reputation reward", None
+    # Real DB gap fallback (see PHASE_TO_TIER_ZONE_KEY's own comment above) -
+    # no `sources` entry at all, but the item's own real `phase` field still
+    # reliably places it in a real tier bucket, so it doesn't get silently
+    # dumped in "Other" just because this one field is missing.
+    tier = PHASE_TO_TIER_ZONE_KEY.get(item.get("phase"))
+    if tier:
+        return "Source unclear (real DB gap - see NOTES.md 2026-08-31)", tier, None
     return "Source unclear", "Other", None
 
 
@@ -544,13 +577,26 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     pool_key_to_slots = opt.build_pool_key_to_slots(profile["weapon_topology"])
 
     owned_items = char["equipped"]["items"]
-    # Everything she already possesses - equipped AND sitting in bags/bank -
-    # isn't something to go acquire, so it's excluded from every tier below
-    # (not just filtered by "would it improve DPS", which could still say
-    # yes for a bagged item she hasn't bothered equipping).
-    owned_all_ids = {it["id"] for it in owned_items if it}
-    owned_all_ids |= {it["id"] for it in char["owned"]["bags"] if it}
-    owned_all_ids |= {it["id"] for it in char["owned"]["bank"] if it}
+    # Real bug found and fixed 2026-08-31: EQUIPPED gear is still fully
+    # excluded (already wearing it, nothing to recommend), but bags/bank
+    # items are now real candidates again, tagged with owned_location
+    # instead of being silently hidden. Root cause: a multi-spec player
+    # logged out in a DIFFERENT spec's gear (e.g. Resto healing gear
+    # equipped, real Elemental T4-T6 pieces sitting in bags/bank from
+    # before the respec) had her own real, correct DPS gear excluded from
+    # her own Elemental report as "already owned, not an acquisition
+    # target" - true in spirit (she does own it) but the wrong UI verdict
+    # (per the user: "no trace of any elemental tier pieces" is exactly
+    # what this caused). Real fix, per the user: still real candidates,
+    # still real MV numbers, just visibly tagged "In Bags"/"In Bank" so a
+    # reader knows it's a re-equip, not a farm/AH target - not fixing the
+    # baseline DPS itself (still her real, literal equipped-gear DPS,
+    # honestly low if she's equipped for a different spec - that's a
+    # separate, real "wrong spec equipped" data-quality signal, not
+    # something to silently paper over here).
+    owned_equipped_ids = {it["id"] for it in owned_items if it}
+    owned_bag_ids = {it["id"] for it in char["owned"]["bags"] if it}
+    owned_bank_ids = {it["id"] for it in char["owned"]["bank"] if it}
 
     acquisition_status = acquisition_gate.load_status(name_realm)
 
@@ -686,13 +732,18 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
                 tier = tier_from_text(source, zone_by_id) or tier
             item_meta[c.item_id] = (source, tier, craft_spell_id)
 
-    # Owned items stay IN the candidate pool (set-bonus progression below
-    # needs to see a bagged/banked piece to correctly credit it toward a
-    # set bonus) - they're filtered out only at the final report-row step,
-    # so an already-owned item never appears as something to go acquire,
-    # while still counting toward whether a set is worth completing.
+    # Owned items stay IN the candidate pool always (set-bonus progression
+    # below needs to see a bagged/banked piece to correctly credit it toward
+    # a set bonus). EQUIPPED items are filtered out at the final report-row
+    # step (already wearing it, nothing to recommend); bags/bank items stay
+    # visible as real candidates too now, tagged owned_location so the
+    # report can badge them "In Bags"/"In Bank" instead of implying she
+    # needs to go acquire something she already owns (real bug fixed
+    # 2026-08-31 - see PHASE_TO_TIER_ZONE_KEY's own comment for the related
+    # tier-bucketing fix from the same real user report).
     print(f"Curated pool: {len(curated_ids)} items. Sweep added {new_count} new candidates "
-          f"({len(owned_all_ids)} already owned - kept for set-bonus math, hidden from acquisition tiers).\n")
+          f"({len(owned_equipped_ids)} equipped - hidden from acquisition tiers; "
+          f"{len(owned_bag_ids | owned_bank_ids)} in bags/bank - shown, tagged owned_location).\n")
 
     item_slot_label = {}
     for slot, cands in candidates.items():
@@ -858,8 +909,9 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     for c, r in screened:
         if r.get("excluded_reason"):
             continue
-        if c.item_id in owned_all_ids:
-            continue  # already hers - not an acquisition target, see note above
+        if c.item_id in owned_equipped_ids:
+            continue  # already equipped - not an acquisition target
+        owned_location = "bags" if c.item_id in owned_bag_ids else "bank" if c.item_id in owned_bank_ids else None
         source, tier, craft_spell_id = item_meta.get(c.item_id, ("", "Other", None))
         slot_label = item_slot_label.get(c.item_id, "Other")
         arp = item_arp_rating(idb.by_id(c.item_id)) if arp_relevant else 0
@@ -891,6 +943,7 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
                  gate=acquisition_gate.gate_for_item(source, slot_label, acquisition_status),
                  arp_rating=arp or None,
                  set_bonus_credit=set_bonus_credit or None,
+                 owned_location=owned_location,
                  **time_horizon.lasts_until_phase(c.name, c.item_id))
         by_tier_slot.setdefault((tier, slot_label), []).append((c, r))
 

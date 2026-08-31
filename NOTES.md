@@ -4835,3 +4835,71 @@ guess. Real verification: `Api.list_characters()` directly confirmed the filter 
 correctly with the toggle on/off, and the real local `http.server` preview technique confirmed the
 same live in the browser (Settings checkbox toggled, Azylaia appeared/disappeared from the
 sidebar in real time).
+
+## 2026-08-31 — Two real bugs found via a real second-PC bad report: multi-spec gear exclusion +
+## a widespread DB source-data gap misfiling real tier gear as "Other"
+
+Real user report: an Elemental Shaman report run on the second PC showed a baseline DPS of only
+1304 (should be 2000-3000+) and "no trace of any elemental tier pieces" - the player was logged
+out in Restoration healing gear/spec at export time. Root cause, confirmed by tracing the pipeline
+directly, not assumed: `run_upgrade_sweep.py`'s `owned_all_ids` (equipped + bags + bank, merged
+into one set) excluded EVERY owned item from ever appearing in the acquisition tiers - correct for
+equipped gear (already wearing it), wrong for bags/bank: her real Elemental T4-T6 gear, sitting in
+bags/bank from before the respec, was being treated as "already owned, not an acquisition target"
+and silently hidden entirely, even though the whole point of an Elemental report is "what should
+she equip."
+
+**Fix 1, per the user ("show upgrades in Bags/Bank but mark them with a badge")**: split
+`owned_all_ids` into `owned_equipped_ids` (still fully excluded) and `owned_bag_ids`/
+`owned_bank_ids` (real candidates again, tagged `owned_location: "bags"|"bank"` on the row).
+`report_template.html` gained `ownedLocationTag()` (same pattern as `horizonTag()`/`arpTag()`) -
+a brass-colored "In Bags"/"In Bank" tag next to the item name, with a title explaining it's a
+re-equip, not a farm/AH target. `check_ledger_consistency.py` gained a render-block guard for
+`it.owned_location`, matching the existing `it.set_note`/`it.rescue_note` guards - same "template
+silently missing a block for a field the data has" bug class this project has hit before.
+
+**Fix 2, found while diagnosing the same report** (per the user, live: "the correct tier head
+does show under other"): real Elemental T6 pieces (Skyshatter Regalia) and T4 pieces (Cyclone
+Regalia) were appearing but bucketed under "Other" instead of their real tier. Root cause,
+confirmed via a direct DB query, not assumed: **every single piece of both real sets has
+`sources: None`** in the sim's own `db.json` - a genuine DB gap, not a bug in this tool's logic,
+and not fixable by borrowing a sibling piece's zone data since every sibling has the identical
+gap. Checked the real scope per the user ("this has to be checked for all profiles"): a DB-wide
+query found **200 real item sets, spanning every class**, with at least one `sources: None`
+piece - most are PvP/honor sets (Gladiator's/Field Marshal's/Warlord's/etc., where `sources:None`
+is actually CORRECT - no real drop location exists for honor-purchased gear), but real RAID tier
+sets are affected too (Skyshatter/Cyclone/Thunderheart/Lightbringer/Malefic/Onslaught/
+Gronnstalker's/Vestments of Absolution/Bonescythe/and more - confirmed several by name, not just
+counted).
+
+Real, principled fix (not inventing a fake zone/boss): confirmed via direct query that every
+`TIER_ZONES` bucket's real zone-resolvable items correspond 1:1 to a real DB `phase` value (T4
+zones are always phase 1, T5 always phase 2, T6 always phase 3 - checked directly, not assumed).
+New `PHASE_TO_TIER_ZONE_KEY` in `run_upgrade_sweep.py`, used as a fallback inside
+`describe_source_and_tier()` only when an item has no real `sources` at all - buckets it into the
+correct real tier using its own real `phase` field, while keeping the displayed source text honest
+("Source unclear (real DB gap...)" rather than claiming a specific boss/zone this DB doesn't
+actually know). Only ever reached for CURATED-pool items - `sweep_all_loot.eligible()` already
+requires real `sources` before a SWEPT item is even considered, so this never risks miscategorizing
+an unvetted item.
+
+Real, not just code-reviewed verification: confirmed the exact two reported items (Skyshatter
+Headguard, Cyclone Faceguard) now resolve to T6/T4 correctly; confirmed the SAME fallback works for
+other classes too (Arms Warrior's real Onslaught Battle-Helm -> T6, Rogue's real Bonescythe
+Gauntlets -> T4) - the shared function fix needed zero per-profile changes. Regenerated a real
+fresh sweep for both Lerynia (595/0, up from 570 - more real candidates now correctly surface) and
+Rubán (1540/0, up from 1524) - `check_ledger_consistency.py` clean for both, and Rubán's own real
+Onslaught set pieces (previously silently "Other" in every one of his existing reports too, not
+just a synthetic/hypothetical case) now correctly show under T6. Confirmed the owned-location badge
+actually renders (not just present in the data) via direct DOM inspection of a real rendered report
+opened through a local `http.server` (`row.querySelector('.item-name').innerHTML` showing the real
+`<span class="tag owned-tag">In Bank</span>` markup) - the Claude Browser pane's own screenshot
+capture had an unrelated rendering quirk on this specific page (blank screenshots despite real,
+correctly-rendered content confirmed via `get_page_text()` and direct DOM query), not a sign the
+fix itself was broken.
+
+Deliberately NOT fixed here, per the user's own scoping and this project's "never invent data"
+rule: the baseline DPS itself stays her real, literal equipped-gear number (honestly low if she's
+geared for a different spec) - that's a separate, real "wrong spec equipped" data-quality signal
+worth surfacing to a reader some day, not something to silently paper over by reconstructing a
+hypothetical "best owned gear" baseline instead of her real one.

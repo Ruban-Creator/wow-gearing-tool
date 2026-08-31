@@ -172,6 +172,7 @@
   .item-name .tag.tier-purple{color:var(--tier-purple-strong); background:var(--tier-purple-bg); border-color:var(--border-soft);}
   .item-name .tag.tier-orange{color:var(--tier-orange-strong); background:var(--tier-orange-bg); border-color:var(--border-soft);}
   .item-name .tag.arp-tag{color:var(--warn-strong); background:var(--warn-bg); border-color:var(--border-soft); cursor:help;}
+  .item-name .tag.owned-tag{color:var(--brass-strong); background:var(--brass-bg); border-color:var(--border-soft); cursor:help;}
   .pair-plus{color:var(--ink-faint); font-weight:400; margin:0 2px;}
   .item-source{font-size:12px; color:var(--ink-muted); margin-top:2px;}
 
@@ -434,6 +435,20 @@ function arpTag(it){
   return ` <span class="tag arp-tag" title="Armor Penetration Rating ${it.arp_rating} - stacks nonlinearly toward the ArP cap, verify combos manually">ArP ${it.arp_rating}</span>`;
 }
 
+// Backlog fix 2026-08-31 - real bug: a multi-spec character (e.g. equipped
+// for Restoration, real Elemental gear sitting in bags/bank from before a
+// respec) had that real Elemental gear excluded from her own Elemental
+// report entirely, as "already owned, not an acquisition target" - true in
+// spirit but the wrong verdict for a report whose whole point is "what
+// should I be wearing." Bags/bank items are real candidates again now,
+// just tagged so a reader knows it's a re-equip, not something to go
+// farm/buy.
+function ownedLocationTag(it){
+  if (!it.owned_location) return '';
+  const label = it.owned_location === 'bank' ? 'In Bank' : 'In Bags';
+  return ` <span class="tag owned-tag" title="Already in her ${it.owned_location === 'bank' ? 'bank' : 'bags'} - re-equip, not an acquisition target">${label}</span>`;
+}
+
 document.getElementById('footer-methodology').textContent =
   'Screened @ ' + DATA.screen_iterations + ' iterations, confirmed @ ' + DATA.confirm_iterations +
   ' where borderline, resolved @ ' + DATA.resolve_iterations + ' where flagged. ' +
@@ -538,7 +553,7 @@ DATA.tiers.forEach((tier, ti) => {
 
       row.innerHTML = `
         <div class="name-col">
-          <div class="item-name">${whLink(it.name, it.item_id)}${craftLink(it.craft_spell_id)}${screenedTag}${lockTag}${horizonTag(it)}${arpTag(it)}</div>
+          <div class="item-name">${whLink(it.name, it.item_id)}${craftLink(it.craft_spell_id)}${screenedTag}${lockTag}${horizonTag(it)}${arpTag(it)}${ownedLocationTag(it)}</div>
           <div class="item-source">${escapeHtml(it.source || 'Source unclear')}</div>
         </div>
         <div class="delta dps">
@@ -641,7 +656,7 @@ if (twoHand.length > 0) {
       const screenedTag = it.resolved ? '' : '<span class="tag">screened only</span>';
       row.innerHTML = `
         <div class="name-col">
-          <div class="item-name">${whLink(it.name, it.item_id)}${craftLink(it.craft_spell_id)}${screenedTag}${horizonTag(it)}${arpTag(it)}</div>
+          <div class="item-name">${whLink(it.name, it.item_id)}${craftLink(it.craft_spell_id)}${screenedTag}${horizonTag(it)}${arpTag(it)}${ownedLocationTag(it)}</div>
           <div class="item-source">${escapeHtml(it.tier)}: ${escapeHtml(it.source || 'Source unclear')}</div>
         </div>
         <div class="delta dps">

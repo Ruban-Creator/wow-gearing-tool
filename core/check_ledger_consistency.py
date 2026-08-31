@@ -246,6 +246,7 @@ def check_html(ledger_data: dict, html_path: str, rep: Report) -> None:
     # template silently missing a block for a field the data actually has.
     rep.check("it.set_note" in html_text, f"{html_path}: no render block references it.set_note")
     rep.check("it.rescue_note" in html_text, f"{html_path}: no render block references it.rescue_note")
+    rep.check("it.owned_location" in html_text, f"{html_path}: no render block references it.owned_location")
 
 
 def main():
