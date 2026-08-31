@@ -2,7 +2,7 @@
 - the local, self-hosted successor to hand-editing/publishing a Claude.ai
 Artifact each time a report is needed (a standalone GUI exe has no way to
 call that tool - see the plan's Context section,
-C:\\Users\\Matthias\\.claude\\plans\\staged-purring-lynx.md).
+C:\\Users\\<user>\\.claude\\plans\\staged-purring-lynx.md).
 """
 import json
 import os

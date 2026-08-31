@@ -59,7 +59,7 @@ in order:
 1. **protoc + protoc-gen-go**, installed via `winget install --id Google.Protobuf` (puts
    `protoc.exe` under `...\WinGet\Packages\Google.Protobuf_.../bin`) and
    `go install google.golang.org/protobuf/cmd/protoc-gen-go@latest` (lands in `%GOPATH%\bin`,
-   `C:\Users\Matthias\go\bin`). Neither is on PATH by default in an already-open shell — add both
+   `C:\Users\<user>\go\bin`). Neither is on PATH by default in an already-open shell — add both
    explicitly per session, or restart the shell.
 2. Generate the proto Go bindings (repo root of the submodule):
    `protoc -I=./proto --go_opt=Mgoogle/protobuf/descriptor.proto=google.golang.org/protobuf/types/descriptorpb --go_out=./sim/core ./proto/*.proto`
@@ -2681,7 +2681,7 @@ truth) - needs copying into the live WoW AddOns folder to actually test.
 
 **2026-08-24 (overnight, autonomous - user asleep, "keep moving through stops, save questions
 for me" instruction): multi-character GUI built end to end**, all 4 stages of the approved plan
-(`C:\Users\Matthias\.claude\plans\staged-purring-lynx.md`). See `CLAUDE.md`'s "Future scope"
+(`C:\Users\<user>\.claude\plans\staged-purring-lynx.md`). See `CLAUDE.md`'s "Future scope"
 section for the real, current summary of what exists now. Detail worth keeping here:
 
 - **Stage A**: `ingest/list_characters.py` real-tested against this machine's actual live
@@ -3713,7 +3713,7 @@ total profiles' own cached `baseline_screened` values in one pass - all present,
 sensible; Arms Warrior's own value (1770.0316931322793) matches byte-for-byte against the exact
 figure recorded in Stage 6.5's own regression check, confirming zero drift across the entire
 session's 8 new-profile stages (6.4-6.13). The staging plan at
-`C:\Users\Matthias\.claude\plans\staged-purring-lynx.md` is now fully executed - every stage's own
+`C:\Users\<user>\.claude\plans\staged-purring-lynx.md` is now fully executed - every stage's own
 STOP checkpoint met, every profile's report built and validated, every real finding documented here
 and in QUESTIONS.md/CLASSES.md for review.
 

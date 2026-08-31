@@ -346,7 +346,7 @@ should keep assuming the fully-optimal gem/enchant loadout, same as it already d
 beyond Lerynia's Survival Hunter to any class/spec `wowsims/tbc-new` itself supports, starting
 with Arms Warrior (Rubán-Thunderstrike) and Balance Druid (Béarforceone-Thunderstrike), for whom
 real character data already exists. Full design:
-`C:\Users\Matthias\.claude\plans\staged-purring-lynx.md` (Plan Mode, approved 2026-08-24).
+`C:\Users\<user>\.claude\plans\staged-purring-lynx.md` (Plan Mode, approved 2026-08-24).
 
 Key finding that reframed the scope: the user's own concern ("most classes have no debuff like
 Expose Armor") turned out to need almost no new code - every ally-affecting debuff examined besides
@@ -396,7 +396,7 @@ is gating that one model behind a per-profile flag (default off), not building N
   `data/character.json` for anything beyond this test.
 
 **Stage 6.1 (Arms Warrior) is done, real-verified, not just designed (2026-08-25)** — full plan at
-`C:\Users\Matthias\.claude\plans\staged-purring-lynx.md` (approved, mid-session revision: reference
+`C:\Users\<user>\.claude\plans\staged-purring-lynx.md` (approved, mid-session revision: reference
 BiS prefers wowsims' own shipped preset gear sets where they exist over hand-curating from
 Wowhead, since they turned out real, plain-JSON, and far less error-prone to consume than
 expected — Wowhead curation stays the fallback only for a slot a preset leaves genuinely
@@ -489,7 +489,7 @@ byte-identical after the change - real regression checks, not assumed safe becau
 "just a new branch." See `QUESTIONS.md` for the full session log.
 
 **Stages 6.3–6.13 (2026-08-25/26): all done, real-verified — the full staged plan at
-`C:\Users\Matthias\.claude\plans\staged-purring-lynx.md` is now fully executed.** 15 total DPS
+`C:\Users\<user>\.claude\plans\staged-purring-lynx.md` is now fully executed.** 15 total DPS
 profiles exist: the original 5 (Survival Hunter, Arms Warrior, Balance Druid, Elemental Shaman,
 Enhancement Shaman) plus 10 new ones built this arc — Beastmastery Hunter (6.4), Fury Warrior
 (6.5), Feral Cat Druid (6.6), Combat Rogue (6.7), Shadow Priest (6.8), Arcane Mage (6.9),
@@ -550,7 +550,7 @@ present) per the user's stated raid comp - never silently switch to 9% without b
 
 **Built, 2026-08-24: the character-select dropdown above, as a real picker + report-viewer
 GUI** — the draft sketch from earlier the same day was planned properly (Plan Mode,
-`C:\Users\Matthias\.claude\plans\staged-purring-lynx.md`) and then implemented end to end
+`C:\Users\<user>\.claude\plans\staged-purring-lynx.md`) and then implemented end to end
 overnight while the user slept, per their explicit "keep moving through stops, save questions
 for me" instruction. Real, verified pieces:
 

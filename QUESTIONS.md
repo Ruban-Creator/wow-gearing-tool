@@ -1,7 +1,7 @@
 # Questions for the user
 
 Running list of real judgment calls hit while building the multi-character GUI
-(see `C:\Users\Matthias\.claude\plans\staged-purring-lynx.md` for the approved
+(see `C:\Users\<user>\.claude\plans\staged-purring-lynx.md` for the approved
 plan) autonomously overnight, 2026-08-24. Each entry: what I decided so work
 could keep moving, and why - flag if you'd rather it be different. Nothing
 here is blocking; all are default choices I judged reasonable, not gaps left
@@ -342,7 +342,7 @@ yet - same as after Stage 6.1, left for you to review first.
 ## Stage 6.3 (Elemental Shaman) done, real-verified
 
 `profiles/tbc/elemental_shaman/` built end to end, per the approved plan
-(`C:\Users\Matthias\.claude\plans\staged-purring-lynx.md`). Real, not assumed: only Elemental and
+(`C:\Users\<user>\.claude\plans\staged-purring-lynx.md`). Real, not assumed: only Elemental and
 Enhancement are real DPS specs (Restoration's own `ui/shaman/restoration/sim.ts` has a literal
 no-op rotation and no APL file at all). A real, new architectural piece this stage needed that
 Warrior/Druid never did: **no real Shaman character exists yet**, so `Test-Elemental-Synthetic`

@@ -106,7 +106,7 @@ be watching for a dialog.
   title only) but crashed on the user's real first double-click - the
   `os.getcwd()` bug above. Fixed, rebuilt.
 - Rebuilt exe verified launching clean from a working directory with no
-  relation to the repo at all (`C:\Users\Matthias`, not inside the repo
+  relation to the repo at all (`C:\Users\<user>`, not inside the repo
   tree), confirming the fix isn't coincidental.
 - **Run Report feature (2026-08-24)**: `gui/api.py` now reaches into `core/`
   for the first time (`run_full_sweep_mv`, `build_ledger_data`,

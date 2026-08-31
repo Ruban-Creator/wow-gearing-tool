@@ -1,7 +1,7 @@
 """Python surface exposed to the pywebview window's JS via `js_api` - see
 gui/app.py. Was read-only (v1: picker + report viewer only) until the Run
 Report feature (see the approved plan,
-C:\\Users\\Matthias\\.claude\\plans\\staged-purring-lynx.md) - now also runs a
+C:\\Users\\<user>\\.claude\\plans\\staged-purring-lynx.md) - now also runs a
 real sweep + renders a local HTML report on demand.
 """
 from __future__ import annotations
