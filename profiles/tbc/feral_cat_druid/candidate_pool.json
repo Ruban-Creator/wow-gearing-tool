@@ -19,6 +19,10 @@
         {
           "phase": "P4",
           "rank": "Best"
+        },
+        {
+          "phase": "P1",
+          "rank": "Realistic"
         }
       ],
       "best_rank_seen": "Best"
@@ -43,6 +47,10 @@
         {
           "phase": "P1",
           "rank": "Best"
+        },
+        {
+          "phase": "P1",
+          "rank": "Realistic"
         }
       ],
       "best_rank_seen": "Best"
@@ -97,6 +105,10 @@
         {
           "phase": "P2",
           "rank": "Best"
+        },
+        {
+          "phase": "P1",
+          "rank": "Realistic"
         }
       ],
       "best_rank_seen": "Best"
@@ -129,6 +141,10 @@
         {
           "phase": "P1",
           "rank": "Best"
+        },
+        {
+          "phase": "P1",
+          "rank": "Realistic"
         }
       ],
       "best_rank_seen": "Best"
@@ -176,6 +192,10 @@
         {
           "phase": "P2",
           "rank": "Best"
+        },
+        {
+          "phase": "P1",
+          "rank": "Realistic"
         }
       ],
       "best_rank_seen": "Best"
@@ -255,6 +275,17 @@
         }
       ],
       "best_rank_seen": "Best"
+    },
+    {
+      "item": "Nightfall Wristguards",
+      "source": "Drop: Epoch Hunter (Old Hillsbrad Foothills)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Realistic"
+        }
+      ],
+      "best_rank_seen": "Realistic"
     }
   ],
   "hands": [
@@ -265,6 +296,10 @@
         {
           "phase": "P1",
           "rank": "Best"
+        },
+        {
+          "phase": "P1",
+          "rank": "Realistic"
         }
       ],
       "best_rank_seen": "Best"
@@ -348,6 +383,17 @@
         }
       ],
       "best_rank_seen": "Best"
+    },
+    {
+      "item": "Girdle of Treachery",
+      "source": "Drop: (Karazhan)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Realistic"
+        }
+      ],
+      "best_rank_seen": "Realistic"
     }
   ],
   "legs": [
@@ -358,6 +404,10 @@
         {
           "phase": "P1",
           "rank": "Best"
+        },
+        {
+          "phase": "P1",
+          "rank": "Realistic"
         }
       ],
       "best_rank_seen": "Best"
@@ -412,6 +462,10 @@
         {
           "phase": "P2",
           "rank": "Best"
+        },
+        {
+          "phase": "P1",
+          "rank": "Realistic"
         }
       ],
       "best_rank_seen": "Best"
@@ -451,6 +505,10 @@
         {
           "phase": "P1",
           "rank": "Best"
+        },
+        {
+          "phase": "P1",
+          "rank": "Realistic"
         }
       ],
       "best_rank_seen": "Best"
@@ -462,6 +520,10 @@
         {
           "phase": "P1",
           "rank": "Best"
+        },
+        {
+          "phase": "P1",
+          "rank": "Realistic"
         }
       ],
       "best_rank_seen": "Best"
@@ -575,6 +637,10 @@
         {
           "phase": "P3",
           "rank": "Best"
+        },
+        {
+          "phase": "P1",
+          "rank": "Realistic"
         }
       ],
       "best_rank_seen": "Best"
@@ -630,6 +696,17 @@
         }
       ],
       "best_rank_seen": "Best"
+    },
+    {
+      "item": "Hourglass of the Unraveller",
+      "source": "Drop: Temporus (The Black Morass)",
+      "seen_in": [
+        {
+          "phase": "P1",
+          "rank": "Realistic"
+        }
+      ],
+      "best_rank_seen": "Realistic"
     }
   ],
   "weapon_2h": [
@@ -640,6 +717,10 @@
         {
           "phase": "P1",
           "rank": "Best"
+        },
+        {
+          "phase": "P1",
+          "rank": "Realistic"
         }
       ],
       "best_rank_seen": "Best"
@@ -690,6 +771,10 @@
         {
           "phase": "P1",
           "rank": "Best"
+        },
+        {
+          "phase": "P1",
+          "rank": "Realistic"
         }
       ],
       "best_rank_seen": "Best"

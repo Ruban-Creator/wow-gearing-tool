@@ -22,6 +22,10 @@
         {
           "phase": "P3",
           "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Sword Build"
         }
       ],
       "best_rank_seen": "Best"
@@ -50,6 +54,10 @@
         {
           "phase": "P3",
           "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Sword Build"
         }
       ],
       "best_rank_seen": "Best"
@@ -78,6 +86,10 @@
         {
           "phase": "P3",
           "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Sword Build"
         }
       ],
       "best_rank_seen": "Best"
@@ -116,6 +128,17 @@
         }
       ],
       "best_rank_seen": "Best"
+    },
+    {
+      "item": "Shroud of the Highborne",
+      "source": "Drop: Illidan Stormrage (Black Temple)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Sword Build"
+        }
+      ],
+      "best_rank_seen": "Sword Build"
     }
   ],
   "chest": [
@@ -141,6 +164,10 @@
         {
           "phase": "P3",
           "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Sword Build"
         }
       ],
       "best_rank_seen": "Best"
@@ -176,6 +203,10 @@
         {
           "phase": "P3",
           "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Sword Build"
         }
       ],
       "best_rank_seen": "Best"
@@ -211,6 +242,10 @@
         {
           "phase": "P3",
           "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Sword Build"
         }
       ],
       "best_rank_seen": "Best"
@@ -246,6 +281,10 @@
         {
           "phase": "P3",
           "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Sword Build"
         }
       ],
       "best_rank_seen": "Best"
@@ -284,6 +323,17 @@
         }
       ],
       "best_rank_seen": "Best"
+    },
+    {
+      "item": "Leggings of Channeled Elements",
+      "source": "Drop: Kaz'rogal (Hyjal Summit)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Sword Build"
+        }
+      ],
+      "best_rank_seen": "Sword Build"
     }
   ],
   "feet": [
@@ -316,6 +366,10 @@
         {
           "phase": "P3",
           "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Sword Build"
         }
       ],
       "best_rank_seen": "Best"
@@ -366,6 +420,10 @@
         {
           "phase": "P3",
           "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Sword Build"
         }
       ],
       "best_rank_seen": "Best"
@@ -377,6 +435,10 @@
         {
           "phase": "P3",
           "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Sword Build"
         }
       ],
       "best_rank_seen": "Best"
@@ -394,6 +456,10 @@
         {
           "phase": "P2",
           "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Sword Build"
         }
       ],
       "best_rank_seen": "Best"
@@ -420,6 +486,10 @@
         {
           "phase": "P3",
           "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Sword Build"
         }
       ],
       "best_rank_seen": "Best"
@@ -447,6 +517,17 @@
         }
       ],
       "best_rank_seen": "Best"
+    },
+    {
+      "item": "Tempest of Chaos",
+      "source": "Drop: Archimonde (Hyjal Summit)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Sword Build"
+        }
+      ],
+      "best_rank_seen": "Sword Build"
     }
   ],
   "offhand": [
@@ -460,6 +541,17 @@
         }
       ],
       "best_rank_seen": "Best"
+    },
+    {
+      "item": "Chronicle of Dark Secrets",
+      "source": "Drop: Rage Winterchill (Hyjal Summit)",
+      "seen_in": [
+        {
+          "phase": "P3",
+          "rank": "Sword Build"
+        }
+      ],
+      "best_rank_seen": "Sword Build"
     }
   ],
   "ranged": [
@@ -485,6 +577,10 @@
         {
           "phase": "P3",
           "rank": "Best"
+        },
+        {
+          "phase": "P3",
+          "rank": "Sword Build"
         }
       ],
       "best_rank_seen": "Best"

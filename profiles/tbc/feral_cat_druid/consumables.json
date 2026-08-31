@@ -1,7 +1,15 @@
 {
   "potId": 22838,
-  "flaskId": 22854,
-  "foodId": 27658,
-  "conjuredId": 22788,
-  "drumsId": "LesserDrumsOfBattle"
+  "battleElixirId": 22831,
+  "guardianElixirId": 32067,
+  "foodId": 27664,
+  "mhImbueId": 34340,
+  "conjuredId": 12662,
+  "drumsId": "GreaterDrumsOfBattle",
+  "superSapper": true,
+  "goblinSapper": true,
+  "scrollAgi": true,
+  "scrollStr": true,
+  "potions": [22838],
+  "conjuredItems": [12662]
 }
