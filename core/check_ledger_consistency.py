@@ -1,12 +1,12 @@
 """Automated consistency checking for the ledger pipeline.
 
-run_full_sweep_mv.py -> tiered_report.json -> build_ledger_data.py ->
+run_upgrade_sweep.py -> tiered_report.json -> build_ledger_data.py ->
 ledger_data.json -> spliced into phase3_ledger.html's `const DATA = {...};`.
 
 Every stage of this pipeline has broken silently at least once this project
 (see NOTES.md): the Beast Lord Armor bug (an item with negative MV and no
 set_note still showing as an "upgrade" - a real filter-gating bug in
-run_full_sweep_mv.py), the rescue_note-never-rendered bug (data was correct,
+run_upgrade_sweep.py), the rescue_note-never-rendered bug (data was correct,
 the HTML template just had no render block for it), and the 2026-08-23
 raw-dict-of-dicts splice bug (the JS threw partway through rendering "tiers"
 and everything past "Achieved BiS" silently went blank - no error surfaced
@@ -56,7 +56,7 @@ def check_tier_item(r: dict, rep: Report, where: str):
     for field in ("name", "mv", "noise_stdev", "tied_within_noise", "item_id", "slot", "tier", "resolved"):
         rep.check(field in r, f"{where}: missing required field '{field}' on {r.get('name', '?')!r}")
 
-    # The exact predicate run_full_sweep_mv.py itself gates inclusion on
+    # The exact predicate run_upgrade_sweep.py itself gates inclusion on
     # (line ~753): real upgrade, OR a genuine set_note, OR a genuine
     # rescue_note. Anything else present is the Beast Lord bug class -
     # a downgrade shown with no explanation for why it's there at all.
@@ -65,7 +65,7 @@ def check_tier_item(r: dict, rep: Report, where: str):
                           f"has no set_note/rescue_note and is not a real upgrade - unexplained downgrade shown")
 
     # tied_within_noise should match the pipeline's own 2-sigma rule
-    # (run_full_sweep_mv.py line ~869: abs(mv) < 2 * noise_stdev).
+    # (run_upgrade_sweep.py line ~869: abs(mv) < 2 * noise_stdev).
     if "mv" in r and "noise_stdev" in r and r["noise_stdev"] is not None:
         expected_tied = abs(r["mv"]) < 2 * r["noise_stdev"]
         rep.check(r.get("tied_within_noise") == expected_tied,
@@ -73,7 +73,7 @@ def check_tier_item(r: dict, rep: Report, where: str):
                    f"|mv|={abs(r['mv']):.2f} vs 2*noise_stdev={2*r['noise_stdev']:.2f} implies {expected_tied}")
 
     # rescue_note is only ever supposed to be attached to a real, positive
-    # sidegrade (run_full_sweep_mv.py line ~634: mv_if_set_broken > 0,
+    # sidegrade (run_upgrade_sweep.py line ~634: mv_if_set_broken > 0,
     # not tied). rescue_mv is that number surfaced alongside the note.
     if r.get("rescue_note"):
         rep.check("rescue_mv" in r and r["rescue_mv"] is not None,
@@ -262,7 +262,7 @@ def main():
     ledger_path = os.path.join(char_cache_dir, f"ledger_data_{args.phase}.json")
 
     if not os.path.exists(tiered_path):
-        print(f"FATAL: {tiered_path} not found - run core/run_full_sweep_mv.py first")
+        print(f"FATAL: {tiered_path} not found - run core/run_upgrade_sweep.py first")
         return 2
     if not os.path.exists(ledger_path):
         print(f"FATAL: {ledger_path} not found - run core/build_ledger_data.py first")

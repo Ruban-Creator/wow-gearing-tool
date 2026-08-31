@@ -1,6 +1,6 @@
 """Real character -> profile_dir map, shared by every real entry point
 (CLI, GUI) that runs a sweep for a specific character - moved here from
-gui/api.py 2026-08-25 after a real bug: run_full_sweep_mv.main()'s
+gui/api.py 2026-08-25 after a real bug: run_upgrade_sweep.main()'s
 `profile_dir` parameter silently defaults to Survival Hunter's own profile
 directory (its historical single-character default, kept for backward
 compatibility), so any call site that forgets to pass `profile_dir`
@@ -13,7 +13,7 @@ list showed "Enchant Weapon - Agility" (Hunter's real weapon-enchant id,
 2564) as the recommended BiS for his Hands slot - a name that could only
 have come from Hunter's own default_enchants.json, since his own file has
 no such value. Root cause: `cli/gear.py`'s `cmd_best` called
-`run_full_sweep_mv.main(args.character, phase, ...)` with no `profile_dir`
+`run_upgrade_sweep.main(args.character, phase, ...)` with no `profile_dir`
 at all; a matching gap was already caught and fixed in `gui/api.py` before
 this (see its own comment, now superseded by this shared module), but the
 CLI path was never updated to match.

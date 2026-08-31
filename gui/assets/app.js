@@ -566,7 +566,7 @@ function pollRunStatus() {
     // "(Stage X of Y)" so people know there's something else coming, not
     // just a bare label that could as easily be the whole run (per the
     // user, 2026-08-25). Y is a real, profile-aware count built once per
-    // run (see run_full_sweep_mv.py's own stage_sequence) - not shown at
+    // run (see run_upgrade_sweep.py's own stage_sequence) - not shown at
     // all for the handful of non-progress stages (syncing, building the
     // report) that sit outside that sequence.
     const stageCount = (st.stage_index && st.stage_total) ? ` (Stage ${st.stage_index} of ${st.stage_total})` : "";

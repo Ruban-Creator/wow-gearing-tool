@@ -199,7 +199,7 @@ def set_character_profile(name_realm: str, profile_dir_name: str | None) -> None
 
 def sim_concurrency() -> int:
     """The real, single source of truth for sim-call concurrency (code
-    review §4.4) - core/run_full_sweep_mv.py's MAX_WORKERS and
+    review §4.4) - core/run_upgrade_sweep.py's MAX_WORKERS and
     adapters/tbc/valuation.py's SIMSERVER_POOL_SIZE both call this instead
     of each hardcoding their own literal that has to be kept in sync by
     hand (they must stay equal - the sim already uses ALL logical threads
@@ -207,8 +207,8 @@ def sim_concurrency() -> int:
     oversubscribes; measured on the original dev machine, 6C/12T: 4
     workers was 7.4x SLOWER than 2). Lives here (not in either of those
     two modules) specifically to avoid a circular import between them -
-    run_full_sweep_mv imports marginal_value imports valuation, so
-    valuation can't import run_full_sweep_mv or vice versa; local_config
+    run_upgrade_sweep imports marginal_value imports valuation, so
+    valuation can't import run_upgrade_sweep or vice versa; local_config
     has no dependency on either.
 
     Derives from real per-machine logical-core count (//6 reproduces the

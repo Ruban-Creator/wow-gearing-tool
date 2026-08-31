@@ -42,7 +42,7 @@ import set_bonus  # noqa: E402
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "adapters", "tbc"))
 import valuation  # noqa: E402
 
-MAX_WORKERS = 2  # matches run_full_sweep_mv.py - see its comment for why 4 was 7.4x slower
+MAX_WORKERS = 2  # matches run_upgrade_sweep.py - see its comment for why 4 was 7.4x slower
 
 TOP_N_PER_SLOT = 3
 EXTRA_SCAN_LIMIT = 7  # how far beyond TOP_N_PER_SLOT to look for Hit/Expertise
@@ -168,7 +168,7 @@ def _owned_hit_exp(baseline_config: list[dict], slot_label: str, stat_indices: t
 def select_candidates(by_tier_slot: dict, active_set_slots: set[str], baseline_config: list[dict],
                        top_n: int = TOP_N_PER_SLOT,
                        extra_stat_indices: tuple[int, ...] = EXTRA_STAT_INDICES) -> list[dict]:
-    """by_tier_slot is run_full_sweep_mv.py's full SCREENED pool -
+    """by_tier_slot is run_upgrade_sweep.py's full SCREENED pool -
     {(tier, slot_label): [(Candidate, result_dict), ...]} - deliberately
     NOT the already-filtered "real upgrades only" tiered report. Per the
     user (2026-08-23): a candidate pool built only from things that already
@@ -296,7 +296,7 @@ def _best_single(settings_path: str, baseline_config: list[dict], cand: "opt.Can
     noise across four independent sim results (see interaction noise
     below), not just two; the trial config is needed to detect set-bonus
     threshold crossings (see _threshold_notes). Cache-backed via
-    valuation.evaluate's own sim_cache - if run_full_sweep_mv.py already
+    valuation.evaluate's own sim_cache - if run_upgrade_sweep.py already
     resolved this exact trial at this iteration count, this is a cache hit,
     not a new sim run."""
     best = None
@@ -454,7 +454,7 @@ def _threshold_notes(baseline_config: list[dict], trial_a: list[dict], trial_b: 
 
 def compute(settings_path: str, by_tier_slot: dict, baseline_config: list[dict],
             screen_iterations: int, resolve_iterations: int, seed: int) -> list[dict]:
-    """by_tier_slot is run_full_sweep_mv.py's full screened pool -
+    """by_tier_slot is run_upgrade_sweep.py's full screened pool -
     {(tier, slot_label): [(Candidate, result_dict), ...]}, NOT the already-
     filtered "real upgrades" tiered report (see select_candidates for why).
     Returns a list of interaction rows, sorted "rescue" findings first, then

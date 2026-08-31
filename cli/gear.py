@@ -35,7 +35,7 @@ def cmd_sync(args):
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
-    # Additive: the legacy flat file above stays the one run_full_sweep_mv.py
+    # Additive: the legacy flat file above stays the one run_upgrade_sweep.py
     # actually reads (unchanged), this is the per-character copy the GUI/
     # multi-character CLI commands read instead - see CLAUDE.md's plan for
     # why the sim pipeline's own paths intentionally aren't touched here.
@@ -56,26 +56,26 @@ def cmd_best(args):
     """Real pipeline now (was a Stage-1 stub) - both blockers it was waiting
     on are long resolved: Stage 2's Expose Weakness raid-vs-personal
     question (now the "Debuff" column, per-attacker) and a real gear
-    export. Thin wrapper - run_full_sweep_mv.main(name_realm, phase) reads
+    export. Thin wrapper - run_upgrade_sweep.main(name_realm, phase) reads
     USER_DATA_DIR/characters/<name_realm>/character.json and writes
     USER_DATA_DIR/characters/<name_realm>/cache/tiered_report_<phase>.json.
 
     profile_dir is resolved explicitly via character_profiles.py, never left
-    to run_full_sweep_mv.main()'s own default - a real bug, found 2026-08-25:
+    to run_upgrade_sweep.main()'s own default - a real bug, found 2026-08-25:
     that default silently points at Survival Hunter's profile (its
     historical single-character value), so this command previously swept
     any non-Hunter character's real gear against Hunter's whole profile
     (candidate pool, enchants, stat weights, settings) without erroring.
     See core/character_profiles.py's own docstring for how this was caught."""
     phase = _normalize_phase(args.phase)
-    import run_full_sweep_mv
+    import run_upgrade_sweep
     import character_profiles
     if args.character not in character_profiles.SUPPORTED_CHARACTERS:
         print(f"'{args.character}' has no known profile yet - supported: "
               f"{', '.join(character_profiles.SUPPORTED_CHARACTERS)}")
         return
     profile_dir = character_profiles.SUPPORTED_CHARACTERS[args.character]
-    run_full_sweep_mv.main(args.character, phase, profile_dir=profile_dir, duration=args.duration)
+    run_upgrade_sweep.main(args.character, phase, profile_dir=profile_dir, duration=args.duration)
 
 
 def cmd_character_list(args):

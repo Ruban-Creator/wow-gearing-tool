@@ -7,7 +7,7 @@
   "distance_from_target": 25,
   "raid_ap_contribution": {
     "enabled": false,
-    "note": "Warriors have no Expose-Weakness-style analytical raid-AP model - Sunder Armor is an enemy-side debuff a solo sim already benefits from directly (see CLAUDE.md's Stage 6 finding). This flag isn't actually read by run_full_sweep_mv.py today (confirmed - it always computes the raid-AP column regardless), but it degrades correctly anyway since expose_weakness.measured_ew_uptime() looks for Expose Weakness's real spell id and finds nothing for a Warrior sim."
+    "note": "Warriors have no Expose-Weakness-style analytical raid-AP model - Sunder Armor is an enemy-side debuff a solo sim already benefits from directly (see CLAUDE.md's Stage 6 finding). This flag isn't actually read by run_upgrade_sweep.py today (confirmed - it always computes the raid-AP column regardless), but it degrades correctly anyway since expose_weakness.measured_ew_uptime() looks for Expose Weakness's real spell id and finds nothing for a Warrior sim."
   },
   "set_bonus_go_source": "sim/warrior/items.go",
   "apl_source": "ui/warrior/dps/apls/arms.apl.json",

@@ -181,7 +181,7 @@ def resolve_items(raw_items: list[dict], item_db: dict[int, dict],
     before). EquipmentSpec.items is a real, fixed 17-slot positional array
     (confirmed from WowSimsExporter's own Lua source, see NOTES.md) - the
     whole rest of the pipeline (gear_config.SLOT_ORDER-indexed lookups in
-    optimizer.py/run_full_sweep_mv.py) assumes `equipped["items"][i]`
+    optimizer.py/run_upgrade_sweep.py) assumes `equipped["items"][i]`
     corresponds to `SLOT_ORDER[i]`. The old unconditional `continue` on an
     empty/unresolved slot silently DROPPED it instead of keeping a
     placeholder, collapsing the list and shifting every later real item up

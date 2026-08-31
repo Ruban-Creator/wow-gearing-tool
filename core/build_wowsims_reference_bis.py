@@ -19,7 +19,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import item_db as idb  # noqa: E402
-import run_full_sweep_mv as sweep  # noqa: E402 - reuses describe_source_and_tier() so a
+import run_upgrade_sweep as sweep  # noqa: E402 - reuses describe_source_and_tier() so a
 # reference-BiS item with a real DB drop/craft/rep source shows that, not a
 # generic "came from a wowsims preset" label that says nothing about where
 # to actually get the item (real bug found 2026-08-25: 12 of Rubán's 16
@@ -104,7 +104,7 @@ def _weapon_pool_key(slot: str, hand_type: int | None, weapon_topology: str) -> 
         return "weapon_2h" if slot == "mainhand" else None
     # one_hand_plus_offhand_item: two real, independent single-item pools -
     # except a real 2H item in mainhand still goes to the "weapon_2h"
-    # side-pool (matches run_full_sweep_mv.py's own slot_for_item()
+    # side-pool (matches run_upgrade_sweep.py's own slot_for_item()
     # routing) - real for Elemental Shaman/Balance Druid, whose actual BiS
     # weapon choice varies by phase. offhand for a 2H phase never reaches
     # here (the raw gear-set slot is genuinely empty).

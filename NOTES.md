@@ -4509,3 +4509,59 @@ Every change in this pass was regression-checked against `check_ledger_consisten
 throughout, both a Hunter profile and a non-Hunter one where relevant) and, where the review's own
 finding was about a specific runtime value (fingerprints, cache migration, parse output), verified
 byte-for-byte or via direct real-data comparison rather than trusted on code-reading alone.
+
+## 2026-08-31 — Full backlog audit + first real file-naming clarity pass
+
+Per the user's explicit request ("double check we have no open questions, no to-do, no unrealised
+future features or any other kind of backlog"): swept `TODO.md` (already clean), `QUESTIONS.md`
+(found and fixed real staleness - three profile judgment-call entries, BM Hunter/Feral Cat Druid/
+Arcane Mage, were actually resolved earlier the same session but never marked RESOLVED in the doc;
+a duplicated Retribution Paladin entry consolidated; one genuinely never-asked-before question found
+- Destruction Warlock's Destro-Fire scoping - raised to the user directly rather than guessed, answer:
+leave as-is), a code TODO/FIXME grep (clean), and `CLAUDE.md`'s "Future scope" section, presented to
+the user as a real status table rather than assumed current.
+
+That review surfaced real drift worth recording: the doc's own text still said "not built" for
+things that were, in fact, already live (the character-select dropdown, the phase toggle, the
+progress indicator in the Run Report modal, tiers 1-2 of the three-tier funnel idea in
+`interaction_matrix.py`) - verified each directly against real GUI markup/code before reporting
+status, not trusted from memory or the doc's own stale framing. **Lesson: a "Future scope" section
+this large needs its own periodic real-verification pass, not just trust in what it said the last
+time it was written** - it drifted from reality several times over without anyone (including this
+tool's own prior sessions) catching it until asked to check directly.
+
+**Real decision from going through the list together**: item 9 (tool rename) turned out to bundle
+two separable things. Per the user - the actual GitHub repo/local folder does NOT need "Ruban" in
+its name (stays `wow-gearing-tool`/`Gearing-Tool`); the PRODUCT/branding rename to "Ruban's Gearing
+Tool (RGT)" was already done in an earlier session (GUI/installer/addon). What was genuinely still
+open: the file-naming clarity pass CLAUDE.md's own Future Scope text had flagged with a concrete
+example (`core/run_full_sweep_mv.py` - "mv" = Marginal Value, not obvious to a newcomer) but never
+actually done.
+
+**First real pass, executed, not just planned:**
+- `core/run_full_sweep_mv.py` → `core/run_upgrade_sweep.py` (`git mv`, preserves history). Every
+  real import (4 call sites: `cli/gear.py`, `core/build_ledger_data.py`,
+  `core/build_wowsims_reference_bis.py`, `gui/api.py`) and every code-comment mention across the
+  WHOLE codebase updated to match - 39 occurrences across 13 Python files, plus 3 more in
+  `core/report_template.html`, `gui/assets/app.js`, and `profiles/tbc/arms_warrior/profile.json`
+  (a real comment inside profile DATA, not just source code). `build_ledger_data.py`'s own import
+  alias (`as sweep_mv`) renamed to `sweep` too, for the same reason as the file itself - no point
+  fixing the module name and leaving the confusing abbreviation alive in every call site via the
+  alias. `CLAUDE.md`/`CLASSES.md` (living, always-current docs) updated the same way;
+  `NOTES.md`/`QUESTIONS.md`'s own historical dated entries deliberately left untouched - those
+  describe what was true AT THE TIME they were written, and rewriting them to use a name that didn't
+  exist yet would be real revisionism against a dated log, not a correction.
+- `core/run_mv_report.py` deleted outright, not renamed - real, additional finding while doing the
+  naming pass: its only actual consumer, `core/build_loot_ledger_data.py`, was ALREADY deleted
+  earlier this same session (found broken + superseded during the §4.1 file-handle cleanup pass) -
+  so nothing produces valid input for `run_mv_report.py` (it read the stale flat
+  `USER_DATA_DIR/character.json` path, hardcoded to survival_hunter) and nothing reads its output
+  (`mv_report.json`) anymore either. Confirmed via a real grep before deleting, not assumed from the
+  file's own age.
+
+**Verified, not assumed clean:** every touched module re-imported successfully (14 modules checked
+directly, including the renamed one itself and `cli/gear.py`); `check_ledger_consistency.py` clean
+on two different profiles afterward; a real, live full sweep run through the actual CLI entry point
+(`python cli/gear.py best Test-Beastmastery-Synthetic phase3`, not a cached/structural check) kicked
+off to prove the renamed module works end-to-end through its real entry point, not just on import -
+see the next dated entry for the result once it finished.

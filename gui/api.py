@@ -85,7 +85,7 @@ import list_characters  # noqa: E402
 import build_character  # noqa: E402
 
 sys.path.insert(0, os.path.join(REPO_ROOT, "core"))
-import run_full_sweep_mv  # noqa: E402
+import run_upgrade_sweep  # noqa: E402
 import build_ledger_data  # noqa: E402
 import character_profiles  # noqa: E402
 import render_report  # noqa: E402
@@ -265,10 +265,10 @@ def _run_report_job(name_realm: str, phase: str, duration: int) -> None:
 
         # Real bug avoided here, not just a defaults-are-fine shortcut: without
         # this, EVERY character's report would silently run through Hunter's
-        # own profile (run_full_sweep_mv.main()'s default profile_dir) -
+        # own profile (run_upgrade_sweep.main()'s default profile_dir) -
         # caught before it ever shipped, since SUPPORTED_CHARACTERS is now a
         # real per-character profile_dir map, not just a flat set.
-        run_full_sweep_mv.main(name_realm, phase, profile_dir=SUPPORTED_CHARACTERS[name_realm],
+        run_upgrade_sweep.main(name_realm, phase, profile_dir=SUPPORTED_CHARACTERS[name_realm],
                                 progress_cb=progress_cb, duration=duration)
 
         _set_status(stage="Building report", detail=None, eta_seconds=None, eta_measured_at=None, stage_index=None, stage_total=None)

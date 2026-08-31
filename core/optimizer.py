@@ -154,7 +154,7 @@ def achievable_enchant(enchant_id: int, known_professions: set[str]) -> int:
     personally has Enchanting (see item_db.enchant_required_profession_name,
     confirmed data-driven off db.json's own requiredProfession field, not a
     hardcoded ring special-case). Every default-enchant lookup in this file
-    and run_full_sweep_mv.py routes through this so a non-Enchanter
+    and run_upgrade_sweep.py routes through this so a non-Enchanter
     character's baseline/candidates never silently assume an unachievable
     ring enchant - same "never invent achievability" principle already
     applied to items via required_profession_name()."""
@@ -320,7 +320,7 @@ def is_unique_conflict(config: list[dict], slot_idx: int, item_id: int) -> bool:
 
 
 # common.proto HandType enum. TwoHand(4) is already filtered out upstream
-# (run_full_sweep_mv.py's slot_for_item) since it needs the melee-weave
+# (run_upgrade_sweep.py's slot_for_item) since it needs the melee-weave
 # rotation variant, not a plain slot swap. MainHand(1) and OffHand(3) were
 # NOT enforced anywhere until this was caught - a real gap, found via a
 # real matched pair (Claw of Molten Fury/MainHand + Fist of Molten

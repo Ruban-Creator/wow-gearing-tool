@@ -37,7 +37,7 @@ def build(name_realm: str, profile_dir: str) -> dict:
     overlay = repo_root.load_json(os.path.join(profile_dir, "raid_buffs_overlay.json"))
     shared = repo_root.load_json(os.path.join(REPO_ROOT, "profiles", "tbc", "_shared", "raid_buffs_received.json"))
 
-    # Same active-profile-state wiring run_full_sweep_mv.main() does - needed
+    # Same active-profile-state wiring run_upgrade_sweep.main() does - needed
     # here too since build_owned_config() below calls into gem_optimizer,
     # which fails loud (by design, Stage 6.0) if this is skipped.
     stat_weights.set_active(stat_weights.load(profile_dir))

@@ -106,7 +106,7 @@ USE_SIMSERVER = True
 # 12 threads - measured 747ms/call oversubscribed vs 101ms/call at
 # pool_size=2 (7.4x). Derived via local_config.sim_concurrency() (code
 # review §4.4), not hardcoded to that one machine - same function
-# run_full_sweep_mv.MAX_WORKERS calls, so the two stay in lockstep
+# run_upgrade_sweep.MAX_WORKERS calls, so the two stay in lockstep
 # automatically instead of needing to be kept equal by hand. There's no
 # reason to hold idle simserver processes a caller can't reach.
 SIMSERVER_POOL_SIZE = local_config.sim_concurrency()
@@ -157,7 +157,7 @@ def _fingerprint_settings(settings: dict) -> str:
     key had no way to know anything changed. Folding the sim's own commit
     SHA into the hashed content means a sim update invalidates every cache
     entry automatically; no caller needs to change since every real caller
-    (marginal_value.py, run_full_sweep_mv.py, interaction_matrix.py, ...)
+    (marginal_value.py, run_upgrade_sweep.py, interaction_matrix.py, ...)
     already reaches this one fingerprinting function, never sim_cache.key()
     directly."""
     template = json.loads(json.dumps(settings))  # deep copy, don't mutate caller's dict

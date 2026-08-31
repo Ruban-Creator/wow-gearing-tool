@@ -68,7 +68,7 @@ a new gotcha; don't let the lesson live only in NOTES.md's session log.
 - **Same unconditional-best policy as gems now** (reversed from an earlier "keep her real current
   enchant" design, 2026-08-25 - see NOTES.md's Missing Enchants entries for the full story).
   `gear_config.get_active_default_enchants()` is the single source; every default-enchant lookup
-  in `optimizer.py`, `run_full_sweep_mv.py`'s full-world-item sweep, and `set_bonus.py`'s tier-set
+  in `optimizer.py`, `run_upgrade_sweep.py`'s full-world-item sweep, and `set_bonus.py`'s tier-set
   comparison must route through it (or `optimizer.achievable_enchant()` - see below), never a
   literal `it.get("enchant", 0)` read off her real gear.
 - **Raw wowsims-preset enchant ids are NOT reliable - verify every one, every profile, no
@@ -90,7 +90,7 @@ a new gotcha; don't let the lesson live only in NOTES.md's session log.
   BiS ("Cat's Swiftness") verified real (non-zero) vs no-enchant, but her actual current pick
   ("Dexterity") beat it by +7.3 DPS in a real head-to-head test - only caught because the Missing
   Enchants ledger surfaced a **negative** delta live (current beats assumed-BiS). That check
-  (`run_full_sweep_mv.py`'s Missing Enchants pass requiring `delta > 0`, never displaying a
+  (`run_upgrade_sweep.py`'s Missing Enchants pass requiring `delta > 0`, never displaying a
   downgrade as a recommendation) is a real safety net, not just cosmetic - keep it.
 - **When most or all of a profile's raw candidate ids show a flat `+0.00` delta, check `db.json`
   directly before concluding the items are just useless.** `{e["effectId"] for e in
@@ -115,12 +115,12 @@ a new gotcha; don't let the lesson live only in NOTES.md's session log.
   a real but structurally-unachievable ring enchant recommended.
 - `build_owned_config()`/`load_candidates()` both take a real `known_professions` parameter now
   (default `{"Herbalism", "Mining"}` = Hunter's real value, so existing callers stay unchanged) -
-  a new profile's real caller (`run_full_sweep_mv.py`'s `main()`) must pass the character's own
+  a new profile's real caller (`run_upgrade_sweep.py`'s `main()`) must pass the character's own
   real professions, not rely on the default.
 
 ## profile_dir - never let a call site guess it
 
-- `run_full_sweep_mv.main()`'s `profile_dir` parameter is **required, no default** (was a
+- `run_upgrade_sweep.main()`'s `profile_dir` parameter is **required, no default** (was a
   dangerous silent default to Hunter's own profile until 2026-08-25 - see
   `core/character_profiles.py`'s docstring for the real bug this caused twice: a non-Hunter
   character's real gear got swept against Hunter's whole candidate pool/enchants/stat
@@ -137,7 +137,7 @@ Three real values exist: `dual_wield`, `two_hand`, `one_hand_plus_offhand_item`.
 distinct handling - confirmed necessary by three different real profiles hitting three different
 gaps, not theoretical:
 
-- `slot_for_item()` (`run_full_sweep_mv.py`) must route 2H weapons correctly per topology - a
+- `slot_for_item()` (`run_upgrade_sweep.py`) must route 2H weapons correctly per topology - a
   `two_hand` profile's mainhand IS its real 2H slot (no separate "should I go 2H" side-analysis
   needed at all); `dual_wield`/`one_hand_plus_offhand_item` both route 2H candidates to the
   separate weapon_2h_candidates side-pool instead.
@@ -148,7 +148,7 @@ gaps, not theoretical:
 - `settings_template_2h.json` (the melee-weave settings variant) is **optional** - only build one
   if the class's actual ROTATION changes with weapon choice (Hunter: real melee-weave APL logic).
   A profile whose rotation doesn't change with weapon choice (a caster: still just casting either
-  way) has no reason to need one; `run_full_sweep_mv.py` already falls back to the profile's own
+  way) has no reason to need one; `run_upgrade_sweep.py` already falls back to the profile's own
   plain `SETTINGS_TEMPLATE` when no `_2h` variant file exists.
 
 ## set_bonus.py - three real Go source forms

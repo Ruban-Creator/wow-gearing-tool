@@ -298,7 +298,7 @@ columns** — never collapse them into one number, and never silently drop the r
 See the user's full spec for §0–§9. Done: Stage 1 (adapter + ingestion), Stage 2 (Survival
 mechanics blocker), Stage 3 (candidate pool: `profiles/tbc/candidate_pool_survival.json`, 79
 items across 15 slots), Stage 4 (§6, the valuation engine actually computing `DPS*(S)` for these
-candidates — `core/run_full_sweep_mv.py` + the Phase 3 Upgrade Ledger artifact; still gets real
+candidates — `core/run_upgrade_sweep.py` + the Phase 3 Upgrade Ledger artifact; still gets real
 refinements as gaps are found, e.g. the top-1-always-resolves fix and the flat top-5 2H list, but
 the stage itself is built and in active use), and Stage 5 (§7, the interaction matrix —
 `core/interaction_matrix.py`, `I(i,j) = MV(i,j) − MV(i) − MV(j)` for the top 3 real-upgrade
@@ -317,16 +317,16 @@ already learned elsewhere ("any one-off transform... needs to be a checked-in sc
 snippet in that turn's Bash call - otherwise the next session has no way to know it was ever
 needed") - just not yet applied here. `compute()`'s own real signature
 (`settings_path, by_tier_slot, baseline_config, screen_iterations, resolve_iterations, seed`) needs
-`by_tier_slot` - `run_full_sweep_mv.py`'s full screened candidate pool, a complex in-memory
+`by_tier_slot` - `run_upgrade_sweep.py`'s full screened candidate pool, a complex in-memory
 structure never persisted to disk - so a real reusable wrapper isn't a trivial argv-parsing
-addition; it needs `run_full_sweep_mv.main()` itself to optionally call into this (or expose that
+addition; it needs `run_upgrade_sweep.main()` itself to optionally call into this (or expose that
 pool) rather than a fully standalone script. Not built this pass - flagging precisely so the next
 time Stage 5 is actually needed, a real wrapper gets written and checked in rather than another
 one-off snippet.
 
 The rest of `core/`'s never-imported modules (`add_gear_variant_to_pool.py`,
 `build_candidate_pool.py`, `build_default_enchants.py`, `build_profile_settings.py`,
-`check_ledger_consistency.py`, `prove_settings_builder.py`, `run_mv_report.py`,
+`check_ledger_consistency.py`, `prove_settings_builder.py`,
 `run_optimizer.py`, `verify_default_enchants.py`, `verify_gem_choices.py`) are real, working,
 standalone maintenance/verification tools run directly (`python core/<name>.py ...`), not dead code
 - same real pattern the code review itself confirmed is fine to leave in place. Each has its own
@@ -411,7 +411,7 @@ is gating that one model behind a per-profile flag (default off), not building N
   bugs were found and fixed this way (a missing `pseudoStats`/`apiVersion` on `bonusStats`, an
   off-by-one in the encounter target's 42-element stats array) - exactly the kind of bug a
   "looks right" review would have missed and a byte-diff caught immediately.
-- **Real regression checkpoint, not skipped**: re-ran `run_full_sweep_mv.py` for Lerynia after all
+- **Real regression checkpoint, not skipped**: re-ran `run_upgrade_sweep.py` for Lerynia after all
   of the above landed - output is byte-for-byte identical to the pre-Stage-6.0 cached report (full
   cache hit too, ~2.7s vs the usual ~8min, confirming the settings fingerprint is genuinely
   unchanged). `check_ledger_consistency.py` clean (667/0) afterward.
@@ -441,7 +441,7 @@ log confirming the APL rotation actually fires, not just parses).
 
 Real shared-code fixes this stage forced, not incidental — every one regression-checked against
 Hunter's own pipeline staying byte-identical:
-- `run_full_sweep_mv.py`'s `slot_for_item()` was hardcoded to route every 2H weapon into Hunter's
+- `run_upgrade_sweep.py`'s `slot_for_item()` was hardcoded to route every 2H weapon into Hunter's
   own optional melee-weave side-pool — for a `two_hand` profile, 2H is the *only* real mainhand
   slot; would have silently kept every one of Rubán's real weapon candidates out of his own
   tiered report entirely. Now topology-aware.
@@ -458,7 +458,7 @@ Hunter's own pipeline staying byte-identical:
   (some items have no DB classAllowlist but still register a Go effect that hard-crashes for the
   wrong class — e.g. Beast-tamer's Shoulders assumes a Hunter agent) and excludes just that
   candidate, honestly, instead of one bad item killing the whole multi-candidate sweep.
-- `profile.json`'s `raid_ap_contribution.enabled` flag actually gates `run_full_sweep_mv.py`'s
+- `profile.json`'s `raid_ap_contribution.enabled` flag actually gates `run_upgrade_sweep.py`'s
   raid-AP computation now — it used to be dead config that only "worked" by accident because
   Hunter's Expose-Weakness debuff settings hadn't been generalized into `_shared/` yet; once they
   were (this stage's own real raid-buffs-boundary decision), a Warrior sim would have started
@@ -489,7 +489,7 @@ Balance Druid turned out to be architecturally bigger than Stage 6.1 anticipated
 weapon choice genuinely varies by phase between a 2H staff and a 1H+offhand combo (confirmed from
 wowsims' own real gear-set data, not assumed), which no prior profile ever exercised. Real,
 general infrastructure built to handle this, not a one-off special case:
-- `run_full_sweep_mv.py`'s `slot_for_item()` gained a real third topology branch
+- `run_upgrade_sweep.py`'s `slot_for_item()` gained a real third topology branch
   (`one_hand_plus_offhand_item`), keyed off the item's real `handType` (`HandTypeOffHand=3` is a
   genuinely distinct value from `HandTypeOneHand=2` - a caster's real offhand item is never
   itself a weapon she'd equip in mainhand). The 2H-side-pool report section's gate widened from
@@ -588,7 +588,7 @@ for me" instruction. Real, verified pieces:
   never wins over a non-empty one regardless of timestamp). Verified against this machine's real
   data: three real characters found (Lerynia/Survival Hunter, a Balance Druid, an Arms Warrior).
 - `data/characters/<name-realm>/character.json` + `.../reports.json` (phase → artifact URL +
-  timestamp) — additive alongside the existing flat `data/character.json`; `run_full_sweep_mv.py`
+  timestamp) — additive alongside the existing flat `data/character.json`; `run_upgrade_sweep.py`
   and the rest of the sim pipeline's paths are deliberately untouched (real per-class simulation
   is Stage 6, separate). New CLI: `gear character list`, `gear report register/list`.
 - `gui/` — a `pywebview`-based app (HTML/CSS/JS assets, no live server/port) with a character
@@ -607,12 +607,22 @@ works today. See `QUESTIONS.md` for the real judgment calls made autonomously wh
 this (source-of-truth tie-break refinement, the fixed phase-grid UI choice, a real data-staleness
 heads-up caught while testing) - flag anything you'd rather were different.
 
-Tool rename to something including the user's gamertag "Ruban" (e.g. RubanAutoSim) is also
-planned, as a final rework once the product is otherwise done — not yet, folder path and
-internal naming stay as-is until then. Fold in a general file-naming clarity pass at the same
-time (e.g. `core/run_full_sweep_mv.py` — "mv" = Marginal Value, the tool's core metric, but the
-name doesn't read as self-explanatory to someone new to the repo) — per the user, file names
-should be clear on their own, not just to someone who already knows the codebase.
+**Product/branding rename: done** (see "Full branding rename to Ruban's Gearing Tool (RGT)",
+2026-08-30) - GUI, installer, and addon all carry the real "Ruban's Gearing Tool (RGT)" identity.
+**Repo/folder rename: explicitly decided against** (per the user, 2026-08-31) - the GitHub repo and
+local working directory stay as `wow-gearing-tool`/`Gearing-Tool`, no "Ruban" needed there.
+
+**File-naming clarity pass: started 2026-08-31, ongoing.** First real pass: `core/
+run_full_sweep_mv.py` (flagged here as the original example - "mv" = Marginal Value, not
+self-explanatory to a newcomer) renamed to `core/run_upgrade_sweep.py`; every real import and code
+comment across the whole codebase updated to match (39+ sites, verified via
+`check_ledger_consistency.py` and a real live sweep afterward). `core/run_mv_report.py` deleted in
+the same pass - not renamed, because it turned out genuinely dead (its only real consumer,
+`core/build_loot_ledger_data.py`, was already deleted earlier the same session as broken/stale, so
+nothing produced valid input for it or read its output anymore). No other filenames in the repo
+were found to have the same "unclear abbreviation" problem on this pass - if a future session spots
+one, same treatment: rename + update every real reference (not just the file itself), verify via a
+real regression check, never a rename left half-done with stale references pointing at the old name.
 
 Publishing `addons/GearingToolCompanion/` to CurseForge is planned as one of the final steps too
 — account + project via console.curseforge.com, tagged for the Anniversary client flavor

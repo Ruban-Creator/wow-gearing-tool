@@ -3,7 +3,7 @@ single source of truth for item stats/flags used by the optimizer. Never
 invents a field; if something isn't in the DB it comes back as None/False.
 
 The ONLY module that should ever open db.json directly (code review §2.4):
-five other modules (gem_optimizer, sweep_all_loot, run_full_sweep_mv,
+five other modules (gem_optimizer, sweep_all_loot, run_upgrade_sweep,
 build_wowsims_reference_bis, ingest/build_character) each had their own
 independent DB_PATH + json.load(), meaning a single sweep parsed the same
 ~multi-MB file into several separate in-memory copies. All five now go
