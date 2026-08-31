@@ -5004,3 +5004,60 @@ needing_ap`/`add_ap_only` (the pass that back-fills raid-AP for screened-only re
 the exact same `only_slot` + `(item_id, best_slot)` treatment as confirm/resolve - found by
 systematically re-checking every `mv.mv_single(...)` call site in the file (4 total) rather than
 assuming only the 2 "obvious" ones (confirm/resolve) needed it.
+
+## 2026-09-01: Overnight autonomous pass on backlog #7 and #8 - investigation, one done, one deliberately not built
+
+Per the user's own explicit standing authorization ("try backlog 7 & 8 during the night when i
+sleep... you can properly plan both those backlog entries and then just continue into building
+them"), worked through both real, unscoped ideas end to end. Real outcome: #7 turned out to
+already be shipped (a documentation gap, not a code gap); #8 turned out to rest on a stale premise
+about the current architecture, with the real remaining cost being a correctness-risky caching
+change not safe to build unreviewed overnight. Full detail for each is in CLAUDE.md's own "Done,
+2026-09-01, backlog #7" note and `FUTURE_TASKS.md`'s rewritten #8 entry respectively - not
+duplicated in full here, just the real investigation trail:
+
+**#7**: grepped `run_upgrade_sweep.py` for `CONFIRM_ITERATIONS` expecting to need to design a new
+4th tier - found `CONFIRM_ITERATIONS = 5000` / `CONFIRM_CLEAR_MARGIN_MULTIPLE = 3` already live,
+added 2026-08-24, with its own real empirical validation already on file in the code comments (140
+real candidates, multiplier swept 2-8, zero verdict changes at any tested value). Didn't trust the
+comment alone - pulled a real, live production `ledger_data_balance_druid_phase3.json` for
+Béarforceone via PowerShell+Python (`ConvertFrom-Json` choked on the nested array-of-dicts shape;
+switched to calling `python -c` from PowerShell directly against the real file path, `é` in the
+character name broke Bash/git-bash's own default encoding when embedded in a heredoc - worked
+around by passing the path as a `sys.argv` argument instead of interpolating it into the script
+text) and counted real `resolve_iterations` values across all 98 real report rows: 79 confirmed at
+5000, 10 fully resolved at 30000, 9 left at the 500-iteration screen only. Exactly the disclosed,
+three-tier behavior #7 asked for, live in production today. `report_template.html`'s existing
+"Screened @500... confirmed @5000 where borderline, resolved @30000 where flagged" line already
+surfaces this to the user. Real conclusion: nothing to build, just paperwork - removed #7 from
+`FUTURE_TASKS.md`, added the "Done" note to CLAUDE.md.
+
+**#8**: before touching anything, re-read `run_upgrade_sweep.py`'s and `optimizer.py`'s real
+baseline-construction code, since #8's own text assumed `DPS*(P)` requires a "joint search over
+shared-pool slots." Confirmed via direct read of `opt.build_owned_config()` that `baseline_config`
+is built straight from the character's actually-equipped items (gems/enchants optimized in place,
+per slot) - there's no combinatorial search happening for `P` today, full stop. Backlog #16
+(shipped hours earlier the same session) already solved the real "shared-pool slot" problem a
+different way (independent per-real-slot MV, not joint search), which makes #8's original framing
+moot for that part, not just unbuilt. What's real and still true: CLAUDE.md's own prior "Stage 7"
+note already root-caused the actual cost correctly - `sim_cache`'s key is a hash of the FULL gear
+config, so any single baseline slot changing (a real raid-week gear change) changes the hash of
+every OTHER candidate's trial config too, forcing a near-100%-miss full re-sweep even though most
+candidates' true MV likely doesn't depend on the changed slot. "Likely" is the real problem: the
+sim computes DPS from the FULL stat pool, so a candidate's true independence from an unrelated slot
+change is a real, per-class, per-rotation claim (does a Warrior's Rage economy near a haste
+breakpoint actually not care about a new Ring's Agility?) that would need real verification per
+profile before any partial-cache-invalidation scheme could be trusted - not something to assume and
+ship overnight into a component every reported DPS number depends on, with no one awake to catch a
+subtle bug. Decided NOT to build this, on the same "never invent data" / "noise honesty" grounds
+this project has held everywhere else. Wrote up a real, lower-risk alternative instead (a "what
+changed since last sweep" diff view over already-computed, already-trusted ledgers via
+`report_storage.py` - zero cache-correctness risk, since it's a pure display-layer comparison, not
+a computation shortcut) as a flagged recommendation for the user's own morning review, not built
+unilaterally since it's a different deliverable than #8 originally asked for.
+
+No code changed by this pass - `core/`, `adapters/`, `gui/` are all untouched, so no exe/installer
+rebuild needed tonight. Real file changes: `CLAUDE.md` (new Done note), `FUTURE_TASKS.md` (#7
+removed, #8 rewritten with tonight's real findings), this entry, and a new root-level `ACTIONS.md`
+(per the user's own mid-session request, "write a actions document for me so i can ask you what i
+have to do tomorrow") summarizing what's actually on the user for their next session.

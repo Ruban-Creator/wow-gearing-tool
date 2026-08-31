@@ -619,6 +619,25 @@ use (dual_wield/two_hand/one_hand_plus_offhand_item) - see NOTES.md's 2026-09-01
 real verification, including a real dramatic case (+1.7 vs +22.0 DPS for the same item in two real
 slots) and a stale assumption fixed in `check_ledger_consistency.py` itself along the way.
 
+**Backlog #7 (three-tier funnel, "confirm@5000" tier) — found already done, 2026-09-01.** Given
+standing authorization to work autonomously overnight through the open backlog, real investigation
+of the ACTIVE `run_upgrade_sweep.py` pipeline (not `core/interaction_matrix.py`, which is real but
+confirmed unused/dead - see that module's own status note above) found `CONFIRM_ITERATIONS = 5000`
+and `CONFIRM_CLEAR_MARGIN_MULTIPLE = 3` already live, added 2026-08-24 with its own real, empirical
+validation on file (140 real leaderboard candidates, multiplier swept 2-8, zero sign flips or
+verdict changes at any tested value - see that constant's own code comment in
+`run_upgrade_sweep.py`). Confirmed genuinely live in production, not just theoretical, by reading a
+real character's own `ledger_data_*.json`: 79 of her 98 real report rows resolved at 5000 iterations
+(confirmed clear of noise, never presented as 30k-precision), 10 at the full 30000, 9 left at the
+500-iteration screen only (never promoted) - the report's own "Screened @500... confirmed @5000
+where borderline, resolved @30000 where flagged" disclosure line
+(`report_template.html`) already surfaces this. `FUTURE_TASKS.md`'s own #7 entry was simply never
+updated after this shipped - a documentation gap, not a code gap; no new code was written for this
+finding, just this note plus removing the stale entry. The remaining tail of #7's original idea
+("extend this funnel to `core/optimizer.py`'s own joint-slot search") is folded into backlog #8's
+entry below instead, since it references the same unused `optimizer.py` functions #8 already
+discusses, rather than kept as a near-duplicate third entry.
+
 **SmartScreen warning on the installer - accepted for now (2026-08-31), real tracked reminder to
 revisit with a code-signing cert later. See `FUTURE_TASKS.md`.**
 
