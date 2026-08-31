@@ -41,7 +41,7 @@ def build_pool(ref_dir: str = REF_DIR, phase_files: list[str] = DEFAULT_PHASE_FI
     refs = []
     for fname in phase_files:
         label = "P" + os.path.splitext(fname)[0].removeprefix("phase")
-        refs.append((label, json.load(open(os.path.join(ref_dir, fname), encoding="utf-8"))))
+        refs.append((label, repo_root.load_json(os.path.join(ref_dir, fname))))
 
     slots = sorted(set().union(*(set(ref["slots"]) for _, ref in refs)))
     pool = {}

@@ -28,15 +28,14 @@ USER_DATA_DIR = repo_root.USER_DATA_DIR
 
 def build(name_realm: str, profile_dir: str) -> dict:
     char_path = os.path.join(USER_DATA_DIR, "characters", name_realm, "character.json")
-    char_data = json.load(open(char_path, encoding="utf-8"))
+    char_data = repo_root.load_json(char_path)
     c = char_data["character"]
 
-    profile = json.load(open(os.path.join(profile_dir, "profile.json"), encoding="utf-8"))
-    class_options = json.load(open(os.path.join(profile_dir, "class_options.json"), encoding="utf-8"))
-    consumables = json.load(open(os.path.join(profile_dir, "consumables.json"), encoding="utf-8"))
-    overlay = json.load(open(os.path.join(profile_dir, "raid_buffs_overlay.json"), encoding="utf-8"))
-    shared = json.load(open(os.path.join(REPO_ROOT, "profiles", "tbc", "_shared", "raid_buffs_received.json"),
-                             encoding="utf-8"))
+    profile = repo_root.load_json(os.path.join(profile_dir, "profile.json"))
+    class_options = repo_root.load_json(os.path.join(profile_dir, "class_options.json"))
+    consumables = repo_root.load_json(os.path.join(profile_dir, "consumables.json"))
+    overlay = repo_root.load_json(os.path.join(profile_dir, "raid_buffs_overlay.json"))
+    shared = repo_root.load_json(os.path.join(REPO_ROOT, "profiles", "tbc", "_shared", "raid_buffs_received.json"))
 
     # Same active-profile-state wiring run_full_sweep_mv.main() does - needed
     # here too since build_owned_config() below calls into gem_optimizer,
@@ -44,10 +43,10 @@ def build(name_realm: str, profile_dir: str) -> dict:
     stat_weights.set_active(stat_weights.load(profile_dir))
     gc.set_active_default_gem(profile["primary_gem_id"])
     _default_enchants_path = os.path.join(profile_dir, "default_enchants.json")
-    default_enchants = (json.load(open(_default_enchants_path, encoding="utf-8"))
+    default_enchants = (repo_root.load_json(_default_enchants_path)
                          if os.path.exists(_default_enchants_path) else {})
     gc.set_active_default_enchants(default_enchants)
-    chase_bonus = json.load(open(os.path.join(profile_dir, "chase_bonus_gems.json"), encoding="utf-8"))
+    chase_bonus = repo_root.load_json(os.path.join(profile_dir, "chase_bonus_gems.json"))
     gem_optimizer.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
     raid_buffs_received = {
         "raidBuffs": {**shared["raidBuffs"], **overlay["raidBuffs"]},
@@ -74,7 +73,7 @@ def build(name_realm: str, profile_dir: str) -> dict:
             f"instead, like Hunter's own settings_template.json already is."
         )
     apl_path = os.path.join(REPO_ROOT, "sim", "tbc-new", apl_source)
-    rotation = json.load(open(apl_path, encoding="utf-8"))
+    rotation = repo_root.load_json(apl_path)
 
     return settings_builder.build_settings(
         character, profile, raid_buffs_received,

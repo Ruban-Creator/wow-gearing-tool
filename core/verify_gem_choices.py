@@ -53,17 +53,17 @@ def main():
     # DEFAULT_GEM + gem_optimizer.CHASE_BONUS_ITEM_IDS all became
     # per-profile settable state - keeps this script runnable for Hunter.
     stat_weights.set_active(stat_weights.load(PROFILE_DIR))
-    profile = json.load(open(os.path.join(PROFILE_DIR, "profile.json"), encoding="utf-8"))
+    profile = repo_root.load_json(os.path.join(PROFILE_DIR, "profile.json"))
     gc.set_active_default_gem(profile["primary_gem_id"])
     _default_enchants_path = os.path.join(PROFILE_DIR, "default_enchants.json")
-    gc.set_active_default_enchants(json.load(open(_default_enchants_path, encoding="utf-8"))
+    gc.set_active_default_enchants(repo_root.load_json(_default_enchants_path)
                                     if os.path.exists(_default_enchants_path) else {})
-    chase_bonus = json.load(open(os.path.join(PROFILE_DIR, "chase_bonus_gems.json"), encoding="utf-8"))
+    chase_bonus = repo_root.load_json(os.path.join(PROFILE_DIR, "chase_bonus_gems.json"))
     gopt.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
 
     char_path = (os.path.join(USER_DATA_DIR, "characters", NAME_REALM, "character.json")
                  if NAME_REALM else os.path.join(USER_DATA_DIR, "character.json"))
-    char = json.load(open(char_path, encoding="utf-8"))
+    char = repo_root.load_json(char_path)
     owned_items = char["equipped"]["items"]
     meta_gem_id = opt.find_owned_meta_gem(owned_items)
     baseline_config = opt.build_owned_config(owned_items)

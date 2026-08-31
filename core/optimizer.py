@@ -186,7 +186,7 @@ def load_candidates(pool_path: str, owned_items: list[dict],
     if pool_key_to_slots is None:
         pool_key_to_slots = POOL_KEY_TO_SLOTS
 
-    pool = json.load(open(pool_path, encoding="utf-8"))
+    pool = repo_root.load_json(pool_path)
     owned_by_name = {it["name"]: it for it in owned_items if it}
     meta_gem_id = find_owned_meta_gem(owned_items)
 

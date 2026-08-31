@@ -42,7 +42,7 @@ ITERATIONS = 3000
 
 
 def verify(profile_dir: str, name_realm: str) -> dict[str, int]:
-    profile = json.load(open(os.path.join(profile_dir, "profile.json"), encoding="utf-8"))
+    profile = repo_root.load_json(os.path.join(profile_dir, "profile.json"))
     stat_weights.set_active(stat_weights.load(profile_dir))
     time_horizon.set_active_ref_dir(os.path.join(profile_dir, "reference_bis"))
     gc.set_active_default_gem(profile["primary_gem_id"])
@@ -52,18 +52,17 @@ def verify(profile_dir: str, name_realm: str) -> dict[str, int]:
     # stripped and isolated regardless of what other slots resolve to, so
     # an empty starting point doesn't bias the result.
     gc.set_active_default_enchants({})
-    chase_bonus = json.load(open(os.path.join(profile_dir, "chase_bonus_gems.json"), encoding="utf-8"))
+    chase_bonus = repo_root.load_json(os.path.join(profile_dir, "chase_bonus_gems.json"))
     gem_optimizer.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
     set_bonus.set_active_item_sets_go(os.path.join(REPO_ROOT, "sim", "tbc-new", profile["set_bonus_go_source"]))
 
-    character = json.load(open(os.path.join(USER_DATA_DIR, "characters", name_realm, "character.json"),
-                                encoding="utf-8"))
+    character = repo_root.load_json(os.path.join(USER_DATA_DIR, "characters", name_realm, "character.json"))
     known_professions = {p["name"] for p in character["character"]["professions"]}
     baseline_config = opt.build_owned_config(character["equipped"]["items"], known_professions)
     settings_path = os.path.join(profile_dir, "settings_template.json")
 
     enchants_path = os.path.join(profile_dir, "default_enchants.json")
-    candidates = json.load(open(enchants_path, encoding="utf-8"))
+    candidates = repo_root.load_json(enchants_path)
 
     # Real methodology fix, found live (2026-08-25): comparing a candidate
     # enchant against the character's own REAL current baseline is only a

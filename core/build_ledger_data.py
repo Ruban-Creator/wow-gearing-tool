@@ -42,9 +42,9 @@ def build(name_realm: str, phase: str, profile_dir: str):
     themselves), but the same "resolve it via character_profiles.py, never
     guess" rule applies regardless of severity."""
     report_path = os.path.join(USER_DATA_DIR, "characters", name_realm, "cache", f"tiered_report_{phase}.json")
-    report = json.load(open(report_path, encoding="utf-8"))
+    report = repo_root.load_json(report_path)
     current_phase_num = int(phase.removeprefix("phase"))
-    profile = json.load(open(os.path.join(profile_dir, "profile.json"), encoding="utf-8"))
+    profile = repo_root.load_json(os.path.join(profile_dir, "profile.json"))
     raid_ap_enabled = profile["raid_ap_contribution"]["enabled"]
     weights = stat_weights.load(profile_dir)
     arp_relevant = weights.get(sweep_mv.ARMOR_PEN_STAT_ID, 0) > 0

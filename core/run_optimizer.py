@@ -25,15 +25,15 @@ def main():
     # flagged elsewhere (CLAUDE.md) as the superseded design not to build
     # on further - kept runnable, not otherwise invested in.
     stat_weights.set_active(stat_weights.load(PROFILE_DIR))
-    profile = json.load(open(os.path.join(PROFILE_DIR, "profile.json"), encoding="utf-8"))
+    profile = repo_root.load_json(os.path.join(PROFILE_DIR, "profile.json"))
     gc.set_active_default_gem(profile["primary_gem_id"])
     _default_enchants_path = os.path.join(PROFILE_DIR, "default_enchants.json")
-    gc.set_active_default_enchants(json.load(open(_default_enchants_path, encoding="utf-8"))
+    gc.set_active_default_enchants(repo_root.load_json(_default_enchants_path)
                                     if os.path.exists(_default_enchants_path) else {})
-    chase_bonus = json.load(open(os.path.join(PROFILE_DIR, "chase_bonus_gems.json"), encoding="utf-8"))
+    chase_bonus = repo_root.load_json(os.path.join(PROFILE_DIR, "chase_bonus_gems.json"))
     gopt.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
 
-    char = json.load(open(os.path.join(USER_DATA_DIR, "character.json"), encoding="utf-8"))
+    char = repo_root.load_json(os.path.join(USER_DATA_DIR, "character.json"))
     owned_items = char["equipped"]["items"]
 
     candidates = opt.load_candidates(POOL_PATH, owned_items)
@@ -61,7 +61,7 @@ def main():
     config = opt.trinket_pairs(SETTINGS_TEMPLATE, config, candidates["trinket1"], log)
     config = opt.ranged_exhaustive(SETTINGS_TEMPLATE, config, candidates["ranged"], log)
 
-    reference = json.load(open(REFERENCE_P3_PATH, encoding="utf-8"))
+    reference = repo_root.load_json(REFERENCE_P3_PATH)
     # Quiver/ammo-pouch items aren't one of our 17 equip slots (they're bag
     # items) - drop them from the bundle rather than let them block
     # resolution of everything else.

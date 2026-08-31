@@ -138,7 +138,7 @@ def _load_phase_item_ranks() -> dict[int, dict[str, str]]:
         path = os.path.join(_ref_dir_active(), f"phase{phase}.json")
         if not os.path.exists(path):
             continue
-        data = json.load(open(path, encoding="utf-8"))
+        data = repo_root.load_json(path)
         ranks = {}
         for entries in data.get("slots", {}).values():
             for e in entries:

@@ -420,7 +420,7 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     zone_by_id = {z["id"]: z["name"] for z in idb.zones()}
 
     char_path = os.path.join(USER_DATA_DIR, "characters", name_realm, "character.json")
-    char = json.load(open(char_path, encoding="utf-8"))
+    char = repo_root.load_json(char_path)
 
     # Stage 6 (multi-class support): load this profile's real manifest and
     # wire every per-profile subsystem's active state from it, once, here -
@@ -461,7 +461,7 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
         has_real_2h_settings = os.path.exists(_settings_2h_path)
 
         def _override_duration(path: str, tag: str) -> str:
-            settings = json.load(open(path, encoding="utf-8"))
+            settings = repo_root.load_json(path)
             settings["encounter"]["duration"] = duration
             out_path = os.path.join(cache_dir, f"_settings_{profile_tag}_{tag}_d{duration}.json")
             with open(out_path, "w", encoding="utf-8") as f:
@@ -472,9 +472,9 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
         SETTINGS_TEMPLATE = _override_duration(SETTINGS_TEMPLATE, "main")
         SETTINGS_2H = overridden_2h if overridden_2h else SETTINGS_TEMPLATE
     else:
-        actual_duration = json.load(open(SETTINGS_TEMPLATE, encoding="utf-8"))["encounter"]["duration"]
+        actual_duration = repo_root.load_json(SETTINGS_TEMPLATE)["encounter"]["duration"]
 
-    profile = json.load(open(os.path.join(profile_dir, "profile.json"), encoding="utf-8"))
+    profile = repo_root.load_json(os.path.join(profile_dir, "profile.json"))
     # Real, ordered list of every stage this run will show, for the GUI's
     # "Stage X of Y" indicator - the 2H section (its own two stages) is
     # structurally unreachable for a two_hand profile (its mainhand IS the
@@ -515,10 +515,10 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     # default" pattern as chase_bonus_gems.json for a profile that hasn't
     # had this built yet.
     _default_enchants_path = os.path.join(profile_dir, "default_enchants.json")
-    default_enchants = (json.load(open(_default_enchants_path, encoding="utf-8"))
+    default_enchants = (repo_root.load_json(_default_enchants_path)
                          if os.path.exists(_default_enchants_path) else {})
     gc.set_active_default_enchants(default_enchants)
-    chase_bonus = json.load(open(os.path.join(profile_dir, "chase_bonus_gems.json"), encoding="utf-8"))
+    chase_bonus = repo_root.load_json(os.path.join(profile_dir, "chase_bonus_gems.json"))
     gem_optimizer.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
     set_bonus.set_active_item_sets_go(os.path.join(REPO_ROOT, "sim", "tbc-new", profile["set_bonus_go_source"]))
     mv.set_shared_slot_groups(profile["weapon_topology"])
@@ -564,7 +564,7 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     # the right tier bucket too, not just the sweep additions.
     curated_source_text = {}
     ref_path = os.path.join(profile_dir, "reference_bis", f"{phase}.json")
-    ref_bis = json.load(open(ref_path, encoding="utf-8"))
+    ref_bis = repo_root.load_json(ref_path)
     for entries in ref_bis["slots"].values():
         for e in entries:
             curated_source_text[e["item"]] = e["source"]
@@ -574,7 +574,7 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     # easy-to-forget manual step; see the plan's Context section).
     milestone("Building candidate pool")
     sweep_path = sweep_all_loot.run(phase_num, profile_dir)
-    sweep_items = json.load(open(sweep_path, encoding="utf-8"))
+    sweep_items = repo_root.load_json(sweep_path)
     owned_by_id = {it["id"]: it for it in owned_items if it}
     meta_gem_id = opt.find_owned_meta_gem(owned_items)
     item_meta = {}  # item_id -> (source_text, tier)

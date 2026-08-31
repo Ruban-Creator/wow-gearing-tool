@@ -23,12 +23,13 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from build_character import REPO_ROOT, USER_DATA_DIR, load_item_db, resolve_items, sim_commit_sha  # noqa: E402
+import repo_root  # noqa: E402 - core/ already on sys.path via build_character's own bootstrap above
 
 
 def build(name_realm: str, race: str, class_name: str, spec: str,
           profession1: str, profession2: str, gear_set_path: str, talents: str) -> dict:
     item_db = load_item_db()
-    gear = json.load(open(gear_set_path, encoding="utf-8"))
+    gear = repo_root.load_json(gear_set_path)
     equipped, unresolved = resolve_items(gear["items"], item_db, preserve_positions=True)
     if unresolved:
         print(f"WARNING: {len(unresolved)} item(s) in {gear_set_path} not found in item DB: "

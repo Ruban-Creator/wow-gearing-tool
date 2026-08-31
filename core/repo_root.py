@@ -16,6 +16,7 @@ was actually ready for a bundled installer - it wasn't) so there's exactly
 one REPO_ROOT resolution to get right, not 27 copies that can silently
 drift out of sync with each other.
 """
+import json
 import os
 import subprocess
 import sys
@@ -159,3 +160,15 @@ def sim_version_label() -> str:
 
 
 USER_DATA_DIR = _user_data_dir()
+
+
+def load_json(path: str):
+    """Reads and parses one JSON file. Code review §4.1: `json.load(open(
+    path, encoding="utf-8"))` (no context manager) appeared 68 times across
+    20 files - on CPython the refcount drop closes the handle immediately,
+    so it worked, but that's an implementation detail to rely on, not a
+    real contract (it emits ResourceWarning under `-W error` and leaks
+    under PyPy). This helper also removes 68 repetitions of
+    `encoding="utf-8"` along the way."""
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)

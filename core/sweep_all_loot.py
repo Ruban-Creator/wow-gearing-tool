@@ -193,7 +193,7 @@ def run(max_phase: int, profile_dir: str) -> str:
     as stat_weights.py - real active-state wiring, not a hardcoded Hunter
     constant."""
     stat_weights.set_active(stat_weights.load(profile_dir))
-    eligibility_rules = json.load(open(os.path.join(profile_dir, "loot_eligibility.json"), encoding="utf-8"))
+    eligibility_rules = repo_root.load_json(os.path.join(profile_dir, "loot_eligibility.json"))
     set_active_eligibility(eligibility_rules)
     global _unsafe_set_names
     _unsafe_set_names = _load_unsafe_set_names(eligibility_rules["class_id"])

@@ -21,17 +21,18 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_wowsims_reference_bis as refbis  # noqa: E402
+import repo_root  # noqa: E402
 
 
 def merge(profile_dir: str, gear_sets_dir: str, spec_label: str, phase: str,
           rank_label: str, filename: str) -> None:
-    profile = json.load(open(os.path.join(profile_dir, "profile.json"), encoding="utf-8"))
+    profile = repo_root.load_json(os.path.join(profile_dir, "profile.json"))
     weapon_topology = profile["weapon_topology"]
 
     resolved = refbis.resolve_gear_set(os.path.join(gear_sets_dir, filename))
 
     pool_path = os.path.join(profile_dir, "candidate_pool.json")
-    pool = json.load(open(pool_path, encoding="utf-8"))
+    pool = repo_root.load_json(pool_path)
 
     added, already_present = [], []
     phase_label = phase.replace("phase", "P")

@@ -237,7 +237,7 @@ def _run_report_job(name_realm: str, phase: str, duration: int) -> None:
     through _run_status instead of hanging the GUI's polling forever."""
     try:
         char_dir = os.path.join(USER_DATA_DIR, "characters", name_realm)
-        profile = json.load(open(os.path.join(SUPPORTED_CHARACTERS[name_realm], "profile.json"), encoding="utf-8"))
+        profile = repo_root.load_json(os.path.join(SUPPORTED_CHARACTERS[name_realm], "profile.json"))
         if profile.get("synthetic_character"):
             # Real gap found and fixed (Stage 6.3, Shaman): a synthetic test
             # character (see ingest/build_synthetic_character.py) has no real
@@ -247,7 +247,7 @@ def _run_report_job(name_realm: str, phase: str, duration: int) -> None:
             # character.json on disk instead of re-syncing.
             _set_status(stage="Loading synthetic test character", detail=None, error=None, eta_seconds=None, eta_measured_at=None,
                         stage_index=None, stage_total=None)
-            char_data = json.load(open(os.path.join(char_dir, "character.json"), encoding="utf-8"))
+            char_data = repo_root.load_json(os.path.join(char_dir, "character.json"))
         else:
             _set_status(stage="Syncing character data", detail=None, error=None, eta_seconds=None, eta_measured_at=None,
                         stage_index=None, stage_total=None)

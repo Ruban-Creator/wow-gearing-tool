@@ -268,8 +268,8 @@ def main():
         print(f"FATAL: {ledger_path} not found - run core/build_ledger_data.py first")
         return 2
 
-    report = json.load(open(tiered_path, encoding="utf-8"))
-    ledger_data = json.load(open(ledger_path, encoding="utf-8"))
+    report = repo_root.load_json(tiered_path)
+    ledger_data = repo_root.load_json(ledger_path)
 
     check_tiered_report(report, rep)
     check_transform(report, ledger_data, rep)

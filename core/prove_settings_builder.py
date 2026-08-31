@@ -24,13 +24,12 @@ PROFILE_DIR = os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter")
 
 
 def main():
-    original = json.load(open(os.path.join(PROFILE_DIR, "settings_template.json"), encoding="utf-8"))
-    profile = json.load(open(os.path.join(PROFILE_DIR, "profile.json"), encoding="utf-8"))
-    class_options = json.load(open(os.path.join(PROFILE_DIR, "class_options.json"), encoding="utf-8"))
-    consumables = json.load(open(os.path.join(PROFILE_DIR, "consumables.json"), encoding="utf-8"))
-    overlay = json.load(open(os.path.join(PROFILE_DIR, "raid_buffs_overlay.json"), encoding="utf-8"))
-    shared = json.load(open(os.path.join(REPO_ROOT, "profiles", "tbc", "_shared", "raid_buffs_received.json"),
-                             encoding="utf-8"))
+    original = repo_root.load_json(os.path.join(PROFILE_DIR, "settings_template.json"))
+    profile = repo_root.load_json(os.path.join(PROFILE_DIR, "profile.json"))
+    class_options = repo_root.load_json(os.path.join(PROFILE_DIR, "class_options.json"))
+    consumables = repo_root.load_json(os.path.join(PROFILE_DIR, "consumables.json"))
+    overlay = repo_root.load_json(os.path.join(PROFILE_DIR, "raid_buffs_overlay.json"))
+    shared = repo_root.load_json(os.path.join(REPO_ROOT, "profiles", "tbc", "_shared", "raid_buffs_received.json"))
     raid_buffs_received = {
         "raidBuffs": {**shared["raidBuffs"], **overlay["raidBuffs"]},
         "debuffs": {**shared["debuffs"], **overlay["debuffs"]},

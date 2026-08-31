@@ -123,7 +123,7 @@ def resolve_gear_set(path: str) -> dict[str, dict]:
     per-slot enchant effectId (None for a slot the preset leaves
     unenchanted, e.g. a slot with no real TBC enchant at all - never
     invented, just passed through as-is)."""
-    data = json.load(open(path, encoding="utf-8"))
+    data = repo_root.load_json(path)
     result = {}
     for slot, it in zip(SLOT_ORDER, data["items"]):
         if not it or "id" not in it:
@@ -145,7 +145,7 @@ def _pool_key_for(slot: str, entry: dict, weapon_topology: str) -> str | None:
 
 
 def build(profile_dir: str, gear_sets_dir: str, spec_label: str, phase_files: dict[str, str]) -> None:
-    profile = json.load(open(os.path.join(profile_dir, "profile.json"), encoding="utf-8"))
+    profile = repo_root.load_json(os.path.join(profile_dir, "profile.json"))
     weapon_topology = profile["weapon_topology"]
     ref_dir = os.path.join(profile_dir, "reference_bis")
     os.makedirs(ref_dir, exist_ok=True)

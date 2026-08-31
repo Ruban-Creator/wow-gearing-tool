@@ -39,15 +39,15 @@ def main():
     # Stage 6 (multi-class support): required active-profile setup - see
     # verify_gem_choices.py's identical block for why.
     stat_weights.set_active(stat_weights.load(PROFILE_DIR))
-    profile = json.load(open(os.path.join(PROFILE_DIR, "profile.json"), encoding="utf-8"))
+    profile = repo_root.load_json(os.path.join(PROFILE_DIR, "profile.json"))
     gc.set_active_default_gem(profile["primary_gem_id"])
     _default_enchants_path = os.path.join(PROFILE_DIR, "default_enchants.json")
-    gc.set_active_default_enchants(json.load(open(_default_enchants_path, encoding="utf-8"))
+    gc.set_active_default_enchants(repo_root.load_json(_default_enchants_path)
                                     if os.path.exists(_default_enchants_path) else {})
-    chase_bonus = json.load(open(os.path.join(PROFILE_DIR, "chase_bonus_gems.json"), encoding="utf-8"))
+    chase_bonus = repo_root.load_json(os.path.join(PROFILE_DIR, "chase_bonus_gems.json"))
     gopt.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
 
-    char = json.load(open(os.path.join(USER_DATA_DIR, "character.json"), encoding="utf-8"))
+    char = repo_root.load_json(os.path.join(USER_DATA_DIR, "character.json"))
     owned_items = char["equipped"]["items"]
 
     candidates = opt.load_candidates(POOL_PATH, owned_items)
@@ -98,7 +98,7 @@ def main():
     print()
     baseline_resolved = baseline_resolve_cache.get("value") or mv.valuation.evaluate(
         SETTINGS_TEMPLATE, baseline_config, mv.RESOLVE_ITERATIONS, opt.SEED)
-    reference = json.load(open(REFERENCE_P3_PATH, encoding="utf-8"))
+    reference = repo_root.load_json(REFERENCE_P3_PATH)
     bundle_names = [n for n in reference["recommended_full_set"] if n != "Quiver of a Thousand Feathers"]
     bundle_config = opt.resolve_name_to_config(bundle_names, candidates, owned_items)
     if bundle_config:
