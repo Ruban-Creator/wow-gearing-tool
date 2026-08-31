@@ -500,7 +500,21 @@ Fixed generically off that field rather than hardcoding "rings are special" - no
 suppressed for any character without Enchanting, in every place a default enchant gets assumed
 (baseline, candidates, and the Missing Enchants list itself). Full writeup in NOTES.md.
 
-## Stage 6.4 (Beastmastery Hunter): real judgment calls worth your eyes
+## RESOLVED 2026-08-31: Beastmastery Hunter judgment calls
+
+- **weapon_topology**: asked directly - confirmed BM should stay identical to Survival Hunter's own
+  setup (dual_wield canonical), not diverge to two_hand. Investigated the swap first and found a
+  real reason NOT to do it even if asked again later: flipping to two_hand-canonical would silently
+  drop dual_wield from the report entirely (the 2H side-comparison section only exists in the
+  DW-canonical direction, not the reverse - see `run_full_sweep_mv.py`'s own real gate at the "2H
+  Weapon Options" section).
+- **`chase_bonus_gems.json` reuse**: re-verified from scratch, per the user's explicit request. Real,
+  significant finding: the reuse-from-Survival shortcut was wrong, not just unconfirmed - missed 10
+  genuine socket-bonus wins (BM's real Ravager pet, ~30% of her total DPS, shifts effective stat
+  value even with byte-identical EP weights). Fixed, and the cross-spec reuse exception itself
+  revoked in `CLASSES.md` so no future profile repeats this mistake.
+
+<details><summary>Original entry, 2026-08-25</summary>
 
 `profiles/tbc/beastmastery_hunter/` is done and real-verified (full writeup in NOTES.md). Three
 calls I made autonomously, per the plan's own guidance, worth a look when there's time:
@@ -518,6 +532,7 @@ calls I made autonomously, per the plan's own guidance, worth a look when there'
   weights are confirmed byte-identical between the two specs, and I spot-checked the handful of
   BM-only candidates a prior verification pass never covered. Full 38-item re-verification wasn't
   run; flag if you'd rather have that done properly instead of the spot-check.
+</details>
 
 ## Stage 6.5 (Fury Warrior): done, real-verified, no open judgment calls to flag
 
@@ -529,7 +544,26 @@ class-level before reuse) or built via the same real pipeline Arms already used
 correction (Bloodthirst is really 30335, not the commonly-cited 23881) found while independently
 verifying the rotation actually fires.
 
-## Stage 6.6 (Feral Cat Druid): real judgment calls worth your eyes
+## RESOLVED 2026-08-31: Feral Cat Druid realistic tier + consumables
+
+- **P1 'realistic' gear tier**: added, per the user's explicit request - merged into
+  `candidate_pool.json` alongside the canonical `bis` reference (via new
+  `core/add_gear_variant_to_pool.py`, reusable for any future profile's own non-canonical variant),
+  not replacing it. 3 real candidates the tool couldn't recommend before now can be: Nightfall
+  Wristguards, Girdle of Treachery, Hourglass of the Unraveller.
+- **`consumables.json`**: rebuilt from Feral's own real `presets.ts` `DefaultConsumables`, per the
+  user's explicit request. Real, confirmed differences from the Enhancement-Shaman-sourced values it
+  had: `foodId` 27658->27664, `conjuredId` 22788->12662, `drumsId` Lesser->GreaterDrumsOfBattle, and
+  a real `flaskId`->`battleElixirId`+`guardianElixirId` swap the old single-field schema couldn't
+  even represent (Feral's real preset uses two separate elixirs, not one flask).
+
+Not touched (informational only, no action needed): the empty `chase_bonus_gems.json` is a real,
+already-verified "no" answer, not an open question. The "no visual browser check" note below is
+superseded - `check_ledger_consistency.py --html` has since been re-run against a real rendered
+report multiple times this session (most recently verifying the §3.2/§3.3 script-escaping fix), same
+structural bar as every other profile.
+
+<details><summary>Original entry, 2026-08-25</summary>
 
 `profiles/tbc/feral_cat_druid/` is done and real-verified (full writeup in NOTES.md). This was the
 messiest stage yet - two genuinely sim-breaking bugs, both silent - so a few calls worth a look:
@@ -555,6 +589,7 @@ messiest stage yet - two genuinely sim-breaking bugs, both silent - so a few cal
   (121/0, confirms the embedded DATA blob byte-matches `ledger_data_phase3.json`) rather than an
   actual look at the rendered page. Same structural bar used for every prior stage's report, but
   flagging since "looks right when opened" was never actually confirmed for this one specifically.
+</details>
 
 ## Stage 6.13 (Destruction Warlock, PLAN CLOSED): real judgment call worth your eyes
 
@@ -596,12 +631,12 @@ strongly implying otherwise. If you'd rather this profile spec into UA (a real, 
 Affliction build some players prefer), that's a real, deliberate deviation from the literal wowsims
 default I used here, not a bug to fix - flag if you want that swap made.
 
-## RESOLVED 2026-08-28: leave the cosmetic DB bug (garbled "Isalien" NPC name) alone
+## RESOLVED 2026-08-28: Stage 6.10 (Retribution Paladin) cosmetic DB bug ("Isalien" NPC name) - leave alone
 
 Per the user - purely cosmetic, doesn't affect any DPS number, not worth touching vendored DB data
 for. No change made, not reported upstream either.
 
-## Stage 6.10 (Retribution Paladin): done, real-verified, one cosmetic data bug to flag
+<details><summary>Original entry, 2026-08-25</summary>
 
 `profiles/tbc/retribution_paladin/` is done and real-verified (full writeup in NOTES.md). No real
 judgment calls needed this stage (P3Bulwark turned out to be a single-item variant, not a build
@@ -612,8 +647,18 @@ Dire Maul vendor). Shows up as a garbled "Drop:" source label on the Libram of H
 candidate. Doesn't affect any DPS number, just that one item's displayed source text. Not fixed -
 touching vendored DB data felt out of scope for a display-only issue, but flagging in case you'd
 rather patch it or report it upstream to the wowsims project.
+</details>
 
-## Stage 6.9 (Arcane Mage): real judgment call worth your eyes
+## RESOLVED 2026-08-31: Arcane Mage P3 Sword-build items
+
+Added, per the user's explicit request. P3's real Sword variant items (Tempest of Chaos, Chronicle
+of Dark Secrets, Shroud of the Highborne, Leggings of Channeled Elements) merged into
+`candidate_pool.json` alongside the canonical Staff build, correctly routed to the mainhand/offhand
+pool keys via the existing per-item `handType` resolution (confirmed via a direct pool dump before
+trusting it, not assumed). Real, immediate payoff: `Chronicle of Dark Secrets` now surfaces as a
+genuine +77.1 DPS upgrade the tool couldn't recommend before this fix.
+
+<details><summary>Original entry, 2026-08-25</summary>
 
 `profiles/tbc/arcane_mage/` is done and real-verified (full writeup in NOTES.md). One real call:
 
@@ -627,6 +672,7 @@ rather patch it or report it upstream to the wowsims project.
   phase-varying topology is already handled generically), this is a real, scoped follow-up, not a
   full rebuild - the reference-BiS builder already supports multi-handType resolution per phase,
   it would just need a second real build call merged into the same pool.
+</details>
 
 ## RESOLVED 2026-08-28: per-class realistic raid buff comp, all 15 profiles
 
