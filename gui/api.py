@@ -186,10 +186,11 @@ def _version_is_newer(candidate: str, current: str) -> bool | None:
 # One global job slot, not per-character concurrency - the real sim-call
 # concurrency ceiling (valuation.SIMSERVER_POOL_SIZE=2) means two
 # simultaneous sweeps would just contend for the same workers with no
-# throughput benefit, and sim_cache.json's whole-file read-modify-write is a
-# real corruption risk under concurrent writes. Lock-protected module-level
-# dict rather than per-request state since pywebview calls each js_api
-# method on its own thread.
+# throughput benefit. (sim_cache's own journal format, since 2026-08-31,
+# is safe under concurrent appends anyway - this constraint is purely
+# about sim-worker contention now, not cache-file corruption risk.)
+# Lock-protected module-level dict rather than per-request state since
+# pywebview calls each js_api method on its own thread.
 _status_lock = threading.Lock()
 _run_status: dict = {
     "active": False, "error": None, "done": False, "stage": None, "detail": None,

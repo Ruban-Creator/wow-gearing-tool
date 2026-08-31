@@ -50,7 +50,7 @@ else:
 
 
 def _user_data_dir() -> str:
-    """Where Production Data (per-character caches/reports, sim_cache.json,
+    """Where Production Data (per-character caches/reports, sim_cache.jsonl,
     local_config.json) actually lives - 2026-08-29 folder-structure rework,
     prompted by the "is this ready for a bundled installer" question. Used
     to be REPO_ROOT/data/, which only works for a dev checkout: an installed
