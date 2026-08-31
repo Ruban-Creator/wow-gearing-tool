@@ -4340,3 +4340,172 @@ because the call didn't throw, so a real failure (e.g. a permissions error) show
 "Install failed: ..." message instead of a false "success" toast. Verified live in the browser
 preview harness: toast appears with the right text and color, stacks cleanly above the other
 banners (reuses the same `.banner-stack` container), and auto-hides on its own.
+
+## 2026-08-31 — Repo-review remediation: privacy, performance, correctness, robustness
+
+An external code review (`CODE_REVIEW.md`, ~11,000 lines across Python/Lua/JS/Go reviewed, graded
+P1/fix-before-public, P2/real-cost, P3/cleanup) came back ahead of making the repo public. Worked
+through essentially the whole thing in the review's own suggested order - every P1/P2 and most P3s,
+skipping only the two explicitly-optional structural refactors (the `sys.path.insert`+bare-import
+architecture, and splitting `run_full_sweep_mv.py`'s 1,542-line `main()` - both flagged "worth doing
+only if already planning a restructure"/"not urgent," not needed for this pass) and §4.1 (68
+unclosed `json.load(open(...))` handles across 20 files - real but purely stylistic, no live bug,
+deferred as lower-value-per-hour than everything else here) and §5.1 (14 never-imported standalone
+tools, informational only - already legitimate maintenance-script pattern, not touched).
+
+**§1 Personal information (P1, blocking public release)**:
+- **§1.1** - the developer's real Windows username appeared in 13 places across 7 files (all
+  referencing a local plan-file path with no value to a reader even ignoring the privacy angle).
+  Stripped to `<user>`; `preview_mock.js`'s mock report path swapped to the real `%LOCALAPPDATA%`
+  form the actual code resolves to, a better mock value than the literal path it had.
+- **§1.2** - three real characters (a real first name + real WoW characters + a named realm) were
+  hardcoded directly in `core/character_profiles.py`'s `SUPPORTED_CHARACTERS` dict - a privacy leak
+  for a public repo, and it also meant the tool only ever worked for one person (a second user got
+  an empty character list with no way to fix it short of editing source). Real architecture split:
+  the 12 built-in synthetic test-fixture characters stay hardcoded (ship with the tool, not personal
+  to anyone), a real user's own characters now live in `local_config.json` (outside git, per-machine,
+  same pattern as `wow_root`/`report_output_root`) via new `local_config.character_profile_overrides()`/
+  `set_character_profile()`. `character_profiles.refresh()` mutates `SUPPORTED_CHARACTERS` in place
+  (never reassigns the name) so `gui/api.py`'s own `SUPPORTED_CHARACTERS = character_profiles.
+  SUPPORTED_CHARACTERS` alias (copied at import time) sees an update immediately, not just after a
+  restart - verified this specific aliasing behavior directly, since getting it wrong would have
+  silently broken the GUI's live view. New GUI flow closes the "No profile" dead end the review also
+  flagged: a character with no profile gets a real dropdown (`character_profiles.available_profiles()`,
+  built from every real `profiles/tbc/*/profile.json`'s own class/spec fields, never hand-maintained)
+  and an Assign button. Also fixed a real, adjacent bug this surfaced:
+  `ingest/list_characters.py`'s `list_synthetic_characters()` used to iterate the (now extensible)
+  full `SUPPORTED_CHARACTERS` map and filter by the ASSIGNED PROFILE's own `synthetic_character` flag
+  - which would have double-listed a real user's real character under debug mode if they assigned it
+  to a profile that's itself flagged synthetic (most are, since few have a real player yet). Now
+  iterates the true built-in fixture list directly. Verified end-to-end against real production data
+  on this machine: re-seeded Lerynia/Rubán/Béarforceone into the real `local_config.json` (via
+  PowerShell, not Bash - see the sandbox-redirect note below) and confirmed `Api.list_characters()`
+  correctly resolves `has_profile: true` for all three and `false` for two other real, unassigned
+  characters on the same account.
+- **§1.3** - audited full git history for anything sensitive that had been removed later without
+  being purged. Found `data/acquisition_status.json` committed across 7 real commits (2026-08-23
+  through 2026-08-28) containing a real, live snapshot of Lerynia's actual reputation standings and
+  arena rating - moved to `USER_DATA_DIR`/gitignored later, but never scrubbed from history. With the
+  user's explicit go-ahead (confirmed before touching history, confirmed again before the actual
+  force-push - this is real, deliberate destructive-operation caution, not a rubber stamp): backed up
+  the whole repo (`E:\Claude\Gearing-Tool-backup-pre-filter-repo`, kept for now), installed
+  `git-filter-repo`, purged the file from all history (`--path data/acquisition_status.json
+  --invert-paths`), verified zero remaining hits via `git log --all --full-history`, confirmed
+  `.gitmodules`/submodule pointer survived intact, then force-pushed. Safe to do now specifically
+  because the repo is still private with no known clones/forks - would be a much bigger deal after
+  going public. No credentials/API keys/tokens/secrets found anywhere (also checked, real grep sweep,
+  clean) - this was purely an identity/personal-data exposure, never a secrets leak.
+
+**§2 Performance**:
+- **§2.1** - `sim_cache.put()` rewrote the ENTIRE cache file (JSON dump + atomic replace) on every
+  single cache miss, under the same lock `get()` uses - measured by the review at 14.4ms/put at
+  1,782 entries, growing unbounded (this project's real cache has since grown to ~48,600 entries).
+  Replaced with an append-only `sim_cache.jsonl` journal - `put()` is now one O(1) line-append,
+  periodic compaction once the journal exceeds 2x its unique-key count. One-time migration from the
+  old format on first load so an existing install's accumulated cache isn't discarded. Verified
+  against a REAL copy of this machine's actual 48,662-entry production cache (not synthetic data) -
+  full migration, spot-checked entries byte-identical, put/get/overwrite/forced-compaction all
+  confirmed correct.
+- **§2.2** - `evaluate()` deep-copied the settings template and re-hashed it on EVERY call, including
+  pure cache hits, where it was the entire remaining cost. Split the cheap imbue decision out so it
+  runs before the template is ever touched, and memoized the fingerprint computation itself
+  (`functools.lru_cache` on `(settings_path, mh_imbue, oh_imbue, bonus_key)` - a tiny real input
+  space) so a repeat call skips the deep-copy/canonical-dump/hash entirely. **Verified byte-identical
+  to the old fingerprint across every real scenario** (plain items, a real fist-weapon imbue trigger,
+  bonus_stats_override, empty items) before trusting this - a mismatch would have silently invalidated
+  the entire 48,600-entry cache from §2.1. Measured: ~28ms/call down to ~0.001ms/call once warm. Real
+  end-to-end `evaluate()` round-trip also verified: a genuine cache miss (513.7ms, real sim call,
+  correct DPS matching the long-established Survival Hunter baseline) followed by a genuine hit
+  (0.05ms, identical result).
+- **§2.3** - `gc.SLOT_ORDER.index(slot)` was a linear scan inside `optimizer.py`'s two hottest loops
+  (`greedy_sweep`: up to 15 slots x 6 passes per run; `set_bonus_branch`). New `gear_config.SLOT_INDEX`
+  precomputed once; both loops now do an O(1) dict lookup.
+- **§2.4** - five modules (`gem_optimizer`, `sweep_all_loot`, `run_full_sweep_mv`,
+  `build_wowsims_reference_bis`, `ingest/build_character`) each had their own independent
+  `DB_PATH`+`json.load()` of `db.json`, so a single sweep parsed the same file into several separate
+  in-memory copies. `item_db.py` gains `items()`/`gems()`/`npcs()`/`zones()`/`consumables()`
+  accessors; all five now go through it. Also fixed a separate real issue in the same file:
+  `build_wowsims_reference_bis.py`'s db.json load ran at MODULE IMPORT TIME, making the module
+  unimportable without the sim submodule checked out - now lazy. While in `item_db.py`: replaced the
+  four `hasattr(fn, "_index")` function-attribute memoization patterns with plain module-level dicts
+  built once in `_load()`. Verified every touched call site with real, live execution (not just
+  imports) - a real socketed item through `gem_optimizer.best_gems_for_item()`, a real 562-item
+  shortlist from `sweep_all_loot.run()`, a real source lookup through
+  `run_full_sweep_mv.describe_source_and_tier()`.
+
+**§3 Correctness**:
+- **§3.1** - `parse_lua_savedvariables()` used `text.partition("=")` to strip the leading
+  `GLOBALNAME = ` off a SavedVariables file - fine for WowSimsExporter (one global, `WSEDB`), but
+  GearingToolCompanion.lua declares two (`GTCompanionDB`, `GTCompanionMinimapDB`), and
+  partition-on-first-`=` grabbed the first table's content PLUS the entire raw text of the second
+  global tacked onto the end. It worked only because `slpp` 1.2.3 silently ignores trailing content
+  after a balanced top-level table - **verified this against this machine's real live SavedVariables
+  file** (decodes to exactly `GTCompanionDB`'s 5 real characters, nothing from
+  `GTCompanionMinimapDB` mixed in), but that was never a real contract, just an accident of the
+  library's own tolerance. Fixed with a per-global regex split + explicit `global_name` parameter.
+  Real proof the fix works, not just that it doesn't crash: `GTCompanionMinimapDB` (angle: 14.0) now
+  parses correctly on its own too - impossible before this fix, since the old code could only ever
+  reach the first global in the file. `list_characters.py`'s `isinstance(entry, dict)` guard (which
+  was defending against exactly this fragility as a symptom) is gone, not just less likely to fire.
+- **§3.2/§3.3** - `render_report.py` spliced `json.dumps(ledger_data)` into a `<script>` block with
+  no escaping (`json.dumps` doesn't escape `/`, so a literal `</script>` anywhere in the data would
+  terminate the block early); `report_template.html`'s own JS had the same gap the frontend app's
+  `escapeHtml()` already avoided - item names/sources/tier names/set-rescue-gate notes went into
+  `innerHTML` raw. Fixed both (a `</` -> `<\/` payload escape, `html.escape()` on the Python side,
+  a matching `escapeHtml()` added to the template's own JS). **Verified against a real crafted
+  injection attempt** (a `</script><script>alert(1)>` tier name, an `<img onerror>` character name)
+  - both neutralized, confirmed by direct string inspection of the rendered output, not just "it
+  didn't crash."
+- Deleted `core/run_gap_analysis.py` (and its only consumer, `core/gap_analysis.py`) - broken (bad
+  import order, read the stale pre-restructure `USER_DATA_DIR/character.json` path, hardcoded to
+  survival_hunter phases 2-3), unimported anywhere, and its actual job (owned gear vs. reference-BiS
+  gap analysis) is now covered more rigorously by the real MV-based Achieved BiS section in the main
+  pipeline. History preserved in git if ever needed again.
+- Deleted a dead `by_name` dict in `optimizer.resolve_name_to_config()` (built, never read) and a
+  stale trailing comment in `valuation.py` that contradicted the rest of its own paragraph
+  (implied simserver's crash was still unfixed two lines below `USE_SIMSERVER = True`).
+
+**§4 Robustness**:
+- **§4.2** - `autodetect_wow_root()` scanned every drive letter A-Z with no caching, on the GUI's own
+  startup path - a mapped-but-disconnected network drive can block `os.path.isdir()` for real
+  seconds. Now checks `SystemDrive` first, skips A:/B:, and caches a successful detection under its
+  own key (kept separate from the real user-override key so the Settings UI's "is this
+  auto-detected vs. user-chosen" distinction stays correct) - re-validated on each read via one cheap
+  `.flavor.info` check rather than trusted forever, and `set_wow_root(None)` ("Reset to auto-detect")
+  clears it so that button genuinely re-scans. Verified with a real call-counting test: second call
+  makes zero additional `isdir()` calls.
+- **§4.3** - `Api.open_url()` passed any string straight to `webbrowser.open()` with no validation -
+  now allowlisted by scheme (http/https unconditionally, `file:` only when the resolved path is
+  under `USER_DATA_DIR`). Verified: a `javascript:` scheme, an arbitrary `file://` path (System32, a
+  desktop file), and a non-http `ftp:` URL are all correctly rejected; real report/credit links still
+  open.
+- **§4.4** - `MAX_WORKERS`/`SIMSERVER_POOL_SIZE` were both hardcoded to 2, correct only because
+  that's what the ORIGINAL dev machine's 6C/12T CPU measured safe. New
+  `local_config.sim_concurrency()` derives from real `os.cpu_count()` (floored at the measured-safe
+  2), overridable via config, called by both modules so they can't drift out of the lockstep their
+  own comments already required. Lives in `local_config.py` specifically to avoid a real circular
+  import (`run_full_sweep_mv` -> `marginal_value` -> `valuation`, so `valuation` can't import
+  `run_full_sweep_mv`).
+
+**§5 Structure**:
+- **§5.4** - deleted `run_full_sweep_mv.py`'s module-level `PROFILE_DIR`/`SETTINGS_TEMPLATE`/
+  `SETTINGS_2H`/`POOL_PATH` constants (all pinned to survival_hunter, historical pre-Stage-6
+  leftover) - confirmed via a real grep that nothing anywhere reads them (every real usage inside
+  `main()` reads its own local variables of the same name, built from the real required `profile_dir`
+  parameter). This was exactly the loaded-gun shape `character_profiles.py`'s own docstring already
+  warns about - the defensive fix for that INCIDENT (`SUPPORTED_CHARACTERS`) was good, but the trap
+  itself was still sitting here, unused, for the next call site to reach for by mistake.
+
+**Real, incidental finding**: this session's own Bash tool calls resolve `%LOCALAPPDATA%\GearingTool\`
+to an isolated sandbox mirror (`AppData\Local\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Local\
+GearingTool\`), not the real path - already documented from an earlier session, re-confirmed
+repeatedly here (a "seeded" character-profile assignment silently landing in the sandbox instead of
+the real file; a migration test touching a stale mirror cache instead of the real 13MB one). The
+PowerShell tool does NOT have this redirect - used it directly for anything that needed to touch the
+real production files. Worth remembering for any future session: verify via PowerShell, not Bash,
+when a "real machine state" check matters.
+
+Every change in this pass was regression-checked against `check_ledger_consistency.py` (clean
+throughout, both a Hunter profile and a non-Hunter one where relevant) and, where the review's own
+finding was about a specific runtime value (fingerprints, cache migration, parse output), verified
+byte-for-byte or via direct real-data comparison rather than trusted on code-reading alone.
