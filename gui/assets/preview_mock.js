@@ -47,20 +47,31 @@ const MOCK_CHARACTERS_BASE = [
     name_realm: "FreshAlt-Thunderstrike", source_used: "gtcompanion",
     identity: {}, wse_timestamp: null, gt_timestamp: 1787578000, has_wse: false, has_gtcompanion: true,
   },
+  {
+    // Low-level leveling alt (real 2026-08-31 case: Azylaia, Lv 53) - here
+    // to demonstrate the "Show characters below level 70" toggle.
+    name_realm: "Azylaia-Thunderstrike", source_used: "gtcompanion",
+    identity: { name: "Azylaia", realm: "Thunderstrike", race: "Human", class: "paladin", level: 53,
+      professions: [] },
+    wse_timestamp: null, gt_timestamp: 1787610000, has_wse: false, has_gtcompanion: true,
+  },
 ];
 // Stateful, per the same pattern as mockAddonInstalled/mockResolveIterations
 // above - so the "Change profile…" flow (backlog, 2026-08-31: a respec, e.g.
 // Elemental -> Enhancement, needs a real way back into the assign UI) is
 // actually demonstrable in the no-backend preview harness, not just static.
 const mockProfileAssignments = { "Lerynia-Thunderstrike": "survival_hunter" };
+let mockShowLowLevel = false;
 
 window.pywebview = {
   api: {
-    list_characters: async () => MOCK_CHARACTERS_BASE.map((c) => ({
-      ...c,
-      has_profile: Object.prototype.hasOwnProperty.call(mockProfileAssignments, c.name_realm),
-      profile_dir_name: mockProfileAssignments[c.name_realm] || null,
-    })),
+    list_characters: async () => MOCK_CHARACTERS_BASE
+      .filter((c) => mockShowLowLevel || !c.identity.level || c.identity.level >= 70)
+      .map((c) => ({
+        ...c,
+        has_profile: Object.prototype.hasOwnProperty.call(mockProfileAssignments, c.name_realm),
+        profile_dir_name: mockProfileAssignments[c.name_realm] || null,
+      })),
     get_reports: async (nameRealm) => {
       // Backlog #13 - nested {profile_dir_name: {phase: {...}}}, matching
       // the real report_storage.py schema.
@@ -78,6 +89,8 @@ window.pywebview = {
     get_supported_phases: async () => (["phase1", "phase2", "phase3", "phase4", "phase5"]),
     get_debug_mode: async () => false,
     set_debug_mode: async (enabled) => enabled,
+    get_show_low_level_characters: async () => mockShowLowLevel,
+    set_show_low_level_characters: async (enabled) => { mockShowLowLevel = enabled; return mockShowLowLevel; },
     get_resolve_iterations: async () => ({
       value: mockResolveIterations ?? 30000, default: 30000, is_configured: mockResolveIterations !== null
     }),

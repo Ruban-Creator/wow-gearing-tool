@@ -4820,3 +4820,18 @@ using the CurseForge app. Stale "it's not on CurseForge" copy removed from `gui/
 `gui/api.py`'s docstrings. Verified live: both links render correctly, are correctly intercepted
 through `open_url()` (no stray in-app navigation), confirmed via a real console-log check of the
 outgoing URL.
+
+## 2026-08-31 — Low-level characters toggle
+
+Real, live user report after the rebuild: low-level characters (Azylaia Lv 53, Rubanker Lv 1) were
+"showing back up" in the picker - not a bug, exactly the intended outcome of this same day's
+earlier `ingest/list_characters.py` decision to keep every real character discoverable regardless
+of level (a leveling alt genuinely being played shouldn't be invisible). Per the user, wanted as a
+toggle instead of always-on: `core/local_config.py`'s `show_low_level_characters()`/
+`set_show_low_level_characters()` (off by default, same pattern as `debug_mode()`), a new
+Settings-modal row, filtering applied in `gui/api.py`'s `list_characters()` - a character with a
+KNOWN level under 70 is hidden by default; one with no captured level yet is never hidden by a
+guess. Real verification: `Api.list_characters()` directly confirmed the filter includes/excludes
+correctly with the toggle on/off, and the real local `http.server` preview technique confirmed the
+same live in the browser (Settings checkbox toggled, Azylaia appeared/disappeared from the
+sidebar in real time).

@@ -317,3 +317,25 @@ def set_debug_mode(enabled: bool) -> None:
     else:
         config.pop("debug_mode", None)
     save(config)
+
+
+def show_low_level_characters() -> bool:
+    """Off by default - the character picker only shows real max-level (70)
+    characters plus anything whose level isn't known yet (no identity
+    captured, e.g. a fresh GTCompanion-only export) - a known-sub-70
+    character is hidden, never one this tool simply can't judge yet.
+    ingest/list_characters.py's own 2026-08-31 decision keeps EVERY real
+    character discoverable regardless of level (a genuinely-being-played
+    leveling alt shouldn't be invisible to this tool), but per the user the
+    same day, that shouldn't mean the default GUI view gets cluttered with
+    them either - this setting is the toggle back to the wider view."""
+    return bool(load().get("show_low_level_characters", False))
+
+
+def set_show_low_level_characters(enabled: bool) -> None:
+    config = load()
+    if enabled:
+        config["show_low_level_characters"] = True
+    else:
+        config.pop("show_low_level_characters", None)
+    save(config)

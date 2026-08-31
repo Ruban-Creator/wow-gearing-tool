@@ -326,6 +326,15 @@ class Api:
         chars = list_characters.list_all_characters()
         if local_config.debug_mode():
             chars = chars + list_characters.list_synthetic_characters()
+        # Per the user (2026-08-31): ingest/list_characters.py's own real
+        # decision the same day keeps every character discoverable
+        # regardless of level (a leveling alt genuinely being played
+        # shouldn't be invisible), but that shouldn't mean the default GUI
+        # view gets cluttered with them - hidden unless explicitly toggled
+        # on, and a known level is required to hide (unknown/uncaptured
+        # level always stays visible, never hidden by a guess).
+        if not local_config.show_low_level_characters():
+            chars = [c for c in chars if not c["identity"].get("level") or c["identity"]["level"] >= 70]
         for c in chars:
             c["has_profile"] = c["name_realm"] in SUPPORTED_CHARACTERS
             # Real dir_name (e.g. "elemental_shaman"), not the full profile_dir
@@ -360,6 +369,13 @@ class Api:
     def set_debug_mode(self, enabled: bool) -> bool:
         local_config.set_debug_mode(bool(enabled))
         return local_config.debug_mode()
+
+    def get_show_low_level_characters(self) -> bool:
+        return local_config.show_low_level_characters()
+
+    def set_show_low_level_characters(self, enabled: bool) -> bool:
+        local_config.set_show_low_level_characters(bool(enabled))
+        return local_config.show_low_level_characters()
 
     def get_resolve_iterations(self) -> dict:
         return {"value": local_config.resolve_iterations(),

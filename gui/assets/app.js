@@ -57,6 +57,7 @@ const settingsOutputDir = document.getElementById("settings-output-dir");
 const settingsChangeBtn = document.getElementById("settings-change-btn");
 const settingsResetBtn = document.getElementById("settings-reset-btn");
 const settingsDebugToggle = document.getElementById("settings-debug-toggle");
+const settingsShowLowLevelToggle = document.getElementById("settings-show-low-level-toggle");
 const settingsResolveIterationsInput = document.getElementById("settings-resolve-iterations-input");
 const settingsResolveIterationsSaveBtn = document.getElementById("settings-resolve-iterations-save-btn");
 const settingsResolveIterationsResetBtn = document.getElementById("settings-resolve-iterations-reset-btn");
@@ -369,6 +370,7 @@ async function refreshSettingsDisplay() {
   const outputDir = await window.pywebview.api.get_report_output_dir();
   settingsOutputDir.textContent = outputDir.path + (outputDir.is_configured ? "" : " (default)");
   settingsDebugToggle.checked = await window.pywebview.api.get_debug_mode();
+  settingsShowLowLevelToggle.checked = await window.pywebview.api.get_show_low_level_characters();
 
   const resolveIterations = await window.pywebview.api.get_resolve_iterations();
   settingsResolveIterationsInput.value = resolveIterations.value;
@@ -532,6 +534,11 @@ settingsResetBtn.addEventListener("click", async () => {
 
 settingsDebugToggle.addEventListener("change", async () => {
   await window.pywebview.api.set_debug_mode(settingsDebugToggle.checked);
+  await loadCharacters();
+});
+
+settingsShowLowLevelToggle.addEventListener("change", async () => {
+  await window.pywebview.api.set_show_low_level_characters(settingsShowLowLevelToggle.checked);
   await loadCharacters();
 });
 
