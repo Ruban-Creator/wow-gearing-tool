@@ -40,22 +40,21 @@ import local_config  # noqa: E402
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
 USER_DATA_DIR = repo_root.USER_DATA_DIR
-# This file is still Survival Hunter's own sweep script (Stage 6.1+ gives
-# Warrior/Druid their own equivalent entry points) - paths point at the
-# migrated profiles/tbc/survival_hunter/ layout, but PROFILE_DIR/PROFILE
-# below (loaded in main()) are what actually drive the new per-profile
-# subsystems (stat weights, gem defaults, professions, weapon topology,
-# raid-AP gating, set-bonus Go source) - see the plan for the full Stage 6
-# architecture.
-PROFILE_DIR = os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter")
-SETTINGS_TEMPLATE = os.path.join(PROFILE_DIR, "settings_template.json")
-# Same buffs/debuffs/talents/encounter as SETTINGS_TEMPLATE - only the
-# "Melee weave" APL constant differs (see NOTES.md, 2026-08-23 melee weave
-# entry). 2H weapons are only ever evaluated under this variant since a 2H
-# weapon without weaving is a strict downgrade (loses the offhand item for
-# nothing) - there's no reason to test one under the non-weave settings.
-SETTINGS_2H = os.path.join(PROFILE_DIR, "settings_template_2h.json")
-POOL_PATH = os.path.join(PROFILE_DIR, "candidate_pool.json")
+# Real, deleted 2026-08-31 (code review §5.4): this file used to define
+# module-level PROFILE_DIR/SETTINGS_TEMPLATE/SETTINGS_2H/POOL_PATH
+# constants, all pointing at survival_hunter - historical leftover from
+# before Stage 6 (multi-class support). main()'s own real profile_dir
+# parameter (required, no default) is what actually drives every real
+# call site - it builds its own LOCAL SETTINGS_TEMPLATE/SETTINGS_2H/
+# POOL_PATH from that parameter (see below), and every real usage in this
+# file reads those, never the module-level ones. Confirmed via a real
+# grep before deleting: zero references to the module-level names
+# anywhere outside their own now-deleted definitions, in this file or any
+# other. This is exactly the shape of bug documented in
+# core/character_profiles.py's own docstring - a default that silently
+# produces a plausible-but-wrong report for the wrong class - the
+# defensive fix there (character_profiles.SUPPORTED_CHARACTERS) was
+# good, but the loaded gun sitting here was still on the table until now.
 # Derived, not hardcoded to one machine's core count (code review §4.4) -
 # see local_config.sim_concurrency()'s own docstring for the real
 # reasoning and measurement. adapters/tbc/valuation.SIMSERVER_POOL_SIZE
