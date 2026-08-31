@@ -16,6 +16,7 @@ import threading
 import time
 import traceback
 import urllib.error
+import urllib.parse
 import urllib.request
 import webbrowser
 from datetime import datetime, timezone
@@ -343,7 +344,25 @@ class Api:
             return json.load(f)
 
     def open_url(self, url: str) -> None:
-        webbrowser.open(url)
+        """Allowlisted by scheme (code review §4.3) - the JS bridge only
+        ever sends http(s) links (Wowhead/GitHub/Patreon/Discord/report
+        artifact URLs) or a file:// URI for a locally-rendered report
+        (Path(out_path).as_uri(), always under USER_DATA_DIR - see
+        run_report() above), but webbrowser.open() on Windows will
+        happily invoke a registered protocol handler for anything else
+        it's given. Safe by construction rather than by assumption about
+        what today's frontend happens to send."""
+        parsed = urllib.parse.urlparse(url)
+        if parsed.scheme in ("http", "https"):
+            webbrowser.open(url)
+            return
+        if parsed.scheme == "file":
+            local_path = os.path.normcase(os.path.abspath(urllib.request.url2pathname(parsed.path)))
+            allowed_root = os.path.normcase(os.path.abspath(USER_DATA_DIR))
+            if local_path.startswith(allowed_root + os.sep):
+                webbrowser.open(url)
+                return
+        raise ValueError(f"open_url: refusing unrecognized/out-of-scope URL {url!r}")
 
     def get_supported_phases(self) -> list[str]:
         return PHASES
