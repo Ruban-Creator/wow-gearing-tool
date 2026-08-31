@@ -625,10 +625,15 @@ one, same treatment: rename + update every real reference (not just the file its
 real regression check, never a rename left half-done with stale references pointing at the old name.
 
 Publishing `addons/GearingToolCompanion/` to CurseForge is planned as one of the final steps too
-— account + project via console.curseforge.com, tagged for the Anniversary client flavor
-specifically (not retail/normal Classic), a declared license, and either manual zip uploads per
-release or a `.pkgmeta` file driving their GitHub-based packager off this repo directly. Not yet —
-the addon is still actively changing session to session.
+— account + project via **authors.curseforge.com** (real, confirmed live 2026-08-31 - NOT
+console.curseforge.com, which is a separate dashboard for adding whole new *games* to the
+platform, not for submitting an addon to an existing game; this file's own guidance briefly had
+the wrong one, caught and corrected by the user checking directly rather than trusting it), tagged
+for the Anniversary client flavor specifically (not retail/normal Classic), a declared license, and
+either manual zip uploads per release or a `.pkgmeta` file driving their GitHub-based packager off
+this repo directly. README.md/CHANGELOG.md/packaging/build_addon_zip.py/the step-by-step publishing
+guide (Artifact) are all real and ready (2026-08-31) - the actual account creation and submission
+are the user's own action, not something this tool can do on their behalf.
 
 An optional self-hosted rebuild of the HTML ledger is also planned, to be scoped later - the
 claude.ai Artifact platform's CSP blocks loading Wowhead's real tooltip-preview script (only
