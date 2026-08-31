@@ -558,8 +558,22 @@ actually be raiding Sunwell Plateau day one even though it's technically "in pha
 way to say "I can currently get into Karazhan and Gruul's, not SWP," the candidate pool search
 space balloons with content that isn't really accessible yet, which is also a more practical fix
 for that scaling problem than pure compute optimization (see the three-tier funnel idea above -
-this filter shrinks the actual problem instead of just computing the huge version faster), and a
-real progress indicator (2026-08-23) - a big sweep can genuinely run 15-20+ minutes (watched this
+this filter shrinks the actual problem instead of just computing the huge version faster).
+
+**Done, 2026-08-31**: the raid/zone scope filter above, broadened per the user's real request to
+cover every real loot-source category the sim's DB actually models, not just raid zones -
+`core/source_scope.py` (raids/dungeons via real `zoneId`, crafting professions, and reputation as
+one bucket - no faction-name table exists anywhere in this DB, confirmed directly, so per "never
+invent data" that stays ungranular rather than hand-maintained from an outside source), layered
+UNDER the existing Phase selector rather than replacing it (real motivating gap confirmed via
+`item_db.zones()`: Phase 3 alone bundles both Hyjal Summit and Black Temple, which aren't equally
+accessible in real TBC progression). New `#source-scope-modal` in the Run Report flow
+(`gui/assets/index.html`/`app.js`), persisted per character
+(`local_config.source_scope_exclusions()`). See NOTES.md's 2026-08-31 entry for the full design
+and real verification (a real exclusion correctly shrank a real sweep's eligible pool and was
+reflected in the report's own metadata).
+
+And a real progress indicator (2026-08-23) - a big sweep can genuinely run 15-20+ minutes (watched this
 happen live this session once the candidate pool got wider), and a user watching a GUI needs
 actual feedback (candidates screened so far / total, current phase: screening vs resolving), not
 a blank wait wondering if it's stuck. Means the underlying pipeline needs to expose a real

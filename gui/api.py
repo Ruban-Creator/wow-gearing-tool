@@ -90,6 +90,9 @@ import build_ledger_data  # noqa: E402
 import character_profiles  # noqa: E402
 import render_report  # noqa: E402
 import local_config  # noqa: E402
+import sweep_all_loot  # noqa: E402
+import source_scope  # noqa: E402
+import item_db as idb  # noqa: E402
 
 # Moved to core/character_profiles.py 2026-08-25 (a real bug: cli/gear.py's
 # own sweep command had no equivalent guard and was silently defaulting
@@ -237,8 +240,16 @@ def _run_report_job(name_realm: str, phase: str, duration: int) -> None:
     through _run_status instead of hanging the GUI's polling forever."""
     try:
         char_dir = os.path.join(USER_DATA_DIR, "characters", name_realm)
-        profile = repo_root.load_json(os.path.join(SUPPORTED_CHARACTERS[name_realm], "profile.json"))
-        if profile.get("synthetic_character"):
+        # Real bug found and fixed 2026-08-31: this used to check the
+        # PROFILE's own `synthetic_character` flag (profile.json), not
+        # whether THIS CHARACTER is actually one of the built-in synthetic
+        # test fixtures - a real character assigned to a profile that still
+        # carries that flag from before any real player used that spec
+        # (elemental_shaman, e.g.) skipped syncing her own real data and hit
+        # a FileNotFoundError for her own character.json, which is never
+        # pre-built for a real character the way it is for the fixtures.
+        # See character_profiles.is_synthetic_character()'s own docstring.
+        if character_profiles.is_synthetic_character(name_realm):
             # Real gap found and fixed (Stage 6.3, Shaman): a synthetic test
             # character (see ingest/build_synthetic_character.py) has no real
             # WowSimsExporter export to sync from at all - the normal
@@ -311,6 +322,14 @@ class Api:
             chars = chars + list_characters.list_synthetic_characters()
         for c in chars:
             c["has_profile"] = c["name_realm"] in SUPPORTED_CHARACTERS
+            # Real dir_name (e.g. "elemental_shaman"), not the full profile_dir
+            # path - lets the GUI's "Change profile" flow pre-select her
+            # CURRENT assignment instead of always starting from scratch
+            # (real gap found and fixed 2026-08-31 - a respec, e.g. Elemental
+            # -> Enhancement, had no way back into the assign UI at all once
+            # she already had a profile).
+            c["profile_dir_name"] = (os.path.basename(SUPPORTED_CHARACTERS[c["name_realm"]])
+                                      if c["has_profile"] else None)
         return chars
 
     def get_available_profiles(self) -> list[dict]:
@@ -352,6 +371,35 @@ class Api:
             n = None
         local_config.set_resolve_iterations(n)
         return self.get_resolve_iterations()
+
+    def get_available_sources(self, name_realm: str, phase: str) -> dict:
+        """Backlog #5 (CLAUDE.md Future Scope) - every real loot source
+        (raid/dungeon zone, crafting profession, reputation) actually
+        present at this phase, for the Run Report modal's "Choose
+        Sources..." checklist. Uses sweep_all_loot.eligible_items() - the
+        PRE-truncation set - so a real zone never silently vanishes from the
+        checklist just because none of its items survived the top-N
+        crude-score cut for their armor type. `enabled` reflects the
+        character's currently saved exclusions (local_config); anything not
+        in that saved list defaults to enabled - a brand-new zone that
+        appears after a phase bump is included by default, same as every
+        character not using this feature at all."""
+        if name_realm not in SUPPORTED_CHARACTERS or phase not in PHASES:
+            return {"zones": [], "crafts": [], "rep": []}
+        profile_dir = SUPPORTED_CHARACTERS[name_realm]
+        phase_num = int(phase.removeprefix("phase"))
+        items = sweep_all_loot.eligible_items(phase_num, profile_dir)
+        zone_by_id = {z["id"]: z["name"] for z in idb.zones()}
+        sources = source_scope.available_sources(items, zone_by_id)
+        excluded = set(local_config.source_scope_exclusions(name_realm))
+        for entries in sources.values():
+            for entry in entries:
+                entry["enabled"] = entry["key"] not in excluded
+        return sources
+
+    def set_source_scope_exclusions(self, name_realm: str, excluded_keys: list[str]) -> dict:
+        local_config.set_source_scope_exclusions(name_realm, excluded_keys)
+        return {"saved": True}
 
     def get_reports(self, name_realm: str) -> dict:
         path = os.path.join(USER_DATA_DIR, "characters", name_realm, "reports.json")

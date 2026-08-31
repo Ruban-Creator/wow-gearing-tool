@@ -4635,3 +4635,100 @@ leftover override was left in this dev machine's own `local_config.json`.
 `check_ledger_consistency.py --skip-html` clean for both Lerynia (649/0) and Rubán (1524/0)
 afterward - confirms the `run_upgrade_sweep.py` import/constant change didn't regress either
 existing profile's report.
+
+## 2026-08-31 — Backlog #5: loot-source scope filter (raids/dungeons, crafting, reputation)
+
+Real motivating gap, confirmed against the sim's own DB before building anything: the Phase
+selector alone is coarser than a single raid tier - `item_db.zones()` shows Phase 3 bundles BOTH
+Hyjal Summit and Black Temple (real TBC progression: BT needs clearing/attuning through Hyjal
+first), so a guild raiding Hyjal but not yet in BT had no way to exclude BT loot. Planned in Plan
+Mode (`staged-purring-lynx.md`, approved) with three real decisions made via AskUserQuestion: (1)
+Reputation stays ONE checkbox, not per-faction - confirmed via direct DB inspection that
+`db.json` has zero faction-name table anywhere (only raw `repFactionId`/`factionId` numbers), and
+per "never invent data" that's not something to hand-maintain from an external source; (2) UI is
+a modal (the user's first answer, "separate OS window," was corrected mid-session - "i
+misunderstood you"); (3) persisted per character (raid access changes over weeks, not per run).
+
+New `core/source_scope.py` - `source_keys()`/`is_in_scope()`/`available_sources()`, wire format a
+short string key (`"zone:<id>"`/`"craft:<id>"`/`"rep"`) so the JS bridge only ever ships plain
+string arrays. `core/sweep_all_loot.py` split into `eligible_items()` (full pre-truncation set,
+what the GUI enumerates from) + `run()` (truncates+caches on top) - using the pre-truncation set
+matters, since filtering AFTER the top-15-per-type crude-score cut could silently starve a zone
+the user actually wants, if the cut had already favored a different (excluded) zone's items.
+`eligible()`/`run()` both gained an optional `excluded_source_keys` param, `None` (the default)
+= byte-identical behavior to before this feature - real, verified: the unscoped cache filename
+(`full_sweep_candidates_arms_warrior_phase3.json`) came out byte-for-byte identical to the
+pre-#5 naming, a scoped run gets a `_scope<hash>` suffix instead so it never collides with the
+unscoped cache. `core/run_upgrade_sweep.py` applies the same `source_scope.is_in_scope()` check
+to the curated pool's existing phase-gate loop (one shared implementation, not two), and records
+real human-readable excluded-source labels into the report's own metadata
+(`source_scope_excluded`) - self-documents the report so "why is this item missing" never needs a
+`local_config.json` spelunk. `core/report_template.html` shows this as a visible warn-colored
+note under the report title when non-empty.
+
+Real, live-DB verification (not just code review): excluding Black Temple + Hyjal for Rubán
+(Arms Warrior, phase 3) took the real eligible pool from 917 -> 808 items, confirmed zero items
+were wrongly kept that ONLY had an excluded source (checked every remaining item's real `sources`
+list directly). A full real end-to-end `run_upgrade_sweep.main()` call with this exclusion active
+correctly produced a `tiered_report_phase3.json` with `source_scope_excluded: ["Black Temple",
+"Hyjal Summit"]` and no `T6` tier at all. `check_ledger_consistency.py` briefly failed afterward -
+correctly, not a real bug: it was comparing the STALE `ledger_data_phase3.json` (built from the
+earlier unscoped sweep) against the now-scoped `tiered_report_phase3.json` on disk, since
+`build_ledger_data.build()` needs to be re-run after any real sweep, same as every other session's
+regression-check gotcha. Restored Rubán's real, unscoped state afterward (cleared the test
+exclusion from `local_config.json`, re-ran the sweep - 0.8s, full cache hit - and rebuilt
+`ledger_data_phase3.json`) since the scoped run was purely this session's own verification, not
+something the user asked to keep. Final check: 1524/0, byte-identical to before this feature.
+
+GUI: new `#source-scope-modal` (`gui/assets/index.html`), same skeleton as the existing Settings
+modal, a `.modal-wide`/`.modal-foot` CSS addition since every prior modal was a single-column
+380px dialog. Verified live via a real local `python -m http.server` (not `file://` - the
+sandboxed Claude Browser pane renders local files as an inert static snapshot with no live JS,
+confirmed earlier this session) - opened Run Report, unchecked Karazhan at Phase 1 ("8 of 9
+sources included"), switched to Phase 3 (correctly showed "12 of 13" - the exclusion survived the
+phase change, and Hyjal/Black Temple/SSC/TK appeared as new, phase-appropriate, enabled-by-default
+sources), Select All correctly cleared back to "All 13 sources included". `preview_mock.js` got a
+stateful mock (`mockSourceExclusions`, real TBC zone/phase mapping) so this is demonstrable in the
+no-backend preview harness too, not just the real app.
+
+## 2026-08-31 — Two real bugs found live on a second PC, both fixed
+
+**Bug 1: a real character assigned to a profile whose `profile.json` still says
+`synthetic_character: true` got a FileNotFoundError for her own `character.json`.** Root cause:
+`gui/api.py`'s `_run_report_job()` checked the PROFILE's own `synthetic_character` flag to decide
+whether to sync real data or load a pre-built fixture file - that flag documents "this profile's
+own original validation data was a synthetic test character" (e.g. `elemental_shaman`, built and
+verified only against `Test-Elemental-Synthetic` before any real Elemental Shaman player existed),
+NOT "every character assigned to this profile is fake." A real user's real Elemental Shaman
+(Zoray-Thunderstrike, on a second PC, not this dev machine) got assigned `elemental_shaman` and
+hit exactly this - the sync step was skipped, and her `character.json` was never pre-built the way
+it is for the built-in fixtures. Fixed via a new `character_profiles.is_synthetic_character
+(name_realm)` (checks the real `_SYNTHETIC_CHARACTERS` dict, not the profile's own flag) -
+`_run_report_job()` now checks the CHARACTER's identity, not the profile's historical note. Real,
+not assumed: confirmed `elemental_shaman/profile.json` does carry `synthetic_character: true`,
+confirmed the new function returns `False` for a real name/`True` for a real fixture name.
+
+**Bug 2: the "assign a profile" dropdown listed all 15 real profiles for every character,
+regardless of class** - found live by the user: a real Shaman could be offered (and picked) an
+Affliction Warlock profile. `character_profiles.available_profiles()` now also returns each
+profile's real lowercase `class` (from its own `profile.json`, never hand-maintained); confirmed
+live for all 15 - every entry resolves correctly (`shaman`, `warlock`, `warrior`, etc.).
+`gui/assets/app.js`'s `populateProfileAssignSelect()` filters to the character's own
+`identity.class` when known, falling back to the full list only if her identity has no class yet
+or nothing matches (never leaves the dropdown empty).
+
+**Also added, per the user mid-session ("we also can't switch the profile later if zoray would
+respec... this needs to be a selector that can be reenabled" + "we should also show survival
+hunter selected... depending on the selected profile")**: profile assignment used to be a one-time
+flow - the banner only ever showed for a character with NO profile, with no way back in after that
+to handle a real respec. Added a persistent "Change profile…" button (`gui/assets/index.html`,
+always visible once a character is selected) that reopens the same banner/dropdown pre-selected to
+her CURRENT assignment (needed a new `profile_dir_name` field on `list_characters()`'s payload,
+`gui/api.py`), with a Cancel option since changing is now optional, not a required first step. Also
+added a small always-visible badge (e.g. "SURVIVAL HUNTER") next to the button showing which
+profile is currently assigned, resolved from the real assignment (`profile_dir_name`), not her raw
+`identity.spec` (the addon-reported spec and the actually-assigned sim profile could diverge).
+Verified live via the same real local-http-server preview technique: assigning Rubán to Arms
+Warrior showed the badge, enabled Run Report, cleared the "No profile" sidebar tag, and reopening
+"Change profile…" for Lerynia correctly pre-selected "Survival Hunter" (filtered to only her two
+real Hunter specs) with a working Cancel.

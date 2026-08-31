@@ -7,32 +7,60 @@ let mockAddonInstalled = false; // flip to true to preview the "up to date" / no
 let mockUpdateAvailable = true; // flip to false to preview the "up to date" / no-banner state
 let mockResolveIterations = null; // null = default (30000), matches local_config's override-or-default shape
 
+// Backlog #5 - representative multi-category fake data, real TBC zone/phase
+// mapping (see core/source_scope.py's own real DB-derived table) so the
+// preview demonstrates the "shifts with phase" behavior honestly.
+let mockSourceExclusions = new Set();
+const MOCK_ZONES_BY_PHASE = {
+  1: ["Karazhan", "Gruul's Lair", "Magtheridon's Lair", "Hellfire Ramparts"],
+  2: ["Serpentshrine Cavern", "Tempest Keep"],
+  3: ["Hyjal Summit", "Black Temple"],
+  4: ["Zul'Aman"],
+  5: ["Sunwell Plateau", "Magisters' Terrace"],
+};
+function mockZonesUpToPhase(phaseNum) {
+  const zones = [];
+  for (let p = 1; p <= phaseNum; p++) zones.push(...(MOCK_ZONES_BY_PHASE[p] || []));
+  return zones;
+}
+
+const MOCK_CHARACTERS_BASE = [
+  {
+    name_realm: "Béarforceone-Thunderstrike", source_used: "wse",
+    identity: { name: "Béarforceone", realm: "Thunderstrike", race: "NightElf", class: "druid", level: 70, spec: "balance",
+      professions: [{ name: "Enchanting", level: 355 }, { name: "Engineering", level: 375 }] },
+    wse_timestamp: 1787174482, gt_timestamp: null, has_wse: true, has_gtcompanion: false,
+  },
+  {
+    name_realm: "Lerynia-Thunderstrike", source_used: "wse",
+    identity: { name: "Lerynia", realm: "Thunderstrike", race: "NightElf", class: "hunter", level: 70, spec: "survival",
+      professions: [{ name: "Herbalism", level: 375 }, { name: "Mining", level: 375 }] },
+    wse_timestamp: 1787512875, gt_timestamp: 1787512999, has_wse: true, has_gtcompanion: true,
+  },
+  {
+    name_realm: "Rubán-Thunderstrike", source_used: "wse",
+    identity: { name: "Rubán", realm: "Thunderstrike", race: "Human", class: "warrior", level: 70, spec: "arms",
+      professions: [{ name: "Blacksmithing", level: 375 }, { name: "Mining", level: 375 }] },
+    wse_timestamp: 1787517345, gt_timestamp: 1787517350, has_wse: true, has_gtcompanion: true,
+  },
+  {
+    name_realm: "FreshAlt-Thunderstrike", source_used: "gtcompanion",
+    identity: {}, wse_timestamp: null, gt_timestamp: 1787578000, has_wse: false, has_gtcompanion: true,
+  },
+];
+// Stateful, per the same pattern as mockAddonInstalled/mockResolveIterations
+// above - so the "Change profile…" flow (backlog, 2026-08-31: a respec, e.g.
+// Elemental -> Enhancement, needs a real way back into the assign UI) is
+// actually demonstrable in the no-backend preview harness, not just static.
+const mockProfileAssignments = { "Lerynia-Thunderstrike": "survival_hunter" };
+
 window.pywebview = {
   api: {
-    list_characters: async () => ([
-      {
-        name_realm: "Béarforceone-Thunderstrike", source_used: "wse",
-        identity: { name: "Béarforceone", realm: "Thunderstrike", race: "NightElf", class: "druid", level: 70, spec: "balance",
-          professions: [{ name: "Enchanting", level: 355 }, { name: "Engineering", level: 375 }] },
-        wse_timestamp: 1787174482, gt_timestamp: null, has_wse: true, has_gtcompanion: false, has_profile: false
-      },
-      {
-        name_realm: "Lerynia-Thunderstrike", source_used: "wse",
-        identity: { name: "Lerynia", realm: "Thunderstrike", race: "NightElf", class: "hunter", level: 70, spec: "survival",
-          professions: [{ name: "Herbalism", level: 375 }, { name: "Mining", level: 375 }] },
-        wse_timestamp: 1787512875, gt_timestamp: 1787512999, has_wse: true, has_gtcompanion: true, has_profile: true
-      },
-      {
-        name_realm: "Rubán-Thunderstrike", source_used: "wse",
-        identity: { name: "Rubán", realm: "Thunderstrike", race: "Human", class: "warrior", level: 70, spec: "arms",
-          professions: [{ name: "Blacksmithing", level: 375 }, { name: "Mining", level: 375 }] },
-        wse_timestamp: 1787517345, gt_timestamp: 1787517350, has_wse: true, has_gtcompanion: true, has_profile: false
-      },
-      {
-        name_realm: "FreshAlt-Thunderstrike", source_used: "gtcompanion",
-        identity: {}, wse_timestamp: null, gt_timestamp: 1787578000, has_wse: false, has_gtcompanion: true, has_profile: false
-      },
-    ]),
+    list_characters: async () => MOCK_CHARACTERS_BASE.map((c) => ({
+      ...c,
+      has_profile: Object.prototype.hasOwnProperty.call(mockProfileAssignments, c.name_realm),
+      profile_dir_name: mockProfileAssignments[c.name_realm] || null,
+    })),
     get_reports: async (nameRealm) => {
       if (nameRealm === "Lerynia-Thunderstrike") {
         return {
@@ -61,12 +89,34 @@ window.pywebview = {
     reset_wow_root: async () => {},
     get_run_status: async () => ({ active: false, done: false, error: null }),
     run_report: async () => ({ started: true }),
+    get_available_sources: async (nameRealm, phase) => {
+      const phaseNum = parseInt(phase.replace("phase", ""), 10) || 3;
+      const zones = mockZonesUpToPhase(phaseNum).map((name, i) => {
+        const key = `zone:${1000 + i}`;
+        return { key, label: name, enabled: !mockSourceExclusions.has(key) };
+      });
+      const crafts = ["Blacksmithing", "Leatherworking", "Tailoring", "Engineering"].map((name, i) => {
+        const key = `craft:${i + 1}`;
+        return { key, label: name, enabled: !mockSourceExclusions.has(key) };
+      });
+      const rep = [{ key: "rep", label: "Reputation rewards", enabled: !mockSourceExclusions.has("rep") }];
+      return { zones, crafts, rep };
+    },
+    set_source_scope_exclusions: async (nameRealm, excludedKeys) => {
+      mockSourceExclusions = new Set(excludedKeys);
+      return { saved: true };
+    },
     get_available_profiles: async () => ([
-      { dir_name: "survival_hunter", label: "Survival Hunter" },
-      { dir_name: "arms_warrior", label: "Arms Warrior" },
-      { dir_name: "balance_druid", label: "Balance Druid" },
+      { dir_name: "survival_hunter", label: "Survival Hunter", class: "hunter" },
+      { dir_name: "beastmastery_hunter", label: "Beastmastery Hunter", class: "hunter" },
+      { dir_name: "arms_warrior", label: "Arms Warrior", class: "warrior" },
+      { dir_name: "fury_warrior", label: "Fury Warrior", class: "warrior" },
+      { dir_name: "balance_druid", label: "Balance Druid", class: "druid" },
     ]),
-    assign_character_profile: async (nameRealm, dirName) => ({ ok: true, has_profile: true }),
+    assign_character_profile: async (nameRealm, dirName) => {
+      mockProfileAssignments[nameRealm] = dirName;
+      return { ok: true, has_profile: true };
+    },
     get_addon_status: async () => ({
       install_path: "C:\\Games\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\GearingToolCompanion",
       installed: mockAddonInstalled,

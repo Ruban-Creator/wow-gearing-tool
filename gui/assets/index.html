@@ -30,11 +30,16 @@
         <header class="detail-header">
           <h1 id="detail-name"></h1>
           <div id="detail-meta" class="detail-meta"></div>
+          <div class="profile-row">
+            <span id="assigned-profile-badge" class="badge assigned-profile" hidden></span>
+            <button id="change-profile-btn" class="modal-btn modal-btn-ghost" hidden>Change profile…</button>
+          </div>
         </header>
         <div id="profile-banner" class="profile-banner" hidden>
-          <span>No sim profile assigned to this character yet.</span>
+          <span id="profile-banner-text">No sim profile assigned to this character yet.</span>
           <select id="profile-assign-select" class="modal-select"></select>
           <button id="profile-assign-btn" class="modal-btn">Assign</button>
+          <button id="profile-assign-cancel-btn" class="modal-btn modal-btn-ghost" hidden>Cancel</button>
         </div>
         <div class="reports-head">
           <h2>Reports</h2>
@@ -150,6 +155,13 @@
             <label class="settings-label" for="run-report-duration">Fight Duration (seconds)</label>
             <input id="run-report-duration" class="modal-select" type="number" min="1" step="1" value="180">
           </div>
+          <div class="settings-row">
+            <div class="settings-label">Loot sources</div>
+            <div class="settings-value" id="run-report-sources-summary">–</div>
+            <div class="settings-actions">
+              <button id="run-report-sources-btn" class="modal-btn" type="button">Choose Sources…</button>
+            </div>
+          </div>
           <button id="run-report-start-btn" class="run-report-btn run-report-btn-wide">Run</button>
           <div id="run-report-error" class="run-report-error" hidden></div>
         </div>
@@ -165,6 +177,30 @@
           <div class="progress-stage">Report ready.</div>
           <button id="run-report-view-btn" class="run-report-btn run-report-btn-wide">View Report</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="source-scope-modal" class="modal-overlay" hidden>
+    <div class="modal modal-wide">
+      <div class="modal-head">
+        <h2>Choose Sources</h2>
+        <button class="modal-close" data-close="source-scope-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="source-scope-hint">
+          Uncheck a source to exclude everything from it - only affects this character, and stays
+          set for future runs until you change it here again.
+        </p>
+        <div class="source-scope-actions">
+          <button id="source-scope-select-all-btn" class="modal-btn modal-btn-ghost">Select All</button>
+          <button id="source-scope-select-none-btn" class="modal-btn modal-btn-ghost">Select None</button>
+        </div>
+        <div id="source-scope-groups"></div>
+      </div>
+      <div class="modal-foot">
+        <button id="source-scope-cancel-btn" class="modal-btn modal-btn-ghost" data-close="source-scope-modal">Cancel</button>
+        <button id="source-scope-save-btn" class="modal-btn">Save</button>
       </div>
     </div>
   </div>

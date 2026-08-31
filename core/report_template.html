@@ -281,6 +281,7 @@
     <div class="title-block">
       <h1>__REPORT_TITLE__</h1>
       <div class="sub">__REPORT_SUBTITLE__</div>
+      <div class="sub" id="source-scope-note" style="display:none; color:var(--warn-strong);"></div>
     </div>
     <div class="stat-strip">
       <div class="stat">
@@ -399,6 +400,17 @@ function horizonTag(it){
 
 document.getElementById('stat-baseline').textContent = DATA.baseline_dps.toFixed(1) + ' DPS';
 document.getElementById('stat-sha').textContent = DATA.sim_commit_sha.slice(0, 10);
+
+// Backlog #5 (CLAUDE.md Future Scope) - real, human-readable labels for any
+// loot sources excluded below the phase gate (e.g. "Black Temple" for
+// "raiding Hyjal but not into BT yet"). Empty for every character not using
+// this GUI setting, so this note stays hidden for every existing report.
+const excludedSources = DATA.source_scope_excluded || [];
+if (excludedSources.length > 0) {
+  const note = document.getElementById('source-scope-note');
+  note.textContent = 'Sources excluded from this sweep: ' + excludedSources.map(escapeHtml).join(', ');
+  note.style.display = 'block';
+}
 
 // Expose Weakness's raid-wide AP contribution is a Survival Hunter-only
 // mechanic (see CLAUDE.md's Stage 2 decision) - every other profile's

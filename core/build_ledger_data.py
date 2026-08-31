@@ -100,6 +100,12 @@ def build(name_realm: str, phase: str, profile_dir: str):
         # length (their own real Teeth of Gruul finding), so this is never
         # silently omitted from the report.
         "fight_duration_seconds": report.get("fight_duration_seconds", 180),
+        # Backlog #5 (CLAUDE.md Future Scope) - real, human-readable labels
+        # for any loot sources this character excluded below the phase gate
+        # (e.g. "Black Temple" for "raiding Hyjal but not into BT yet") -
+        # empty for every character not using this setting. Self-documents
+        # the report so it's never ambiguous later why an item is missing.
+        "source_scope_excluded": report.get("source_scope_excluded", []),
         "screen_iterations": sweep.SCREEN_ITERATIONS,
         "confirm_iterations": sweep.CONFIRM_ITERATIONS,
         "resolve_iterations": sweep.RESOLVE_ITERATIONS,

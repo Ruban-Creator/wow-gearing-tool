@@ -43,8 +43,12 @@ const detailContent = document.getElementById("detail-content");
 const detailName = document.getElementById("detail-name");
 const detailMeta = document.getElementById("detail-meta");
 const profileBanner = document.getElementById("profile-banner");
+const profileBannerText = document.getElementById("profile-banner-text");
 const profileAssignSelect = document.getElementById("profile-assign-select");
 const profileAssignBtn = document.getElementById("profile-assign-btn");
+const profileAssignCancelBtn = document.getElementById("profile-assign-cancel-btn");
+const changeProfileBtn = document.getElementById("change-profile-btn");
+const assignedProfileBadge = document.getElementById("assigned-profile-badge");
 const reportsGrid = document.getElementById("reports-grid");
 
 const settingsBtn = document.getElementById("settings-btn");
@@ -107,6 +111,15 @@ const runReportElapsed = document.getElementById("run-report-elapsed");
 const runReportStageEta = document.getElementById("run-report-stage-eta");
 const runReportDone = document.getElementById("run-report-done");
 const runReportViewBtn = document.getElementById("run-report-view-btn");
+
+const runReportSourcesSummary = document.getElementById("run-report-sources-summary");
+const runReportSourcesBtn = document.getElementById("run-report-sources-btn");
+const sourceScopeModal = document.getElementById("source-scope-modal");
+const sourceScopeGroups = document.getElementById("source-scope-groups");
+const sourceScopeSelectAllBtn = document.getElementById("source-scope-select-all-btn");
+const sourceScopeSelectNoneBtn = document.getElementById("source-scope-select-none-btn");
+const sourceScopeSaveBtn = document.getElementById("source-scope-save-btn");
+const sourceScopeCancelBtn = document.getElementById("source-scope-cancel-btn");
 
 function openModal(el) { el.hidden = false; }
 function closeModal(el) { el.hidden = true; }
@@ -204,11 +217,28 @@ async function selectCharacter(nameRealm) {
   detailMeta.textContent = metaParts.join(" · ") || "No identity captured yet - export in-game.";
 
   profileBanner.hidden = c.has_profile;
+  profileAssignCancelBtn.hidden = true;
   selectedHasProfile = c.has_profile;
   runReportBtn.disabled = !c.has_profile;
   runReportBtn.title = c.has_profile ? "" : "No sim profile yet for this character.";
-  if (!c.has_profile) {
-    await populateProfileAssignSelect();
+  // Real gap found and fixed 2026-08-31: always visible once a character is
+  // selected, not just when she has no profile yet - a respec (e.g.
+  // Elemental -> Enhancement) had no way back into the assign UI at all
+  // once she already had one.
+  changeProfileBtn.hidden = false;
+  if (c.has_profile) {
+    // Per the user (2026-08-31): show which sim profile is actually
+    // assigned at a glance, not just discoverable by opening "Change
+    // profile…" - depends on the real assignment, not her raw identity.spec
+    // (the addon-reported spec and the assigned sim profile could diverge).
+    const profiles = await ensureAvailableProfilesCache();
+    const assigned = profiles.find((p) => p.dir_name === c.profile_dir_name);
+    assignedProfileBadge.textContent = assigned ? assigned.label : c.profile_dir_name;
+    assignedProfileBadge.hidden = false;
+  } else {
+    assignedProfileBadge.hidden = true;
+    profileBannerText.textContent = "No sim profile assigned to this character yet.";
+    await populateProfileAssignSelect(id.class);
   }
 
   const reports = await window.pywebview.api.get_reports(nameRealm);
@@ -217,16 +247,53 @@ async function selectCharacter(nameRealm) {
 
 let availableProfilesCache = null;
 
-async function populateProfileAssignSelect() {
+async function ensureAvailableProfilesCache() {
   // Cached across calls - the profile list only changes with a new build
   // of the tool, never within a single running session.
   if (!availableProfilesCache) {
     availableProfilesCache = await window.pywebview.api.get_available_profiles();
   }
-  profileAssignSelect.innerHTML = availableProfilesCache
+  return availableProfilesCache;
+}
+
+async function populateProfileAssignSelect(charClass, currentDirName) {
+  await ensureAvailableProfilesCache();
+  // Real bug found and fixed 2026-08-31: this used to list every real
+  // profile (any class) for every character, so a real Shaman could be
+  // offered - and picked - an Affliction Warlock profile with nothing to
+  // stop it. Filter to the character's own detected class when known;
+  // fall back to the full list if her identity has no class yet (no
+  // export captured) or no profile matches her class at all (not one of
+  // the 15 currently supported) - never leave the dropdown empty.
+  const cls = (charClass || "").toLowerCase();
+  const matching = cls ? availableProfilesCache.filter((p) => p.class === cls) : [];
+  const list = matching.length ? matching : availableProfilesCache;
+  profileAssignSelect.innerHTML = list
     .map((p) => `<option value="${escapeHtml(p.dir_name)}">${escapeHtml(p.label)}</option>`)
     .join("");
+  // Pre-select her current assignment when reopening to change it (a
+  // respec, e.g.) - Assign then reads as "confirm/update", not "start over".
+  if (currentDirName && list.some((p) => p.dir_name === currentDirName)) {
+    profileAssignSelect.value = currentDirName;
+  }
 }
+
+changeProfileBtn.addEventListener("click", async () => {
+  const c = characters.find((x) => x.name_realm === selectedNameRealm);
+  if (!c) return;
+  const id = c.identity || {};
+  await populateProfileAssignSelect(id.class, c.profile_dir_name);
+  const currentLabel = availableProfilesCache.find((p) => p.dir_name === c.profile_dir_name);
+  profileBannerText.textContent = c.has_profile
+    ? `Current profile: ${currentLabel ? currentLabel.label : c.profile_dir_name}. Choose a different one below if she's respecced.`
+    : "No sim profile assigned to this character yet.";
+  profileAssignCancelBtn.hidden = !c.has_profile;
+  profileBanner.hidden = false;
+});
+
+profileAssignCancelBtn.addEventListener("click", () => {
+  profileBanner.hidden = true;
+});
 
 profileAssignBtn.addEventListener("click", async () => {
   if (!selectedNameRealm || !profileAssignSelect.value) return;
@@ -533,7 +600,78 @@ runReportBtn.addEventListener("click", async () => {
   runReportCharacter.textContent = selectedNameRealm;
   runReportPhaseSelect.innerHTML = PHASES.map((p) => `<option value="${p}">${PHASE_LABELS[p]}</option>`).join("");
   runReportDurationInput.value = 180;
+  await refreshSourcesSummary();
   openModal(runReportModal);
+});
+
+// ---- Loot-source scope (backlog #5) ----
+
+// Available sources shift with the selected Phase (e.g. Black Temple only
+// exists at Phase 3+), so the summary label re-fetches whenever the phase
+// changes, not just when the Run Report modal first opens.
+runReportPhaseSelect.addEventListener("change", refreshSourcesSummary);
+
+async function refreshSourcesSummary() {
+  if (!selectedNameRealm || !runReportPhaseSelect.value) return;
+  const sources = await window.pywebview.api.get_available_sources(selectedNameRealm, runReportPhaseSelect.value);
+  const all = [...sources.zones, ...sources.crafts, ...sources.rep];
+  const enabledCount = all.filter((s) => s.enabled).length;
+  runReportSourcesSummary.textContent = all.length === 0
+    ? "No sources found for this phase"
+    : enabledCount === all.length
+      ? `All ${all.length} sources included`
+      : `${enabledCount} of ${all.length} sources included`;
+}
+
+function renderSourceScopeGroups(sources) {
+  const groupDefs = [
+    { key: "zones", title: "Raid & Dungeon Zones" },
+    { key: "crafts", title: "Crafting Professions" },
+    { key: "rep", title: "Reputation" },
+  ];
+  sourceScopeGroups.innerHTML = groupDefs
+    .filter((g) => sources[g.key] && sources[g.key].length)
+    .map((g) => {
+      const items = sources[g.key].map((s) => `
+        <label class="source-scope-item">
+          <input type="checkbox" data-source-key="${escapeHtml(s.key)}" ${s.enabled ? "checked" : ""}>
+          ${escapeHtml(s.label)}
+        </label>
+      `).join("");
+      return `
+        <div class="source-scope-group">
+          <div class="source-scope-group-title">${escapeHtml(g.title)}</div>
+          <div class="source-scope-grid">${items}</div>
+        </div>
+      `;
+    }).join("");
+}
+
+runReportSourcesBtn.addEventListener("click", async () => {
+  if (!selectedNameRealm || !runReportPhaseSelect.value) return;
+  const sources = await window.pywebview.api.get_available_sources(selectedNameRealm, runReportPhaseSelect.value);
+  renderSourceScopeGroups(sources);
+  openModal(sourceScopeModal);
+});
+
+sourceScopeSelectAllBtn.addEventListener("click", () => {
+  sourceScopeGroups.querySelectorAll("input[type=checkbox]").forEach((cb) => { cb.checked = true; });
+});
+sourceScopeSelectNoneBtn.addEventListener("click", () => {
+  sourceScopeGroups.querySelectorAll("input[type=checkbox]").forEach((cb) => { cb.checked = false; });
+});
+
+sourceScopeCancelBtn.addEventListener("click", () => {
+  closeModal(sourceScopeModal);
+});
+
+sourceScopeSaveBtn.addEventListener("click", async () => {
+  const excluded = Array.from(sourceScopeGroups.querySelectorAll("input[type=checkbox]"))
+    .filter((cb) => !cb.checked)
+    .map((cb) => cb.dataset.sourceKey);
+  await window.pywebview.api.set_source_scope_exclusions(selectedNameRealm, excluded);
+  closeModal(sourceScopeModal);
+  await refreshSourcesSummary();
 });
 
 function formatElapsed(ms) {

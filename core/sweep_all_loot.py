@@ -20,8 +20,14 @@ once Arms Warrior became the second real profile to test this against):
 - quality >= 3 (Rare+) - a practical floor against vendor trash/quest greens,
   not a hidden exclusion of anything that's actually competitive.
 - phase <= max_phase.
-- must have at least one real `sources` entry (drop/crafted/quest/vendor).
+- must have at least one real `sources` entry (drop/crafted/rep - the only
+  three source types this DB's data model has, confirmed via source_scope.py).
+- an optional, further user-chosen scope UNDER the phase gate (backlog #5,
+  CLAUDE.md Future Scope - source_scope.py, e.g. "Phase 3, but not Black
+  Temple yet"). None (the default everywhere except a real user selection)
+  means every existing caller's behavior is unchanged.
 """
+import hashlib
 import json
 import os
 import sys
@@ -31,6 +37,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import stat_weights  # noqa: E402
 import set_bonus  # noqa: E402
 import item_db as idb  # noqa: E402
+import source_scope  # noqa: E402
 
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
@@ -146,7 +153,7 @@ def is_encounter_only_legendary(item: dict) -> bool:
     return False
 
 
-def eligible(item: dict, max_phase: int = MAX_PHASE) -> bool:
+def eligible(item: dict, max_phase: int = MAX_PHASE, excluded_source_keys: set[str] | None = None) -> bool:
     rules = _eligibility_active()
     if item.get("setName") in _unsafe_set_names:
         return False
@@ -157,6 +164,12 @@ def eligible(item: dict, max_phase: int = MAX_PHASE) -> bool:
     if not item.get("sources"):
         return False
     if is_encounter_only_legendary(item):
+        return False
+    # Backlog #5 (CLAUDE.md Future Scope) - a user-chosen scope layered under
+    # the phase gate above (e.g. "Phase 3, but not Black Temple yet" - Hyjal
+    # and Black Temple are both real Phase 3 content). None (the default)
+    # means every existing call site's behavior is unchanged.
+    if excluded_source_keys and not source_scope.is_in_scope(item, excluded_source_keys):
         return False
     if item.get("type") not in NO_ILVL_FLOOR_TYPES:
         ilvl = item.get("scalingOptions", {}).get("0", {}).get("ilvl", 0)
@@ -183,10 +196,17 @@ def eligible(item: dict, max_phase: int = MAX_PHASE) -> bool:
     return armor_type in rules["armor_ok"]
 
 
-def run(max_phase: int, profile_dir: str) -> str:
-    """Eligible-item universe for one phase, shared by any character running
-    this profile - so the output is namespaced by (profile, phase), not by
-    character. Returns the written path.
+def eligible_items(max_phase: int, profile_dir: str,
+                    excluded_source_keys: set[str] | None = None) -> list[dict]:
+    """The full, PRE-truncation eligible-item universe for one phase (every
+    real class/armor/weapon/phase/scope gate applied, but before run()'s own
+    top-N-per-type crude-score shortlisting). Split out from run() so the
+    GUI's source-scope picker (gui/api.py's get_available_sources()) can
+    enumerate every real source actually present at this phase - using the
+    already-truncated top-N list here would risk a zone silently vanishing
+    from the checklist just because none of its items survived the crude-
+    score cut for their armor type, even though the zone itself is real and
+    in-phase.
 
     Stage 6.1: eligibility rules (class id, armor/weapon/ranged-weapon-type
     allowlists) are now profile-driven (loot_eligibility.json), same pattern
@@ -198,12 +218,18 @@ def run(max_phase: int, profile_dir: str) -> str:
     global _unsafe_set_names
     _unsafe_set_names = _load_unsafe_set_names(eligibility_rules["class_id"])
 
-    items = idb.items()
+    return [it for it in idb.items() if eligible(it, max_phase, excluded_source_keys)]
+
+
+def run(max_phase: int, profile_dir: str, excluded_source_keys: set[str] | None = None) -> str:
+    """Eligible-item universe for one phase, shared by any character running
+    this profile - so the output is namespaced by (profile, phase[, scope]),
+    not by character. Returns the written path."""
+    items = eligible_items(max_phase, profile_dir, excluded_source_keys)
 
     by_type = defaultdict(list)
     for it in items:
-        if eligible(it, max_phase):
-            by_type[it.get("type")].append(it)
+        by_type[it.get("type")].append(it)
 
     total = sum(len(v) for v in by_type.values())
     print(f"Eligible (phase<={max_phase}, ilvl>={MIN_ILVL}, quality>={MIN_QUALITY}): {total}")
@@ -225,7 +251,17 @@ def run(max_phase: int, profile_dir: str) -> str:
     print(f"\nTotal shortlisted for real sim: {len(shortlisted)}")
 
     profile_name = os.path.basename(os.path.normpath(profile_dir))
-    out_path = os.path.join(USER_DATA_DIR, "cache", f"full_sweep_candidates_{profile_name}_phase{max_phase}.json")
+    # Scope-aware cache filename - byte-identical to the pre-#5 filename when
+    # unscoped (the default, current-user case: zero cache-invalidation risk
+    # for anyone not using this feature), a short deterministic hash appended
+    # only when a real exclusion set is active, so a scoped run never
+    # collides with or clobbers the unscoped cache.
+    suffix = ""
+    if excluded_source_keys:
+        digest = hashlib.sha1("|".join(sorted(excluded_source_keys)).encode("utf-8")).hexdigest()[:10]
+        suffix = f"_scope{digest}"
+    out_path = os.path.join(USER_DATA_DIR, "cache",
+                             f"full_sweep_candidates_{profile_name}_phase{max_phase}{suffix}.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(shortlisted, f, indent=2)
     print(f"Wrote {out_path}")

@@ -70,11 +70,35 @@ def _profile_dir(dir_name: str) -> str:
     return os.path.join(PROFILES_DIR, dir_name)
 
 
+def is_synthetic_character(name_realm: str) -> bool:
+    """True only for the built-in synthetic test-fixture characters above -
+    never true for a real user's own character, even one assigned to a
+    profile whose own profile.json still carries a historical
+    `synthetic_character: true` flag. Real bug found and fixed 2026-08-31:
+    that flag describes the PROFILE's own original validation data (e.g.
+    elemental_shaman was built and verified only against
+    Test-Elemental-Synthetic before any real Elemental Shaman player
+    existed), not "every character assigned to this profile is fake" -
+    gui/api.py's _run_report_job() used to check the profile's flag
+    directly, so a real character assigned to a profile that still carries
+    it (nothing yet clears it once a real player starts using that spec)
+    skipped syncing her own real data and hit a FileNotFoundError for her
+    own character.json, which is never pre-built for a real character the
+    way it is for the built-in fixtures."""
+    return name_realm in _SYNTHETIC_CHARACTERS
+
+
 def available_profiles() -> list[dict]:
-    """Every real, buildable profile under profiles/tbc/ - {dir_name,
-    label}, label derived from the profile's own real class/spec fields
+    """Every real, buildable profile under profiles/tbc/ - {dir_name, label,
+    class}, label derived from the profile's own real class/spec fields
     (never hand-maintained, so a new profile shows up here automatically).
-    Feeds the GUI's "assign a profile to this character" dropdown."""
+    `class` (the profile's own real lowercase class name, e.g. "shaman") is
+    included so the GUI's "assign a profile to this character" dropdown can
+    filter to profiles matching the character's own detected class -
+    real bug found and fixed 2026-08-31: without it, every real profile
+    (all 15, any class) was offered for every character, so a real Shaman
+    could be assigned an Affliction Warlock profile and nothing would ever
+    catch it."""
     result = []
     for dir_name in sorted(os.listdir(PROFILES_DIR)):
         profile_path = os.path.join(PROFILES_DIR, dir_name, "profile.json")
@@ -82,9 +106,11 @@ def available_profiles() -> list[dict]:
             continue
         with open(profile_path, encoding="utf-8") as f:
             p = json.load(f)
+        class_name = p.get("class", "")
         spec_label = p.get("spec", dir_name).replace("_", " ").title()
-        class_label = p.get("class", "").title()
-        result.append({"dir_name": dir_name, "label": f"{spec_label} {class_label}".strip()})
+        class_label = class_name.title()
+        result.append({"dir_name": dir_name, "label": f"{spec_label} {class_label}".strip(),
+                        "class": class_name.lower()})
     return result
 
 

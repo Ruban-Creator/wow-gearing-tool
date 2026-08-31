@@ -197,6 +197,33 @@ def set_character_profile(name_realm: str, profile_dir_name: str | None) -> None
     save(config)
 
 
+def source_scope_exclusions(name_realm: str) -> list[str]:
+    """Backlog #5 (CLAUDE.md Future Scope) - real loot sources (raid/dungeon
+    zones, crafting professions, reputation) this character has chosen to
+    exclude from their candidate pool, layered UNDER the Phase selector (see
+    core/source_scope.py for the real motivating gap - Phase 3 alone bundles
+    both Hyjal Summit and Black Temple, which aren't equally accessible in
+    real TBC progression). Persisted per character, not per run - real raid
+    access changes over weeks, not per report. Empty by default (nothing
+    excluded - matches every existing character's behavior before this
+    setting existed)."""
+    return load().get("source_scope_exclusions", {}).get(name_realm, [])
+
+
+def set_source_scope_exclusions(name_realm: str, keys: list[str] | None) -> None:
+    """Pass an empty list or None to clear the character's exclusions back
+    to "everything included"."""
+    config = load()
+    overrides = config.setdefault("source_scope_exclusions", {})
+    if not keys:
+        overrides.pop(name_realm, None)
+    else:
+        overrides[name_realm] = list(keys)
+    if not overrides:
+        config.pop("source_scope_exclusions", None)
+    save(config)
+
+
 def sim_concurrency() -> int:
     """The real, single source of truth for sim-call concurrency (code
     review §4.4) - core/run_upgrade_sweep.py's MAX_WORKERS and

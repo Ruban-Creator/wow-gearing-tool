@@ -36,6 +36,7 @@ import stat_weights  # noqa: E402
 import gem_optimizer  # noqa: E402
 import sweep_all_loot  # noqa: E402
 import local_config  # noqa: E402
+import source_scope  # noqa: E402
 
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
@@ -420,6 +421,12 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
                          "stage_index": idx, "stage_total": len(stage_sequence) or None})
 
     phase_num = int(phase.removeprefix("phase"))
+    # Backlog #5 (CLAUDE.md Future Scope) - real loot sources this character
+    # has chosen to exclude, layered under the phase gate above (see
+    # source_scope.py's docstring for the real motivating gap). Empty for
+    # every character that hasn't touched this GUI setting - same "read
+    # local_config directly" pattern RESOLVE_ITERATIONS already established.
+    excluded_source_keys = set(local_config.source_scope_exclusions(name_realm))
     milestone("Starting sweep")
     start = time.time()
     npc_by_id = {n["id"]: n["name"] for n in idb.npcs()}
@@ -563,6 +570,13 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
             db_item = idb.by_id(c.item_id)
             if db_item is not None and db_item.get("phase", 0) > phase_num:
                 continue
+            # Same source-scope check the swept pool goes through below
+            # (sweep_all_loot.run()) - one shared implementation
+            # (source_scope.is_in_scope()), since a curated-pool candidate
+            # resolves to the same real DB item with the same real
+            # `sources` field.
+            if db_item is not None and not source_scope.is_in_scope(db_item, excluded_source_keys):
+                continue
             kept.append(c)
         candidates[slot] = kept
     curated_ids = {c.item_id for cands in candidates.values() for c in cands if c.item_id}
@@ -579,7 +593,7 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     # trusting a possibly-stale cached file (this used to be a separate,
     # easy-to-forget manual step; see the plan's Context section).
     milestone("Building candidate pool")
-    sweep_path = sweep_all_loot.run(phase_num, profile_dir)
+    sweep_path = sweep_all_loot.run(phase_num, profile_dir, excluded_source_keys)
     sweep_items = repo_root.load_json(sweep_path)
     owned_by_id = {it["id"]: it for it in owned_items if it}
     meta_gem_id = opt.find_owned_meta_gem(owned_items)
@@ -1529,6 +1543,22 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     elapsed = time.time() - start
     print(f"Elapsed: {elapsed:.1f}s")
 
+    # Backlog #5 - real, human-readable labels for whatever was excluded, so
+    # a report opened weeks later is self-documenting (same spirit as always
+    # recording the sim commit SHA - never leave "why is this ranking
+    # different" needing a git-diff/local_config.json spelunk to answer).
+    def _source_key_label(key: str) -> str:
+        if key == "rep":
+            return "Reputation rewards"
+        kind, _, raw_id = key.partition(":")
+        if kind == "zone":
+            return zone_by_id.get(int(raw_id), key)
+        if kind == "craft":
+            return idb.PROFESSION_NAMES.get(int(raw_id), key)
+        return key
+
+    source_scope_excluded = sorted(_source_key_label(k) for k in excluded_source_keys)
+
     out_dir = os.path.join(USER_DATA_DIR, "characters", name_realm, "cache")
     os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, f"tiered_report_{phase}.json")
@@ -1536,7 +1566,8 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
         json.dump({"baseline_screened": baseline_screen["combined"], "achieved_bis": achieved_bis,
                    "missing_enchants": missing_enchants,
                    "tiers": tiered_out, "two_hand": two_hand_out, "two_hand_meta": two_hand_meta,
-                   "fight_duration_seconds": actual_duration}, f, indent=2)
+                   "fight_duration_seconds": actual_duration,
+                   "source_scope_excluded": source_scope_excluded}, f, indent=2)
     print(f"Wrote {out_path}")
     milestone("Done")
     return out_path
