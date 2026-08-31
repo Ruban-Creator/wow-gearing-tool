@@ -22,14 +22,35 @@ a new gotcha; don't let the lesson live only in NOTES.md's session log.
   methodology: pure primary-stat vs the item's own socket-bonus-chased loadout, real DPS, not a
   linear EP guess). A new profile starts with an **empty** chase-bonus set, not inherited from
   another class - verify its own candidates before assuming any bonus is worth chasing.
-- **Exception**: when a new profile shares its *entire* item pool with an already-verified profile
-  (two specs under one class dir, e.g. Beastmastery/Survival Hunter) AND its real EP weights are
+- **This exception is REVOKED as of 2026-08-31 - do not reuse `chase_bonus_gems.json` across
+  sibling specs, even with byte-identical EP weights.** The original claim (below, kept for the
+  historical record) was that "byte-identical EP weights -> same socket-bonus verdict, since it's
+  purely a function of stat weights, never rotation/pet/class mechanics" was proven wrong by a
+  real, full re-verification: Beastmastery Hunter's `chase_bonus_gems.json` had been reused
+  verbatim from Survival Hunter's own (byte-identical EP weights, spot-checked at the time) since
+  2026-08-25, but a real 22-item `core/verify_gem_choices.py` re-run found **10 genuine, resolved
+  socket-bonus wins** (+2.6 to +10.5 DPS, all clearly outside noise) that the spot-check missed
+  entirely - BM's real Ravager pet contributes ~30% of her total DPS, and effective stat value
+  shifts with that pet-DPS-share the same way already documented below for Demonology vs
+  Affliction/Destruction Warlock. A byte-identical EP-weight table does NOT capture a pet's own
+  separate contribution - two specs can share literal Agility/Hit/Crit weights on paper and still
+  disagree on whether a specific item's socket bonus is worth it, because the pet's share of total
+  DPS is a real, separate variable the EP table doesn't encode. **Always run the full
+  `verify_gem_choices.py` pass for every new profile, no exception based on sibling-spec EP-weight
+  equality alone** - a spot-check on a handful of items is not sufficient replacement, since this
+  exact case (Beastmastery) WAS spot-checked and still missed 10 real wins.
+
+  <details><summary>Original (now-revoked) reasoning, 2026-08-25</summary>
+
+  Claimed: when a new profile shares its *entire* item pool with an already-verified profile (two
+  specs under one class dir, e.g. Beastmastery/Survival Hunter) AND its real EP weights are
   confirmed byte-identical to that profile's own (check both specs' real `presets.ts` preset
-  blocks directly, don't assume), reusing the already-verified `chase_bonus_gems.json` list is
-  defensible, not a shortcut - the socket-bonus-vs-pure-stat question is purely a function of stat
-  weights, never rotation/pet/class mechanics. Still spot-check with a handful of fresh real sim
-  calls on any candidates the prior run never covered (found real, in 2026-08-25: Beastmastery's
-  own pool had a few items Survival's own past pass never tested) before trusting the reuse fully.
+  blocks directly, don't assume), reusing the already-verified `chase_bonus_gems.json` list was
+  considered defensible, not a shortcut - the socket-bonus-vs-pure-stat question was assumed to be
+  purely a function of stat weights, never rotation/pet/class mechanics. Spot-checking a handful of
+  fresh real sim calls on any candidates the prior run never covered was meant to catch a bad reuse
+  - it did not (see above).
+  </details>
 
 ## Non-obvious real filename conventions
 

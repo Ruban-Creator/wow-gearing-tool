@@ -13,7 +13,11 @@ enough to beat it. Screens all of them cheap first, only resolves the
 close calls at high iterations - same funnel discipline as
 marginal_value.mv_single_tiered.
 
-Usage: python core/verify_gem_choices.py
+Usage: python core/verify_gem_choices.py [profile_dir_name] [name_realm]
+  Defaults to survival_hunter / the flat USER_DATA_DIR/character.json (Lerynia's
+  own, original behavior) when no args given - both args must be given together
+  to point at a different profile's own synthetic/real character.json, e.g.:
+  python core/verify_gem_choices.py beastmastery_hunter Test-Beastmastery-Synthetic
 """
 import json
 import os
@@ -32,7 +36,9 @@ import gem_optimizer as gopt  # noqa: E402
 import marginal_value as mv  # noqa: E402
 import stat_weights  # noqa: E402
 
-PROFILE_DIR = os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter")
+PROFILE_DIR_NAME = sys.argv[1] if len(sys.argv) > 1 else "survival_hunter"
+NAME_REALM = sys.argv[2] if len(sys.argv) > 2 else None
+PROFILE_DIR = os.path.join(REPO_ROOT, "profiles", "tbc", PROFILE_DIR_NAME)
 SETTINGS_TEMPLATE = os.path.join(PROFILE_DIR, "settings_template.json")
 POOL_PATH = os.path.join(PROFILE_DIR, "candidate_pool.json")
 SCREEN_ITERATIONS = 3000
@@ -55,7 +61,9 @@ def main():
     chase_bonus = json.load(open(os.path.join(PROFILE_DIR, "chase_bonus_gems.json"), encoding="utf-8"))
     gopt.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
 
-    char = json.load(open(os.path.join(USER_DATA_DIR, "character.json"), encoding="utf-8"))
+    char_path = (os.path.join(USER_DATA_DIR, "characters", NAME_REALM, "character.json")
+                 if NAME_REALM else os.path.join(USER_DATA_DIR, "character.json"))
+    char = json.load(open(char_path, encoding="utf-8"))
     owned_items = char["equipped"]["items"]
     meta_gem_id = opt.find_owned_meta_gem(owned_items)
     baseline_config = opt.build_owned_config(owned_items)
