@@ -247,22 +247,22 @@ end
 -- timestamps" view. Reads whatever's already in GTCompanionDB; doesn't touch
 -- other accounts' SavedVariables (out of reach from in-game Lua anyway).
 local function AllCharacters()
-    -- Already-saved sub-70 entries (from before the Save*-function level
-    -- gate below existed - e.g. a real level 1 alt that showed up in
-    -- /gtlist next to real raid characters) are filtered from display
-    -- here too, not just blocked from future saves. Only skips entries
-    -- where the level is DEFINITELY known and below max - an entry with
-    -- no captured identity/level yet is shown as usual, not assumed sub-70.
-    local maxLevel = GetMaxPlayerLevel and GetMaxPlayerLevel() or 70
+    -- Real, explicit reversal 2026-08-31: this used to hide any entry with a
+    -- known level below GetMaxPlayerLevel() (paired with the Save*-function
+    -- level gate that used to exist below), meant to keep a throwaway level
+    -- 1 alt out of /gtlist next to real raid characters. Confirmed with the
+    -- user that a genuinely-being-played sub-70 character (a level 53
+    -- Paladin still leveling toward a real 70 raid spot) should NOT be
+    -- silently excluded just for not being max level yet - the "clutter"
+    -- problem the old filter solved and the "leveling character I actually
+    -- play" case it also caught turned out to be the same mechanism, so no
+    -- level distinction is made here anymore.
     local list = {}
     for key, entry in pairs(GTCompanionDB) do
-        local level = entry.identity and entry.identity.level
-        if not (level and level < maxLevel) then
-            table.insert(list, {
-                key = key, identity = entry.identity or {}, timestamp = entry.timestamp or 0,
-                wse_export_trigger = entry.wse_export_trigger,
-            })
-        end
+        table.insert(list, {
+            key = key, identity = entry.identity or {}, timestamp = entry.timestamp or 0,
+            wse_export_trigger = entry.wse_export_trigger,
+        })
     end
     table.sort(list, function(a, b) return a.timestamp > b.timestamp end)
     return list
@@ -293,25 +293,21 @@ end
 -- declaration is in the right place.
 local bankIsOpen = false
 
--- The sim pipeline only supports max-level (70) characters - saving/
--- tracking data for a leveling character is real, pointless clutter (a
--- level 1 alt showed up in /gtlist next to real raid characters). Every
--- Save* function below is gated on this. GetMaxPlayerLevel() (not a
--- hardcoded 70) matches the exact real check WowSimsExporter's own
--- SavedDataManager.lua:OnCharacterChanged already uses internally
--- ("if character.level < GetMaxPlayerLevel() then return end") - staying
--- correct automatically if the level cap ever changes, not duplicating a
--- number that could drift out of sync with WSE's own real behavior.
-local function IsMaxLevel()
-    local maxLevel = GetMaxPlayerLevel and GetMaxPlayerLevel() or 70
-    return UnitLevel("player") >= maxLevel
-end
+-- Real, explicit reversal 2026-08-31 (see AllCharacters()'s own note): every
+-- Save* function below used to be gated on max-level-only (IsMaxLevel(),
+-- removed) so the sim pipeline (which only supports 70s) wouldn't get
+-- pointless clutter from a level 1 throwaway alt. Confirmed with the user
+-- that a real, actively-played leveling character (not max level yet, but
+-- genuinely going to raid) should still be captured - so nothing here is
+-- level-gated anymore. The sim pipeline itself is still free to ignore/
+-- reject a sub-70 character's data on its own end if it needs to; this
+-- addon's job is just to capture what's true about the character, not to
+-- guess which ones will end up being sim'd.
 
 -- Bank containers only read valid data while the bank frame is open, so
 -- bank is only ever re-scanned on BANKFRAME_OPENED; bags update on their
 -- own event and must not overwrite the last-known bank snapshot.
 local function SaveBags()
-    if not IsMaxLevel() then return end
     local entry = Entry()
     entry.bags = DumpContainers(BagContainers())
     entry.timestamp = time()
@@ -328,7 +324,7 @@ end
 -- read, in which case this leaves entry.bank untouched instead of
 -- clobbering it.
 local function SaveBank()
-    if not bankIsOpen or not IsMaxLevel() then
+    if not bankIsOpen then
         return
     end
     local entry = Entry()
@@ -337,7 +333,6 @@ local function SaveBank()
 end
 
 local function SaveReputationAndArena()
-    if not IsMaxLevel() then return end
     local entry = Entry()
     entry.reputation = DumpReputation()
     entry.arena = DumpArena()
@@ -345,7 +340,6 @@ local function SaveReputationAndArena()
 end
 
 local function SaveIdentity()
-    if not IsMaxLevel() then return end
     local entry = Entry()
     entry.identity = DumpIdentity()
     entry.timestamp = time()
@@ -395,8 +389,12 @@ end
 -- C_Timer.After delay at the call site (see PLAYER_ENTERING_WORLD below),
 -- same reasoning already used for reputation - gives the client a moment to
 -- finish warming up before asking WSE to read talent data.
+-- No IsMaxLevel() check here either (removed 2026-08-31, see SaveBags's own
+-- note) - WSE's own OnCharacterChanged already does its own real max-level
+-- check internally (SavedDataManager.lua), so calling it for a leveling
+-- character just becomes a harmless no-op on WSE's side rather than
+-- something this addon needs to pre-filter.
 local function TriggerWSEExport()
-    if not IsMaxLevel() then return end
     local entry = Entry()
     if not LibStub then
         entry.wse_export_trigger = { ok = false, reason = "LibStub not found", at = time() }
@@ -643,9 +641,19 @@ minimapButton:SetMovable(true)
 -- ship - a real 32-bit uncompressed TGA (WoW loads addon-supplied TGA
 -- textures directly, no BLP conversion needed) replaces both the
 -- background texture and the letter FontString below.
+-- Real bug found 2026-08-31 (live screenshot, icon visibly off-center inside
+-- the ring): MiniMap-TrackingBorder below is anchored TOPLEFT to this
+-- button, but that texture's own ring artwork is NOT centered within its
+-- own 53x53 canvas - it's deliberately offset, a well-known quirk of this
+-- specific Blizzard texture that every minimap-button addon using it has to
+-- account for (the same convention LibDBIcon-1.0 uses). Centering the icon
+-- on the BUTTON's own geometric center (the old CENTER/0,0 anchor) ignores
+-- that the ring's true visual center sits elsewhere - TOPLEFT + the
+-- standard (7,-5) offset used for a 20x20 icon on a 31x31 button is what
+-- actually lines an icon up with this ring's real "window".
 local iconTex = minimapButton:CreateTexture(nil, "BACKGROUND")
 iconTex:SetSize(20, 20)
-iconTex:SetPoint("CENTER", minimapButton, "CENTER", 0, 0)
+iconTex:SetPoint("TOPLEFT", minimapButton, "TOPLEFT", 7, -5)
 iconTex:SetTexture("Interface\\AddOns\\GearingToolCompanion\\icon.tga")
 
 local overlay = minimapButton:CreateTexture(nil, "OVERLAY")

@@ -22,17 +22,6 @@ from build_character import REPO_ROOT, USER_DATA_DIR, find_savedvariables, parse
 sys.path.insert(0, os.path.join(REPO_ROOT, "core"))
 import character_profiles  # noqa: E402
 
-# TBC Anniversary's real, fixed level cap for the whole expansion (already
-# assumed throughout this codebase - every real character.json/profile is
-# built at 70) - the sim pipeline can't use a sub-max-level character at
-# all, so one shows up here as pointless clutter otherwise (real case:
-# a level 1 alt appeared in the GUI's character list next to real raid
-# characters, even after the companion addon's own /gtlist got the
-# equivalent filter - that one only affects the addon's own in-game
-# display/future saves, not this separate Python-side read path).
-MAX_LEVEL = 70
-
-
 def list_wse_characters() -> dict[str, dict]:
     """name_realm -> {"identity": {...same subset build_character.build() puts
     under "character"...}, "timestamp": int, "source_account": str}.
@@ -158,14 +147,16 @@ def list_all_characters() -> list[dict]:
         w = wse.get(name_realm)
         g = gt.get(name_realm)
 
-        # Skip only when the level is DEFINITELY known and below max - a
-        # character with no captured level yet is shown as usual, never
-        # assumed sub-max. Checks both sources' raw identity (not yet
-        # merged/picked below) so a stale sub-70 GTCompanion entry can't
-        # slip through just because WSE's own data doesn't carry a level.
-        known_levels = [d["identity"].get("level") for d in (w, g) if d and d["identity"].get("level")]
-        if known_levels and max(known_levels) < MAX_LEVEL:
-            continue
+        # Real, explicit reversal 2026-08-31: this used to skip any character
+        # whose known level was below TBC's 70 cap, on the same "a level 1
+        # alt shows up next to real raid characters" reasoning the addon's
+        # own now-removed IsMaxLevel() gate used (see GearingToolCompanion.lua's
+        # own note on this same date) - confirmed with the user that a
+        # genuinely-being-played leveling character should still show up
+        # here, not just once they hit 70. The sim pipeline itself still only
+        # works on a real 70 profile; that's an unrelated, still-true
+        # constraint on RUNNING a report, not on whether a character is
+        # worth listing at all.
         if w and g:
             w_empty, g_empty = _is_empty_identity(w["identity"]), _is_empty_identity(g["identity"])
             if w_empty and not g_empty:
