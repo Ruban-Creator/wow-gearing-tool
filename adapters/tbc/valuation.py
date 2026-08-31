@@ -10,6 +10,7 @@ fingerprint so the cache key doesn't depend on file paths.
 """
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import os
@@ -55,17 +56,26 @@ FIST_WEAPON_TYPE = 3
 FIST_WEAPON_IMBUE_ID = 34340
 
 
-def _apply_weapon_imbues(settings: dict, items: list[dict]) -> None:
+def _imbue_decision(items: list[dict]) -> tuple[int | None, int | None]:
+    """(mainhand imbue id or None, offhand imbue id or None) - None means
+    "leave whatever the settings file already has", matching
+    _apply_weapon_imbues()'s original only-ever-ADDS behavior. Split out
+    (code review §2.2) so this cheap part (two item_db dict lookups) can run
+    BEFORE touching the settings template at all - lets evaluate() check the
+    memoized fingerprint cache first and skip the template deep-copy
+    entirely on a hit, which is the common case."""
     if not items:
-        return
-    mh = items[gear_config.SLOT_ORDER.index("mainhand")] if len(items) > gear_config.SLOT_ORDER.index("mainhand") else None
-    oh = items[gear_config.SLOT_ORDER.index("offhand")] if len(items) > gear_config.SLOT_ORDER.index("offhand") else None
-    consumables = settings["player"]["consumables"]
-    for slot_item, field in ((mh, "mhImbueId"), (oh, "ohImbueId")):
+        return (None, None)
+    mh_idx, oh_idx = gear_config.SLOT_INDEX["mainhand"], gear_config.SLOT_INDEX["offhand"]
+    mh = items[mh_idx] if len(items) > mh_idx else None
+    oh = items[oh_idx] if len(items) > oh_idx else None
+    result: list[int | None] = [None, None]
+    for i, slot_item in enumerate((mh, oh)):
         if slot_item and slot_item.get("id"):
             item = item_db.by_id(slot_item["id"])
             if item and item.get("weaponType") == FIST_WEAPON_TYPE:
-                consumables[field] = FIST_WEAPON_IMBUE_ID
+                result[i] = FIST_WEAPON_IMBUE_ID
+    return (result[0], result[1])
 
 REPO_ROOT = repo_root.REPO_ROOT
 USER_DATA_DIR = repo_root.USER_DATA_DIR
@@ -153,15 +163,42 @@ def _fingerprint_settings(settings: dict) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
+@functools.lru_cache(maxsize=256)
 def settings_fingerprint(settings_path: str) -> str:
     """Hash of everything in the file-loaded template EXCEPT
     player.equipment.items. Used as part of the cache key so two different
     backgrounds never collide. Reflects only the settings FILE - callers
     whose effective settings differ from the file (e.g. evaluate()'s
     per-config weapon imbue mutation) must fingerprint their own mutated
-    dict via _fingerprint_settings() instead, or the cache key would miss
-    that dimension."""
+    dict via _fingerprint_for()/_fingerprint_settings() instead, or the
+    cache key would miss that dimension.
+
+    Memoized (code review §2.2) - a pure function of settings_path alone
+    (repo_root.sim_commit_sha() can't change mid-process), so a repeat call
+    skips the template deep-copy + canonical json.dumps + sha256 entirely."""
     return _fingerprint_settings(_load_template(settings_path))
+
+
+@functools.lru_cache(maxsize=256)
+def _fingerprint_for(settings_path: str, mh_imbue: int | None, oh_imbue: int | None,
+                      bonus_key: tuple[float, ...] | None) -> str:
+    """Memoized fingerprint for evaluate()'s actual mutated settings (weapon
+    imbues + optional bonus-stats override) - code review §2.2. The real
+    input space is tiny (one settings file x 3 imbue states x a handful of
+    real bonus_stats_override vectors), but without memoizing, EVERY
+    evaluate() call - including pure cache hits, where this was the entire
+    remaining cost - paid a full template deep-copy + canonical dump +
+    hash. On a repeat key, lru_cache returns the memoized string without
+    re-executing any of this."""
+    settings = _load_template(settings_path)
+    consumables = settings["player"]["consumables"]
+    if mh_imbue is not None:
+        consumables["mhImbueId"] = mh_imbue
+    if oh_imbue is not None:
+        consumables["ohImbueId"] = oh_imbue
+    if bonus_key is not None:
+        settings["player"]["bonusStats"]["stats"] = list(bonus_key)
+    return _fingerprint_settings(settings)
 
 
 def _build_raid_sim_request(settings: dict, iterations: int, seed: int) -> dict:
@@ -204,22 +241,30 @@ def evaluate(settings_path: str, items: list[dict], iterations: int, seed: int,
     delta reflects ONLY the set bonus's own behavioral effect (a proc, a
     spell mod) and not any raw stat difference from the swap itself."""
     gear_hash = gear_config.config_hash(items)
-    settings = _load_template(settings_path)
-    # Mutate (fist-weapon imbue selection, bonus stats override) BEFORE
-    # fingerprinting - the fingerprint must reflect what's actually about
-    # to run, not the raw file, or two configs that differ only by
-    # triggering a different imbue/stat override would collide on the
-    # same cache key.
-    _apply_weapon_imbues(settings, items)
-    if bonus_stats_override is not None:
-        settings["player"]["bonusStats"]["stats"] = bonus_stats_override
-    fp = _fingerprint_settings(settings)
+    # Code review §2.2: the imbue decision (cheap - two item_db dict
+    # lookups) is computed BEFORE touching the settings template at all, so
+    # the memoized _fingerprint_for() can be checked - and the cache
+    # consulted - without ever deep-copying/re-serializing the (up to
+    # ~75KB) template. Previously this happened on EVERY call, including
+    # pure cache hits, where it was the entire remaining cost.
+    mh_imbue, oh_imbue = _imbue_decision(items)
+    bonus_key = tuple(bonus_stats_override) if bonus_stats_override is not None else None
+    fp = _fingerprint_for(settings_path, mh_imbue, oh_imbue, bonus_key)
     cache_key = sim_cache.key(gear_hash, fp, iterations, seed)
 
     cached = sim_cache.get(cache_key)
     if cached is not None:
         return cached
 
+    # Only reached on an actual cache MISS - build the real mutated
+    # settings dict for the sim call itself.
+    settings = _load_template(settings_path)
+    if mh_imbue is not None:
+        settings["player"]["consumables"]["mhImbueId"] = mh_imbue
+    if oh_imbue is not None:
+        settings["player"]["consumables"]["ohImbueId"] = oh_imbue
+    if bonus_stats_override is not None:
+        settings["player"]["bonusStats"]["stats"] = bonus_stats_override
     settings["player"]["equipment"] = {"items": items}
 
     if USE_SIMSERVER:
