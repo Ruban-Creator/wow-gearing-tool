@@ -99,6 +99,19 @@ clicking through). Not yet root-caused. Don't assume a scripted/unattended insta
 actually runs silently until this is understood - verify interactively, or expect a human/agent to
 be watching for a dialog.
 
+**Windows SmartScreen warning on every install, expected and not a bug**: `RGT-Setup.exe` has no
+code-signing configuration anywhere in `installer.iss` - confirmed by direct grep, not assumed -
+so it's a completely unsigned executable, which SmartScreen always flags regardless of file
+reputation. Decided with the user (2026-08-31): accept this for now (document the workaround
+below), rather than buy a certificate immediately. **Real reminder, revisit once this ships more
+broadly**: a code-signing cert is the real fix - a standard cert (~$100-400/yr, e.g.
+DigiCert/Sectigo/SSL.com) removes the "Unknown Publisher" text but SmartScreen still needs weeks/
+months of real download reputation before the warning itself goes away; an EV cert (~$300-600/yr,
+usually a hardware token + business identity verification) is the only option that clears the
+warning immediately, from the very first download. Until then, tell users: click "More info" ->
+"Run anyway" on the SmartScreen prompt - this is Windows' standard, expected behavior for any
+unsigned installer, not something specific to this tool.
+
 ## Verification done so far
 
 - Console build (`console=True` variant) launched clean, no traceback.

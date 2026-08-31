@@ -17,7 +17,5 @@
   "gear_tier_note": "Same real t4/t5/t6/swp -> phase1/2/3/5 mapping as Affliction Warlock.",
   "talents_note": "Real TalentsDestruction ('-20500301332101-50500051220051053105') - a real, distinct TalentsDestroNightfall alternate exists in presets.ts but is never wired into any real preset build (DESTRUCTION_BUILD uses TalentsDestruction), same 'defined but unreferenced by a canonical build' pattern already found for Mage/Paladin's own dead-alternate files, confirmed not the real default.",
   "class_options_note": "Real, base (unmodified) DefaultOptions from presets.ts: curseOptions=Recklessness, summon=Succubus, sacrificeSummon=true, armor=FelArmor - DESTRUCTION_BUILD uses P1_DEFAULT_SETTINGS directly with no per-spec override, unlike Affliction/Demonology.",
-  "gems_enchants_note": "Reused Affliction's own verified default_enchants.json. Gem verification run fresh (not reused), same real reasoning as Demonology - see QUESTIONS.md for the real result.",
-  "synthetic_character": true,
-  "synthetic_character_note": "No real Destruction Warlock alt exists - built via ingest/build_synthetic_character.py from the real wowsims t6.gear.json preset, same real race/professions convention as Affliction/Demonology."
+  "gems_enchants_note": "Reused Affliction's own verified default_enchants.json. Gem verification run fresh (not reused), same real reasoning as Demonology - see QUESTIONS.md for the real result."
 }

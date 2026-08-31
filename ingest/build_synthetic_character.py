@@ -8,10 +8,15 @@ itself is a placeholder identity, deliberately unrealistic so it can never
 collide with a real future WowSimsExporter export.
 
 This is NOT a replacement for ingest/build_character.py - that stays the
-real path for an actual character. A profile built against a synthetic
-character must carry profile.json's "synthetic_character": true forward
-into anything that reports on it (see gui/api.py, report_template.html),
-so nothing downstream mistakes it for trustworthy personal advice.
+real path for an actual character. The fixture is trusted by NAME alone
+(character_profiles._SYNTHETIC_CHARACTERS / is_synthetic_character()) - a
+profile.json-level "synthetic_character" flag used to exist for this too,
+but was removed 2026-08-31 after it turned out to be the root cause of a
+real bug (a real player assigned to a profile that still had the flag hit
+a FileNotFoundError, since gui/api.py checked the PROFILE's flag instead of
+the CHARACTER's own identity to decide whether to sync). Never add that
+flag back to a profile.json - the fixture name itself is already the
+correct, permanent signal.
 
 Usage: python ingest/build_synthetic_character.py <name_realm> <race> <class> <spec>
     <profession1> <profession2> <gear_set_json_path> <talents_string>

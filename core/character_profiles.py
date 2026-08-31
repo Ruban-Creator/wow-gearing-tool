@@ -47,9 +47,18 @@ REPO_ROOT = repo_root.REPO_ROOT
 PROFILES_DIR = os.path.join(REPO_ROOT, "profiles", "tbc")
 
 # Synthetic test characters (Stage 6.3+) - no real character export exists
-# for these, see each profile.json's synthetic_character_note. Real, proven
+# for these; built via ingest/build_synthetic_character.py. Real, proven
 # pipeline runs (full sweep, real report), just not real personal
 # characters - safe to ship in source, unlike a real person's own roster.
+# Each profile's own profile.json used to carry a `synthetic_character: true`
+# flag documenting "no real player has used this spec yet, don't fully trust
+# its report" - removed 2026-08-31 (per the user, real players now testing
+# these specs with their own live data) after also being the ROOT CAUSE of a
+# real bug: gui/api.py used to check that flag (not the character's own
+# identity) to decide whether to sync real data, so a real player assigned
+# to any of the 12 profiles that still had it hit a FileNotFoundError for
+# her own character.json. See is_synthetic_character() below - the correct,
+# permanent check for "is THIS character one of the built-in fixtures."
 _SYNTHETIC_CHARACTERS = {
     "Test-Elemental-Synthetic": "elemental_shaman",
     "Test-Enhancement-Synthetic": "enhancement_shaman",

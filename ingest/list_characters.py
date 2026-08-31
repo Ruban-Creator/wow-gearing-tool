@@ -99,26 +99,23 @@ def list_synthetic_characters() -> list[dict]:
     surface them. Shaped to match that function's own merged-entry dict so
     the GUI's existing rendering code needs no special-casing.
 
-    Iterates character_profiles._SYNTHETIC_CHARACTERS specifically, NOT the
-    full SUPPORTED_CHARACTERS map (real, fixed 2026-08-31 alongside that
-    map becoming extensible via local_config - see character_profiles.py's
-    own docstring): SUPPORTED_CHARACTERS can now also contain a real user's
-    own character assigned to a profile whose OWN profile.json happens to
-    be synthetic_character:true (most profiles are, since only a few have
-    a real player). Filtering on the profile's own flag instead of on
-    "is this actually one of the built-in test fixtures" would have
-    double-listed a real user's real character here under debug mode -
-    never invents a character, but could have mis-classified a real one."""
+    Iterates character_profiles._SYNTHETIC_CHARACTERS specifically (the real
+    list of built-in fixture NAMES), NOT the full SUPPORTED_CHARACTERS map,
+    which can also contain a real user's own character. Real, fixed
+    2026-08-31 (second half of the same bug class as
+    character_profiles.is_synthetic_character()'s own docstring): this used
+    to ALSO require the assigned profile's own profile.json to carry
+    synthetic_character:true - once real players started being assigned to
+    these profiles and that flag was cleared (per the user, 2026-08-31 -
+    "we will start testing with other users live data instead of using
+    synthetic characters"), that check would have silently stopped listing
+    the built-in fixture here even though it's still a real, valid test
+    character on disk. Iterating _SYNTHETIC_CHARACTERS by name (this
+    dict never contains a real player) plus confirming character.json
+    actually exists is already the correct, sufficient signal - no need to
+    also ask the profile's own (now removed) flag."""
     result = []
     for name_realm, dir_name in character_profiles._SYNTHETIC_CHARACTERS.items():
-        profile_dir = character_profiles._profile_dir(dir_name)
-        profile_path = os.path.join(profile_dir, "profile.json")
-        if not os.path.exists(profile_path):
-            continue
-        with open(profile_path, encoding="utf-8") as f:
-            profile = json.load(f)
-        if not profile.get("synthetic_character"):
-            continue
         char_path = os.path.join(USER_DATA_DIR, "characters", name_realm, "character.json")
         if not os.path.exists(char_path):
             continue

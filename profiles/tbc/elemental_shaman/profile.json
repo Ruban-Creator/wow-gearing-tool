@@ -10,7 +10,5 @@
   },
   "set_bonus_go_source": "sim/shaman/item_sets.go",
   "apl_source": "ui/shaman/elemental/apls/default.apl.json",
-  "apl_note": "Same TypeAPL pattern as Arms Warrior/Balance Druid - confirmed via the same makePresetAPLRotation() helper, the file's raw content is a direct, valid player.rotation value.",
-  "synthetic_character": true,
-  "synthetic_character_note": "No real Shaman character exists yet (2026-08-25) - this profile is validated against a synthetic test character seeded from a real wowsims preset gear set (see ingest/build_synthetic_character.py), not a real personal export. Never treat its report as trustworthy personal upgrade advice."
+  "apl_note": "Same TypeAPL pattern as Arms Warrior/Balance Druid - confirmed via the same makePresetAPLRotation() helper, the file's raw content is a direct, valid player.rotation value."
 }

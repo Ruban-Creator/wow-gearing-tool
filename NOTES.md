@@ -4732,3 +4732,30 @@ Verified live via the same real local-http-server preview technique: assigning R
 Warrior showed the badge, enabled Run Report, cleared the "No profile" sidebar tag, and reopening
 "Change profile…" for Lerynia correctly pre-selected "Survival Hunter" (filtered to only her two
 real Hunter specs) with a working Cancel.
+
+## 2026-08-31 — Confirmed Bug 1 above was systemic, not one-off; cleared the root cause
+
+Per the user's real follow-up question ("will the Zoray bug also affect all other unused
+profiles?") - checked directly: 12 of the 15 real profiles still carried `synthetic_character:
+true` (every one except the original three: `survival_hunter`, `arms_warrior`, `balance_druid`).
+Any real player assigned to any of those 12 would have hit the identical FileNotFoundError the
+fix already covers (`is_synthetic_character()` checks the CHARACTER's identity, not the profile's
+flag - one shared code path, so the fix already covered all 12, confirmed via direct calls for
+several arbitrary real-sounding names, not just Zoray's).
+
+Per the user ("clear the flags, we will start testing with other users live data instead of using
+synthetic characters"): removed `synthetic_character`/`synthetic_character_note` from all 12
+profile.json files. Found and fixed a SECOND, related dependency on the same flag before it could
+become a fresh silent bug: `ingest/list_characters.py`'s `list_synthetic_characters()` (feeds the
+GUI's debug-mode character list) ALSO required the assigned profile's own flag to be true before
+listing a built-in synthetic fixture (Test-Beastmastery-Synthetic, etc.) - clearing the flags would
+have silently stopped these 12 fixtures from appearing in debug mode, even though they're still
+real, valid, on-disk test characters. Fixed the same way as the original bug: iterate
+`character_profiles._SYNTHETIC_CHARACTERS` by NAME (the correct, permanent signal) plus confirm
+`character.json` exists, drop the now-redundant profile.json read entirely. Updated
+`ingest/build_synthetic_character.py`'s own docstring (used to instruct future sessions to "carry
+the flag forward" - now explicitly says never to re-add it).
+
+Real, not just code-reviewed: `list_synthetic_characters()` still correctly lists all 12 real
+fixtures after the flags were removed (direct call, confirmed by name). `check_ledger_consistency
+.py` stayed clean for Lerynia (649/0) and Rubán (1524/0) throughout.

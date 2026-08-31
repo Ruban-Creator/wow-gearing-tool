@@ -589,6 +589,28 @@ etc. Not part of any current stage — noted here so it isn't lost, but don't bu
 user actually asks. Keep `core/`/`adapters/` command-line-first and UI-agnostic in the meantime so
 a GUI can sit on top later without a rewrite.
 
+**Open, real, confirmed bug (2026-08-31, not yet fixed) — reports/ledgers need a profile
+dimension, not just character+phase.** Every stage of the report pipeline
+(`run_upgrade_sweep.py`'s `tiered_report_<phase>.json`, `build_ledger_data.py`'s
+`ledger_data_<phase>.json`, the rendered `<phase>.html`, and `reports.json`'s own
+`reports[phase]` key) is keyed by `(name_realm, phase)` only - confirmed via direct grep, not
+assumed. Now that "Change profile…" (below) makes switching a character's assigned spec trivial,
+a real character (e.g. Rubán) running Phase 3 as Arms then switching to Fury and running Phase 3
+again silently OVERWRITES the Arms report with no warning - always latent, now a real, likely-hit
+case. Needs a real design pass (Plan Mode, given the schema change to `reports.json` and the
+question of what happens to an EXISTING single-profile report file on disk - migration, not just
+new writes) before touching it - not done yet, flagged here so it isn't lost.
+
+**Decided 2026-08-31: SmartScreen warning on the installer - accept it for now, revisit with a
+code-signing cert later.** `RGT-Setup.exe` has zero code-signing configuration (confirmed via
+direct grep of `installer.iss`) - a fully unsigned exe always gets Windows SmartScreen's strongest
+warning, regardless of download count. Per the user: leave it as-is (document the "More info" ->
+"Run anyway" workaround, see `packaging/README.md`) rather than buy a certificate immediately, but
+keep this as a real, tracked reminder to revisit - a standard cert (~$100-400/yr) removes the
+"Unknown Publisher" text but still needs weeks/months of real reputation before the warning itself
+clears; an EV cert (~$300-600/yr, usually a hardware token) is the only option that clears it
+immediately.
+
 **Decided 2026-08-31: no hit-target toggle, ever - drop the idea entirely, not just defer it.**
 Every profile's real reference BiS/candidate pool data stays built from the 6% (moonkin-present)
 wowsims preset variant permanently, matching this tool's real, stated raid comp - never 9%. This

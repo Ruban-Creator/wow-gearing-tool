@@ -13,7 +13,5 @@
   "apl_source": "ui/warrior/dps/apls/fury.apl.json",
   "apl_note": "Real, separate APL from Arms's own arms.apl.json - unlike Hunter's Beastmastery/Survival, Warrior's two specs do NOT share one apl file.",
   "weapon_topology_note": "Confirmed via real handType data on the actual p3_fury.gear.json weapon items (Warglaive of Azzinoth pair: handType=1 MainHand, handType=3 OffHand) - not assumed from class/spec convention alone.",
-  "stat_weights_note": "Real, sim-team EP weights from warrior/dps/presets.ts's P2_FURY_EP_PRESET ('P2, P3, P4 & P5 - Fury') - genuinely distinct from Arms's own preset (Fury's real MeleeHit/Expertise/Haste priorities differ meaningfully from Arms's two-hand values), not inherited.",
-  "synthetic_character": true,
-  "synthetic_character_note": "No real Fury Warrior alt exists - built via ingest/build_synthetic_character.py from the real wowsims p3_fury.gear.json preset, same convention as the other synthetic test characters."
+  "stat_weights_note": "Real, sim-team EP weights from warrior/dps/presets.ts's P2_FURY_EP_PRESET ('P2, P3, P4 & P5 - Fury') - genuinely distinct from Arms's own preset (Fury's real MeleeHit/Expertise/Haste priorities differ meaningfully from Arms's two-hand values), not inherited."
 }
