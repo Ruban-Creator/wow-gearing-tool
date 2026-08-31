@@ -196,18 +196,40 @@ the real report pipeline. Same "real code, never invoked" pattern already docume
 search is measured, real-cost-prohibitive at the pool sizes this tool already hits, per CLAUDE.md's
 own Stage 5 status note).
 
-Real, structural fix, not scoped yet: some form of joint search specifically over the actually-
-coupled shared-pool slots (ring pair, trinket pair, weapon pair for dual-wield) - closely related
-to (maybe the same underlying work as) the "decomposed re-sweep" idea already in backlog #8 above,
-which independently arrived at "explicit joint search only over the actually-coupled subgroups" as
-a real, still-unbuilt need. Real, known cost concern: `optimizer.py`'s existing pair-search
-functions exist but were apparently never wired in, and Stage 5's `interaction_matrix.py` was
-dropped specifically because a full pairwise joint search was too expensive at real pool sizes -
-any real fix here needs to reckon with that same cost constraint, likely scoped narrower than a
-full joint search (e.g. only re-evaluate the "loser" slot's OWN best candidate against a
-baseline where the "winner" slot is already fixed to ITS own best candidate, a 2-pass sequential
-search rather than a full joint one - not designed yet, just the shape of a cheaper option worth
-considering).
+**Real, correct, much cheaper fix - per the user, 2026-08-31, NOT a joint pair search**: "we do not
+need to know the 2 best ring combination, all we have to do is make sure we always value rings vs
+ring1 and 2 then put the higher MV value in our ledger - we could of course add which ring slot
+they replace first." This is NOT the same as the "decomposed re-sweep"/joint-search idea in
+backlog #8 above (that one's about caching across whole re-sweeps; this is about not discarding
+information the sweep ALREADY computes) - a genuinely simpler, cheaper design:
+
+`mv_single()` ALREADY runs a real sim call against EVERY real slot a shared-pool candidate could
+occupy (the loop `for slot in slots: ... result = valuation.evaluate(...)`) - it just keeps the
+MAX and throws the other trial's real result away. The fix: stop collapsing to one `best_slot`
+winner - return/keep BOTH real per-slot results independently, and let each of ring1/ring2 (or
+trinket1/trinket2, or mainhand/offhand for dual-wield) run its OWN independent leaderboard/
+achieved-BiS check against its own real candidates. Report rows would show which real slot a
+candidate replaces (the user's own suggestion), so a reader sees "this replaces your Ring 1" vs
+"this replaces your Ring 2" rather than one ambiguous "Ring" bucket.
+
+**Real cost implication, checked before assuming free**: the SCREENING pass costs exactly the same
+(both real-slot trials are already computed today, this fix just stops discarding one). The
+RESOLVE tier is where a real, bounded cost increase shows up - today only the ONE winning trial's
+margin decides whether to pay for a 30k resolve; independently evaluating both slots means EACH
+could independently need its own resolve pass, up to ~2x the resolve-tier cost specifically for
+borderline shared-pool candidates (ring/trinket/dual-wield-weapon slots only, not the whole sweep,
+and only candidates already close enough to the noise floor to need resolving in the first place).
+
+Real, concrete implementation shape (not yet built): `mv_single()`/`mv_single_tiered()` in
+`core/marginal_value.py` need to return a list of per-real-slot results instead of one collapsed
+dict; `run_upgrade_sweep.py`'s row-building (`screen_one`/`to_resolve`/`by_tier_slot` construction)
+needs to handle up to 2 real rows per shared-pool candidate instead of 1; `achieved_bis`'s existing
+per-real-slot loop (already real, already correct in principle - see its own code comment on why
+it tracks per-REAL-slot, not per-display-bucket) should then work correctly with no further changes
+once it's checking against real independent per-slot results instead of a single winner-take-all
+one. `report_template.html` needs a small new tag/label for "replaces Ring 1"/"replaces Ring 2" per
+the user's own suggestion. Not yet scoped into a real plan - ready to build next time this is
+picked up.
 
 Not scoped or started - real, confirmed by direct code tracing and the user's own correct
 counter-argument, worth a proper design pass (Plan Mode, given it touches core MV computation and
