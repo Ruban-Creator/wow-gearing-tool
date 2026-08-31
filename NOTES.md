@@ -4759,3 +4759,64 @@ the flag forward" - now explicitly says never to re-add it).
 Real, not just code-reviewed: `list_synthetic_characters()` still correctly lists all 12 real
 fixtures after the flags were removed (direct call, confirmed by name). `check_ledger_consistency
 .py` stayed clean for Lerynia (649/0) and Rubán (1524/0) throughout.
+
+## 2026-08-31 — Backlog #13: multi-profile-per-class report storage
+
+Real, confirmed bug (see CLAUDE.md's own backlog entry for the full context): every report/ledger
+file was keyed by `(character, phase)` only - a character reassigned to a different sim profile
+(e.g. Rubán: Arms <-> Fury) silently overwrote the prior spec's report. Fixed via Plan Mode -
+`core/report_storage.py` (new, shared read/migrate/write helper), profile-suffixed filenames
+across `run_upgrade_sweep.py`/`build_ledger_data.py`/`local_config.report_output_path()`,
+`reports.json` now nested `{profile_dir_name: {phase: {...}}}`. `cli/gear.py`'s
+`report register`/`report list` and `core/check_ledger_consistency.py` both gained `--profile`
+(default: the character's current assignment) so neither is a second, un-fixed path to the same
+bug. Old underlying HTML/cache files are left exactly where they are - a migrated `reports.json`
+entry keeps its existing absolute URL, so nothing on disk needed renaming.
+
+Real verification, not just code review:
+- Migration tested against a real COPY of Rubán's actual `reports.json` (4 real phase entries) -
+  correctly nested under `arms_warrior`, byte-identical entries, idempotent on a second read.
+- **Real end-to-end run of the actual motivating case**: reassigned Rubán to Fury Warrior on this
+  dev machine, ran a real Phase 3 sweep. Result: `reports.json` gained a new `fury_warrior.phase3`
+  branch while `arms_warrior`'s original 4 entries stayed byte-identical (same `generated_at`
+  timestamps as before touching anything) - confirmed via `Api.get_reports()`/`Api.list_characters()`
+  directly, not just the raw file. Switching his real assignment back to Arms and re-checking
+  confirmed the GUI-side `renderReports(reports, profileDirName)` scoping shows only the currently-
+  assigned profile's branch, as designed.
+- **Real mistake caught and fixed mid-verification**: an earlier `nohup`-backgrounded test process
+  was falsely reported "completed" by the harness (a known unreliability with that specific
+  backgrounding pattern on this Windows/Git-Bash setup, hit several times this session) while
+  actually still running - a second, redundant sweep was accidentally started on top of it for the
+  same character/profile/phase, causing real CPU oversubscription (confirmed via `Get-CimInstance
+  Win32_Process` command-line inspection, not assumed) that made both runs crawl. Killed the
+  redundant duplicate once found; the original then completed normally. Real lesson: always check
+  `Get-Process`/`Get-CimInstance` for an already-running duplicate before manually launching a
+  second background test against the same real data, especially given this environment's own
+  established log-capture unreliability for `nohup ... & disown` (multiple prior real instances
+  this session) - a "completed" notification for that pattern is not fully trustworthy on its own.
+- CLI round-trip: `report register`/`report list --profile fury_warrior` and the default (no
+  `--profile`, resolves to current assignment) both verified against Rubán's real data, then the
+  test entry was cleaned up.
+- `check_ledger_consistency.py --profile` regression pass, fresh sweeps regenerated under the new
+  naming for both real profiles: Rubán/arms_warrior 1524/0 (unchanged from before this session's
+  work), Lerynia/survival_hunter 570/0 - down from an earlier same-session baseline of 649 for a
+  real, understood, unrelated reason: the OLD cached `tiered_report_phase3.json` this fresh run
+  replaced predated 2026-08-30's real Beast Lord Armor/Rift Stalker Leggings rescue-check fix (see
+  this file's own 2026-08-24 entry on that fix) - the fresh regeneration correctly excludes those
+  6 items, the stale file never picked up the fix. Confirmed via a direct item-by-item diff and
+  the user's own live confirmation ("we fixed a beastlord bug yesterday") before trusting it, not
+  assumed - same baseline DPS and achieved-BiS count in both files, only the false-positive
+  upgrade rows differ.
+- All test-only artifacts (the temporary Fury Warrior assignment, the CLI test report entry, the
+  real-but-unrequested Fury Warrior report generated during verification) cleaned up afterward -
+  Rubán's real `local_config.json` assignment and `reports.json` end this session exactly as they
+  were, plus the real fix.
+
+Also added in the same pass, per the user: a real CurseForge listing link
+(https://www.curseforge.com/wow/addons/gt-companion, live as of this session) alongside the
+existing direct one-click "Install" flow in both the Settings modal and the install banner -
+neither replaces the other, since a direct install is still lower-friction for anyone not already
+using the CurseForge app. Stale "it's not on CurseForge" copy removed from `gui/assets/app.js`,
+`gui/api.py`'s docstrings. Verified live: both links render correctly, are correctly intercepted
+through `open_url()` (no stray in-app navigation), confirmed via a real console-log check of the
+outgoing URL.

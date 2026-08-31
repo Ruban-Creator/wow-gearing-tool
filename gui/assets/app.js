@@ -65,6 +65,7 @@ const settingsWowRootChangeBtn = document.getElementById("settings-wow-root-chan
 const settingsWowRootResetBtn = document.getElementById("settings-wow-root-reset-btn");
 const settingsAddonStatus = document.getElementById("settings-addon-status");
 const settingsAddonInstallBtn = document.getElementById("settings-addon-install-btn");
+const settingsAddonCurseforgeLink = document.getElementById("settings-addon-curseforge-link");
 const creditsVersion = document.getElementById("credits-version");
 const creditsGithubLink = document.getElementById("credits-github-link");
 const creditsPatreonLink = document.getElementById("credits-patreon-link");
@@ -73,6 +74,7 @@ const creditsDiscordLink = document.getElementById("credits-discord-link");
 const addonBanner = document.getElementById("addon-banner");
 const addonBannerText = document.getElementById("addon-banner-text");
 const addonBannerInstallBtn = document.getElementById("addon-banner-install-btn");
+const addonBannerCurseforgeLink = document.getElementById("addon-banner-curseforge-link");
 const addonBannerDismissBtn = document.getElementById("addon-banner-dismiss-btn");
 let addonBannerDismissed = false;
 
@@ -242,7 +244,7 @@ async function selectCharacter(nameRealm) {
   }
 
   const reports = await window.pywebview.api.get_reports(nameRealm);
-  renderReports(reports);
+  renderReports(reports, c.profile_dir_name);
 }
 
 let availableProfilesCache = null;
@@ -311,10 +313,16 @@ profileAssignBtn.addEventListener("click", async () => {
   }
 });
 
-function renderReports(reports) {
+function renderReports(reports, profileDirName) {
+  // Backlog #13 - `reports` is now nested {profile_dir_name: {phase: {...}}}
+  // (report_storage.py) so a character reassigned to a different sim
+  // profile doesn't overwrite her prior spec's reports; only the currently
+  // assigned profile's own branch is ever shown here - the loop below is
+  // otherwise unchanged from before this change.
+  const profileReports = (profileDirName && reports[profileDirName]) || {};
   reportsGrid.innerHTML = "";
   for (const phase of PHASES) {
-    const r = reports[phase];
+    const r = profileReports[phase];
     const card = document.createElement("div");
     card.className = "report-card";
 
@@ -437,15 +445,17 @@ updateBannerDismissBtn.addEventListener("click", () => {
   updateBanner.hidden = true;
 });
 
-for (const link of [creditsGithubLink, creditsPatreonLink, creditsDiscordLink]) {
+for (const link of [creditsGithubLink, creditsPatreonLink, creditsDiscordLink,
+                     settingsAddonCurseforgeLink, addonBannerCurseforgeLink]) {
   link.addEventListener("click", (e) => {
     e.preventDefault();
     window.pywebview.api.open_url(link.href);
   });
 }
 
-// ---- Companion addon install (not on CurseForge yet - see gui/api.py's
-// own comment on why this ships directly from the repo instead) ----
+// ---- Companion addon install (also on CurseForge as of 2026-08-31:
+// https://www.curseforge.com/wow/addons/gt-companion - this tool still
+// offers a direct one-click install too, see gui/api.py's own comment) ----
 
 async function refreshAddonStatus() {
   const status = await window.pywebview.api.get_addon_status();
@@ -472,8 +482,8 @@ async function checkAddonBanner() {
     return;
   }
   addonBannerText.textContent = status.installed
-    ? "A newer version of GearingToolCompanion is available - it's not on CurseForge, so this tool ships it directly."
-    : "GearingToolCompanion isn't installed yet - it's not on CurseForge, so this tool ships it directly.";
+    ? "A newer version of GearingToolCompanion is available."
+    : "GearingToolCompanion isn't installed yet.";
   addonBanner.hidden = false;
 }
 
@@ -776,7 +786,8 @@ function pollRunStatus() {
         runReportViewBtn.onclick = () => window.pywebview.api.open_url(st.report_url);
         if (selectedNameRealm === st.name_realm) {
           const reports = await window.pywebview.api.get_reports(st.name_realm);
-          renderReports(reports);
+          const c = characters.find((x) => x.name_realm === st.name_realm);
+          renderReports(reports, c && c.profile_dir_name);
         }
       }
     }

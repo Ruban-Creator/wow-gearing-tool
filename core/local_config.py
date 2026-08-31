@@ -47,11 +47,17 @@ def set_report_output_root(path: str | None) -> None:
     save(config)
 
 
-def report_output_path(name_realm: str, phase: str) -> str:
+def report_output_path(name_realm: str, profile_dir_name: str, phase: str) -> str:
+    """Backlog #13 - profile_dir_name is now a real, required part of the
+    filename (`<profile_dir_name>_<phase>.html`, not just `<phase>.html`) so
+    a character reassigned to a different sim profile doesn't overwrite her
+    prior spec's report - see core/report_storage.py's own docstring for
+    the full real bug this fixes."""
+    filename = f"{profile_dir_name}_{phase}.html"
     root = report_output_root()
     if root:
-        return os.path.join(root, name_realm, f"{phase}.html")
-    return os.path.join(USER_DATA_DIR, "characters", name_realm, "reports", f"{phase}.html")
+        return os.path.join(root, name_realm, filename)
+    return os.path.join(USER_DATA_DIR, "characters", name_realm, "reports", filename)
 
 
 # The only hardcoded fallback left once wow_root() has no configured value

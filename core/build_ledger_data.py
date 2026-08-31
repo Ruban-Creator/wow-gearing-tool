@@ -41,7 +41,12 @@ def build(name_realm: str, phase: str, profile_dir: str):
     like raid_ap_contribution's enabled flag, not the DPS numbers
     themselves), but the same "resolve it via character_profiles.py, never
     guess" rule applies regardless of severity."""
-    report_path = os.path.join(USER_DATA_DIR, "characters", name_realm, "cache", f"tiered_report_{phase}.json")
+    # Backlog #13 - same real, required filename component as
+    # run_upgrade_sweep.py's own out_path (see core/report_storage.py's
+    # docstring for the full bug this fixes).
+    profile_dir_name = os.path.basename(os.path.normpath(profile_dir))
+    report_path = os.path.join(USER_DATA_DIR, "characters", name_realm, "cache",
+                                f"tiered_report_{profile_dir_name}_{phase}.json")
     report = repo_root.load_json(report_path)
     current_phase_num = int(phase.removeprefix("phase"))
     profile = repo_root.load_json(os.path.join(profile_dir, "profile.json"))
@@ -113,11 +118,21 @@ def build(name_realm: str, phase: str, profile_dir: str):
 
 
 if __name__ == "__main__":
+    # Real bug found in passing (2026-08-31, unrelated to backlog #13
+    # itself): this fallback called build(name_realm, phase) with no
+    # profile_dir at all - build()'s own signature has required profile_dir
+    # since 2026-08-25 (see its docstring), so this block has been silently
+    # broken (a plain missing-argument TypeError) since then. Fixed while
+    # touching this file for the profile-aware filename change below,
+    # rather than leaving a dead debug entry point dead.
+    import character_profiles
     name_realm, phase = "Lerynia-Thunderstrike", "phase3"
-    data = build(name_realm, phase)
+    profile_dir = character_profiles.SUPPORTED_CHARACTERS[name_realm]
+    profile_dir_name = os.path.basename(os.path.normpath(profile_dir))
+    data = build(name_realm, phase, profile_dir)
     out_dir = os.path.join(USER_DATA_DIR, "characters", name_realm, "cache")
     os.makedirs(out_dir, exist_ok=True)
-    out_path = os.path.join(out_dir, f"ledger_data_{phase}.json")
+    out_path = os.path.join(out_dir, f"ledger_data_{profile_dir_name}_{phase}.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
     print(f"Wrote {out_path}")

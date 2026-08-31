@@ -542,6 +542,11 @@ html, body {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+  /* .modal-btn is also applied to real <a> tags (e.g. the CurseForge links) -
+     these two undo the browser's default link styling so it matches its
+     <button> siblings exactly. */
+  text-decoration: none;
+  display: inline-block;
 }
 .modal-btn:hover { background: var(--bg-card-hover); }
 .modal-btn-ghost {

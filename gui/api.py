@@ -93,6 +93,7 @@ import local_config  # noqa: E402
 import sweep_all_loot  # noqa: E402
 import source_scope  # noqa: E402
 import item_db as idb  # noqa: E402
+import report_storage  # noqa: E402
 
 # Moved to core/character_profiles.py 2026-08-25 (a real bug: cli/gear.py's
 # own sweep command had no equivalent guard and was silently defaulting
@@ -112,10 +113,13 @@ SUPPORTED_CHARACTERS = character_profiles.SUPPORTED_CHARACTERS
 # code gap, confirmed by that loop needing zero changes here.
 PHASES = ["phase1", "phase2", "phase3", "phase4", "phase5"]
 
-# GearingToolCompanion isn't published on CurseForge yet (per the user,
-# 2026-08-30) - this repo's own mirrored copy (see CLAUDE.md's "Addon sync"
-# section) IS the real, current addon source, so installing FROM here is
-# installing the real thing, not a stand-in.
+# Also published on CurseForge as of 2026-08-31
+# (https://www.curseforge.com/wow/addons/gt-companion - see index.html's
+# "View on CurseForge" links) - this direct-install path still exists
+# alongside it, since this repo's own mirrored copy (see CLAUDE.md's "Addon
+# sync" section) IS the real, current addon source either way, and a
+# one-click install from inside the GUI is still lower-friction for anyone
+# who doesn't already use the CurseForge app.
 ADDON_SRC_DIR = os.path.join(REPO_ROOT, "addons", "GearingToolCompanion")
 
 
@@ -240,6 +244,11 @@ def _run_report_job(name_realm: str, phase: str, duration: int) -> None:
     through _run_status instead of hanging the GUI's polling forever."""
     try:
         char_dir = os.path.join(USER_DATA_DIR, "characters", name_realm)
+        # Backlog #13 - real, required for every output path below (report
+        # HTML, tiered_report/ledger_data filenames, reports.json's own
+        # nested key) so a character reassigned to a different sim profile
+        # doesn't silently overwrite her prior spec's report.
+        profile_dir_name = os.path.basename(os.path.normpath(SUPPORTED_CHARACTERS[name_realm]))
         # Real bug found and fixed 2026-08-31: this used to check the
         # PROFILE's own `synthetic_character` flag (profile.json), not
         # whether THIS CHARACTER is actually one of the built-in synthetic
@@ -286,23 +295,20 @@ def _run_report_job(name_realm: str, phase: str, duration: int) -> None:
         ledger_data = build_ledger_data.build(name_realm, phase, profile_dir=SUPPORTED_CHARACTERS[name_realm])
         html = render_report.render(ledger_data, char_data, phase)
 
-        out_path = local_config.report_output_path(name_realm, phase)
+        out_path = local_config.report_output_path(name_realm, profile_dir_name, phase)
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(html)
         report_url = Path(out_path).as_uri()
 
-        # Same shape cli/gear.py's cmd_report_register already writes, so
-        # the existing get_reports()/renderReports()/open_url() JS needs no
-        # changes to display or open a Run-Report-generated entry.
-        reports_path = os.path.join(char_dir, "reports.json")
-        reports = {}
-        if os.path.exists(reports_path):
-            with open(reports_path, encoding="utf-8") as f:
-                reports = json.load(f)
-        reports[phase] = {"artifact_url": report_url, "generated_at": datetime.now(timezone.utc).isoformat()}
-        with open(reports_path, "w", encoding="utf-8") as f:
-            json.dump(reports, f, indent=2)
+        # Same shape cli/gear.py's cmd_report_register already writes (both
+        # go through report_storage.py now, backlog #13), so the existing
+        # get_reports()/renderReports()/open_url() JS needs no changes to
+        # display or open a Run-Report-generated entry.
+        reports = report_storage.load_reports(name_realm)
+        reports.setdefault(profile_dir_name, {})[phase] = {
+            "artifact_url": report_url, "generated_at": datetime.now(timezone.utc).isoformat()}
+        report_storage.save_reports(name_realm, reports)
 
         _set_status(active=False, done=True, stage="Done", detail=None, eta_seconds=None, eta_measured_at=None,
                     stage_index=None, stage_total=None, report_url=report_url)
@@ -402,11 +408,10 @@ class Api:
         return {"saved": True}
 
     def get_reports(self, name_realm: str) -> dict:
-        path = os.path.join(USER_DATA_DIR, "characters", name_realm, "reports.json")
-        if not os.path.exists(path):
-            return {}
-        with open(path, encoding="utf-8") as f:
-            return json.load(f)
+        """Backlog #13 - nested {profile_dir_name: {phase: {...}}}, migrated
+        automatically from the old flat schema if needed - see
+        report_storage.load_reports()'s own docstring."""
+        return report_storage.load_reports(name_realm)
 
     def open_url(self, url: str) -> None:
         """Allowlisted by scheme (code review §4.3) - the JS bridge only
@@ -510,9 +515,10 @@ class Api:
         local_config.set_wow_root(None)
 
     def get_addon_status(self) -> dict:
-        """GearingToolCompanion isn't on CurseForge yet (per the user,
-        2026-08-30) - installing it today means manually copying files into
-        the right WoW folder, easy to get wrong or forget after an update.
+        """The direct-install path this method backs still exists alongside
+        the CurseForge listing (2026-08-31) - a one-click install from
+        inside the GUI, no manual file copying into the right WoW folder,
+        easy to get wrong or forget after an update by hand.
         `up_to_date` stays real, content-hash-based (never a version-string
         comparison alone) - a real edit with a forgotten version bump would
         otherwise report clean when it isn't. `shipped_version`/

@@ -62,10 +62,14 @@ window.pywebview = {
       profile_dir_name: mockProfileAssignments[c.name_realm] || null,
     })),
     get_reports: async (nameRealm) => {
+      // Backlog #13 - nested {profile_dir_name: {phase: {...}}}, matching
+      // the real report_storage.py schema.
       if (nameRealm === "Lerynia-Thunderstrike") {
         return {
-          phase3: { artifact_url: "https://claude.ai/code/artifact/81e5b616-0d28-45a5-a257-786b7774e810",
-            generated_at: "2026-08-24T13:32:16.870611+00:00", notes: "Phase 3 Upgrade Ledger" }
+          survival_hunter: {
+            phase3: { artifact_url: "https://claude.ai/code/artifact/81e5b616-0d28-45a5-a257-786b7774e810",
+              generated_at: "2026-08-24T13:32:16.870611+00:00", notes: "Phase 3 Upgrade Ledger" }
+          }
         };
       }
       return {};

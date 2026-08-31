@@ -26,6 +26,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import repo_root  # noqa: E402
+import character_profiles  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
 USER_DATA_DIR = repo_root.USER_DATA_DIR
 DEFAULT_HTML = r"E:\Claude\Temp\Gearing-Tool\phase3_ledger.html"
@@ -251,15 +252,26 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--character", default="Lerynia-Thunderstrike")
     parser.add_argument("--phase", default="phase3")
+    parser.add_argument("--profile", default=None,
+                         help="profile_dir_name (e.g. arms_warrior) - backlog #13, defaults to "
+                              "the character's current assignment via character_profiles.SUPPORTED_CHARACTERS")
     parser.add_argument("--html", default=DEFAULT_HTML, help="Path to the published ledger HTML")
     parser.add_argument("--skip-html", action="store_true", help="Skip the HTML splice check")
     args = parser.parse_args()
 
+    profile_dir_name = args.profile
+    if profile_dir_name is None:
+        profile_dir = character_profiles.SUPPORTED_CHARACTERS.get(args.character)
+        if profile_dir is None:
+            print(f"FATAL: {args.character} has no current profile assignment - pass --profile explicitly")
+            return 2
+        profile_dir_name = os.path.basename(os.path.normpath(profile_dir))
+
     rep = Report()
 
     char_cache_dir = os.path.join(USER_DATA_DIR, "characters", args.character, "cache")
-    tiered_path = os.path.join(char_cache_dir, f"tiered_report_{args.phase}.json")
-    ledger_path = os.path.join(char_cache_dir, f"ledger_data_{args.phase}.json")
+    tiered_path = os.path.join(char_cache_dir, f"tiered_report_{profile_dir_name}_{args.phase}.json")
+    ledger_path = os.path.join(char_cache_dir, f"ledger_data_{profile_dir_name}_{args.phase}.json")
 
     if not os.path.exists(tiered_path):
         print(f"FATAL: {tiered_path} not found - run core/run_upgrade_sweep.py first")

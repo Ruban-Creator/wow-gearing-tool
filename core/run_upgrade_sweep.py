@@ -421,6 +421,11 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
                          "stage_index": idx, "stage_total": len(stage_sequence) or None})
 
     phase_num = int(phase.removeprefix("phase"))
+    # Backlog #13 (CLAUDE.md Future Scope) - real, required part of every
+    # output filename below, so a character reassigned to a different sim
+    # profile doesn't silently overwrite her prior spec's report/ledger -
+    # see core/report_storage.py's own docstring for the full real bug.
+    profile_dir_name = os.path.basename(os.path.normpath(profile_dir))
     # Backlog #5 (CLAUDE.md Future Scope) - real loot sources this character
     # has chosen to exclude, layered under the phase gate above (see
     # source_scope.py's docstring for the real motivating gap). Empty for
@@ -1561,7 +1566,7 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
 
     out_dir = os.path.join(USER_DATA_DIR, "characters", name_realm, "cache")
     os.makedirs(out_dir, exist_ok=True)
-    out_path = os.path.join(out_dir, f"tiered_report_{phase}.json")
+    out_path = os.path.join(out_dir, f"tiered_report_{profile_dir_name}_{phase}.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump({"baseline_screened": baseline_screen["combined"], "achieved_bis": achieved_bis,
                    "missing_enchants": missing_enchants,

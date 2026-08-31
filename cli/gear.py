@@ -21,6 +21,8 @@ sys.path.insert(0, os.path.join(REPO_ROOT, "adapters", "tbc"))
 import build_character  # noqa: E402
 import list_characters  # noqa: E402
 import adapter  # noqa: E402
+import character_profiles  # noqa: E402
+import report_storage  # noqa: E402
 
 
 def character_dir(name_realm: str) -> str:
@@ -103,46 +105,58 @@ def _normalize_phase(raw: str) -> str:
     raise SystemExit(f"Unrecognized phase {raw!r} - expected e.g. '3' or 'phase3'.")
 
 
+def _resolve_profile_dir_name(character: str, explicit: str | None) -> str:
+    """Backlog #13 - reports.json is now nested under profile_dir_name (see
+    report_storage.py's own docstring for the real bug this fixes: a
+    character reassigned to a different sim profile used to silently
+    overwrite her prior spec's report). --profile lets a caller register/
+    list a report for a profile OTHER than the character's current
+    assignment (e.g. registering a Fury report while she's currently
+    assigned Arms); defaults to her current assignment, same "resolve via
+    character_profiles.py, never guess" rule as cmd_best."""
+    if explicit:
+        return explicit
+    profile_dir = character_profiles.SUPPORTED_CHARACTERS.get(character)
+    if profile_dir is None:
+        raise SystemExit(f"'{character}' has no known profile yet - pass --profile explicitly, "
+                          f"or assign one first (supported: {', '.join(character_profiles.SUPPORTED_CHARACTERS)})")
+    return os.path.basename(os.path.normpath(profile_dir))
+
+
 def cmd_report_register(args):
     phase = _normalize_phase(args.phase)
-    reports_path = os.path.join(character_dir(args.character), "reports.json")
-    reports = {}
-    if os.path.exists(reports_path):
-        with open(reports_path, encoding="utf-8") as f:
-            reports = json.load(f)
+    profile_dir_name = _resolve_profile_dir_name(args.character, args.profile)
+    reports = report_storage.load_reports(args.character)
+    profile_reports = reports.setdefault(profile_dir_name, {})
 
-    old = reports.get(phase)
+    old = profile_reports.get(phase)
     entry = {
         "artifact_url": args.url,
         "generated_at": args.generated_at or datetime.now(timezone.utc).isoformat(),
     }
     if args.notes:
         entry["notes"] = args.notes
-    reports[phase] = entry
+    profile_reports[phase] = entry
 
-    with open(reports_path, "w", encoding="utf-8") as f:
-        json.dump(reports, f, indent=2)
+    report_storage.save_reports(args.character, reports)
 
     if old:
-        print(f"Replaced {args.character}/{phase}'s report URL:")
+        print(f"Replaced {args.character}/{profile_dir_name}/{phase}'s report URL:")
         print(f"  old: {old['artifact_url']}")
         print(f"  new: {entry['artifact_url']}")
     else:
-        print(f"Registered {args.character}/{phase} -> {entry['artifact_url']}")
+        print(f"Registered {args.character}/{profile_dir_name}/{phase} -> {entry['artifact_url']}")
 
 
 def cmd_report_list(args):
-    reports_path = os.path.join(character_dir(args.character), "reports.json")
-    if not os.path.exists(reports_path):
-        print(f"No reports registered yet for {args.character}.")
+    profile_dir_name = _resolve_profile_dir_name(args.character, args.profile)
+    reports = report_storage.load_reports(args.character)
+    profile_reports = reports.get(profile_dir_name, {})
+    if not profile_reports:
+        print(f"No reports registered yet for {args.character}/{profile_dir_name}.")
         return
-    with open(reports_path, encoding="utf-8") as f:
-        reports = json.load(f)
-    if not reports:
-        print(f"No reports registered yet for {args.character}.")
-        return
-    for phase in sorted(reports):
-        r = reports[phase]
+    for phase in sorted(profile_reports):
+        r = profile_reports[phase]
         print(f"{phase}: {r['artifact_url']}  (generated {r['generated_at']})")
         if r.get("notes"):
             print(f"    notes: {r['notes']}")
@@ -195,9 +209,15 @@ def main():
     p_report_register.add_argument("url")
     p_report_register.add_argument("--notes")
     p_report_register.add_argument("--generated-at")
+    p_report_register.add_argument("--profile", default=None,
+                                    help="profile_dir_name (e.g. fury_warrior) - defaults to the "
+                                         "character's current assignment")
     p_report_register.set_defaults(func=cmd_report_register)
     p_report_list = report_sub.add_parser("list", help="list registered report URLs for a character")
     p_report_list.add_argument("character")
+    p_report_list.add_argument("--profile", default=None,
+                                help="profile_dir_name (e.g. fury_warrior) - defaults to the "
+                                     "character's current assignment")
     p_report_list.set_defaults(func=cmd_report_list)
 
     args = parser.parse_args()

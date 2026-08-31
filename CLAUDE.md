@@ -589,17 +589,18 @@ etc. Not part of any current stage — noted here so it isn't lost, but don't bu
 user actually asks. Keep `core/`/`adapters/` command-line-first and UI-agnostic in the meantime so
 a GUI can sit on top later without a rewrite.
 
-**Open, real, confirmed bug (2026-08-31, not yet fixed), backlog #13 — reports/ledgers need a
-profile dimension, not just character+phase (multi-profile-per-class support).** Every stage of the report pipeline
-(`run_upgrade_sweep.py`'s `tiered_report_<phase>.json`, `build_ledger_data.py`'s
-`ledger_data_<phase>.json`, the rendered `<phase>.html`, and `reports.json`'s own
-`reports[phase]` key) is keyed by `(name_realm, phase)` only - confirmed via direct grep, not
-assumed. Now that "Change profile…" (below) makes switching a character's assigned spec trivial,
-a real character (e.g. Rubán) running Phase 3 as Arms then switching to Fury and running Phase 3
-again silently OVERWRITES the Arms report with no warning - always latent, now a real, likely-hit
-case. Needs a real design pass (Plan Mode, given the schema change to `reports.json` and the
-question of what happens to an EXISTING single-profile report file on disk - migration, not just
-new writes) before touching it - not done yet, flagged here so it isn't lost.
+**Done, 2026-08-31, backlog #13 — reports/ledgers now have a real profile dimension, not just
+character+phase (multi-profile-per-class support).** Every stage of the report pipeline used to be
+keyed by `(name_realm, phase)` only, so a character reassigned to a different sim profile (e.g.
+Rubán: Arms <-> Fury) silently overwrote her prior spec's report. New `core/report_storage.py`
+(shared read/migrate/write helper, used by both `gui/api.py` and `cli/gear.py`), profile-suffixed
+filenames throughout, `reports.json` now nested `{profile_dir_name: {phase: {...}}}` with
+automatic, lazy migration of the old flat schema on first read - real existing report data (3
+real characters, 12 synthetic fixtures) verified preserved, not lost. See NOTES.md's 2026-08-31
+entry for the full real end-to-end verification (including a real mid-session mistake: an earlier
+background test was falsely reported complete by the harness while still running, causing a real
+CPU-oversubscription slowdown once a second, redundant test was accidentally started on top of it
+- caught and fixed via direct process inspection, not assumed).
 
 **SmartScreen warning on the installer - accepted for now (2026-08-31), real tracked reminder to
 revisit with a code-signing cert later. See `FUTURE_TASKS.md`.**
