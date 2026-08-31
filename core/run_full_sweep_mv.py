@@ -55,7 +55,6 @@ SETTINGS_TEMPLATE = os.path.join(PROFILE_DIR, "settings_template.json")
 # nothing) - there's no reason to test one under the non-weave settings.
 SETTINGS_2H = os.path.join(PROFILE_DIR, "settings_template_2h.json")
 POOL_PATH = os.path.join(PROFILE_DIR, "candidate_pool.json")
-DB_PATH = os.path.join(REPO_ROOT, "sim", "tbc-new", "assets", "database", "db.json")
 MAX_WORKERS = 2  # matches valuation.SIMSERVER_POOL_SIZE - see its comment for why 4 was 7.4x slower
 
 SCREEN_ITERATIONS = 500  # cheap ranking pass across the whole pool
@@ -413,9 +412,8 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     phase_num = int(phase.removeprefix("phase"))
     milestone("Starting sweep")
     start = time.time()
-    db = json.load(open(DB_PATH, encoding="utf-8"))
-    npc_by_id = {n["id"]: n["name"] for n in db.get("npcs", [])}
-    zone_by_id = {z["id"]: z["name"] for z in db.get("zones", [])}
+    npc_by_id = {n["id"]: n["name"] for n in idb.npcs()}
+    zone_by_id = {z["id"]: z["name"] for z in idb.zones()}
 
     char_path = os.path.join(USER_DATA_DIR, "characters", name_realm, "character.json")
     char = json.load(open(char_path, encoding="utf-8"))

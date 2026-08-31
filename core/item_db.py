@@ -1,6 +1,13 @@
 """Thin, read-only wrapper over the sim's assets/database/db.json - the
 single source of truth for item stats/flags used by the optimizer. Never
 invents a field; if something isn't in the DB it comes back as None/False.
+
+The ONLY module that should ever open db.json directly (code review §2.4):
+five other modules (gem_optimizer, sweep_all_loot, run_full_sweep_mv,
+build_wowsims_reference_bis, ingest/build_character) each had their own
+independent DB_PATH + json.load(), meaning a single sweep parsed the same
+~multi-MB file into several separate in-memory copies. All five now go
+through the accessors below instead.
 """
 from __future__ import annotations
 
@@ -13,49 +20,79 @@ import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
 DB_PATH = os.path.join(REPO_ROOT, "sim", "tbc-new", "assets", "database", "db.json")
 
-_db = None
+_db: dict | None = None
+_by_id_index: dict[int, dict] | None = None
+_ids_by_name_index: dict[str, list[int]] | None = None
+_gem_by_id_index: dict[int, dict] | None = None
+_enchant_by_id_index: dict[int, dict] | None = None
 
 
-def _load():
-    global _db
-    if _db is None:
-        with open(DB_PATH, encoding="utf-8") as f:
-            _db = json.load(f)
+def _load() -> dict:
+    """Loads db.json once per process and builds every index this module
+    offers at the same time (code review §2.4's secondary finding: the old
+    per-function `hasattr(fn, "_index")` memoization worked but was
+    unidiomatic - same behavior, plain module-level dicts, built once here
+    instead of scattered across four separate functions)."""
+    global _db, _by_id_index, _ids_by_name_index, _gem_by_id_index, _enchant_by_id_index
+    if _db is not None:
+        return _db
+    with open(DB_PATH, encoding="utf-8") as f:
+        _db = json.load(f)
+    _by_id_index = {it["id"]: it for it in _db.get("items", [])}
+    _ids_by_name_index = {}
+    for it in _db.get("items", []):
+        _ids_by_name_index.setdefault(it["name"], []).append(it["id"])
+    _gem_by_id_index = {g["id"]: g for g in _db.get("gems", [])}
+    _enchant_by_id_index = {e["effectId"]: e for e in _db.get("enchants", [])}
     return _db
 
 
+def items() -> list[dict]:
+    _load()
+    return _db.get("items", [])
+
+
+def gems() -> list[dict]:
+    _load()
+    return _db.get("gems", [])
+
+
+def npcs() -> list[dict]:
+    _load()
+    return _db.get("npcs", [])
+
+
+def zones() -> list[dict]:
+    _load()
+    return _db.get("zones", [])
+
+
+def consumables() -> list[dict]:
+    _load()
+    return _db.get("consumables", [])
+
+
 def by_id(item_id: int) -> dict | None:
-    db = _load()
-    if not hasattr(by_id, "_index"):
-        by_id._index = {it["id"]: it for it in db.get("items", [])}
-    return by_id._index.get(item_id)
+    _load()
+    return _by_id_index.get(item_id)
 
 
 def ids_by_name(name: str) -> list[int]:
-    db = _load()
-    if not hasattr(ids_by_name, "_index"):
-        idx = {}
-        for it in db.get("items", []):
-            idx.setdefault(it["name"], []).append(it["id"])
-        ids_by_name._index = idx
-    return ids_by_name._index.get(name, [])
+    _load()
+    return _ids_by_name_index.get(name, [])
 
 
 def gem_by_id(gem_id: int) -> dict | None:
-    db = _load()
-    if not hasattr(gem_by_id, "_index"):
-        gem_by_id._index = {g["id"]: g for g in db.get("gems", [])}
-    return gem_by_id._index.get(gem_id)
+    _load()
+    return _gem_by_id_index.get(gem_id)
 
 
 def enchant_by_id(effect_id: int) -> dict | None:
     """db.json's enchants collection is keyed by effectId (not itemId) -
     a display/name lookup, not proof the Go sim engine implements the
     effect (see core/verify_default_enchants.py for the real check)."""
-    db = _load()
-    if not hasattr(enchant_by_id, "_index"):
-        enchant_by_id._index = {e["effectId"]: e for e in db.get("enchants", [])}
-    return enchant_by_id._index.get(effect_id)
+    _load()
+    return _enchant_by_id_index.get(effect_id)
 
 
 # proto/common.proto GemColor enum (read directly, not guessed - color 8 is

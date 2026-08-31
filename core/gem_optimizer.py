@@ -35,7 +35,6 @@ into the decision until it's proven against the sim.
 """
 from __future__ import annotations
 
-import json
 import os
 import sys
 
@@ -46,7 +45,6 @@ import stat_weights  # noqa: E402
 
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
-DB_PATH = os.path.join(REPO_ROOT, "sim", "tbc-new", "assets", "database", "db.json")
 
 sys.path.insert(0, os.path.join(REPO_ROOT, "adapters", "tbc"))
 import valuation  # noqa: E402
@@ -63,15 +61,8 @@ GEM_MATCHES = {
     PRISMATIC: {RED, BLUE, YELLOW},
 }
 
-_gems_cache: list[dict] | None = None
-
-
 def _all_gems() -> list[dict]:
-    global _gems_cache
-    if _gems_cache is None:
-        with open(DB_PATH, encoding="utf-8") as f:
-            _gems_cache = json.load(f)["gems"]
-    return _gems_cache
+    return idb.gems()
 
 
 def _crude_score(stats: list[float]) -> float:

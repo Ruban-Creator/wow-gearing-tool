@@ -30,11 +30,11 @@ from collections import defaultdict
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import stat_weights  # noqa: E402
 import set_bonus  # noqa: E402
+import item_db as idb  # noqa: E402
 
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
 USER_DATA_DIR = repo_root.USER_DATA_DIR
-DB_PATH = os.path.join(REPO_ROOT, "sim", "tbc-new", "assets", "database", "db.json")
 
 ITEM_TYPE_WEAPON = 13
 ITEM_TYPE_RANGED = 14
@@ -198,8 +198,7 @@ def run(max_phase: int, profile_dir: str) -> str:
     global _unsafe_set_names
     _unsafe_set_names = _load_unsafe_set_names(eligibility_rules["class_id"])
 
-    db = json.load(open(DB_PATH, encoding="utf-8"))
-    items = db["items"]
+    items = idb.items()
 
     by_type = defaultdict(list)
     for it in items:

@@ -29,6 +29,7 @@ from slpp import slpp as lua
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "core"))
 import repo_root  # noqa: E402
 import local_config  # noqa: E402
+import item_db as idb  # noqa: E402
 
 REPO_ROOT = repo_root.REPO_ROOT
 USER_DATA_DIR = repo_root.USER_DATA_DIR
@@ -93,11 +94,8 @@ def load_item_db() -> dict[int, dict]:
     elixirs, food, bandages, sappers, ...) - they're separate collections in
     db.json. Without the second, ordinary bag/bank consumables would wrongly
     show up as "unresolved" (the sim genuinely knows them, just not as gear)."""
-    db_path = os.path.join(SIM_SUBMODULE, "assets", "database", "db.json")
-    with open(db_path, encoding="utf-8") as f:
-        db = json.load(f)
-    merged = {it["id"]: it for it in db.get("items", [])}
-    for it in db.get("consumables", []):
+    merged = {it["id"]: it for it in idb.items()}
+    for it in idb.consumables():
         merged.setdefault(it["id"], it)
     return merged
 

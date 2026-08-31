@@ -27,10 +27,6 @@ import run_full_sweep_mv as sweep  # noqa: E402 - reuses describe_source_and_tie
 
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
-DB_PATH = os.path.join(REPO_ROOT, "sim", "tbc-new", "assets", "database", "db.json")
-_db = json.load(open(DB_PATH, encoding="utf-8"))
-NPC_BY_ID = {n["id"]: n["name"] for n in _db.get("npcs", [])}
-ZONE_BY_ID = {z["id"]: z["name"] for z in _db.get("zones", [])}
 
 
 def _real_source(item: dict, phase: str, spec_label: str) -> str:
@@ -39,8 +35,15 @@ def _real_source(item: dict, phase: str, spec_label: str) -> str:
     "this is where the recommendation came from") only when the DB
     genuinely has no source data for this item - same "Source unclear"
     fallback the rest of the pipeline uses in that case, so a real gap
-    reads the same way everywhere rather than being masked by the label."""
-    desc, _tier, _craft = sweep.describe_source_and_tier(item, NPC_BY_ID, ZONE_BY_ID)
+    reads the same way everywhere rather than being masked by the label.
+
+    npc_by_id/zone_by_id built from item_db (code review §2.4) instead of
+    this module's own former top-level db.json load - that top-level I/O
+    also made this module unimportable without the sim submodule checked
+    out, real friction for anything that just wants resolve_gear_set()."""
+    npc_by_id = {n["id"]: n["name"] for n in idb.npcs()}
+    zone_by_id = {z["id"]: z["name"] for z in idb.zones()}
+    desc, _tier, _craft = sweep.describe_source_and_tier(item, npc_by_id, zone_by_id)
     if desc != "Source unclear":
         return desc
     return f"wowsims {phase.replace('phase', 'Phase ')} {spec_label} preset"
