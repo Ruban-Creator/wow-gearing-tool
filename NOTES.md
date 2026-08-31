@@ -4933,3 +4933,74 @@ Elemental Shaman (not the Resto-gear edge case that surfaced this whole investig
 mana constraint is much less severe, so the burst-damage potion is still the correct real choice -
 the OOM problem here is an artifact of the specific bad-report scenario, not evidence the profile's
 own default consumable choice is wrong. No config change made - already matched this decision.
+
+## 2026-09-01 — Backlog #16: shared-pool slots (Ring/Trinket/dual-wield Weapon) fixed for real
+
+Real fix, not just diagnosis this time. Root cause (found 2026-08-31, see the entry above and
+NOTES.md's own dated history): `core/marginal_value.py`'s `mv_single()` used to evaluate a shared-
+pool candidate (occupies EITHER of two real slots, e.g. ring1/ring2) against BOTH real slots but
+collapse to ONE winner-take-all `best_slot`/mv, discarding the other trial's real result entirely.
+Since replacing whichever of her two current items is weaker always gives the bigger DPS gain,
+EVERY candidate's own winner consistently landed on the same real slot - the OTHER slot's current
+item could never be beaten by anything, not because nothing was good enough, but because nothing
+was ever independently checked against it specifically. Confirmed live, twice: 22/22 real trinket
+candidates for one real character all resolved to trinket2, none ever evaluated against trinket1.
+
+**Real fix, per the user's own design (2026-08-31, NOT a joint pair search - that's a different,
+much more expensive idea already dropped once for cost reasons, see Stage 5's
+`interaction_matrix.py`)**: `mv_single()` now returns a LIST - one real, independent result per
+real slot a candidate could occupy - instead of one collapsed dict. Added an `only_slot` param so
+the confirm/resolve tiers can re-evaluate just the ONE already-known slot at higher precision,
+not both (resolving a slot that already had a clear screening verdict would be wasted compute).
+`mv_single_tiered()` (a real, correct, but currently-unused-in-the-main-pipeline function - only
+`verify_gem_choices.py` even references it, and only in a docstring) got the same treatment so it
+didn't end up silently broken by the new list-returning `mv_single()`.
+
+**Real, non-trivial ripple effect found and fixed while implementing, not anticipated in the
+original design write-up**: `run_upgrade_sweep.py`'s confirm/resolve/rescue/raid-AP passes all
+used to key their results by `item_id` ALONE (`confirmed_by_id`, `resolved_by_id`, `ap_only_by_id`).
+Once a shared-pool candidate can have TWO real leaderboard rows (one per real slot) both entering
+`to_resolve`, keying by `item_id` alone meant the second row's confirmed/resolved result would
+silently overwrite the first's in the shared dict - a real, dangerous correctness bug that would
+have partially UNDONE the whole fix (both rows ending up with the SAME mv, whichever was computed
+last). Fixed by re-keying every one of these dicts to `(item_id, best_slot)` throughout - confirmed
+the set-bonus rescue-check section specifically does NOT need this (`set_bonus.ARMOR_SET_SLOTS` is
+`["head", "shoulder", "chest", "hands", "legs"]` only, no shared-pool overlap, checked directly
+rather than assumed).
+
+**Also found and fixed**: `check_ledger_consistency.py`'s own duplicate-item-mv assertion (a real,
+useful check that used to correctly catch stale-cache/duplicate-write bugs) was keyed by
+`(item_id, r["slot"])` - the DISPLAY slot ("Ring"), not the real one - so it now correctly flagged
+the INTENDED new behavior (the same item legitimately carrying two different real mv values, one
+per real slot) as a false-positive failure. Re-keyed to `(item_id, r["best_slot"])`, matching the
+same real-slot-not-display-slot fix applied everywhere else.
+
+`report_template.html` gained `replacesSlotTag()` (real slot labels: "Ring 1"/"Ring 2"/"Trinket 1"/
+"Trinket 2"/"Main Hand"/"Off Hand") per the user's own suggestion, using the existing neutral `.tag`
+style (no new CSS needed) - shown next to any candidate whose `best_slot` maps to a real shared-pool
+slot, silently absent for single-real-slot items (Head, Chest, etc.) and the unrelated 2H-weapon-
+option rows (which never set `best_slot` at all - confirmed that section calls `valuation.evaluate()`
+directly, bypassing `mv_single()` entirely, so it was never affected by this bug in the first place).
+`check_ledger_consistency.py` gained a render-block guard for `it.best_slot`, matching the existing
+`it.set_note`/`it.rescue_note`/`it.owned_location` guards.
+
+Real, not just code-reviewed verification, across all three real weapon topologies in active use:
+- **Lerynia (dual_wield)**: "Band of the Eternal Champion" now shows twice in the real Ring tier -
+  ring1 +19.2, ring2 +18.5 - genuinely different real numbers, not a duplicate. `check_ledger_
+  consistency.py` 617/0 (was 570/0 before this fix - the increase is real, new, correctly-surfaced
+  rows, not a regression).
+- **Rubán (two_hand)**: 14 real dual-slot items found across Ring/Trinket, including one dramatic
+  case - "Madness of the Betrayer" +1.7 for trinket1 vs +22.0 for trinket2 - real, independently
+  confirmed via `check_ledger_consistency.py`'s own new (item_id, best_slot) duplicate-detection,
+  which correctly did NOT flag this as an error (real, deliberate, differing values). 1692/0.
+- **Béarforceone (one_hand_plus_offhand_item)**: 1385/0, confirming the fix doesn't regress a
+  topology with no real dual-wield-weapon shared pool (only ring/trinket apply there).
+- Real HTML rendering verified via a local `http.server` + direct DOM query (not just the raw
+  data) - `Band of Devastation` genuinely renders twice in Rubán's real report, tagged "Ring 1" and
+  "Ring 2" respectively via real `<span class="tag" title="Replaces your current Ring 1">` markup.
+
+Real design decision made INLINE during implementation, not pre-planned: `screened_upgrades_
+needing_ap`/`add_ap_only` (the pass that back-fills raid-AP for screened-only real upgrades) needed
+the exact same `only_slot` + `(item_id, best_slot)` treatment as confirm/resolve - found by
+systematically re-checking every `mv.mv_single(...)` call site in the file (4 total) rather than
+assuming only the 2 "obvious" ones (confirm/resolve) needed it.

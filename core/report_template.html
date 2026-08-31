@@ -449,6 +449,22 @@ function ownedLocationTag(it){
   return ` <span class="tag owned-tag" title="Already in her ${it.owned_location === 'bank' ? 'bank' : 'bags'} - re-equip, not an acquisition target">${label}</span>`;
 }
 
+// Backlog #16 (2026-08-31) - a shared-pool display slot (Ring/Trinket/
+// Weapon) now shows which of the two real slots a candidate replaces, per
+// the user's own suggestion - each real slot is independently evaluated
+// now (see NOTES.md's dated entry for the real bug this fixes), so the
+// same candidate can appear once per real slot it's a genuine upgrade for.
+const REAL_SLOT_LABELS = {
+  ring1: 'Ring 1', ring2: 'Ring 2',
+  trinket1: 'Trinket 1', trinket2: 'Trinket 2',
+  mainhand: 'Main Hand', offhand: 'Off Hand',
+};
+function replacesSlotTag(it){
+  const label = REAL_SLOT_LABELS[it.best_slot];
+  if (!label) return '';
+  return ` <span class="tag" title="Replaces your current ${label}">${escapeHtml(label)}</span>`;
+}
+
 document.getElementById('footer-methodology').textContent =
   'Screened @ ' + DATA.screen_iterations + ' iterations, confirmed @ ' + DATA.confirm_iterations +
   ' where borderline, resolved @ ' + DATA.resolve_iterations + ' where flagged. ' +
@@ -553,7 +569,7 @@ DATA.tiers.forEach((tier, ti) => {
 
       row.innerHTML = `
         <div class="name-col">
-          <div class="item-name">${whLink(it.name, it.item_id)}${craftLink(it.craft_spell_id)}${screenedTag}${lockTag}${horizonTag(it)}${arpTag(it)}${ownedLocationTag(it)}</div>
+          <div class="item-name">${whLink(it.name, it.item_id)}${craftLink(it.craft_spell_id)}${screenedTag}${lockTag}${horizonTag(it)}${arpTag(it)}${ownedLocationTag(it)}${replacesSlotTag(it)}</div>
           <div class="item-source">${escapeHtml(it.source || 'Source unclear')}</div>
         </div>
         <div class="delta dps">
@@ -656,7 +672,7 @@ if (twoHand.length > 0) {
       const screenedTag = it.resolved ? '' : '<span class="tag">screened only</span>';
       row.innerHTML = `
         <div class="name-col">
-          <div class="item-name">${whLink(it.name, it.item_id)}${craftLink(it.craft_spell_id)}${screenedTag}${horizonTag(it)}${arpTag(it)}${ownedLocationTag(it)}</div>
+          <div class="item-name">${whLink(it.name, it.item_id)}${craftLink(it.craft_spell_id)}${screenedTag}${horizonTag(it)}${arpTag(it)}${ownedLocationTag(it)}${replacesSlotTag(it)}</div>
           <div class="item-source">${escapeHtml(it.tier)}: ${escapeHtml(it.source || 'Source unclear')}</div>
         </div>
         <div class="delta dps">

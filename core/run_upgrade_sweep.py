@@ -906,46 +906,54 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     # replace it, not stack with it).
     display_to_armor_slot = {SLOT_DISPLAY[s]: s for s in set_bonus.ARMOR_SET_SLOTS}
     by_tier_slot: dict[tuple[str, str], list] = {}
-    for c, r in screened:
-        if r.get("excluded_reason"):
-            continue
-        if c.item_id in owned_equipped_ids:
-            continue  # already equipped - not an acquisition target
-        owned_location = "bags" if c.item_id in owned_bag_ids else "bank" if c.item_id in owned_bank_ids else None
-        source, tier, craft_spell_id = item_meta.get(c.item_id, ("", "Other", None))
-        slot_label = item_slot_label.get(c.item_id, "Other")
-        arp = item_arp_rating(idb.by_id(c.item_id)) if arp_relevant else 0
-        # Real set-bonus ranking credit (per the user, 2026-08-25): if THIS
-        # specific candidate is the piece that crosses a real, currently-
-        # achievable set-bonus threshold (given what she already owns of
-        # that set elsewhere), credit its isolated bonus value toward the
-        # sort key (rank_value(), used below) - not toward the displayed mv
-        # itself, which stays the honest isolated number.
-        set_bonus_credit = 0
-        item_dict = idb.by_id(c.item_id)
-        cand_set_name = item_dict.get("setName") if item_dict else None
-        if cand_set_name and cand_set_name in threshold_values_by_set:
-            phys_slot = display_to_armor_slot.get(slot_label)
-            if phys_slot:
-                idx = gc.SLOT_ORDER.index(phys_slot)
-                current_entry = baseline_config[idx] if idx < len(baseline_config) else None
-                current_item = idb.by_id(current_entry["id"]) if current_entry and current_entry.get("id") else None
-                owned_excl_slot = set_bonus.count_set_pieces_in_config(cand_set_name, baseline_config)
-                if current_item and current_item.get("setName") == cand_set_name:
-                    owned_excl_slot -= 1
-                count_with_candidate = owned_excl_slot + 1
-                for threshold, value in threshold_values_by_set[cand_set_name].items():
-                    if owned_excl_slot < threshold <= count_with_candidate:
-                        set_bonus_credit += value
-        r = dict(r, source=source, tier=tier, slot=slot_label, item_id=c.item_id,
-                 craft_spell_id=craft_spell_id,
-                 set_note=set_notes_by_item.get(c.item_id),
-                 gate=acquisition_gate.gate_for_item(source, slot_label, acquisition_status),
-                 arp_rating=arp or None,
-                 set_bonus_credit=set_bonus_credit or None,
-                 owned_location=owned_location,
-                 **time_horizon.lasts_until_phase(c.name, c.item_id))
-        by_tier_slot.setdefault((tier, slot_label), []).append((c, r))
+    for c, results in screened:
+        # Backlog #16 (2026-08-31) - mv_single() now returns a list, one
+        # real, independent result per real slot the candidate could
+        # occupy (both ring1/ring2 for a shared-pool item, normally just
+        # one for anything else) - see its own docstring for the real bug
+        # this fixes. Each becomes its own row here, so ring1/ring2 (or
+        # trinket1/trinket2, or mainhand/offhand) each get their own
+        # independent leaderboard/achieved-BiS check.
+        for r in results:
+            if r.get("excluded_reason"):
+                continue
+            if c.item_id in owned_equipped_ids:
+                continue  # already equipped - not an acquisition target
+            owned_location = "bags" if c.item_id in owned_bag_ids else "bank" if c.item_id in owned_bank_ids else None
+            source, tier, craft_spell_id = item_meta.get(c.item_id, ("", "Other", None))
+            slot_label = item_slot_label.get(c.item_id, "Other")
+            arp = item_arp_rating(idb.by_id(c.item_id)) if arp_relevant else 0
+            # Real set-bonus ranking credit (per the user, 2026-08-25): if THIS
+            # specific candidate is the piece that crosses a real, currently-
+            # achievable set-bonus threshold (given what she already owns of
+            # that set elsewhere), credit its isolated bonus value toward the
+            # sort key (rank_value(), used below) - not toward the displayed mv
+            # itself, which stays the honest isolated number.
+            set_bonus_credit = 0
+            item_dict = idb.by_id(c.item_id)
+            cand_set_name = item_dict.get("setName") if item_dict else None
+            if cand_set_name and cand_set_name in threshold_values_by_set:
+                phys_slot = display_to_armor_slot.get(slot_label)
+                if phys_slot:
+                    idx = gc.SLOT_ORDER.index(phys_slot)
+                    current_entry = baseline_config[idx] if idx < len(baseline_config) else None
+                    current_item = idb.by_id(current_entry["id"]) if current_entry and current_entry.get("id") else None
+                    owned_excl_slot = set_bonus.count_set_pieces_in_config(cand_set_name, baseline_config)
+                    if current_item and current_item.get("setName") == cand_set_name:
+                        owned_excl_slot -= 1
+                    count_with_candidate = owned_excl_slot + 1
+                    for threshold, value in threshold_values_by_set[cand_set_name].items():
+                        if owned_excl_slot < threshold <= count_with_candidate:
+                            set_bonus_credit += value
+            r = dict(r, source=source, tier=tier, slot=slot_label, item_id=c.item_id,
+                     craft_spell_id=craft_spell_id,
+                     set_note=set_notes_by_item.get(c.item_id),
+                     gate=acquisition_gate.gate_for_item(source, slot_label, acquisition_status),
+                     arp_rating=arp or None,
+                     set_bonus_credit=set_bonus_credit or None,
+                     owned_location=owned_location,
+                     **time_horizon.lasts_until_phase(c.name, c.item_id))
+            by_tier_slot.setdefault((tier, slot_label), []).append((c, r))
 
     # A leaderboard item only needs the expensive 30k resolve if 1k screening
     # left it close enough to the noise floor that resolving could plausibly
@@ -993,13 +1001,21 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     # --- Pass 2a: confirm @ 5k - cheap sharpening pass, see CONFIRM_ITERATIONS ---
     baseline_confirm = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, CONFIRM_ITERATIONS, opt.SEED)
 
+    # Backlog #16 (2026-08-31) - only_slot scopes this to the ONE real slot
+    # this leaderboard row already represents (mv_single() now returns a
+    # list otherwise - see its own docstring). Keyed by (item_id, slot), not
+    # item_id alone: a shared-pool candidate can now have TWO independent
+    # leaderboard rows (one per real slot), and item_id alone would let the
+    # second one silently overwrite the first's confirmed result.
     def confirm_one(cr):
-        c, _ = cr
-        return c.item_id, mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_confirm,
-                                        CONFIRM_ITERATIONS, opt.SEED, baseline_agility=baseline_agility)
+        c, r = cr
+        result = mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_confirm,
+                               CONFIRM_ITERATIONS, opt.SEED, baseline_agility=baseline_agility,
+                               only_slot=r["best_slot"])[0]
+        return (c.item_id, r["best_slot"]), result
 
     confirmed_pairs = run_with_progress(confirm_one, to_resolve, "Confirming", progress_cb=progress_cb, stage_sequence=stage_sequence)
-    confirmed_by_id = dict(confirmed_pairs)
+    confirmed_by_key = dict(confirmed_pairs)
 
     # Escalate to the full 30k pass only if still not clear at 5k's own noise
     # floor - INCLUDING #1 picks, per the user (2026-08-24): the earlier
@@ -1013,7 +1029,8 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     # NOTES.md 2026-08-24.
     need_full_resolve = [
         (c, r) for c, r in to_resolve
-        if abs(confirmed_by_id[c.item_id]["mv"]) < CONFIRM_CLEAR_MARGIN_MULTIPLE * confirmed_by_id[c.item_id]["noise_stdev"]
+        if abs(confirmed_by_key[(c.item_id, r["best_slot"])]["mv"])
+        < CONFIRM_CLEAR_MARGIN_MULTIPLE * confirmed_by_key[(c.item_id, r["best_slot"])]["noise_stdev"]
     ]
 
     # Printed BEFORE resolving starts, not after - per the user (2026-08-24):
@@ -1034,31 +1051,32 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     # screened_upgrades_needing_ap pass below), same "already clear, don't
     # spend more compute on it" principle already applied to DPS.
     def resolve_one(cr):
-        c, _ = cr
-        return c.item_id, mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_resolved,
-                                        RESOLVE_ITERATIONS, opt.SEED, baseline_agility=baseline_agility)
+        c, r = cr
+        result = mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_resolved,
+                               RESOLVE_ITERATIONS, opt.SEED, baseline_agility=baseline_agility,
+                               only_slot=r["best_slot"])[0]
+        return (c.item_id, r["best_slot"]), result
 
     resolved_pairs = run_with_progress(resolve_one, need_full_resolve, "Resolving", progress_cb=progress_cb, stage_sequence=stage_sequence)
-    resolved_by_id = dict(resolved_pairs)
+    resolved_by_key = dict(resolved_pairs)
 
     for key, rows in by_tier_slot.items():
         for c, r in rows:
-            if c.item_id in resolved_by_id:
-                res = resolved_by_id[c.item_id]
+            row_key = (c.item_id, r["best_slot"])
+            if row_key in resolved_by_key:
+                res = resolved_by_key[row_key]
                 r["mv"] = res["mv"]
                 r["noise_stdev"] = res["noise_stdev"]
                 r["tied_within_noise"] = res["tied_within_noise"]
                 r["raid_ap_per_attacker"] = res.get("raid_ap_per_attacker")
-                r["best_slot"] = res.get("best_slot", r.get("best_slot"))
                 r["resolved"] = True
                 r["resolve_iterations"] = RESOLVE_ITERATIONS
-            elif c.item_id in confirmed_by_id:
-                res = confirmed_by_id[c.item_id]
+            elif row_key in confirmed_by_key:
+                res = confirmed_by_key[row_key]
                 r["mv"] = res["mv"]
                 r["noise_stdev"] = res["noise_stdev"]
                 r["tied_within_noise"] = res["tied_within_noise"]
                 r["raid_ap_per_attacker"] = res.get("raid_ap_per_attacker")
-                r["best_slot"] = res.get("best_slot", r.get("best_slot"))
                 r["resolved"] = True
                 r["resolve_iterations"] = CONFIRM_ITERATIONS
             else:
@@ -1157,18 +1175,23 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
         if not r["resolved"] and not r["tied_within_noise"] and r["mv"] > 0
     ]
 
+    # Backlog #16 - only_slot + (item_id, slot) keying, same reasoning as
+    # confirm_one/resolve_one above.
     def add_ap_only(cr):
-        c, _ = cr
-        return c.item_id, mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_screen,
-                                        SCREEN_ITERATIONS, opt.SEED, baseline_agility=baseline_agility)
+        c, r = cr
+        result = mv.mv_single(SETTINGS_TEMPLATE, baseline_config, c, baseline_screen,
+                               SCREEN_ITERATIONS, opt.SEED, baseline_agility=baseline_agility,
+                               only_slot=r["best_slot"])[0]
+        return (c.item_id, r["best_slot"]), result
 
     ap_only_pairs = run_with_progress(add_ap_only, screened_upgrades_needing_ap, "Raid-AP lookups", progress_cb=progress_cb, stage_sequence=stage_sequence)
-    ap_only_by_id = dict(ap_only_pairs)
+    ap_only_by_key = dict(ap_only_pairs)
 
     for key, rows in by_tier_slot.items():
         for c, r in rows:
-            if not r["resolved"] and c.item_id in ap_only_by_id:
-                r["raid_ap_per_attacker"] = ap_only_by_id[c.item_id].get("raid_ap_per_attacker")
+            row_key = (c.item_id, r["best_slot"])
+            if not r["resolved"] and row_key in ap_only_by_key:
+                r["raid_ap_per_attacker"] = ap_only_by_key[row_key].get("raid_ap_per_attacker")
 
     if screened_upgrades_needing_ap:
         print(f"Filled Raid AP for {len(screened_upgrades_needing_ap)} screened-only real upgrades.\n")
@@ -1196,15 +1219,25 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     # real upgrade candidate for offhand alone hid mainhand's own real,
     # independently-BiS status from Achieved BiS too, even though nothing
     # about mainhand itself was actually beatable. Fixed by tracking real
-    # upgrades per REAL slot instead of per display bucket, using each
-    # candidate's own best_slot (marginal_value.py's mv_single() now reports
-    # which specific real slot its own best trial substituted into - not
-    # arbitrary: replacing whichever of a shared-pool item's two real slots
-    # is weaker always gives the bigger DPS gain, so best_slot correctly
-    # identifies which real slot a rational player would actually put a
-    # given candidate in). A single-real-slot display bucket (Head, Neck,
-    # ...) is unaffected either way - best_slot there is always that one
-    # real slot, no ambiguity to begin with.
+    # upgrades per REAL slot instead of per display bucket, using each row's
+    # own best_slot. A single-real-slot display bucket (Head, Neck, ...) is
+    # unaffected either way - best_slot there is always that one real slot,
+    # no ambiguity to begin with.
+    #
+    # Real SECOND bug in the same area, found live 2026-08-31 (backlog #16):
+    # `best_slot` used to mean "whichever of the two real slots this
+    # candidate's own best trial substituted into" - a single winner-take-
+    # all pick per candidate, since replacing whichever of her two current
+    # items is weaker always gives the bigger DPS gain. That meant EVERY
+    # candidate's own best_slot consistently landed on the same weaker real
+    # slot, so the stronger slot's current item could never be beaten by
+    # ANYTHING - not because nothing was good enough, but because nothing
+    # was ever independently checked against it. Confirmed live: 22 of 22
+    # real trinket candidates for one real character all resolved to the
+    # same real slot. Fixed at the source - marginal_value.py's mv_single()
+    # now returns one real, independent result PER real slot a shared-pool
+    # candidate could occupy, so each real slot gets its own real upgrade
+    # check here, not a shared winner-take-all one.
     real_slots_with_upgrades = set()
     for (tier, slot), rows in by_tier_slot.items():
         for _c, r in rows:

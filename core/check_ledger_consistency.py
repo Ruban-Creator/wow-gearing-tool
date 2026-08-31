@@ -106,12 +106,20 @@ def check_tiered_report(report: dict, rep: Report) -> None:
             rep.check(isinstance(rows, list), f"{where}: expected a list, got {type(rows).__name__}")
             for r in rows:
                 check_tier_item(r, rep, where)
-                # Same item_id should never carry contradictory mv values
-                # across two different report locations - a sign of a stale
-                # cache entry or a duplicate-write bug.
-                key = (r.get("item_id"), r.get("slot"))
+                # Same item_id in the same REAL slot should never carry
+                # contradictory mv values across two different report
+                # locations - a sign of a stale cache entry or a duplicate-
+                # write bug. Keyed by (item_id, best_slot) - the real slot
+                # (e.g. "ring1"/"ring2"), not r["slot"] (the DISPLAY label,
+                # e.g. "Ring") - since backlog #16 (2026-08-31), the exact
+                # same item legitimately appears TWICE with two different
+                # real mv values in the same display slot/tier (once per
+                # real slot it's independently evaluated against - see
+                # run_upgrade_sweep.py's own dated comment on the bug this
+                # fixes), which used to collide under the old, coarser key.
+                key = (r.get("item_id"), r.get("best_slot") or r.get("slot"))
                 if key in seen_ids and abs(seen_ids[key].get("mv", 0) - r.get("mv", 0)) > 0.5:
-                    rep.check(False, f"{where}: item_id={key[0]} in slot {key[1]!r} has mv={r.get('mv'):+.1f} "
+                    rep.check(False, f"{where}: item_id={key[0]} in real slot {key[1]!r} has mv={r.get('mv'):+.1f} "
                                       f"but was already seen with mv={seen_ids[key].get('mv'):+.1f} "
                                       f"in tier {seen_ids[key].get('tier')!r}")
                 seen_ids[key] = r
@@ -247,6 +255,7 @@ def check_html(ledger_data: dict, html_path: str, rep: Report) -> None:
     rep.check("it.set_note" in html_text, f"{html_path}: no render block references it.set_note")
     rep.check("it.rescue_note" in html_text, f"{html_path}: no render block references it.rescue_note")
     rep.check("it.owned_location" in html_text, f"{html_path}: no render block references it.owned_location")
+    rep.check("it.best_slot" in html_text, f"{html_path}: no render block references it.best_slot")
 
 
 def main():

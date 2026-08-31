@@ -602,6 +602,23 @@ background test was falsely reported complete by the harness while still running
 CPU-oversubscription slowdown once a second, redundant test was accidentally started on top of it
 - caught and fixed via direct process inspection, not assumed).
 
+**Done, 2026-09-01, backlog #16 — shared-pool slots (Ring/Trinket/dual-wield Weapon) now evaluate
+each real slot independently, not winner-take-all.** `core/marginal_value.py`'s `mv_single()` used
+to try a shared-pool candidate in both real slots (e.g. ring1/ring2) but report only whichever gave
+the bigger DPS gain - since replacing whichever of her two current items is weaker always wins,
+EVERY candidate consistently routed to the same real slot, so the other slot's current item could
+never be beaten by anything, not because nothing was good enough but because nothing was
+independently checked. Confirmed live, twice, on two different real characters (22/22 real trinket
+candidates all resolving to the same slot in one case). `mv_single()` now returns a list - one real,
+independent result per real slot - and `run_upgrade_sweep.py`'s confirm/resolve/raid-AP passes were
+re-keyed from `item_id` alone to `(item_id, best_slot)` to avoid a real, dangerous collision found
+while implementing (two rows for the same item would otherwise silently overwrite each other's
+resolved result). `report_template.html` shows which real slot a candidate replaces ("Ring 1"/
+"Ring 2"/etc.) per the user's own suggestion. Verified across all three real weapon topologies in
+use (dual_wield/two_hand/one_hand_plus_offhand_item) - see NOTES.md's 2026-09-01 entry for the full
+real verification, including a real dramatic case (+1.7 vs +22.0 DPS for the same item in two real
+slots) and a stale assumption fixed in `check_ledger_consistency.py` itself along the way.
+
 **SmartScreen warning on the installer - accepted for now (2026-08-31), real tracked reminder to
 revisit with a code-signing cert later. See `FUTURE_TASKS.md`.**
 

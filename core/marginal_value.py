@@ -86,11 +86,36 @@ def delta_noise(baseline_result: dict, candidate_result: dict, iterations: int) 
 
 def mv_single(settings_path: str, baseline_config: list[dict], candidate: "opt.Candidate",
               baseline_result: dict, iterations: int, seed: int = opt.SEED,
-              baseline_agility: float | None = None) -> dict:
+              baseline_agility: float | None = None, only_slot: str | None = None) -> list[dict]:
     """MV of swapping ONE candidate into baseline_config's matching slot(s).
-    For shared-pool items (rings/trinkets/weapons), tries every slot the
-    item could occupy and reports whichever gives the bigger DPS gain -
-    that's what a real player would actually do with it.
+    Real bug found and fixed 2026-08-31 (backlog #16, live user report): for
+    a shared-pool item (rings/trinkets/dual-wield weapons - occupies EITHER
+    of two real slots), this used to try every real slot and report only
+    whichever gave the bigger DPS gain, discarding the other trial's real
+    result entirely. Since whichever of her two current items is weaker
+    always gives the bigger gain, EVERY candidate's own best trial
+    consistently landed on that same weaker slot - the stronger slot's
+    current item could never be beaten by anything, even a candidate that
+    would genuinely improve it too, because nothing ever independently
+    checked. Confirmed live on real data: 22 of 22 real trinket candidates
+    for one real character all resolved to the same real slot, none ever
+    evaluated against the other.
+
+    Now returns a LIST - one real, independent result per real slot tried
+    (both slots for a shared-pool item, normally just one for anything
+    else) - so each real slot gets its own leaderboard/achieved-BiS check
+    against its own real candidates, per the user's own fix design ("we do
+    not need to know the 2 best ring combination, all we have to do is make
+    sure we always value rings vs ring 1 and 2 then put the higher MV value
+    in our ledger"). Screening cost is unchanged (both trials were already
+    being run before this fix, just discarding one) - see run_upgrade_sweep
+    .py's own resolve-tier comment for the real, bounded cost this adds
+    there specifically.
+
+    only_slot restricts the loop to one specific already-known slot - used
+    by the resolve tier to re-evaluate just ONE real slot's borderline
+    trial at higher precision, not both (resolving a slot that already had
+    a clear screening verdict would be wasted compute).
 
     baseline_agility is optional and opt-in (default None): per CLAUDE.md's
     Stage 2 ground rule, personal DPS and raid AP contribution must be
@@ -103,15 +128,15 @@ def mv_single(settings_path: str, baseline_config: list[dict], candidate: "opt.C
     candidate call, not recompute it per candidate - it doesn't depend on
     the candidate at all."""
     if candidate.excluded_reason:
-        return {"name": candidate.name, "excluded_reason": candidate.excluded_reason}
+        return [{"name": candidate.name, "excluded_reason": candidate.excluded_reason}]
 
     slots = _SLOT_HINT.get(candidate.item_id, [])
     if not slots:
-        return {"name": candidate.name, "excluded_reason": "no known slot for this item id - call set_slot_hints() first"}
+        return [{"name": candidate.name, "excluded_reason": "no known slot for this item id - call set_slot_hints() first"}]
+    if only_slot is not None:
+        slots = [s for s in slots if s == only_slot]
 
-    best = None
-    best_trial = None
-    best_slot = None
+    results = []
     sim_error = None
     for slot in slots:
         slot_idx = gc.SLOT_ORDER.index(slot)
@@ -138,62 +163,54 @@ def mv_single(settings_path: str, baseline_config: list[dict], candidate: "opt.C
             # item crashing the whole multi-candidate sweep.
             sim_error = str(e)
             continue
-        if best is None or result["combined"] > best["combined"]:
-            best = result
-            best_trial = trial
-            best_slot = slot
 
-    if best is None:
+        delta = result["combined"] - baseline_result["combined"]
+        noise = delta_noise(baseline_result, result, iterations)
+
+        raid_ap_per_attacker = None
+        if baseline_agility is not None:
+            new_agility = valuation.get_agility(settings_path, trial)
+            baseline_uptime = baseline_result.get("ew_uptime")
+            new_uptime = result.get("ew_uptime")
+            if new_agility is not None and baseline_uptime is not None and new_uptime is not None:
+                # Per ONE physical attacker (count=1), not multiplied by an
+                # assumed raid size - per the user: report how much
+                # stronger/weaker the debuff itself gets, not a total
+                # pre-multiplied by PHYSICAL_ATTACKER_COUNT's assumed 9.
+                # This lets a raid lead or loot council apply their OWN
+                # actual physical-attacker count (which varies week to
+                # week) rather than trusting a baked-in midpoint assumption
+                # in the headline number.
+                base_ap = expose_weakness.raid_ap_contribution(baseline_agility, baseline_uptime, 1)
+                new_ap = expose_weakness.raid_ap_contribution(new_agility, new_uptime, 1)
+                raid_ap_per_attacker = new_ap - base_ap
+
+        results.append({
+            "name": candidate.name,
+            "mv": delta,
+            "noise_stdev": noise,
+            "tied_within_noise": abs(delta) < 2 * noise,  # ~95% confidence band
+            "new_combined": result["combined"],
+            # Marginal AP this candidate grants to EACH of the raid's other
+            # physical attackers via Expose Weakness, ON TOP OF personal DPS
+            # (already inside "mv" above) - never collapsed into one number,
+            # per the ground rule. Multiply by your raid's actual physical-
+            # attacker count for a total. None when baseline_agility wasn't
+            # supplied.
+            "raid_ap_per_attacker": raid_ap_per_attacker,
+            # The REAL slot (e.g. "ring1" not "Ring") THIS result applies to
+            # - for a shared-pool item this is now one of potentially TWO
+            # real, independent results for the same candidate (see the
+            # function's own docstring for the real bug this fixes), not a
+            # "best among several" winner.
+            "best_slot": slot,
+        })
+
+    if not results:
         reason = f"sim error: {sim_error}" if sim_error else "unique conflict in every candidate slot"
-        return {"name": candidate.name, "excluded_reason": reason}
+        return [{"name": candidate.name, "excluded_reason": reason}]
 
-    delta = best["combined"] - baseline_result["combined"]
-    noise = delta_noise(baseline_result, best, iterations)
-
-    raid_ap_per_attacker = None
-    if baseline_agility is not None:
-        new_agility = valuation.get_agility(settings_path, best_trial)
-        baseline_uptime = baseline_result.get("ew_uptime")
-        new_uptime = best.get("ew_uptime")
-        if new_agility is not None and baseline_uptime is not None and new_uptime is not None:
-            # Per ONE physical attacker (count=1), not multiplied by an
-            # assumed raid size - per the user: report how much stronger/
-            # weaker the debuff itself gets, not a total pre-multiplied by
-            # PHYSICAL_ATTACKER_COUNT's assumed 9. This lets a raid lead or
-            # loot council apply their OWN actual physical-attacker count
-            # (which varies week to week) rather than trusting a baked-in
-            # midpoint assumption in the headline number.
-            base_ap = expose_weakness.raid_ap_contribution(baseline_agility, baseline_uptime, 1)
-            new_ap = expose_weakness.raid_ap_contribution(new_agility, new_uptime, 1)
-            raid_ap_per_attacker = new_ap - base_ap
-
-    return {
-        "name": candidate.name,
-        "mv": delta,
-        "noise_stdev": noise,
-        "tied_within_noise": abs(delta) < 2 * noise,  # ~95% confidence band
-        "new_combined": best["combined"],
-        # Marginal AP this candidate grants to EACH of the raid's other
-        # physical attackers via Expose Weakness, ON TOP OF personal DPS
-        # (already inside "mv" above) - never collapsed into one number,
-        # per the ground rule. Multiply by your raid's actual physical-
-        # attacker count for a total. None when baseline_agility wasn't
-        # supplied.
-        "raid_ap_per_attacker": raid_ap_per_attacker,
-        # Which REAL slot (e.g. "ring1" not "Ring") this candidate's own
-        # best trial actually substituted into - for a shared-pool item
-        # this is genuinely meaningful, not arbitrary: replacing whichever
-        # of her two current items is weaker always gives the bigger DPS
-        # gain, so "best_slot" correctly identifies which specific real
-        # slot a rational player would actually put this item in. Added
-        # 2026-08-28 so a per-real-slot Achieved-BiS check (run_full_sweep_
-        # mv.py) can tell "ring1 has a real upgrade" apart from "ring2
-        # does" instead of only knowing "the Ring display bucket does,
-        # somewhere" - real bug found live by the user, confirmed for the
-        # Weapon bucket specifically but structurally identical for Ring/
-        # Trinket too.
-        "best_slot": best_slot,
-    }
+    return results
 
 
 SCREEN_ITERATIONS = 2000
@@ -207,31 +224,42 @@ CLEAR_MARGIN_MULTIPLE = 8
 
 
 def mv_single_tiered(settings_path: str, baseline_config: list[dict], candidate: "opt.Candidate",
-                      baseline_screen: dict, baseline_resolve_cache: dict, seed: int = opt.SEED) -> dict:
+                      baseline_screen: dict, baseline_resolve_cache: dict, seed: int = opt.SEED) -> list[dict]:
     """Screens at 2k iterations first; only pays for a 30k resolve pass when
     the screening result is close enough to the noise floor that resolving
     could plausibly change the verdict. Most candidates in a real pool are
     clear upgrades or clear downgrades - this is where most of the runtime
     was going for no accuracy benefit. baseline_resolve_cache is a 1-item
     dict used as a lazy cache slot so the (expensive) baseline resolve only
-    ever runs once across the whole report, not once per close candidate."""
-    screen = mv_single(settings_path, baseline_config, candidate, baseline_screen, SCREEN_ITERATIONS, seed)
-    if "excluded_reason" in screen:
-        return screen
+    ever runs once across the whole report, not once per close candidate.
 
-    if abs(screen["mv"]) >= CLEAR_MARGIN_MULTIPLE * screen["noise_stdev"]:
-        screen["resolved"] = False
-        screen["iterations"] = SCREEN_ITERATIONS
-        return screen
+    Backlog #16 (2026-08-31) - mv_single() now returns a list (one real,
+    independent result per real slot a shared-pool candidate could occupy,
+    see its own docstring for the real bug this fixes) - this function
+    mirrors that: each real slot's screening result independently decides
+    whether IT needs a resolve pass, not one shared verdict for both."""
+    screened = mv_single(settings_path, baseline_config, candidate, baseline_screen, SCREEN_ITERATIONS, seed)
+    if len(screened) == 1 and "excluded_reason" in screened[0]:
+        return screened
 
-    if "value" not in baseline_resolve_cache:
-        baseline_resolve_cache["value"] = valuation.evaluate(settings_path, baseline_config, RESOLVE_ITERATIONS, seed)
-    baseline_resolve = baseline_resolve_cache["value"]
-
-    resolved = mv_single(settings_path, baseline_config, candidate, baseline_resolve, RESOLVE_ITERATIONS, seed)
-    resolved["resolved"] = True
-    resolved["iterations"] = RESOLVE_ITERATIONS
-    return resolved
+    final = []
+    baseline_resolve = None
+    for r in screened:
+        if abs(r["mv"]) >= CLEAR_MARGIN_MULTIPLE * r["noise_stdev"]:
+            r["resolved"] = False
+            r["iterations"] = SCREEN_ITERATIONS
+            final.append(r)
+            continue
+        if baseline_resolve is None:
+            if "value" not in baseline_resolve_cache:
+                baseline_resolve_cache["value"] = valuation.evaluate(settings_path, baseline_config, RESOLVE_ITERATIONS, seed)
+            baseline_resolve = baseline_resolve_cache["value"]
+        resolved = mv_single(settings_path, baseline_config, candidate, baseline_resolve, RESOLVE_ITERATIONS, seed,
+                              only_slot=r["best_slot"])[0]
+        resolved["resolved"] = True
+        resolved["iterations"] = RESOLVE_ITERATIONS
+        final.append(resolved)
+    return final
 
 
 def mv_bundle(settings_path: str, baseline_config: list[dict], bundle_config: list[dict],
