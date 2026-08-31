@@ -351,10 +351,23 @@ function fmtDelta(v, kind){
   return {text, cls};
 }
 
+// Matches gui/assets/app.js's own escapeHtml() - code review §3.3 found
+// this template's own JS interpolating db.json-sourced strings (item
+// names, note text) into innerHTML with no escaping, unlike the frontend
+// app, which already does this correctly. All of today's real data
+// (Blizzard's item/NPC-name charset) makes this implausible to exploit in
+// practice, but costs nothing and closes the inconsistency.
+function escapeHtml(s){
+  const div = document.createElement('div');
+  div.textContent = s == null ? '' : s;
+  return div.innerHTML;
+}
+
 function whLink(name, itemId, extraClass){
-  if (!itemId) return name;
+  const safeName = escapeHtml(name);
+  if (!itemId) return safeName;
   const cls = 'wh-link' + (extraClass ? ' ' + extraClass : '');
-  return `<a class="${cls}" href="https://www.wowhead.com/tbc/item=${itemId}" target="_blank" rel="noopener noreferrer">${name}</a>`;
+  return `<a class="${cls}" href="https://www.wowhead.com/tbc/item=${itemId}" target="_blank" rel="noopener noreferrer">${safeName}</a>`;
 }
 
 function craftLink(spellId){
@@ -446,8 +459,8 @@ if (enchantsList.length > 0) {
     card.className = 'enchants-card';
     card.innerHTML = `
       <div class="enchants-text">
-        <div class="slot">${e.slot} — ${e.item_name}</div>
-        <div class="name">${e.current_name || '(unenchanted)'} &#8594; ${e.bis_name}</div>
+        <div class="slot">${escapeHtml(e.slot)} — ${escapeHtml(e.item_name)}</div>
+        <div class="name">${e.current_name ? escapeHtml(e.current_name) : '(unenchanted)'} &#8594; ${escapeHtml(e.bis_name)}</div>
       </div>
       <div class="enchants-gain">+${e.mv.toFixed(1)}</div>
     `;
@@ -464,7 +477,7 @@ DATA.tiers.forEach((tier, ti) => {
 
   const navLink = document.createElement('a');
   navLink.href = '#' + anchorId;
-  navLink.innerHTML = tier.name.replace(/\s*\(.*\)/, '') + ' <span class="n">' + itemCount + '</span>';
+  navLink.innerHTML = escapeHtml(tier.name.replace(/\s*\(.*\)/, '')) + ' <span class="n">' + itemCount + '</span>';
   navEl.appendChild(navLink);
 
   const section = document.createElement('section');
@@ -473,7 +486,7 @@ DATA.tiers.forEach((tier, ti) => {
 
   const head = document.createElement('div');
   head.className = 'tier-head';
-  head.innerHTML = '<h2>' + tier.name + '</h2><span class="count">' + itemCount + ' upgrade' + (itemCount === 1 ? '' : 's') + '</span>';
+  head.innerHTML = '<h2>' + escapeHtml(tier.name) + '</h2><span class="count">' + itemCount + ' upgrade' + (itemCount === 1 ? '' : 's') + '</span>';
   section.appendChild(head);
 
   tier.slots.forEach(slotGroup => {
@@ -498,7 +511,7 @@ DATA.tiers.forEach((tier, ti) => {
       row.innerHTML = `
         <div class="name-col">
           <div class="item-name">${whLink(it.name, it.item_id)}${craftLink(it.craft_spell_id)}${screenedTag}${lockTag}${horizonTag(it)}${arpTag(it)}</div>
-          <div class="item-source">${it.source || 'Source unclear'}</div>
+          <div class="item-source">${escapeHtml(it.source || 'Source unclear')}</div>
         </div>
         <div class="delta dps">
           <div class="k">Player (DPS)</div>
@@ -513,21 +526,21 @@ DATA.tiers.forEach((tier, ti) => {
       if (it.set_note) {
         const note = document.createElement('div');
         note.className = 'set-note';
-        note.innerHTML = '<b>Set bonus</b><br>' + it.set_note;
+        note.innerHTML = '<b>Set bonus</b><br>' + escapeHtml(it.set_note);
         row.appendChild(note);
       }
 
       if (it.rescue_note) {
         const note = document.createElement('div');
         note.className = 'set-note';
-        note.innerHTML = '<b>Sidegrade</b><br>' + it.rescue_note;
+        note.innerHTML = '<b>Sidegrade</b><br>' + escapeHtml(it.rescue_note);
         row.appendChild(note);
       }
 
       if (it.gate) {
         const note = document.createElement('div');
         note.className = 'gate-note';
-        note.innerHTML = '<b>Not yet obtainable</b><br>' + it.gate.note;
+        note.innerHTML = '<b>Not yet obtainable</b><br>' + escapeHtml(it.gate.note);
         row.appendChild(note);
       }
 
@@ -601,7 +614,7 @@ if (twoHand.length > 0) {
       row.innerHTML = `
         <div class="name-col">
           <div class="item-name">${whLink(it.name, it.item_id)}${craftLink(it.craft_spell_id)}${screenedTag}${horizonTag(it)}${arpTag(it)}</div>
-          <div class="item-source">${it.tier}: ${it.source || 'Source unclear'}</div>
+          <div class="item-source">${escapeHtml(it.tier)}: ${escapeHtml(it.source || 'Source unclear')}</div>
         </div>
         <div class="delta dps">
           <div class="k">Player (DPS)</div>

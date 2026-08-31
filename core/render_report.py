@@ -4,6 +4,7 @@ Artifact each time a report is needed (a standalone GUI exe has no way to
 call that tool - see the plan's Context section,
 C:\\Users\\<user>\\.claude\\plans\\staged-purring-lynx.md).
 """
+import html
 import json
 import os
 import sys
@@ -18,12 +19,17 @@ def _format_subtitle(character: dict, phase_num: int) -> str:
     whichever character/phase actually ran (race casing e.g. "NightElf" ->
     "Nightelf" matches the original file's own styling, not WoW's own
     camelCase - a simple first-letter-only-capitalized transform, not a
-    race-specific lookup table)."""
+    race-specific lookup table). Every field is html.escape()'d before
+    interpolation (code review §3.2) - Blizzard's real character-name
+    charset makes this implausible to actually exploit, but costs nothing
+    and matches the discipline gui/assets/app.js's own escapeHtml() already
+    applies on the frontend side."""
     c = character["character"]
-    race = c["race"][:1] + c["race"][1:].lower()
-    spec_class = f"{c['spec'].capitalize()} {c['class'].capitalize()}"
-    professions = "/".join(p["name"] for p in c["professions"])
-    return f"<b>{c['name']}</b> · {race} {spec_class} · {professions} · Phase {phase_num}"
+    name = html.escape(c["name"])
+    race = html.escape(c["race"][:1] + c["race"][1:].lower())
+    spec_class = html.escape(f"{c['spec'].capitalize()} {c['class'].capitalize()}")
+    professions = html.escape("/".join(p["name"] for p in c["professions"]))
+    return f"<b>{name}</b> · {race} {spec_class} · {professions} · Phase {phase_num}"
 
 
 def render(ledger_data: dict, character: dict, phase: str) -> str:
@@ -38,16 +44,22 @@ def render(ledger_data: dict, character: dict, phase: str) -> str:
     # title needs the name too, or every character's report is
     # indistinguishable from any other open tab showing "Phase 3 Upgrade
     # Ledger".
-    page_title = f"{character['character']['name']} — Phase {phase_num} Ledger"
+    page_title = f"{html.escape(character['character']['name'])} — Phase {phase_num} Ledger"
 
     with open(TEMPLATE_PATH, encoding="utf-8") as f:
-        html = f.read()
+        page = f.read()
 
-    html = html.replace("__REPORT_PAGE_TITLE__", page_title)
-    html = html.replace("__REPORT_TITLE__", title)
-    html = html.replace("__REPORT_SUBTITLE__", subtitle)
-    html = html.replace("__REPORT_DATA_JSON__", json.dumps(ledger_data))
-    return html
+    page = page.replace("__REPORT_PAGE_TITLE__", page_title)
+    page = page.replace("__REPORT_TITLE__", title)
+    page = page.replace("__REPORT_SUBTITLE__", subtitle)
+    # </ escaped to <\/ (valid inside a JSON string, parses identically) so
+    # a literal "</script>" inside any string in ledger_data (an item/NPC/
+    # zone name from db.json, or a note this tool generates) can't
+    # terminate the <script> block early - code review §3.2, json.dumps()
+    # does not escape "/" by default.
+    payload = json.dumps(ledger_data).replace("</", "<\\/")
+    page = page.replace("__REPORT_DATA_JSON__", payload)
+    return page
 
 
 if __name__ == "__main__":
