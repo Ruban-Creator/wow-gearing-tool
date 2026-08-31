@@ -5,4 +5,5 @@ wowsimcli*
 *.exe
 build/*
 !build/README.md
+packaging/output/
 .claude/

@@ -141,3 +141,32 @@ be watching for a dialog.
   (`unins000.exe`) also real-tested. Same "still not done by a human" gap
   as above still applies to the installed copy specifically - starting
   clean isn't the same as every feature working end to end.
+
+## Packaging the Companion addon for CurseForge
+
+`python packaging/build_addon_zip.py` builds `packaging/output/GearingToolCompanion-v<version>.zip`
+straight from `addons/GearingToolCompanion/` - the zip's own top-level entry is a
+`GearingToolCompanion/` folder (required: both CurseForge and a manual `Interface/AddOns/` drop
+need the addon's own folder name at the zip root, not the `.lua`/`.toc` loose). The version in the
+filename is read directly from the `.toc`'s own `## Version:` field, so it can never drift out of
+sync with what the addon reports in-game - bump that field first, then re-run the script.
+
+Only `GearingToolCompanion.lua`/`.toc`/`icon.tga` go inside the zip - `README.md`/`CHANGELOG.md`
+(same directory) are NOT included; CurseForge reads those directly from the linked GitHub repo for
+the project page description and changelog tab, so shipping copies inside the zip too would be
+redundant, not required.
+
+An automated packager exists at the repo root (`.pkgmeta`, real and ready) but is NOT wired up yet
+- real, current CurseForge docs confirmed (2026-08-31,
+https://support.curseforge.com/en/support/solutions/articles/9000197281) it works via a repo
+webhook (GitHub "Webhooks & Services", `curseforge.com/api/projects/{id}/package?token={token}`)
+that fires on **every commit to the whole repository**, not just addon-related ones - this repo is
+a monorepo (the addon is one small subdirectory alongside the Python tool, the vendored sim
+submodule, etc.), so enabling it means every unrelated Python/profile-data commit also pings
+CurseForge's packager. `.pkgmeta`'s own `move-folders` (moves `addons/GearingToolCompanion` to the
+zip root as `GearingToolCompanion`) handles the non-root-addon problem fine - the real remaining
+cost is the ignore list needing manual upkeep every time this repo gains a new top-level
+file/directory, plus the every-commit noise. Worth revisiting once the addon's own update cadence
+settles down; manual upload via `build_addon_zip.py`'s own zip output is the real, working path for
+now - see `packaging/curseforge_publishing_guide.html` for the full step-by-step, sourced from
+CurseForge's own real, current submission docs (not guessed).

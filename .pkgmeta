@@ -1,0 +1,36 @@
+# CurseForge automatic-packaging config for GT Companion (addons/GearingToolCompanion/).
+# NOT enabled yet - this repo is a monorepo (the addon is one small subdirectory
+# alongside the Python tool and the vendored sim submodule), and the webhook this
+# drives fires on EVERY commit to the WHOLE repo, not just addon-related ones -
+# see packaging/README.md's "Packaging the Companion addon for CurseForge" section
+# for the real tradeoff writeup before wiring up the webhook. Kept here, real and
+# ready, for whenever that tradeoff is worth it - see
+# https://support.curseforge.com/en/support/solutions/articles/9000197281 for the
+# real, current field reference this was written against (2026-08-31).
+#
+# The ignore list below must be kept in sync by hand whenever this repo gains a
+# new top-level file/directory - nothing here discovers that automatically.
+package-as: GearingToolCompanion
+move-folders:
+    addons/GearingToolCompanion: GearingToolCompanion
+license-output: LICENSE.txt
+ignore:
+    - .claude
+    - CLASSES.md
+    - CLAUDE.md
+    - NOTES.md
+    - QUESTIONS.md
+    - TODO.md
+    - adapters
+    - addons
+    - branding
+    - build
+    - cli
+    - core
+    - gui
+    - ingest
+    - packaging
+    - profiles
+    - requirements-gui.txt
+    - requirements.txt
+    - sim
