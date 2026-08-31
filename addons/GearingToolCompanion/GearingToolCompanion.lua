@@ -641,25 +641,30 @@ minimapButton:SetMovable(true)
 -- ship - a real 32-bit uncompressed TGA (WoW loads addon-supplied TGA
 -- textures directly, no BLP conversion needed) replaces both the
 -- background texture and the letter FontString below.
--- Real bug found 2026-08-31 (live screenshot, icon visibly off-center inside
--- the ring): MiniMap-TrackingBorder below is anchored TOPLEFT to this
--- button, but that texture's own ring artwork is NOT centered within its
--- own 53x53 canvas - it's deliberately offset, a well-known quirk of this
--- specific Blizzard texture that every minimap-button addon using it has to
--- account for (the same convention LibDBIcon-1.0 uses). Centering the icon
--- on the BUTTON's own geometric center (the old CENTER/0,0 anchor) ignores
--- that the ring's true visual center sits elsewhere - TOPLEFT + the
--- standard (7,-5) offset used for a 20x20 icon on a 31x31 button is what
--- actually lines an icon up with this ring's real "window".
-local iconTex = minimapButton:CreateTexture(nil, "BACKGROUND")
-iconTex:SetSize(20, 20)
-iconTex:SetPoint("TOPLEFT", minimapButton, "TOPLEFT", 7, -5)
-iconTex:SetTexture("Interface\\AddOns\\GearingToolCompanion\\icon.tga")
-
 local overlay = minimapButton:CreateTexture(nil, "OVERLAY")
 overlay:SetSize(53, 53)
 overlay:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
 overlay:SetPoint("TOPLEFT", 0, 0)
+
+-- Real, iterative fix 2026-08-31, tuned against six live in-game screenshots,
+-- not guessed once and left. CENTER-on-the-button's-own-geometric-center was
+-- mildly off toward the ring's bottom-left; CENTER-on-`overlay`'s raw 53x53
+-- canvas center (the naive "the ring texture object IS the ring, so center on
+-- it" idea, +11 right/+11 down from the button's own center) made it
+-- drastically worse (badge mostly outside the ring) - proving the ring's real
+-- visual window sits only a few px from the BUTTON's own center, and that the
+-- overlay's raw canvas has real padding of its own unrelated to where the
+-- ring is actually drawn. (-1, 1.5) below is the final, user-confirmed
+-- correct offset from the button's center, arrived at by successive small
+-- nudges (3,3 too far right/slightly high -> 1,2 still too far left-needed ->
+-- -1,2 slightly too high -> -1,1 slightly too low -> -1,1.5 confirmed
+-- correct). Don't re-derive this from texture geometry again if it drifts -
+-- MiniMap-TrackingBorder's real padding isn't documented anywhere trustworthy,
+-- this value is empirical, not calculated.
+local iconTex = minimapButton:CreateTexture(nil, "BACKGROUND")
+iconTex:SetSize(20, 20)
+iconTex:SetPoint("CENTER", minimapButton, "CENTER", -1, 1.5)
+iconTex:SetTexture("Interface\\AddOns\\GearingToolCompanion\\icon.tga")
 
 local function UpdateMinimapButtonPosition()
     local angle = math.rad(GTCompanionMinimapDB.angle or 200)
