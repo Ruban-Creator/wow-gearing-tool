@@ -628,7 +628,19 @@ rather patch it or report it upstream to the wowsims project.
   full rebuild - the reference-BiS builder already supports multi-handType resolution per phase,
   it would just need a second real build call merged into the same pool.
 
-## Stage 6.8 (Shadow Priest): real judgment call worth your eyes
+## RESOLVED 2026-08-28: per-class realistic raid buff comp, all 15 profiles
+
+Per the user - done in commit `b1c4a69` ("Make raid buffs class-realistic across all 15 profiles,
+fix Enhancement Shaman melee-range bug"), same session as this entry was first raised. Every
+profile's `raid_buffs_overlay.json` now sources its own real `DefaultPartyBuffs` from that class's
+own `presets.ts` instead of inheriting the shared melee-group baseline - confirmed real effect
+(+204.6 DPS on Balance Druid A/B) - and surfaced a genuine, separate bug during verification
+(Enhancement Shaman silently defaulting to a ranged `distance_from_target`, putting her outside
+melee range all fight; fixed, corrected 885.7 -> 2435.7 DPS). This entry (below, original text) was
+never marked resolved at the time - re-confirmed still intact 2026-08-31 (re-asked, user said yes,
+found already done) - not re-done, no new work needed.
+
+<details><summary>Original entry, 2026-08-25</summary>
 
 `profiles/tbc/shadow_priest/` is done and real-verified (full writeup in NOTES.md). One real call:
 
@@ -639,6 +651,7 @@ rather patch it or report it upstream to the wowsims project.
   each profile reflect ITS OWN class's realistic raid positioning instead of one shared assumption
   across all of them, this is the stage to revisit that call from (would mean touching every
   existing profile's overlay, not just this one).
+</details>
 
 ## Stage 6.7 (Combat Rogue): done, real-verified, no open judgment calls to flag
 
