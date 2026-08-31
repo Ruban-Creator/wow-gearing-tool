@@ -13,6 +13,7 @@ from __future__ import annotations
 import glob
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
 
@@ -44,12 +45,38 @@ def find_savedvariables(addon_folder_name: str) -> list[str]:
     return glob.glob(pattern)
 
 
-def parse_lua_savedvariables(path: str) -> dict:
+_GLOBAL_RE = re.compile(r"^(\w+)\s*=\s*", re.MULTILINE)
+
+
+def parse_lua_savedvariables(path: str, global_name: str | None = None) -> dict:
+    """A SavedVariables file is one or more `GLOBALNAME = { ... }` blocks
+    back to back (a .toc can declare several - GearingToolCompanion.lua
+    declares two: GTCompanionDB, GTCompanionMinimapDB). Splits per-global by
+    regex rather than the old `text.partition("=")` (real bug, code review
+    §3.1, fixed 2026-08-31): partition-on-first-"=" grabbed the first
+    table's content PLUS the entire second global's raw text tacked onto
+    the end, relying entirely on slpp silently ignoring trailing garbage
+    after a balanced top-level table - verified this IS what slpp 1.2.3
+    actually does today (a real live GTCompanionDB/GTCompanionMinimapDB
+    file decodes to exactly GTCompanionDB's own 5 real characters, nothing
+    from the second global mixed in), but that's an undocumented tolerance
+    to depend on, not a real contract - a different global write order, a
+    third SavedVariable, or a future slpp that errors on trailing content
+    instead of ignoring it would all silently break this.
+
+    global_name=None keeps the old default behavior (first global in the
+    file) for a single-SavedVariable addon like WowSimsExporter (its own
+    .toc declares only WSEDB) where there's nothing to disambiguate -
+    pass it explicitly for any addon with more than one."""
     with open(path, encoding="utf-8") as f:
         text = f.read()
-    # Files are `GLOBALNAME = { ... }`; slpp wants just the table literal.
-    _, _, rhs = text.partition("=")
-    return lua.decode(rhs.strip())
+    matches = list(_GLOBAL_RE.finditer(text))
+    for i, m in enumerate(matches):
+        if global_name is not None and m.group(1) != global_name:
+            continue
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        return lua.decode(text[m.end():end].strip())
+    return {}
 
 
 def sim_commit_sha() -> str:
@@ -84,7 +111,7 @@ def find_wse_character(name_realm: str) -> tuple[dict, str] | None:
     best_ts = -1
     for path in find_savedvariables("WowSimsExporter"):
         account = path.split(os.sep)[-3]
-        wsedb = parse_lua_savedvariables(path)
+        wsedb = parse_lua_savedvariables(path, "WSEDB")
         for profile in wsedb.get("profiles", {}).values():
             for entry in profile.get("savedCharacters", []):
                 if entry.get("name") != name_realm:
@@ -101,7 +128,7 @@ def find_wse_character(name_realm: str) -> tuple[dict, str] | None:
 
 def find_gt_companion(name_realm: str) -> dict | None:
     for path in find_savedvariables("GearingToolCompanion"):
-        db = parse_lua_savedvariables(path)
+        db = parse_lua_savedvariables(path, "GTCompanionDB")
         if name_realm in db:
             return db[name_realm]
     return None

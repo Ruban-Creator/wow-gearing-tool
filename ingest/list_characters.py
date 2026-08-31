@@ -35,7 +35,7 @@ def list_wse_characters() -> dict[str, dict]:
     result: dict[str, dict] = {}
     for path in find_savedvariables("WowSimsExporter"):
         account = path.split(os.sep)[-3]
-        wsedb = parse_lua_savedvariables(path)
+        wsedb = parse_lua_savedvariables(path, "WSEDB")
         for profile in wsedb.get("profiles", {}).values():
             for entry in profile.get("savedCharacters", []):
                 name_realm = entry.get("name")
@@ -69,10 +69,18 @@ def list_gtcompanion_characters() -> dict[str, dict]:
     this machine has the addon installed (same newest-wins rule as WSE)."""
     result: dict[str, dict] = {}
     for path in find_savedvariables("GearingToolCompanion"):
-        db = parse_lua_savedvariables(path)
+        # Real bug, fixed 2026-08-31 (code review §3.1): parse_lua_savedvariables()
+        # used to grab GTCompanionDB's real content PLUS the entire raw text
+        # of the second SavedVariable (GTCompanionMinimapDB) tacked onto the
+        # end, relying on slpp silently ignoring the trailing garbage - it
+        # happened to work, but was never a real contract. Passing the
+        # global name explicitly now parses just GTCompanionDB's own table,
+        # so the isinstance() guard this loop used to need (defending
+        # against a GTCompanionMinimapDB-shaped entry slipping in if slpp
+        # ever stopped tolerating the trailing content) is gone - not
+        # possible anymore, not just unlikely.
+        db = parse_lua_savedvariables(path, "GTCompanionDB")
         for name_realm, entry in db.items():
-            if not isinstance(entry, dict):
-                continue  # skips GTCompanionMinimapDB-shaped globals if ever matched by mistake
             ts = entry.get("timestamp", 0)
             if name_realm in result and result[name_realm]["timestamp"] >= ts:
                 continue
