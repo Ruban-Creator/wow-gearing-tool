@@ -149,3 +149,20 @@ it. Real options, per the user's own question ("is there any way we can fix the 
 
 Not scoped or started - real, confirmed, worth doing at some point, not urgent (the practical
 tier-bucketing symptom is already fixed).
+
+**Scoped down to what this tool actually surfaces (2026-08-31)**: the 200+ DB-wide figure above
+counts every real item set regardless of whether this tool ever shows it (most are PvP/honor sets,
+where `sources: None` is correct, not a gap). New `core/check_missing_sources.py` (pure DB/file
+reads, no sim calls - safe to run any time, including while a real sweep or the game itself is
+running) checks specifically each of the 15 real profiles' own `candidate_pool.json` +
+`reference_bis/*.json` item lists against the DB. Real result: **255 items across all 15 profiles**
+have `sources: None` - every profile is affected (7 for Retribution Paladin, the fewest; 36 for
+Survival Hunter, the most - roughly proportional to candidate-pool size, not evenly spread). Most
+are real raid-tier gear (matches the pattern already found: Skyshatter/Cyclone/Onslaught/
+Gronnstalker's/Thunderheart/Voidheart/Malefic/etc.), a handful are real arena weapons (e.g.
+Gladiator's Slicer, Merciless Gladiator's Quickblade/Maul) where `sources: None` is likely
+*correct* (arena/honor purchases have no real "drop" location) rather than a gap - worth excluding
+those specifically before any upstream report or overlay file, not lumping them in as "missing."
+Re-run `python core/check_missing_sources.py` any time for the current, real, full per-profile
+list - not reproduced item-by-item here since it's long and would drift out of date; the script is
+the live source of truth.
