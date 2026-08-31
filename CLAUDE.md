@@ -589,8 +589,8 @@ etc. Not part of any current stage — noted here so it isn't lost, but don't bu
 user actually asks. Keep `core/`/`adapters/` command-line-first and UI-agnostic in the meantime so
 a GUI can sit on top later without a rewrite.
 
-**Open, real, confirmed bug (2026-08-31, not yet fixed) — reports/ledgers need a profile
-dimension, not just character+phase.** Every stage of the report pipeline
+**Open, real, confirmed bug (2026-08-31, not yet fixed), backlog #13 — reports/ledgers need a
+profile dimension, not just character+phase (multi-profile-per-class support).** Every stage of the report pipeline
 (`run_upgrade_sweep.py`'s `tiered_report_<phase>.json`, `build_ledger_data.py`'s
 `ledger_data_<phase>.json`, the rendered `<phase>.html`, and `reports.json`'s own
 `reports[phase]` key) is keyed by `(name_realm, phase)` only - confirmed via direct grep, not
