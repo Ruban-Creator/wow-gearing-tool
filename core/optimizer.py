@@ -378,11 +378,6 @@ def resolve_name_to_config(name_list: list[str], candidates: dict[str, list["Can
     owned-enchant/gems-if-owned-else-DEFAULT_GEM resolution as the rest of
     the candidate pool. Returns None if any name can't be placed - never
     silently drops an item to make a bundle 'work'."""
-    by_name = {}
-    for slot_cands in candidates.values():
-        for c in slot_cands:
-            by_name.setdefault(c.name, []).append(c)
-
     config = [None] * len(gc.SLOT_ORDER)
     remaining = list(name_list)
     # Fill slots that have exactly one still-unassigned name matching one of
@@ -409,7 +404,7 @@ def greedy_sweep(settings_path: str, config: list[dict], candidates: dict[str, l
         changed = False
         passes += 1
         for slot in GREEDY_SLOTS:
-            slot_idx = gc.SLOT_ORDER.index(slot)
+            slot_idx = gc.SLOT_INDEX[slot]
             options = [c for c in candidates.get(slot, []) if c.excluded_reason is None]
             if not options:
                 continue
@@ -502,7 +497,7 @@ def set_bonus_branch(settings_path: str, greedy_config: list[dict], candidates: 
     trial = list(greedy_config)
     swapped_names = []
     for slot in set_slots:
-        slot_idx = gc.SLOT_ORDER.index(slot)
+        slot_idx = gc.SLOT_INDEX[slot]
         target = next((c for c in candidates.get(slot, [])
                         if c.excluded_reason is None and _in_set(c.item_id, set_name)), None)
         if target is None:

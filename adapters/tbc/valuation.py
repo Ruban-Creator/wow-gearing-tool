@@ -94,8 +94,7 @@ USE_SIMSERVER = True
 # 4x12=48-way parallelism fighting over 12 threads - measured 747ms/call
 # oversubscribed vs 101ms/call at pool_size=2 with MAX_WORKERS=2 to match
 # (7.4x). Keep this <= MAX_WORKERS in run_full_sweep_mv.py; there's no
-# reason to hold idle simserver processes a caller can't reach. (Still
-# relevant if/when simserver gets re-enabled after the crash is fixed.)
+# reason to hold idle simserver processes a caller can't reach.
 SIMSERVER_POOL_SIZE = 2
 
 _settings_lock = threading.Lock()

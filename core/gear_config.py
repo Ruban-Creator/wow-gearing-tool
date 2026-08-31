@@ -12,6 +12,11 @@ SLOT_ORDER = [
     "mainhand", "offhand", "ranged",
 ]
 
+# Precomputed once (code review §2.3) - SLOT_ORDER.index(slot) is a linear
+# scan; optimizer.py's greedy_sweep() called it fresh on every (slot, pass)
+# iteration, up to 15 slots x 6 passes per run. Same lookup, O(1) instead.
+SLOT_INDEX = {s: i for i, s in enumerate(SLOT_ORDER)}
+
 # Per-profile since Stage 6 (multi-class support) - a pure-Agility Hunter gem is
 # meaningless for a Strength Warrior or an Intellect/Spell Damage Druid. Was a flat
 # module constant (32194, Delicate Crimson Spinel, +10 Agility - the gem actually
