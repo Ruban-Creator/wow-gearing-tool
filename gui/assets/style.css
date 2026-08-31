@@ -421,6 +421,8 @@ html, body {
 
 .modal-body {
   padding: 18px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
 }
 
 .settings-row {

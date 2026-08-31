@@ -28,9 +28,9 @@ def main():
         "Ruban's Gearing Tool",
         url=os.path.join(ASSETS_DIR, "index.html"),
         js_api=api,
-        width=900,
-        height=650,
-        min_size=(700, 500),
+        width=950,
+        height=780,
+        min_size=(750, 550),
         background_color="#14161a",
     )
     # Real per-window icon, not just the exe's own embedded resource -
