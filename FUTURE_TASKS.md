@@ -166,3 +166,49 @@ those specifically before any upstream report or overlay file, not lumping them 
 Re-run `python core/check_missing_sources.py` any time for the current, real, full per-profile
 list - not reproduced item-by-item here since it's long and would drift out of date; the script is
 the live source of truth.
+
+## #16 — Shared-pool slots (Ring/Trinket/Weapon) can only ever surface ONE upgrade per pair
+
+Found 2026-08-31, via the same live bad-report investigation as #15 - but a genuinely separate,
+structural finding, confirmed correct by the user directly (not just the "wrong spec equipped"
+baseline issue - the user's own point: "even in elemental gear she could have 2 ring and 2 trinket
+updates so it doesn't matter if she is in resto gear"). Real, achieved-BiS symptom: her Ring/
+Trinket showed as "nothing beats this" even though real, positive-MV candidates existed in the
+pool for that same display slot.
+
+Root cause, traced through the real code, not assumed: `core/marginal_value.py`'s `mv_single()`
+evaluates each candidate FULLY INDEPENDENTLY - for a shared-pool item (occupies either of two real
+slots, e.g. ring1/ring2), it tries the candidate in both real slots and keeps whichever gives the
+bigger DPS gain as that candidate's one canonical `best_slot`/MV (real, deliberate design, see the
+function's own docstring/comment - "that's what a real player would actually do with it"). Nothing
+anywhere aggregates across multiple different candidates to ask "does the OTHER real slot have its
+own independent upgrade too, evaluated against a baseline where the first slot is ALSO fixed."
+`run_upgrade_sweep.py`'s `achieved_bis` computation (the part that surfaced this) is downstream of
+this same limitation - a real slot only avoids "achieved BiS" if SOME candidate's own best_slot
+happens to land there, which structurally can't happen if the other slot is a consistently bigger
+target for every real candidate in the pool.
+
+Confirmed this ISN'T dead-end architecture - `core/optimizer.py` already has real, built
+joint-slot search code for exactly this (`trinket_pairs()`, `greedy_sweep()`, `set_bonus_branch()`,
+`full_bundle_branch()`) - but NONE of it is actually called anywhere in `run_upgrade_sweep.py`,
+the real report pipeline. Same "real code, never invoked" pattern already documented for
+`core/interaction_matrix.py` (Stage 5, deliberately dropped for real cost reasons - a joint 2-item
+search is measured, real-cost-prohibitive at the pool sizes this tool already hits, per CLAUDE.md's
+own Stage 5 status note).
+
+Real, structural fix, not scoped yet: some form of joint search specifically over the actually-
+coupled shared-pool slots (ring pair, trinket pair, weapon pair for dual-wield) - closely related
+to (maybe the same underlying work as) the "decomposed re-sweep" idea already in backlog #8 above,
+which independently arrived at "explicit joint search only over the actually-coupled subgroups" as
+a real, still-unbuilt need. Real, known cost concern: `optimizer.py`'s existing pair-search
+functions exist but were apparently never wired in, and Stage 5's `interaction_matrix.py` was
+dropped specifically because a full pairwise joint search was too expensive at real pool sizes -
+any real fix here needs to reckon with that same cost constraint, likely scoped narrower than a
+full joint search (e.g. only re-evaluate the "loser" slot's OWN best candidate against a
+baseline where the "winner" slot is already fixed to ITS own best candidate, a 2-pass sequential
+search rather than a full joint one - not designed yet, just the shape of a cheaper option worth
+considering).
+
+Not scoped or started - real, confirmed by direct code tracing and the user's own correct
+counter-argument, worth a proper design pass (Plan Mode, given it touches core MV computation and
+has real runtime-cost tradeoffs) next time this is picked up.
