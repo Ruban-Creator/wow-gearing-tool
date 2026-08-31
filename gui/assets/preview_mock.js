@@ -5,6 +5,7 @@
 // verification is done, or keep for future quick iteration - not shipped.
 let mockAddonInstalled = false; // flip to true to preview the "up to date" / no-banner state
 let mockUpdateAvailable = true; // flip to false to preview the "up to date" / no-banner state
+let mockResolveIterations = null; // null = default (30000), matches local_config's override-or-default shape
 
 window.pywebview = {
   api: {
@@ -45,6 +46,13 @@ window.pywebview = {
     get_supported_phases: async () => (["phase1", "phase2", "phase3", "phase4", "phase5"]),
     get_debug_mode: async () => false,
     set_debug_mode: async (enabled) => enabled,
+    get_resolve_iterations: async () => ({
+      value: mockResolveIterations ?? 30000, default: 30000, is_configured: mockResolveIterations !== null
+    }),
+    set_resolve_iterations: async (n) => {
+      mockResolveIterations = (n !== null && n !== undefined && n > 0) ? Math.max(1000, n) : null;
+      return { value: mockResolveIterations ?? 30000, default: 30000, is_configured: mockResolveIterations !== null };
+    },
     get_report_output_dir: async () => ({ path: "%LOCALAPPDATA%\\GearingTool\\characters\\<character>\\reports", is_configured: false }),
     pick_report_folder: async () => null,
     reset_report_output_dir: async () => {},

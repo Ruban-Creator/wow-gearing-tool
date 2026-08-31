@@ -232,6 +232,40 @@ def set_max_workers_override(n: int | None) -> None:
     save(config)
 
 
+# The real, historical constant - 30000 is what run_upgrade_sweep.py's own
+# RESOLVE_ITERATIONS was hardcoded to before this setting existed (see
+# NOTES.md's real A/B data: 30k was the floor for a REPORTED number, not
+# just a screening gate - 5000 missed a real, decision-relevant +1.3 DPS
+# effect that only showed up at 30k). Kept here as the one real default,
+# not duplicated as a second literal in run_upgrade_sweep.py.
+DEFAULT_RESOLVE_ITERATIONS = 30000
+
+
+def resolve_iterations() -> int:
+    """Backlog item #6 (CLAUDE.md Future Scope) - the final resolve pass's
+    iteration count, exposed as a real, per-machine tunable setting instead
+    of a hardcoded constant, since the right value is a genuine speed/
+    precision tradeoff a user might want to tune (a higher count is slower
+    but tighter noise bounds; see run_upgrade_sweep.py's own real A/B
+    write-up for what happens if this is set too low - NOT recommended
+    below 30000 for a number that gets reported as final, only for
+    deliberately trading precision for speed with eyes open)."""
+    override = load().get("resolve_iterations")
+    if override:
+        return int(override)
+    return DEFAULT_RESOLVE_ITERATIONS
+
+
+def set_resolve_iterations(n: int | None) -> None:
+    """Pass None to clear back to the default (30000)."""
+    config = load()
+    if n is None:
+        config.pop("resolve_iterations", None)
+    else:
+        config["resolve_iterations"] = int(n)
+    save(config)
+
+
 def debug_mode() -> bool:
     """Off by default - the GUI's real, addon-sourced character picker
     (ingest/list_characters.py) never includes the synthetic test

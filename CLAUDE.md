@@ -566,10 +566,11 @@ a blank wait wondering if it's stuck. Means the underlying pipeline needs to exp
 progress signal (e.g. a callback or periodic status write), not just print-to-stdout text - worth
 designing in from the start rather than bolting on later, per the same "keep core/adapters
 UI-agnostic so a GUI can sit on top without a rewrite" principle already governing this section.
-Also a resolve-iterations setting (2026-08-23) - per the user, expose the final resolve pass's
-iteration count as a real GUI setting rather than a hardcoded constant, since the right value is
-a genuine speed/precision tradeoff a user might want to tune (see the funnel idea below for the
-actual measured numbers behind this).
+**Done, 2026-08-31**: the resolve-iterations setting above - `core/local_config.py`'s
+`resolve_iterations()`/`set_resolve_iterations()`, wired into `run_upgrade_sweep.py`'s
+`RESOLVE_ITERATIONS` and exposed as a real Settings-modal row (`gui/assets/index.html` +
+`app.js`) with a tooltip recommending 30000 (the real A/B data behind that recommendation is in
+the funnel idea below). See NOTES.md's 2026-08-31 entry for the real verification done.
 etc. Not part of any current stage — noted here so it isn't lost, but don't build toward it until the
 user actually asks. Keep `core/`/`adapters/` command-line-first and UI-agnostic in the meantime so
 a GUI can sit on top later without a rewrite.

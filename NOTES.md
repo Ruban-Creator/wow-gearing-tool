@@ -4599,3 +4599,39 @@ Wowhead's own `data-wowhead="gems=...&ench=..."` attribute so the tooltip shows 
 tool actually recommends wearing it (gemmed/enchanted), not just the bare item -
 `ledger_data.json` doesn't carry per-item gem/enchant ids today, so this needs real pipeline
 plumbing, not just a template change. Noted in CLAUDE.md, not built here.
+
+## 2026-08-31 — Backlog #6: resolve-iterations exposed as a real GUI setting
+
+Four independent `RESOLVE_ITERATIONS = 30000` constants existed across `marginal_value.py`,
+`optimizer.py`, `run_upgrade_sweep.py`, and `verify_gem_choices.py` - only `run_upgrade_sweep.py`'s
+own local constant actually drives the real "Run Report" GUI flow, so that's the only one wired to
+the new setting; the other three stay hardcoded (screening/verification tooling, not user-facing).
+
+`core/local_config.py` gained the same `<setting>()`/`set_<setting>(value_or_None)` pattern already
+used for `wow_root`/`debug_mode`/etc: `DEFAULT_RESOLVE_ITERATIONS = 30000`, `resolve_iterations()`,
+`set_resolve_iterations(n)`. `run_upgrade_sweep.py`'s `RESOLVE_ITERATIONS` now reads
+`local_config.resolve_iterations()` instead of a hardcoded literal. `gui/api.py` exposes
+`get_resolve_iterations()`/`set_resolve_iterations(n)`; the setter floors any positive override at
+1000 (never silently allows an absurdly-low value like 1) and treats `None`/`0`/negative as "clear
+back to default."
+
+Per the user's explicit requirement, the new Settings-modal row (`gui/assets/index.html`,
+`gui/assets/preview.html`) carries a native `title` tooltip on a "(?)" hint span explaining the
+real tradeoff, sourced from this project's own real A/B data (see CLAUDE.md's Stage 5 write-up):
+30000 recommended, going lower risks misreporting or flipping the sign of a small-but-real DPS
+difference. `gui/assets/app.js` wires the input + Save/Reset buttons to the new API methods;
+`gui/assets/preview_mock.js` got a matching stateful mock (`mockResolveIterations`) so Save/Reset
+round-trips visibly in the no-backend preview harness too.
+
+Real, not just code-reading, verification: `preview.html`/`preview_mock.js` tested live via a
+temporary local `python -m http.server` (not `file://` - confirmed once already this session that
+the sandboxed Claude Browser pane renders local files as an inert static snapshot with no live JS,
+so `file://` alone would have been a false-positive check) - Save (5000) and Reset (back to 30000)
+both round-tripped correctly through real DOM interaction. Separately, real Python calls confirmed
+`local_config.set_resolve_iterations(5000)` → `run_upgrade_sweep.RESOLVE_ITERATIONS == 5000` end to
+end, and `gui/api.Api().set_resolve_iterations()`/`get_resolve_iterations()` return the expected
+`{value, default, is_configured}` shape; state was reset back to default (`None`) afterward so no
+leftover override was left in this dev machine's own `local_config.json`.
+`check_ledger_consistency.py --skip-html` clean for both Lerynia (649/0) and Rubán (1524/0)
+afterward - confirms the `run_upgrade_sweep.py` import/constant change didn't regress either
+existing profile's report.

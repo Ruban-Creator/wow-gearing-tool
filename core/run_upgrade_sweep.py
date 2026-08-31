@@ -87,8 +87,14 @@ SCREEN_ITERATIONS = 500  # cheap ranking pass across the whole pool
 # effect this small). 30k is the floor for a REPORTED number - a lower
 # iteration count is fine for a screening/pre-screening GATE decision
 # (worst case there is wasted compute, not a wrong answer), never for a
-# number that gets shown as final.
-RESOLVE_ITERATIONS = 30000  # precise, only spent on each (tier, slot) leaderboard
+# number that gets shown as final. Exposed as a real, per-machine tunable
+# setting (backlog item #6, CLAUDE.md Future Scope, 2026-08-31) via
+# local_config.resolve_iterations() rather than hardcoded here directly -
+# the real speed/precision tradeoff above is exactly the kind of thing a
+# user might want to tune with their eyes open, not something this file
+# should force on everyone. Default (30000, unset) is the same real value
+# this comment already argues for.
+RESOLVE_ITERATIONS = local_config.resolve_iterations()  # precise, only spent on each (tier, slot) leaderboard
 # 2026-08-24: added as a genuinely ADDITIVE confirm tier between SCREEN_ITERATIONS
 # and RESOLVE_ITERATIONS, not a replacement for either - per the user, and per the
 # real 10-item A/B test already on file (see the SCREEN_ITERATIONS comment above and

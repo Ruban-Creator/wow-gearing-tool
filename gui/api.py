@@ -336,6 +336,23 @@ class Api:
         local_config.set_debug_mode(bool(enabled))
         return local_config.debug_mode()
 
+    def get_resolve_iterations(self) -> dict:
+        return {"value": local_config.resolve_iterations(),
+                "default": local_config.DEFAULT_RESOLVE_ITERATIONS,
+                "is_configured": bool(local_config.load().get("resolve_iterations"))}
+
+    def set_resolve_iterations(self, n: int | None) -> dict:
+        """n<=0 or None resets to the default. Floor of 1000 on any real
+        override - below that isn't a "faster, less precise" tradeoff
+        anymore, it's fast enough to be meaningless noise for a reported
+        number (see local_config.resolve_iterations()'s own docstring)."""
+        if n is not None and n > 0:
+            n = max(1000, int(n))
+        else:
+            n = None
+        local_config.set_resolve_iterations(n)
+        return self.get_resolve_iterations()
+
     def get_reports(self, name_realm: str) -> dict:
         path = os.path.join(USER_DATA_DIR, "characters", name_realm, "reports.json")
         if not os.path.exists(path):

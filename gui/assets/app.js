@@ -53,6 +53,9 @@ const settingsOutputDir = document.getElementById("settings-output-dir");
 const settingsChangeBtn = document.getElementById("settings-change-btn");
 const settingsResetBtn = document.getElementById("settings-reset-btn");
 const settingsDebugToggle = document.getElementById("settings-debug-toggle");
+const settingsResolveIterationsInput = document.getElementById("settings-resolve-iterations-input");
+const settingsResolveIterationsSaveBtn = document.getElementById("settings-resolve-iterations-save-btn");
+const settingsResolveIterationsResetBtn = document.getElementById("settings-resolve-iterations-reset-btn");
 const settingsWowRoot = document.getElementById("settings-wow-root");
 const settingsWowRootChangeBtn = document.getElementById("settings-wow-root-change-btn");
 const settingsWowRootResetBtn = document.getElementById("settings-wow-root-reset-btn");
@@ -292,6 +295,9 @@ async function refreshSettingsDisplay() {
   settingsOutputDir.textContent = outputDir.path + (outputDir.is_configured ? "" : " (default)");
   settingsDebugToggle.checked = await window.pywebview.api.get_debug_mode();
 
+  const resolveIterations = await window.pywebview.api.get_resolve_iterations();
+  settingsResolveIterationsInput.value = resolveIterations.value;
+
   const wowRoot = await window.pywebview.api.get_wow_root();
   settingsWowRoot.textContent = wowRoot.path + (wowRoot.is_configured ? "" : " (auto-detected)");
 
@@ -450,6 +456,17 @@ settingsResetBtn.addEventListener("click", async () => {
 settingsDebugToggle.addEventListener("change", async () => {
   await window.pywebview.api.set_debug_mode(settingsDebugToggle.checked);
   await loadCharacters();
+});
+
+settingsResolveIterationsSaveBtn.addEventListener("click", async () => {
+  const n = parseInt(settingsResolveIterationsInput.value, 10);
+  await window.pywebview.api.set_resolve_iterations(Number.isFinite(n) ? n : null);
+  await refreshSettingsDisplay();
+});
+
+settingsResolveIterationsResetBtn.addEventListener("click", async () => {
+  await window.pywebview.api.set_resolve_iterations(null);
+  await refreshSettingsDisplay();
 });
 
 settingsWowRootChangeBtn.addEventListener("click", async () => {
