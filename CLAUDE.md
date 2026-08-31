@@ -641,14 +641,24 @@ this repo directly. README.md/CHANGELOG.md/packaging/build_addon_zip.py/the step
 guide (Artifact) are all real and ready (2026-08-31) - the actual account creation and submission
 are the user's own action, not something this tool can do on their behalf.
 
-An optional self-hosted rebuild of the HTML ledger is also planned, to be scoped later - the
-claude.ai Artifact platform's CSP blocks loading Wowhead's real tooltip-preview script (only
-Google Fonts is allowed through), but that CSP doesn't exist on a plain HTML file served from
-somewhere we control (an external webserver, or the user's Synology NAS) - Wowhead's script is
-explicitly designed for third-party embedding, so a self-hosted build could get full, authentic
-in-game-style tooltips on hover, not just the click-through links the Artifact version has. Not
-built - needs its own plan (build/deploy process, whether to keep the Artifact version as the
-convenient default alongside it, etc.) once the rest of the tool is otherwise done.
+**DONE, 2026-08-31 - real Wowhead tooltips, no hosting/server ever needed.** This item's original
+framing assumed the report was still being published as a claude.ai Artifact (whose CSP blocks
+Wowhead's tooltip-preview script - only Google Fonts is allowed through), so "self-hosted" meant
+standing up a real webserver (an external host, the user's Synology NAS) just to escape that CSP.
+The user caught, live, that this premise was stale: reports are now rendered locally and opened as
+a plain `file://` page (`gui/api.py`'s `run_report()`/`Path.as_uri()`), never published as an
+Artifact at all - and a `file://` page has no CSP to escape in the first place. `<script src>`
+loading was never subject to CORS/CSP the way `fetch`/XHR is, so Wowhead's own real, standard embed
+(`https://www.wowhead.com/tooltips` - two `<script>` tags, auto-detects any real
+`https://www.wowhead.com/...` link already on the page, which `report_template.html`'s `whLink()`
+already produces) just works, with zero hosting. Verified live, not assumed: opened a real rendered
+report in the user's actual desktop Firefox and confirmed the script's own real icon-injection +
+item-quality link coloring rendered correctly. Two `<script>` tags added to
+`core/report_template.html`'s head - the entire fix. Real, scoped follow-up not done here: passing
+each item's actual recommended gems/enchants into Wowhead's `data-wowhead="gems=...&ench=..."`
+attribute so the tooltip shows the fully-optimized item, not just the base item - `ledger_data.json`
+doesn't currently carry gem/enchant ids per row, so this would need real plumbing through the
+pipeline; flag if wanted.
 
 **Version 2 / a separate future feature build (explicitly not this build)**: a Google Sheets
 export function for the results.csv/winner.json outputs from §8 - per the user, this would be

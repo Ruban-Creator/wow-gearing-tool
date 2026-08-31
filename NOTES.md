@@ -4565,3 +4565,37 @@ on two different profiles afterward; a real, live full sweep run through the act
 (`python cli/gear.py best Test-Beastmastery-Synthetic phase3`, not a cached/structural check) kicked
 off to prove the renamed module works end-to-end through its real entry point, not just on import -
 see the next dated entry for the result once it finished.
+
+## 2026-08-31 — Real, live sweep confirmed the run_upgrade_sweep.py rename works
+
+`python cli/gear.py best Test-Beastmastery-Synthetic phase3` ran to completion through the actual
+CLI entry point (not a cached check) - 326.1s, exit code 0, real `tiered_report_phase3.json`
+written. Rebuilt `ledger_data_phase3.json` from it and re-ran `check_ledger_consistency.py`: 150/0
+clean. Closes out the rename verification from the earlier entry the same day.
+
+## 2026-08-31 — Real Wowhead tooltips work with zero hosting (backlog item #11 solved, not built)
+
+Going through the Future Scope backlog together, the user questioned item #11's own premise
+directly: "i don't know if we need to host the html files now that we just provide them locally
+through the gui - maybe we can add wowhead tooltips now without hosting." Checked and confirmed
+correct - the item's original framing (self-host on an external webserver/the user's NAS to escape
+the claude.ai Artifact platform's CSP) was written when reports were still being published as
+Artifacts. That stopped being true a while ago: reports are rendered locally and opened as a plain
+`file://` page. A `file://` page has no CSP at all, and `<script src>` loading was never subject to
+CORS/CSP the way `fetch`/XHR is - so Wowhead's own real, standard third-party embed
+(`https://www.wowhead.com/tooltips`, checked live for the real current markup, not guessed) just
+works with zero server.
+
+Verified, not assumed: built a real test report, opened it in the user's actual desktop Firefox
+(not the sandboxed Claude Browser pane, which renders local files as an inert static snapshot and
+would have given a false negative), and confirmed the script's own real icon-injection +
+item-quality link coloring rendered on every real Wowhead link. Applied for real: two `<script>`
+tags added to `core/report_template.html`'s head - the entire fix, no `whLink()` changes needed
+since it already produces the exact `<a href="https://www.wowhead.com/...">` markup the script
+auto-detects. `check_ledger_consistency.py` clean afterward (154/0).
+
+Real, scoped follow-up NOT done: passing each item's actual recommended gems/enchants into
+Wowhead's own `data-wowhead="gems=...&ench=..."` attribute so the tooltip shows the item as this
+tool actually recommends wearing it (gemmed/enchanted), not just the bare item -
+`ledger_data.json` doesn't carry per-item gem/enchant ids today, so this needs real pipeline
+plumbing, not just a template change. Noted in CLAUDE.md, not built here.

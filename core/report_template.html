@@ -1,4 +1,20 @@
 <title>__REPORT_PAGE_TITLE__</title>
+<!-- Real Wowhead tooltip embed (2026-08-31) - official embed per
+     https://www.wowhead.com/tooltips, auto-detects any real
+     https://www.wowhead.com/... link already on the page (whLink() below
+     already produces exactly that markup, no changes needed there).
+     Verified live: this report is opened as a plain file:// page (see
+     gui/api.py's run_report()/Path.as_uri()), and <script src> loading is
+     NOT subject to CORS/CSP the way fetch/XHR is - confirmed by actually
+     opening a real rendered report in a real desktop browser and seeing
+     the script's own real icon-injection + item-quality link coloring
+     render, not just assumed from how script tags generally behave. The
+     claude.ai Artifact platform's CSP (which blocks this exact script) was
+     the ONLY real reason a "self-hosted" build was ever considered
+     necessary - it doesn't apply here since this report was never an
+     Artifact, and self-hosting/a dedicated webserver is not needed. -->
+<script>const whTooltips = {colorLinks: true, iconizeLinks: true, renameLinks: true};</script>
+<script src="https://wow.zamimg.com/js/tooltips.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Overpass:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Overpass+Mono:wght@400;500;600;700&display=swap');
 
