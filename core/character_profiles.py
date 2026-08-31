@@ -20,34 +20,95 @@ CLI path was never updated to match.
 
 Computing this from identity.class/spec is still unreliable in general (a
 GTCompanion-sourced identity block has no spec field at all - see
-ingest/list_characters.py), so this stays a literal mapping rather than
-derived logic - add a line here once a new profile is proven, same as
-every existing one was."""
+ingest/list_characters.py), so there's no way to derive a real user's own
+character -> profile mapping automatically; a human has to say which
+profile a given character uses.
+
+Real, explicit split as of 2026-08-31 (code review §1.2): a REAL named
+character used to be hardcoded directly in this dict (three of them, tied
+to one person's real first name and real WoW realm - a privacy problem in
+a public repo, and it also meant this tool only ever worked for that one
+person; a second user got an empty character list with no way to fix it
+short of editing source). Only the built-in SYNTHETIC test-fixture
+characters (ship with the tool, prove each profile works, not personal to
+anyone) stay hardcoded below. A real user's own characters are assigned
+through the GUI (Api.assign_character_profile(), see gui/api.py) or by
+calling local_config.set_character_profile() directly, and live in
+local_config.json - outside git, per-machine, same as wow_root/
+report_output_root."""
+import json
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import repo_root  # noqa: E402
+import local_config  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
+PROFILES_DIR = os.path.join(REPO_ROOT, "profiles", "tbc")
 
-SUPPORTED_CHARACTERS = {
-    "Lerynia-Thunderstrike": os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter"),
-    "Rubán-Thunderstrike": os.path.join(REPO_ROOT, "profiles", "tbc", "arms_warrior"),
-    "Béarforceone-Thunderstrike": os.path.join(REPO_ROOT, "profiles", "tbc", "balance_druid"),
-    # Synthetic test characters (Stage 6.3/6.4) - no real Shaman export
-    # exists yet, see each profile.json's synthetic_character_note. Real,
-    # proven pipeline runs (full sweep, real report), just not real
-    # personal characters.
-    "Test-Elemental-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "elemental_shaman"),
-    "Test-Enhancement-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "enhancement_shaman"),
-    "Test-Beastmastery-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "beastmastery_hunter"),
-    "Test-Fury-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "fury_warrior"),
-    "Test-FeralCat-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "feral_cat_druid"),
-    "Test-CombatRogue-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "combat_rogue"),
-    "Test-ShadowPriest-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "shadow_priest"),
-    "Test-ArcaneMage-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "arcane_mage"),
-    "Test-RetPaladin-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "retribution_paladin"),
-    "Test-Affliction-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "affliction_warlock"),
-    "Test-Demonology-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "demonology_warlock"),
-    "Test-Destruction-Synthetic": os.path.join(REPO_ROOT, "profiles", "tbc", "destruction_warlock"),
+# Synthetic test characters (Stage 6.3+) - no real character export exists
+# for these, see each profile.json's synthetic_character_note. Real, proven
+# pipeline runs (full sweep, real report), just not real personal
+# characters - safe to ship in source, unlike a real person's own roster.
+_SYNTHETIC_CHARACTERS = {
+    "Test-Elemental-Synthetic": "elemental_shaman",
+    "Test-Enhancement-Synthetic": "enhancement_shaman",
+    "Test-Beastmastery-Synthetic": "beastmastery_hunter",
+    "Test-Fury-Synthetic": "fury_warrior",
+    "Test-FeralCat-Synthetic": "feral_cat_druid",
+    "Test-CombatRogue-Synthetic": "combat_rogue",
+    "Test-ShadowPriest-Synthetic": "shadow_priest",
+    "Test-ArcaneMage-Synthetic": "arcane_mage",
+    "Test-RetPaladin-Synthetic": "retribution_paladin",
+    "Test-Affliction-Synthetic": "affliction_warlock",
+    "Test-Demonology-Synthetic": "demonology_warlock",
+    "Test-Destruction-Synthetic": "destruction_warlock",
 }
+
+
+def _profile_dir(dir_name: str) -> str:
+    return os.path.join(PROFILES_DIR, dir_name)
+
+
+def available_profiles() -> list[dict]:
+    """Every real, buildable profile under profiles/tbc/ - {dir_name,
+    label}, label derived from the profile's own real class/spec fields
+    (never hand-maintained, so a new profile shows up here automatically).
+    Feeds the GUI's "assign a profile to this character" dropdown."""
+    result = []
+    for dir_name in sorted(os.listdir(PROFILES_DIR)):
+        profile_path = os.path.join(PROFILES_DIR, dir_name, "profile.json")
+        if not os.path.isfile(profile_path):
+            continue
+        with open(profile_path, encoding="utf-8") as f:
+            p = json.load(f)
+        spec_label = p.get("spec", dir_name).replace("_", " ").title()
+        class_label = p.get("class", "").title()
+        result.append({"dir_name": dir_name, "label": f"{spec_label} {class_label}".strip()})
+    return result
+
+
+def _compute() -> dict:
+    result = {name: _profile_dir(dir_name) for name, dir_name in _SYNTHETIC_CHARACTERS.items()}
+    for name_realm, dir_name in local_config.character_profile_overrides().items():
+        result[name_realm] = _profile_dir(dir_name)
+    return result
+
+
+SUPPORTED_CHARACTERS: dict[str, str] = {}
+
+
+def refresh() -> None:
+    """Recomputes SUPPORTED_CHARACTERS IN PLACE (mutates the existing dict
+    object via clear()+update(), never reassigns the name to a new dict) -
+    gui/api.py holds its own `SUPPORTED_CHARACTERS = character_profiles.
+    SUPPORTED_CHARACTERS` alias from import time; reassigning this module's
+    own attribute to a fresh dict object would leave that alias pointing at
+    the old, stale one. Call this after assign_character_profile() so a
+    newly-assigned character is usable immediately in the same running
+    process, not just after a restart."""
+    SUPPORTED_CHARACTERS.clear()
+    SUPPORTED_CHARACTERS.update(_compute())
+
+
+refresh()

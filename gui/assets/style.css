@@ -261,6 +261,17 @@ html, body {
   border-radius: 8px;
   padding: 10px 14px;
   font-size: 12.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.profile-banner[hidden] {
+  display: none;
+}
+.profile-banner .modal-select {
+  font-size: 12.5px;
+  padding: 4px 8px;
 }
 
 .reports-grid {

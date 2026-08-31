@@ -53,6 +53,12 @@ window.pywebview = {
     reset_wow_root: async () => {},
     get_run_status: async () => ({ active: false, done: false, error: null }),
     run_report: async () => ({ started: true }),
+    get_available_profiles: async () => ([
+      { dir_name: "survival_hunter", label: "Survival Hunter" },
+      { dir_name: "arms_warrior", label: "Arms Warrior" },
+      { dir_name: "balance_druid", label: "Balance Druid" },
+    ]),
+    assign_character_profile: async (nameRealm, dirName) => ({ ok: true, has_profile: true }),
     get_addon_status: async () => ({
       install_path: "C:\\Games\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\GearingToolCompanion",
       installed: mockAddonInstalled,

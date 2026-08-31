@@ -312,6 +312,22 @@ class Api:
             c["has_profile"] = c["name_realm"] in SUPPORTED_CHARACTERS
         return chars
 
+    def get_available_profiles(self) -> list[dict]:
+        return character_profiles.available_profiles()
+
+    def assign_character_profile(self, name_realm: str, dir_name: str) -> dict:
+        """Real, user-driven fix for the "No profile" dead end (code review
+        §1.2) - a character with no sim profile yet can now be assigned one
+        directly from the GUI instead of requiring a source edit.
+        character_profiles.refresh() makes it usable immediately, in this
+        same running process, not just after a restart."""
+        valid_dirs = {p["dir_name"] for p in character_profiles.available_profiles()}
+        if dir_name not in valid_dirs:
+            return {"ok": False, "error": f"Unknown profile {dir_name!r}."}
+        local_config.set_character_profile(name_realm, dir_name)
+        character_profiles.refresh()
+        return {"ok": True, "has_profile": name_realm in SUPPORTED_CHARACTERS}
+
     def get_debug_mode(self) -> bool:
         return local_config.debug_mode()
 

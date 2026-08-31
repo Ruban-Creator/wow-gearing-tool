@@ -136,6 +136,31 @@ def set_wow_root(path: str | None) -> None:
     save(config)
 
 
+def character_profile_overrides() -> dict:
+    """name_realm -> profile dir_name (e.g. "arms_warrior") for a real
+    user's own characters. Added 2026-08-31 (code review §1.2): this used
+    to be three real characters hardcoded directly in
+    core/character_profiles.py, tying a real person's first name to their
+    real WoW characters and realm in source - a privacy problem in a
+    public repo, and it also meant the tool only ever worked for that one
+    person. Empty by default; grows via set_character_profile() (the GUI's
+    "assign a profile" flow, or called directly)."""
+    return load().get("character_profiles", {})
+
+
+def set_character_profile(name_realm: str, profile_dir_name: str | None) -> None:
+    """Pass None to remove the override."""
+    config = load()
+    overrides = config.setdefault("character_profiles", {})
+    if profile_dir_name is None:
+        overrides.pop(name_realm, None)
+    else:
+        overrides[name_realm] = profile_dir_name
+    if not overrides:
+        config.pop("character_profiles", None)
+    save(config)
+
+
 def debug_mode() -> bool:
     """Off by default - the GUI's real, addon-sourced character picker
     (ingest/list_characters.py) never includes the synthetic test

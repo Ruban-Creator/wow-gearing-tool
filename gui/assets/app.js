@@ -43,6 +43,8 @@ const detailContent = document.getElementById("detail-content");
 const detailName = document.getElementById("detail-name");
 const detailMeta = document.getElementById("detail-meta");
 const profileBanner = document.getElementById("profile-banner");
+const profileAssignSelect = document.getElementById("profile-assign-select");
+const profileAssignBtn = document.getElementById("profile-assign-btn");
 const reportsGrid = document.getElementById("reports-grid");
 
 const settingsBtn = document.getElementById("settings-btn");
@@ -202,10 +204,42 @@ async function selectCharacter(nameRealm) {
   selectedHasProfile = c.has_profile;
   runReportBtn.disabled = !c.has_profile;
   runReportBtn.title = c.has_profile ? "" : "No sim profile yet for this character.";
+  if (!c.has_profile) {
+    await populateProfileAssignSelect();
+  }
 
   const reports = await window.pywebview.api.get_reports(nameRealm);
   renderReports(reports);
 }
+
+let availableProfilesCache = null;
+
+async function populateProfileAssignSelect() {
+  // Cached across calls - the profile list only changes with a new build
+  // of the tool, never within a single running session.
+  if (!availableProfilesCache) {
+    availableProfilesCache = await window.pywebview.api.get_available_profiles();
+  }
+  profileAssignSelect.innerHTML = availableProfilesCache
+    .map((p) => `<option value="${escapeHtml(p.dir_name)}">${escapeHtml(p.label)}</option>`)
+    .join("");
+}
+
+profileAssignBtn.addEventListener("click", async () => {
+  if (!selectedNameRealm || !profileAssignSelect.value) return;
+  profileAssignBtn.disabled = true;
+  try {
+    const result = await window.pywebview.api.assign_character_profile(selectedNameRealm, profileAssignSelect.value);
+    if (result.ok) {
+      showToast(`Profile assigned - ${selectedNameRealm} is ready to run.`);
+      await loadCharacters();  // re-selects selectedNameRealm itself, now with has_profile:true
+    } else {
+      showToast(`Couldn't assign profile: ${result.error}`);
+    }
+  } finally {
+    profileAssignBtn.disabled = false;
+  }
+});
 
 function renderReports(reports) {
   reportsGrid.innerHTML = "";

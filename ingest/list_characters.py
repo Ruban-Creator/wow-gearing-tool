@@ -85,17 +85,25 @@ def list_gtcompanion_characters() -> dict[str, dict]:
 
 def list_synthetic_characters() -> list[dict]:
     """Debug-mode-only entries for the synthetic test characters built this
-    session to verify a new class/spec profile (Test-*-Synthetic - see
-    profile.json's own synthetic_character flag) - these have no real
-    WowSimsExporter/GearingToolCompanion SavedVariables entry to be
-    discovered from at all, so list_all_characters() alone can never surface
-    them. Shaped to match that function's own merged-entry dict so the GUI's
-    existing rendering code needs no special-casing beyond the synthetic
-    flag itself. Never invents a character - only lists one whose real
-    profile.json declares itself synthetic AND whose real character.json
-    already exists on disk (built via ingest/build_synthetic_character.py)."""
+    session to verify a new class/spec profile (Test-*-Synthetic) - these
+    have no real WowSimsExporter/GearingToolCompanion SavedVariables entry
+    to be discovered from at all, so list_all_characters() alone can never
+    surface them. Shaped to match that function's own merged-entry dict so
+    the GUI's existing rendering code needs no special-casing.
+
+    Iterates character_profiles._SYNTHETIC_CHARACTERS specifically, NOT the
+    full SUPPORTED_CHARACTERS map (real, fixed 2026-08-31 alongside that
+    map becoming extensible via local_config - see character_profiles.py's
+    own docstring): SUPPORTED_CHARACTERS can now also contain a real user's
+    own character assigned to a profile whose OWN profile.json happens to
+    be synthetic_character:true (most profiles are, since only a few have
+    a real player). Filtering on the profile's own flag instead of on
+    "is this actually one of the built-in test fixtures" would have
+    double-listed a real user's real character here under debug mode -
+    never invents a character, but could have mis-classified a real one."""
     result = []
-    for name_realm, profile_dir in character_profiles.SUPPORTED_CHARACTERS.items():
+    for name_realm, dir_name in character_profiles._SYNTHETIC_CHARACTERS.items():
+        profile_dir = character_profiles._profile_dir(dir_name)
         profile_path = os.path.join(profile_dir, "profile.json")
         if not os.path.exists(profile_path):
             continue
