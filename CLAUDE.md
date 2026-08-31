@@ -601,15 +601,8 @@ case. Needs a real design pass (Plan Mode, given the schema change to `reports.j
 question of what happens to an EXISTING single-profile report file on disk - migration, not just
 new writes) before touching it - not done yet, flagged here so it isn't lost.
 
-**Decided 2026-08-31: SmartScreen warning on the installer - accept it for now, revisit with a
-code-signing cert later.** `RGT-Setup.exe` has zero code-signing configuration (confirmed via
-direct grep of `installer.iss`) - a fully unsigned exe always gets Windows SmartScreen's strongest
-warning, regardless of download count. Per the user: leave it as-is (document the "More info" ->
-"Run anyway" workaround, see `packaging/README.md`) rather than buy a certificate immediately, but
-keep this as a real, tracked reminder to revisit - a standard cert (~$100-400/yr) removes the
-"Unknown Publisher" text but still needs weeks/months of real reputation before the warning itself
-clears; an EV cert (~$300-600/yr, usually a hardware token) is the only option that clears it
-immediately.
+**SmartScreen warning on the installer - accepted for now (2026-08-31), real tracked reminder to
+revisit with a code-signing cert later. See `FUTURE_TASKS.md`.**
 
 **Decided 2026-08-31: no hit-target toggle, ever - drop the idea entirely, not just defer it.**
 Every profile's real reference BiS/candidate pool data stays built from the 6% (moonkin-present)
@@ -705,89 +698,6 @@ narrowly. Originally scoped as "results.csv/winner.json outputs from §8" - both
 already effectively superseded by the real HTML ledger long before this decision, so there was no
 real remaining case for a Sheets export to begin with.
 
-**Idea collection, not decided — discuss before building**: speeding up a re-sweep after a raid
-week nets 1-2 new items. Rough thinking, for discussion, not a plan:
-
-- The existing `sim_cache.json` (keyed by full gear-config hash, per the architecture above)
-  already doesn't need invalidating when new items arrive — a cached DPS for an old config is
-  still a true statement about that config forever. The real cost isn't repeated sim calls, it's
-  that `DPS*(P)` requires a joint *search* over shared-pool slots (rings/trinkets/weapons, set
-  bonuses), and that search currently seems to re-run from scratch over the whole pool rather
-  than reusing the previous optimal assignment.
-- Possible direction: decompose the search into independent single-slot optimization plus
-  explicit joint search only over the actually-coupled subgroups (ring pair, trinket pair,
-  weapon pair, any tier-set combo). A new item then only requires re-solving the specific
-  subgroup(s) it belongs to against the previously-known-optimal assignment for that subgroup,
-  not a full 15-slot re-search. This also happens to be closer to how "shared-pool slots" are
-  already described in the architecture (Stage 2's Ring/Trinket/Weapon note) — may be worth
-  building regardless of caching.
-- A cheap per-slot swap-and-resim could serve as a *prefilter* to decide which candidates are
-  even worth a real joint re-search — but per the ground rules at the top of this file, that can
-  only ever be a heuristic to prune what gets the expensive treatment, never the source of a
-  reported MV number itself.
-- Open question the user flagged directly: the baseline `DPS*(P)` itself shifts every time P
-  gains an item, so even a perfect sub-search cache still needs every remaining candidate's MV
-  recomputed against the new baseline (`DPS*(P_new ∪ {i})` configs that were never tried before,
-  since they include the newly-owned item). Worth discussing whether that's an acceptable cost
-  (it's proportional to remaining-candidate-count, not total-pool-size) or whether it needs its
-  own optimization.
-
-**Idea collection #2, not decided — a three-tier funnel for scaling to a much bigger pool**
-(2026-08-23). Prompted by watching Stage 5's interaction matrix take ~15-20 minutes on Lerynia's
-already-narrow Phase 3 pool once the candidate-selection fix (below) widened it. The user's real
-concern: a FRESH LEVEL 70 CHARACTER STARTING IN PHASE 5 has every item from Phases 1-5
-simultaneously live as a real candidate for every slot at once - the pool this tool would need to
-search is enormously bigger than "one already-decently-geared character's Phase 3 upgrade list,"
-and it still needs to finish in a reasonable time. Rough shape, matching the existing prefilter
-principle above (a cheap pass may only ever prune what gets the expensive treatment, never BE the
-reported number) but formalized as three explicit tiers instead of one screen/resolve split:
-
-1. **Pre-screen** - something cheaper than today's 1000-iteration screen, to cut an enormous raw
-   pool (every phase's items at once) down to a manageable shortlist before spending even a cheap
-   sim run on each one. Not yet decided whether this should be a real (very-low-iteration) sim
-   call or a static EP-based prefilter using `STAT_WEIGHTS` - the ground rules already sanction
-   EP as a legitimate prefilter heuristic, just never as a reported number. User's concrete
-   proposal (2026-08-23): 100 iterations for this tier - real SEM math checks out (the sim's own
-   player_stdev was ~74 at 1000 iterations in the user's own test, so SEM ≈ 74/√100 ≈ 7.4 DPS at
-   100 - noisy, but only affects which pairs get promoted to the next tier, never a reported
-   number, so the tradeoff is real but bounded).
-2. **Screen** - the user's proposal: 500-1000 iterations (matches today's existing
-   `SCREEN_ITERATIONS`), applied to whatever survives step 1.
-3. **Finalize** - resolve only the top ~3 candidate FULL SETS (not top individual items or
-   pairs) at high precision - the user left the exact iteration count open ("12.5k baseline from
-   sim or your 30k, up to you"). Confirmed by the user checking the actual wowsims web UI
-   (Hunter, incognito, default "Iterations" field): the sim's own real default is **25000**, not
-   12.5k - that recollection was off, caught by checking rather than assuming. If this tier ever
-   gets built, 25000 is the real, verified reference point to weigh against this tool's own 30000,
-   not a guessed number.
-
-**Status (2026-08-23): tiers 1-2 are actually built**, not just an idea anymore -
-`core/interaction_matrix.py`'s `compute()` now runs a real 3-pass funnel: pre-screen @100 →
-screen @1000 → resolve @30000, each stage gating whether a pair gets promoted to the next.
-
-**Real, controlled A/B data** (10 real items, mixed magnitudes, same seed, cache cleared for a
-clean timing comparison) settled the "is 30k worth it" question concretely rather than by
-argument:
-
-| iterations | time/item | verdict vs the 30k reference |
-|---|---|---|
-| 100 | 0.25s | unreliable - 6 of 10 disagreed, confirms pre-screen-only use |
-| 1000 | 0.40s | 1 of 10 disagreed (a razor-thin +1.3 DPS real effect) |
-| 5000 | 1.04s | same 1 of 10 disagreed - every clear-magnitude item (±7 to ±51 DPS) matched 30k exactly |
-| 30000 | 5.33s | reference |
-
-Conclusion: 5000 is NOT safe as the final reported number (noise-honesty is a hard rule, and it
-missed exactly the case that matters - a small-but-real effect near the noise floor), but it's
-strong evidence for a 4th, intermediate "confirm @5000" tier between screen and finalize, since
-it agreed with 30k on every item that had a real, decision-relevant magnitude. Not yet built.
-Earlier in this same session, a single hand-tested wowsims comparison (30k: +1.06 DPS, 5k: -3.50
-DPS, sign flip) looked like it disproved 5k entirely - the fuller 10-item test clarifies that
-scary result was itself a near-zero-effect edge case, the same class of case the 10-item test's
-one disagreement also hit, not evidence that 5k is broadly unreliable.
-
-Worth noting: this reframes the exercise back toward the core `DPS*(S)` full-set search (Stage
-4), not just Stage 5's pairwise interaction matrix specifically - "finalize the 3 best sets"
-implies whole-gear-configuration finalists, which suggests this funnel principle may belong in
-`core/optimizer.py`'s own search too, not just `interaction_matrix.py`. Not scoped or planned -
-this is the rough shape only, for discussion once the tool needs to handle a pool this size (not
-yet - today's actual character is a single, already-geared Phase 3 Survival Hunter).
+**Backlog #7 (three-tier funnel 4th tier + optimizer.py extension) and #8 (decomposed
+re-sweep caching) - both idea collection, not decided, moved to `FUTURE_TASKS.md`
+(2026-08-31) to keep this file focused on active work.**
