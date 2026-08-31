@@ -60,8 +60,9 @@ a new gotcha; don't let the lesson live only in NOTES.md's session log.
   easy to misread as "6-piece tier" at a glance, especially since tier-piece-count variants ARE a
   real thing this project has hit elsewhere (Feral Cat Druid, per the current staging plan). Check
   the real label in `presets.ts` before assuming which axis a numeric gear-set suffix encodes.
-  CLAUDE.md already has a standing default for the hit-target axis specifically: assume 6%
-  (moonkin present) until a real GUI toggle exists - never silently switch to 9%.
+  CLAUDE.md already has a standing default for the hit-target axis specifically: always the 6%
+  (moonkin present) variant, permanently - a hit-target toggle was considered and explicitly
+  dropped (2026-08-31), not just deferred. Never use 9% for any profile.
 
 ## Enchants
 
