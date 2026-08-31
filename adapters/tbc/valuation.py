@@ -29,6 +29,7 @@ import repo_root  # noqa: E402
 import sim_cache  # noqa: E402
 import gear_config  # noqa: E402
 import item_db  # noqa: E402
+import local_config  # noqa: E402
 
 # Real bug found 2026-08-25: the packaged GUI (a windowed, console-less
 # PyInstaller build) has no console of its own, so every bridge.exe
@@ -98,14 +99,17 @@ USE_SIMSERVER = True
 # (simserver vs file-based path, identical DPS to 4 decimal places, same
 # seed) and stability (200 concurrent mixed-iteration calls via the real
 # production pool pattern, zero errors, well past the old #34 hang point).
-# The Ryzen 5 5600X this runs on is 6C/12T, and wowsimcli/simserver already
-# use ALL logical threads internally per sim call ("Running N iterations on
-# 12 concurrent sims" - runtime.NumCPU()). A pool size of 4 means up to
-# 4x12=48-way parallelism fighting over 12 threads - measured 747ms/call
-# oversubscribed vs 101ms/call at pool_size=2 with MAX_WORKERS=2 to match
-# (7.4x). Keep this <= MAX_WORKERS in run_full_sweep_mv.py; there's no
+# The original dev machine (Ryzen 5 5600X, 6C/12T) measured wowsimcli/
+# simserver already using ALL logical threads internally per sim call
+# ("Running N iterations on 12 concurrent sims" - Go's runtime.NumCPU()).
+# A pool size of 4 there meant up to 4x12=48-way parallelism fighting over
+# 12 threads - measured 747ms/call oversubscribed vs 101ms/call at
+# pool_size=2 (7.4x). Derived via local_config.sim_concurrency() (code
+# review §4.4), not hardcoded to that one machine - same function
+# run_full_sweep_mv.MAX_WORKERS calls, so the two stay in lockstep
+# automatically instead of needing to be kept equal by hand. There's no
 # reason to hold idle simserver processes a caller can't reach.
-SIMSERVER_POOL_SIZE = 2
+SIMSERVER_POOL_SIZE = local_config.sim_concurrency()
 
 _settings_lock = threading.Lock()
 _template_cache = {}

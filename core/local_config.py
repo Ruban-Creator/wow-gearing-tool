@@ -161,6 +161,41 @@ def set_character_profile(name_realm: str, profile_dir_name: str | None) -> None
     save(config)
 
 
+def sim_concurrency() -> int:
+    """The real, single source of truth for sim-call concurrency (code
+    review §4.4) - core/run_full_sweep_mv.py's MAX_WORKERS and
+    adapters/tbc/valuation.py's SIMSERVER_POOL_SIZE both call this instead
+    of each hardcoding their own literal that has to be kept in sync by
+    hand (they must stay equal - the sim already uses ALL logical threads
+    per call internally via Go's runtime.NumCPU(), so a larger pool
+    oversubscribes; measured on the original dev machine, 6C/12T: 4
+    workers was 7.4x SLOWER than 2). Lives here (not in either of those
+    two modules) specifically to avoid a circular import between them -
+    run_full_sweep_mv imports marginal_value imports valuation, so
+    valuation can't import run_full_sweep_mv or vice versa; local_config
+    has no dependency on either.
+
+    Derives from real per-machine logical-core count (//6 reproduces the
+    original dev machine's own measured-safe 2, floored there since a
+    machine with fewer logical threads wasn't part of what was actually
+    measured), overridable via local_config for anyone who wants to tune
+    it themselves."""
+    override = load().get("max_workers")
+    if override:
+        return int(override)
+    return max(2, (os.cpu_count() or 12) // 6)
+
+
+def set_max_workers_override(n: int | None) -> None:
+    """Pass None to clear back to the derived default."""
+    config = load()
+    if n is None:
+        config.pop("max_workers", None)
+    else:
+        config["max_workers"] = int(n)
+    save(config)
+
+
 def debug_mode() -> bool:
     """Off by default - the GUI's real, addon-sourced character picker
     (ingest/list_characters.py) never includes the synthetic test

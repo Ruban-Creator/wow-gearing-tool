@@ -35,6 +35,7 @@ import time_horizon  # noqa: E402
 import stat_weights  # noqa: E402
 import gem_optimizer  # noqa: E402
 import sweep_all_loot  # noqa: E402
+import local_config  # noqa: E402
 
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
@@ -55,7 +56,11 @@ SETTINGS_TEMPLATE = os.path.join(PROFILE_DIR, "settings_template.json")
 # nothing) - there's no reason to test one under the non-weave settings.
 SETTINGS_2H = os.path.join(PROFILE_DIR, "settings_template_2h.json")
 POOL_PATH = os.path.join(PROFILE_DIR, "candidate_pool.json")
-MAX_WORKERS = 2  # matches valuation.SIMSERVER_POOL_SIZE - see its comment for why 4 was 7.4x slower
+# Derived, not hardcoded to one machine's core count (code review §4.4) -
+# see local_config.sim_concurrency()'s own docstring for the real
+# reasoning and measurement. adapters/tbc/valuation.SIMSERVER_POOL_SIZE
+# calls the same function, so the two stay in lockstep automatically.
+MAX_WORKERS = local_config.sim_concurrency()
 
 SCREEN_ITERATIONS = 500  # cheap ranking pass across the whole pool
 # Lowered from 1000 to 500 on 2026-08-24, validated empirically (not guessed):
