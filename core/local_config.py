@@ -92,13 +92,29 @@ def _looks_like_anniversary_client(path: str) -> bool:
 
 
 def autodetect_wow_root() -> str | None:
-    """Scans every real drive letter present on this machine for a real
+    """Scans real drive letters present on this machine for a real
     Anniversary-client install, verified via the client's own .flavor.info
     file rather than just a matching folder name. Returns the first real
     match found, or None if nothing real was found anywhere - callers must
     handle None (fall back to _LEGACY_DEFAULT_WOW_ROOT, or ask the user),
-    never invent a path when this comes back empty."""
-    for letter in string.ascii_uppercase:
+    never invent a path when this comes back empty.
+
+    Real GUI-startup-blocking risk (code review §4.2): os.path.isdir() on
+    a mapped-but-disconnected network drive or an empty optical drive can
+    block for real seconds, and this runs on the GUI's own startup path
+    (see wow_root(), which now caches the result specifically so this
+    expensive scan only ever runs once). Checks the real SystemDrive
+    (almost always C:, the common case) FIRST so a normal install returns
+    immediately without touching any other letter, and skips A:/B: - the
+    historical floppy-drive letters, still occasionally mapped to a slow
+    or prompting device on an old machine even though real floppy drives
+    are gone."""
+    system_drive = os.environ.get("SystemDrive", "C:").upper()
+    ordered_letters = [system_drive.rstrip(":")] + [
+        letter for letter in string.ascii_uppercase
+        if letter not in ("A", "B", system_drive.rstrip(":"))
+    ]
+    for letter in ordered_letters:
         drive = f"{letter}:\\"
         if not os.path.isdir(drive):
             continue
@@ -113,24 +129,44 @@ def wow_root() -> str:
     """The real WoW Anniversary install root used to find addon
     SavedVariables (ingest/build_character.py's find_savedvariables(),
     which feeds both the sync pipeline and the GUI's character picker).
-    Precedence: explicit user config > real autodetection (verified via
-    .flavor.info, never just a folder-name guess) > the one legacy
-    hardcoded default, kept only so a machine that had this working before
-    wow_root() existed doesn't regress."""
+    Precedence: explicit user config > a CACHED prior real autodetection >
+    a fresh real autodetection (verified via .flavor.info, never just a
+    folder-name guess) > the one legacy hardcoded default, kept only so a
+    machine that had this working before wow_root() existed doesn't
+    regress.
+
+    Caches a successful autodetection under its own separate key (code
+    review §4.2) - NOT into the same "wow_root" key gui/api.py's
+    get_wow_root() checks for its own is_configured flag (that flag means
+    "the user explicitly chose this", which stays false for something
+    this function found on its own) - so the real, potentially-slow drive
+    scan (os.path.isdir() can block for real seconds on a mapped-but-
+    disconnected network drive) only ever runs once per machine, not once
+    on every GUI launch."""
     configured = load().get("wow_root")
     if configured:
         return configured
+    cached = load().get("_autodetected_wow_root")
+    if cached and _looks_like_anniversary_client(cached):
+        return cached
     detected = autodetect_wow_root()
     if detected:
+        config = load()
+        config["_autodetected_wow_root"] = detected
+        save(config)
         return detected
     return _LEGACY_DEFAULT_WOW_ROOT
 
 
 def set_wow_root(path: str | None) -> None:
-    """Pass None to clear back to autodetect/legacy-default behavior."""
+    """Pass None to clear back to autodetect/legacy-default behavior - also
+    clears wow_root()'s own cached prior autodetection, so "Reset to
+    auto-detect" in the GUI genuinely re-scans instead of silently
+    returning whatever was cached from before."""
     config = load()
     if path is None:
         config.pop("wow_root", None)
+        config.pop("_autodetected_wow_root", None)
     else:
         config["wow_root"] = path
     save(config)
