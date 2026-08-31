@@ -113,3 +113,39 @@ download count. Real reminder, revisit once this ships more broadly:
 
 Not scoped or budgeted - a real cost decision for the user to make once the installer is being
 distributed more broadly (currently pre-release, not yet published as a GitHub Release).
+
+## #14 — Build the actual scheduled sim-update-checking agent/machine
+
+`CLAUDE.md`'s "Sim update procedure" section is a real, already-tested RUNBOOK (every step was
+actually run once, live, before being written down) - but it's still just documentation. Nothing
+actually RUNS it on a schedule yet: no dedicated always-on machine, no real cron/scheduled-task
+wiring, no agent actually watching `wowsims/tbc-new`'s tags daily and executing the runbook
+end-to-end. Per the user (2026-08-31): plan and build this for real at some point - not scoped or
+started yet, just confirmed as real, wanted infrastructure, not lost.
+
+## #15 — Investigate the widespread `sources: None` DB gap (real raid tier sets across every class)
+
+Found 2026-08-31 while diagnosing a live bad report (see NOTES.md's dated entry for the full
+story) - confirmed via a direct DB query that 200+ real item sets across every class have
+`sources: None` for every single piece, including real raid tier sets (Skyshatter/Cyclone/
+Thunderheart/Lightbringer/Malefic/Onslaught/Gronnstalker's/Vestments of Absolution/Bonescythe,
+and more - not an exhaustive list). A real, DB-derived phase-based fallback (`PHASE_TO_TIER_ZONE_KEY`
+in `core/run_upgrade_sweep.py`) already fixes the practical symptom - these items now bucket into
+their correct real tier instead of "Other" - but the underlying gap (no real drop
+boss/zone/npc known for any of these items) is still real and unfixed at the source.
+
+This isn't something fixable locally - the sim's own DB is built from a real WoW client's data
+files (`db2tool`/`gen_db`, see `CLAUDE.md`'s "Local setup" section), and boss loot-table data was
+never part of that client-side data to begin with, so there's no local rebuild that would recover
+it. Real options, per the user's own question ("is there any way we can fix the Sources?"):
+- Report it upstream to `wowsims/tbc-new` as a real, verified gap (it's open source) - would need
+  each item's real source individually verified (e.g. against Wowhead) before submitting, not
+  bulk-guessed from general TBC knowledge.
+- Maintain a small local overlay file in this repo mapping item_id -> real, individually-verified
+  source data for the items this tool's own profiles actually surface - same verification bar.
+- Per the user's own suggestion: fold periodic re-checking of this gap into #14's future
+  sim-update agent, once that exists - each time it checks for a new wowsims release, it could
+  also check whether upstream has filled in any of these previously-missing sources.
+
+Not scoped or started - real, confirmed, worth doing at some point, not urgent (the practical
+tier-bucketing symptom is already fixed).
