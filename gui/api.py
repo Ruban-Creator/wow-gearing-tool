@@ -292,7 +292,13 @@ def _run_report_job(name_realm: str, phase: str, duration: int) -> None:
                                 progress_cb=progress_cb, duration=duration)
 
         _set_status(stage="Building report", detail=None, eta_seconds=None, eta_measured_at=None, stage_index=None, stage_total=None)
-        ledger_data = build_ledger_data.build(name_realm, phase, profile_dir=SUPPORTED_CHARACTERS[name_realm])
+        # build_with_diff() (2026-09-04) persists ledger_data_<profile>_<phase>.json
+        # for real now (used to only live embedded in the HTML - see that
+        # function's own docstring for the real gap this closes) and embeds a
+        # real "what changed since your last sweep" comparison against the
+        # rotated-aside previous file - report_template.html renders it when
+        # present, silently absent on a character's first-ever sweep.
+        ledger_data = build_ledger_data.build_with_diff(name_realm, phase, profile_dir=SUPPORTED_CHARACTERS[name_realm])
         html = render_report.render(ledger_data, char_data, phase)
 
         out_path = local_config.report_output_path(name_realm, profile_dir_name, phase)

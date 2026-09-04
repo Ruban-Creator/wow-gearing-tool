@@ -222,6 +222,22 @@ def check_transform(report: dict, ledger_data: dict, rep: Report) -> None:
     rep.check(ledger_data.get("two_hand_meta") == report.get("two_hand_meta"),
                "ledger_data.json: two_hand_meta does not pass through tiered_report.json unchanged")
 
+    # 2026-09-04 - ledger_diff.compute()'s real output shape. None is a
+    # legitimate value (first-ever sweep for this character/profile/phase,
+    # no previous file to diff against) - only checked when present.
+    diff = ledger_data.get("diff")
+    if diff is not None:
+        for key in ("new", "moved", "no_longer_shown"):
+            rep.check(isinstance(diff.get(key), list),
+                       f"ledger_data.json: diff[{key!r}] is not a list ({diff.get(key)!r})")
+        moved_keys = [(it.get("item_id"), it.get("best_slot")) for it in diff.get("moved", [])]
+        rep.check(len(moved_keys) == len(set(moved_keys)),
+                   "ledger_data.json: diff['moved'] has a duplicate (item_id, best_slot) - "
+                   "ledger_diff.py's own index should make this impossible")
+        for it in diff.get("moved", []):
+            rep.check("old_mv" in it and "delta" in it,
+                       f"ledger_data.json: diff['moved'] row {it.get('name')!r} missing old_mv/delta")
+
 
 def extract_html_data_blob(html_path: str) -> dict | None:
     with open(html_path, encoding="utf-8") as f:
@@ -256,6 +272,7 @@ def check_html(ledger_data: dict, html_path: str, rep: Report) -> None:
     rep.check("it.rescue_note" in html_text, f"{html_path}: no render block references it.rescue_note")
     rep.check("it.owned_location" in html_text, f"{html_path}: no render block references it.owned_location")
     rep.check("it.best_slot" in html_text, f"{html_path}: no render block references it.best_slot")
+    rep.check("DATA.diff" in html_text, f"{html_path}: no render block references DATA.diff")
 
 
 def main():

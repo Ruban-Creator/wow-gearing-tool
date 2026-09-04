@@ -55,16 +55,30 @@ risk this project has consistently avoided elsewhere (see e.g. how carefully bac
 collision risk was hunted down before, not after, shipping). Real, honest correctness risk beats a
 faster sweep.
 
-**Real alternative worth the user's consideration, NOT built tonight (different deliverable than
-#8 originally asked for, so flagging rather than building unilaterally):** the actual underlying
-motivation - "I got 1-2 items this week, what changed?" - doesn't strictly need a faster sweep at
-all. `core/report_storage.py` (backlog #13) already keeps the PRIOR sweep's `reports.json` entry
-per profile/phase; a "diff since last report" view (compare the new ledger's MVs per item_id
-against the previous `ledger_data_<profile>_<phase>.json` for the same character/profile/phase,
-surface what's new/changed) would serve the real want with zero cache-correctness risk, since it's
-a pure display-layer comparison over two already-fully-computed, already-trusted ledgers - not a
-shortcut inside the computation itself. Genuinely buildable in a future session if the user wants
-it; not started.
+**DONE, 2026-09-04 - the real alternative, built as a different deliverable than #8's original
+ask (flagged to the user first, built after they confirmed).** The actual underlying motivation -
+"I got 1-2 items this week, what changed?" - didn't need a faster sweep at all. New
+`core/ledger_diff.py` compares a fresh sweep's `ledger_data` against the same character/profile/
+phase's own previous sweep (now genuinely persisted to disk on every real run, a real pre-existing
+gap fixed along the way - see below), using the same `abs(delta) < 2 * noise` "not tied" rule
+already used everywhere else in this codebase, zero new sim calls, zero cache-correctness risk.
+Three real categories shown in a new "Since Your Last Sweep" report section: new candidates,
+items whose MV moved outside noise (old value shown alongside), and items no longer shown -
+deliberately NOT split into acquired/filtered/outranked sub-cases (only the top-8 leaderboard rows
+per tier/slot are persisted, not the full screened pool, so that distinction genuinely isn't
+knowable from what's stored) and labeled honestly rather than claiming false precision. Real,
+pre-existing gap fixed as a side effect: the live GUI flow used to build `ledger_data` only to
+embed it in the rendered HTML, never persisting it standalone - meaning `check_ledger_
+consistency.py`'s own long-standing requirement that this file already exist on disk could only
+ever have been satisfied by a manual one-off write. `build_ledger_data.persist()`/`build_with_
+diff()` now make this a real, permanent, checked-in part of every sweep. See NOTES.md's 2026-09-04
+entry for the full build/verification trail (including a real design bug a test caught before it
+shipped: an initial `.previous.json` rotation scheme was unneeded and wrong-ordered - simplified to
+reading the plain file before it gets overwritten).
+
+**Still open - the original #8 ask (make the sweep itself faster) was NOT solved by the above**,
+and isn't scoped for this feature to grow into without real per-class independence verification
+(see below).
 
 **If the user wants the actual sweep-speed problem solved instead of routed around:** the honest
 next step is proving real per-class independence bounds (which stat/slot changes a given profile's

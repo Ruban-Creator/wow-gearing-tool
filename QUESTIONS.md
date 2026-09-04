@@ -748,3 +748,14 @@ or a third) plus real testing against a live sweep before landing in `run_full_s
 `build_ledger_data.py`/the report template, none of which there was time for before the session's
 hard stop. Real next step: revisit this with a fresh sweep to test against, not a rushed same-session
 edit to a core scoring file with no time to verify.
+
+## Judgment call, 2026-09-04: "no longer shown" stays one bucket, not split three ways
+
+When you said "start building" after I asked whether to build the fuller 3-way split (acquired /
+filtered by scope / displaced from leaderboard) or the simpler single-bucket version, you didn't
+pick one explicitly. Went with the simpler version: only the top-8 leaderboard rows per tier/slot
+are ever persisted to `ledger_data`, not the full screened pool, so telling those three cases apart
+isn't actually possible from what's stored today without a bigger, separate change (persisting the
+full pool). Labeled honestly ("now equipped, filtered, or outranked") rather than guessing which
+one applies. If this ambiguity turns out to matter in practice, the real fix is persisting the full
+screened pool alongside the leaderboard - a real, separate, scoped follow-up, not started.

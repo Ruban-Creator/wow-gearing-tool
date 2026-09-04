@@ -262,6 +262,26 @@
   .enchants-text .swap{font-size:12px; color:var(--ink-muted); margin-top:2px;}
   .enchants-gain{flex:none; font-size:15.5px; font-weight:700; color:var(--sage-strong); white-space:nowrap;}
 
+  /* ---------- What Changed Since Your Last Sweep (2026-09-04) ---------- */
+  .changes-head h2{color:var(--brass-strong);}
+  .changes-group{margin-bottom:14px;}
+  .changes-group:last-child{margin-bottom:0;}
+  .changes-group-label{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-faint); font-weight:700; margin-bottom:6px;}
+  .changes-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:9px;}
+  .changes-card{
+    display:flex; align-items:center; gap:10px;
+    background:var(--surface-2); border:1px solid var(--border-soft); border-left:3px solid var(--border);
+    border-radius:9px; padding:10px 13px;
+  }
+  .changes-card.is-new{background:var(--sage-bg); border-left-color:var(--sage);}
+  .changes-card.is-gone{opacity:.75;}
+  .changes-text{flex:1 1 auto; min-width:0;}
+  .changes-text .slot{font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-faint); font-weight:700;}
+  .changes-text .name{font-size:13.5px; font-weight:600; line-height:1.3;}
+  .changes-delta{flex:none; font-size:14px; font-weight:700; white-space:nowrap; color:var(--sage-strong);}
+  .changes-delta.neg{color:var(--bad);}
+  .changes-was{flex:none; font-size:11.5px; color:var(--ink-faint); white-space:nowrap;}
+
   footer{
     margin-top:46px; padding-top:16px; border-top:1px solid var(--border-soft);
     font-size:11.5px; color:var(--ink-faint); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
@@ -327,6 +347,27 @@
     <div class="bis-sub" id="bis-sub"></div>
     <div class="bis-grid" id="bis-grid"></div>
     <div class="bis-empty" id="bis-empty" hidden>No real BiS achieved yet - every slot still has a real upgrade somewhere in the pool.</div>
+  </section>
+
+  <section class="bis" id="changes-section" hidden>
+    <div class="bis-head changes-head">
+      <h2>Since Your Last Sweep</h2>
+      <span class="count" id="changes-count"></span>
+    </div>
+    <div class="bis-sub" id="changes-sub">Compared against your previous sweep for this exact phase - real DPS-gain moves outside noise, plus what's new or no longer shown.</div>
+    <div class="changes-group" id="changes-new-group" hidden>
+      <div class="changes-group-label">New candidates</div>
+      <div class="changes-grid" id="changes-new-grid"></div>
+    </div>
+    <div class="changes-group" id="changes-moved-group" hidden>
+      <div class="changes-group-label">Moved outside noise</div>
+      <div class="changes-grid" id="changes-moved-grid"></div>
+    </div>
+    <div class="changes-group" id="changes-gone-group" hidden>
+      <div class="changes-group-label">No longer shown</div>
+      <div class="changes-grid" id="changes-gone-grid"></div>
+    </div>
+    <div class="bis-empty" id="changes-empty" hidden>Nothing changed outside noise since your last sweep for this phase.</div>
   </section>
 
   <section class="bis" id="enchants-section" hidden>
@@ -500,6 +541,85 @@ if (bisList.length > 0) {
   // read as a missing/broken section.
   document.getElementById('bis-count').textContent = '0 slots locked in';
   document.getElementById('bis-empty').hidden = false;
+}
+
+// "Since Your Last Sweep" (2026-09-04, real alternative built after backlog
+// #8's investigation found no safe way to make the sweep itself faster -
+// see FUTURE_TASKS.md/NOTES.md's 2026-09-04 entry). Purely a comparison of
+// two already-computed, already-trusted ledgers (core/ledger_diff.py) - no
+// new sim calls, so no cache-correctness risk. DATA.diff is null on a
+// character's first-ever sweep for this phase - nothing to compare against
+// yet, a legitimate state, section stays hidden rather than showing an
+// empty "0 changes" box that would just be noise on every first run.
+const changesDiff = DATA.diff;
+if (changesDiff) {
+  document.getElementById('changes-section').hidden = false;
+  const newList = changesDiff.new || [];
+  const movedList = changesDiff.moved || [];
+  const goneList = changesDiff.no_longer_shown || [];
+  const totalChanges = newList.length + movedList.length + goneList.length;
+
+  document.getElementById('changes-count').textContent =
+    totalChanges === 0 ? 'No real changes' : totalChanges + ' change' + (totalChanges === 1 ? '' : 's');
+
+  function changeCard(it, extraClass, rightHtml) {
+    const card = document.createElement('div');
+    card.className = 'changes-card' + (extraClass ? ' ' + extraClass : '');
+    card.innerHTML = `
+      <div class="changes-text">
+        <div class="slot">${escapeHtml(it.tier || it.slot || '')}</div>
+        <div class="name">${whLink(it.name, it.item_id)}${replacesSlotTag(it)}</div>
+      </div>
+      ${rightHtml}
+    `;
+    return card;
+  }
+
+  if (newList.length > 0) {
+    document.getElementById('changes-new-group').hidden = false;
+    const grid = document.getElementById('changes-new-grid');
+    newList.forEach(it => {
+      const d = fmtDelta(it.mv);
+      grid.appendChild(changeCard(it, 'is-new', `<div class="changes-delta ${d.cls}">${d.text}</div>`));
+    });
+  }
+
+  if (movedList.length > 0) {
+    document.getElementById('changes-moved-group').hidden = false;
+    const grid = document.getElementById('changes-moved-grid');
+    movedList.forEach(it => {
+      // Headline number stays "current mv", matching every other row in
+      // this report - the delta/was-value are secondary context, not the
+      // main figure, so a reader scanning mv numbers sees a consistent unit
+      // everywhere rather than a delta in one section and an absolute
+      // figure everywhere else.
+      const cur = fmtDelta(it.mv);
+      const was = fmtDelta(it.old_mv);
+      const delta = fmtDelta(it.delta);
+      grid.appendChild(changeCard(it, '', `
+        <div>
+          <div class="changes-delta ${cur.cls}">${cur.text}</div>
+          <div class="changes-was">was ${was.text} (${delta.text})</div>
+        </div>
+      `));
+    });
+  }
+
+  if (goneList.length > 0) {
+    document.getElementById('changes-gone-group').hidden = false;
+    const grid = document.getElementById('changes-gone-grid');
+    goneList.forEach(it => {
+      // Deliberately not claiming to know why - see ledger_diff.py's own
+      // docstring for the real reason this can't be told apart yet
+      // (already equipped now / filtered by a scope change / still a real
+      // candidate but pushed out of the top-N list by something else).
+      grid.appendChild(changeCard(it, 'is-gone', '<div class="changes-was">now equipped, filtered, or outranked</div>'));
+    });
+  }
+
+  if (totalChanges === 0) {
+    document.getElementById('changes-empty').hidden = false;
+  }
 }
 
 // Missing Enchants: only real, verified gaps ever land in this list (see

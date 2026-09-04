@@ -6,28 +6,30 @@ entry and CLAUDE.md/FUTURE_TASKS.md for the full technical writeups. This file i
 asked about directly ("what do I have to do?") and regenerated/updated at the end of a future
 autonomous session the same way — treat it as disposable, not an append-only log like NOTES.md.
 
-## Decide: backlog #8 (re-sweep speed after a raid week)
+## Decide: backlog #8 (re-sweep speed after a raid week) - narrowed down, 2026-09-04
 
-Real investigation found the original idea ("joint search over shared-pool slots") doesn't match
-how the tool actually works anymore — no such search exists today, and backlog #16 (shipped hours
-before this pass) already solved the underlying coupling problem a different way. The REAL
-remaining cost (a full re-sweep after 1-2 new items ends up ~100% cache-missing) is real and
-understood, but fixing it safely means proving per-class/per-rotation independence claims (e.g.
-"does Warrior's Rage economy near a haste breakpoint actually not care about a new Ring's
-Agility?") — not something to assume and ship overnight into a component every reported DPS
-number depends on.
+The "what changed since your last sweep" diff view is now built and live (see below) - that part
+of #8 is done. What's still genuinely unsolved is the ORIGINAL ask: making the sweep itself faster.
+Fixing that safely means proving per-class/per-rotation independence claims (e.g. "does Warrior's
+Rage economy near a haste breakpoint actually not care about a new Ring's Agility?") - not
+something to assume and ship into a component every reported DPS number depends on.
 
-**Your call, three real options** (full detail in `FUTURE_TASKS.md`'s #8 entry):
-1. Accept re-sweeps stay ~15-20 min for now — nothing forces this to be fixed soon, it's an
-   annoyance, not a blocker.
-2. Greenlight a *different*, lower-risk feature instead: a "what changed since last sweep" diff
-   view (compares the new report against the previous one via `report_storage.py`, zero
-   cache-correctness risk since it's pure display-layer comparison). This is NOT what #8
-   originally asked for (it doesn't make sweeps faster), but serves the same real want ("I got new
-   gear, what's different?").
-3. Greenlight the real, substantial work: proving per-slot independence bounds one profile at a
+**Your call, two real options now** (full detail in `FUTURE_TASKS.md`'s #8 entry):
+1. Accept re-sweeps stay ~15-20 min - the diff view now means you don't have to manually spot
+   what changed, so this may not sting as much as it did before. Nothing forces a fix.
+2. Greenlight the real, substantial work: proving per-slot independence bounds one profile at a
    time before touching the cache key at all. Genuinely more than a session's worth of careful
    work, not a quick fix.
+
+## Built since this file was written: "Since Your Last Sweep"
+
+Every real report now shows a new section comparing itself against your last sweep for that exact
+character/profile/phase - new candidates, items whose DPS gain moved outside noise, and items no
+longer shown (labeled honestly - it can't yet tell apart "you already got it" from "filtered out"
+from "still good, just outranked now", since only the top-8 list per slot is stored, not the full
+pool). Silently absent on a first-ever sweep for a phase (nothing to compare against yet). No
+action needed from you - it'll just show up starting with your next sweep for any phase you've
+already run once before.
 
 ## Still open, unstarted (not touched tonight, per your own scope)
 

@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import time_horizon  # noqa: E402
 import stat_weights  # noqa: E402
 import run_upgrade_sweep as sweep  # noqa: E402 - source of truth for the real iteration counts (see report_template.html's footer)
+import ledger_diff  # noqa: E402
 
 import repo_root  # noqa: E402
 USER_DATA_DIR = repo_root.USER_DATA_DIR
@@ -117,23 +118,70 @@ def build(name_realm: str, phase: str, profile_dir: str):
     }
 
 
-if __name__ == "__main__":
-    # Real bug found in passing (2026-08-31, unrelated to backlog #13
-    # itself): this fallback called build(name_realm, phase) with no
-    # profile_dir at all - build()'s own signature has required profile_dir
-    # since 2026-08-25 (see its docstring), so this block has been silently
-    # broken (a plain missing-argument TypeError) since then. Fixed while
-    # touching this file for the profile-aware filename change below,
-    # rather than leaving a dead debug entry point dead.
-    import character_profiles
-    name_realm, phase = "Lerynia-Thunderstrike", "phase3"
-    profile_dir = character_profiles.SUPPORTED_CHARACTERS[name_realm]
-    profile_dir_name = os.path.basename(os.path.normpath(profile_dir))
-    data = build(name_realm, phase, profile_dir)
+def persist(name_realm: str, phase: str, profile_dir_name: str, data: dict) -> str:
+    """Writes ledger_data_<profile>_<phase>.json - real, permanent output
+    from now on (2026-09-04), not just this file's own dev-tool artifact.
+    Real gap this closes: the live GUI flow (gui/api.py's _run_report_job)
+    used to build the ledger_data dict only to embed it in the rendered
+    HTML, never persisting it standalone - so check_ledger_consistency.py's
+    own real requirement that this file already exist on disk could only
+    ever be satisfied by a one-off manual write, the exact "ad-hoc snippet,
+    not checked in" anti-pattern this project has already flagged elsewhere
+    (see CLAUDE.md's interaction_matrix.py note). Also the real prerequisite
+    for ledger_diff.py's "what changed since last sweep" comparison.
+
+    Plain overwrite, no history/rotation file needed: ledger_diff.compute()
+    always runs BEFORE this (see build_with_diff()) while the file on disk
+    still holds the PRIOR sweep - "whatever's there right before this
+    write" already IS "last time's sweep" by construction, so there's
+    nothing to snapshot separately.
+    """
     out_dir = os.path.join(USER_DATA_DIR, "characters", name_realm, "cache")
     os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, f"ledger_data_{profile_dir_name}_{phase}.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
-    print(f"Wrote {out_path}")
+    return out_path
+
+
+def build_with_diff(name_realm: str, phase: str, profile_dir: str) -> dict:
+    """The one real call site both gui/api.py and this file's own __main__
+    dev tool use - build() -> compute the real diff against last sweep (MUST
+    happen before persist() below overwrites the file compute() reads as
+    "previous") -> embed the diff -> persist (so the on-disk file and
+    whatever gets rendered into HTML stay identical, matching
+    check_ledger_consistency.py's own existing check_html() equality
+    assertion) -> return the same dict."""
+    profile_dir_name = os.path.basename(os.path.normpath(profile_dir))
+    data = build(name_realm, phase, profile_dir)
+    data["diff"] = ledger_diff.compute(name_realm, phase, profile_dir_name, data)
+    persist(name_realm, phase, profile_dir_name, data)
+    return data
+
+
+if __name__ == "__main__":
+    import argparse
+    import character_profiles
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--character", default="Lerynia-Thunderstrike")
+    parser.add_argument("--phase", default="phase3")
+    parser.add_argument("--profile", default=None,
+                         help="profile_dir_name (e.g. arms_warrior) - defaults to the character's "
+                              "current assignment via character_profiles.SUPPORTED_CHARACTERS, same "
+                              "rule check_ledger_consistency.py already uses.")
+    args = parser.parse_args()
+
+    if args.profile:
+        profile_dir = os.path.join(repo_root.REPO_ROOT, "profiles", "tbc", args.profile)
+    else:
+        profile_dir = character_profiles.SUPPORTED_CHARACTERS[args.character]
+
+    data = build_with_diff(args.character, args.phase, profile_dir)
     print(f"tiers: {[(t['name'], len(t['slots'])) for t in data['tiers']]}")
+    if data["diff"] is None:
+        print("diff: no previous sweep to compare against (expected on a first run)")
+    else:
+        d = data["diff"]
+        print(f"diff: {len(d['new'])} new, {len(d['moved'])} moved outside noise, "
+              f"{len(d['no_longer_shown'])} no longer shown")

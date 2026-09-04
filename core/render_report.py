@@ -72,7 +72,7 @@ if __name__ == "__main__":
     name_realm, phase = "Lerynia-Thunderstrike", "phase3"
     character = repo_root.load_json(os.path.join(USER_DATA_DIR, "characters", name_realm, "character.json"))
     profile_dir = os.path.join(REPO_ROOT, "profiles", "tbc", "survival_hunter")
-    ledger_data = build_ledger_data.build(name_realm, phase, profile_dir)
+    ledger_data = build_ledger_data.build_with_diff(name_realm, phase, profile_dir)
     rendered_html = render(ledger_data, character, phase)
 
     out_dir = os.path.join(USER_DATA_DIR, "characters", name_realm, "reports")

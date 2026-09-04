@@ -5072,3 +5072,80 @@ action (account creation + submission via authors.curseforge.com) - everything e
 CHANGELOG, build_addon_zip.py, the in-GUI Settings/banner link pointing at this exact URL) was
 already prepared and waiting. Updated CLAUDE.md's own publishing note to DONE and removed the
 now-stale "your own action" item from ACTIONS.md.
+
+## 2026-09-04: Built the "Since Your Last Sweep" diff view (backlog #8's real alternative)
+
+Following up on the 2026-09-01 investigation that found no safe way to make a re-sweep itself
+faster (see that entry and FUTURE_TASKS.md's #8), built the lower-risk alternative flagged there:
+a real, noise-aware comparison of a fresh sweep against the character's own previous one for the
+same (character, profile, phase) - zero new sim calls, so zero cache-correctness risk, since it's
+pure arithmetic over two already-computed, already-trusted ledgers.
+
+**Real gap found and fixed along the way, not anticipated going in**: the live GUI flow
+(`gui/api.py`'s `_run_report_job`) built the `ledger_data` dict only to embed it in the rendered
+HTML - it never actually wrote a standalone `ledger_data_<profile>_<phase>.json` to disk. Only
+`core/build_ledger_data.py`'s own `__main__` dev-tool block did that, and it was hardcoded to
+Lerynia-Thunderstrike/phase3 only. Yet `check_ledger_consistency.py` has always required that exact
+file to already exist on disk for whatever character/phase/profile it's checking - meaning the real
+regression numbers already on file for Rubán/Béarforceone (1692/0, 1385/0, etc. from backlog #16's
+own verification) could only have come from a manual one-off write at some point, the exact
+"ad-hoc snippet, not checked in" anti-pattern this project has already flagged elsewhere
+(`interaction_matrix.py`'s own status note in CLAUDE.md). New `build_ledger_data.persist()` +
+`build_with_diff()` fixes this as a side effect - every real sweep from now on leaves a genuine,
+current `ledger_data_<profile>_<phase>.json` on disk, and `__main__` now takes real
+`--character`/`--phase`/`--profile` args instead of being hardcoded.
+
+**Design correction caught by testing, not assumed correct**: the first design used a
+`.previous.json` rotation file (persist() would `os.replace()` the existing file aside before
+writing the new one, and `ledger_diff.compute()` would read that rotated file). A real, isolated
+test script (borrowing Béarforceone's actual production ledger_data as a realistic fixture, run
+under a throwaway fake character name so her real files were never touched) caught this immediately
+- at the point `compute()` needs to run (before persist() has done anything), no `.previous.json`
+file exists yet, since nothing has been rotated. Simplified to the correct design: `compute()`
+reads whatever's on disk under the PLAIN filename (that's still last sweep's data, since this
+sweep hasn't overwritten it yet) BEFORE persist() overwrites it - no rotation, no second file,
+simpler and correct. Real lesson: the isolated test caught a real ordering bug that a
+code-review-only pass likely would have missed (the bug only manifests via the actual call
+sequence, not by reading either function in isolation).
+
+**Real classification, three buckets**, using the same "~95% confidence, not tied" rule already
+used everywhere else in this codebase (`abs(delta) < 2 * noise` - `marginal_value.py`,
+`run_upgrade_sweep.py`, `gem_optimizer.py`, `set_bonus.py` all use this exact threshold for "is
+this difference real"), not an invented new threshold:
+- **New candidates**: `(item_id, best_slot)` present in the new sweep, absent from the old.
+- **Moved outside noise**: present in both, `abs(new_mv - old_mv) >= 2 * sqrt(old_noise² + new_noise²)`
+  - the two sweeps' noise combines the same way `marginal_value.delta_noise()` already combines two
+  independent sim results.
+- **No longer shown**: present in the old sweep, absent from the new. Deliberately NOT split further
+  (acquired vs. filtered by scope vs. genuinely outranked) - only the top `LEADERBOARD_SIZE=8` items
+  per (tier, slot) are ever persisted, so the full screened pool needed to tell those apart isn't
+  available. Labeled honestly ("now equipped, filtered, or outranked") rather than claiming false
+  precision - a real, deliberate scope-down flagged to the user before building (see the
+  conversation the same day), who confirmed proceeding without asking for the fuller 3-way split.
+
+**Real, live verification**: an isolated script exercised `persist()`/`compute()`'s full real
+sequence (first-ever-sweep returns None, a real moved/new/gone case classifies correctly, a
+diff-against-itself correctly reports zero changes) using Béarforceone's actual production ledger
+data as the fixture, run under a fake character name, fully cleaned up afterward - zero risk to her
+real files. Then verified against REAL production data directly: rebuilt Béarforceone's, Lerynia's,
+and Rubán's actual `ledger_data_<profile>_phase3.json` via the new pipeline (no new sim calls - pure
+re-derivation from their already-cached `tiered_report_*.json`), ran `check_ledger_consistency.py`
+for all three (0 failures on all three: Béarforceone 1389/0 then 1396/0 with a real rendered HTML
+included, Lerynia 621/0, Rubán 1696/0 with the same pre-existing achieved_bis-empty warning already
+on file). Rendered HTML checked via direct DOM query (`document.querySelectorAll`) through a local
+`http.server`, matching this project's own established workaround for this template's real
+screenshot-rendering quirk - confirmed all three real categories (new/moved/no-longer-shown) render
+with correct WoWhead links, tier labels, and a consistent "current mv is the headline number"
+convention (a real mid-build fix: the first version showed the raw delta as the headline figure,
+inconsistent with every other row in the report showing absolute mv - caught by looking at the
+actual rendered card, not just the data).
+
+`check_ledger_consistency.py` gained real structural assertions for `ledger_data.get("diff")`
+(shape-checked when present, a duplicate-key check on the "moved" list, an "old_mv"/"delta"
+presence check) plus a `check_html()` render-block guard for `DATA.diff`, matching the existing
+`it.set_note`/`it.rescue_note`/`it.owned_location`/`it.best_slot` pattern.
+
+New files: `core/ledger_diff.py`. Changed: `core/build_ledger_data.py` (persist/build_with_diff,
+argv-based `__main__`), `gui/api.py` (`build_with_diff()` call site), `core/render_report.py`
+(same), `core/report_template.html` (new "Since Your Last Sweep" section + CSS), 
+`core/check_ledger_consistency.py` (new assertions).
