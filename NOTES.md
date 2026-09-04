@@ -5061,3 +5061,14 @@ rebuild needed tonight. Real file changes: `CLAUDE.md` (new Done note), `FUTURE_
 removed, #8 rewritten with tonight's real findings), this entry, and a new root-level `ACTIONS.md`
 (per the user's own mid-session request, "write a actions document for me so i can ask you what i
 have to do tomorrow") summarizing what's actually on the user for their next session.
+
+## 2026-09-01: GT Companion is live on CurseForge
+
+User reported the CurseForge listing is online; verified directly (not taken on word) by fetching
+https://www.curseforge.com/wow/addons/gt-companion - real, live page: "GT Companion" by
+RubanCreator, 6 real downloads already, last update Aug 31 2026, correctly tagged for the
+Anniversary client flavor. This was the one remaining item that was genuinely the user's own
+action (account creation + submission via authors.curseforge.com) - everything else (README,
+CHANGELOG, build_addon_zip.py, the in-GUI Settings/banner link pointing at this exact URL) was
+already prepared and waiting. Updated CLAUDE.md's own publishing note to DONE and removed the
+now-stale "your own action" item from ACTIONS.md.

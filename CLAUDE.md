@@ -697,16 +697,17 @@ were found to have the same "unclear abbreviation" problem on this pass - if a f
 one, same treatment: rename + update every real reference (not just the file itself), verify via a
 real regression check, never a rename left half-done with stale references pointing at the old name.
 
-Publishing `addons/GearingToolCompanion/` to CurseForge is planned as one of the final steps too
-— account + project via **authors.curseforge.com** (real, confirmed live 2026-08-31 - NOT
-console.curseforge.com, which is a separate dashboard for adding whole new *games* to the
-platform, not for submitting an addon to an existing game; this file's own guidance briefly had
-the wrong one, caught and corrected by the user checking directly rather than trusting it), tagged
-for the Anniversary client flavor specifically (not retail/normal Classic), a declared license, and
-either manual zip uploads per release or a `.pkgmeta` file driving their GitHub-based packager off
-this repo directly. README.md/CHANGELOG.md/packaging/build_addon_zip.py/the step-by-step publishing
-guide (Artifact) are all real and ready (2026-08-31) - the actual account creation and submission
-are the user's own action, not something this tool can do on their behalf.
+**DONE, live as of the user's own real submission (confirmed 2026-09-01 via a direct fetch of the
+live listing, not just taking the user's word): `addons/GearingToolCompanion/` is published on
+CurseForge as "GT Companion" by RubanCreator -
+https://www.curseforge.com/wow/addons/gt-companion - 6 real downloads already, last update Aug 31
+2026, correctly tagged for the Anniversary client flavor.** Account + project went through
+**authors.curseforge.com** (real, confirmed live 2026-08-31 - NOT console.curseforge.com, which is
+a separate dashboard for adding whole new *games* to the platform, not for submitting an addon to
+an existing game; this file's own guidance briefly had the wrong one, caught and corrected by the
+user checking directly rather than trusting it). The real CurseForge listing link already added to
+the GUI's Settings modal and install banner (see the earlier "backlog ?" arc) was live-in-waiting
+for exactly this moment and now points at a real, working page - nothing further to do here.
 
 **DONE, 2026-08-31 - real Wowhead tooltips, no hosting/server ever needed.** This item's original
 framing assumed the report was still being published as a claude.ai Artifact (whose CSP blocks

@@ -42,12 +42,11 @@ number depends on.
   distributed more broadly than this dev machine (a real cost decision, ~$100-600/yr depending on
   cert type — see `FUTURE_TASKS.md`).
 
-## Your own actions (not something I can do for you)
+## Done since this file was written
 
-- **CurseForge**: create an account + addon project at **authors.curseforge.com** (confirmed the
-  correct dashboard, not console.curseforge.com) for `GearingToolCompanion`, tagged for the
-  Anniversary client flavor. README/CHANGELOG/build script/step-by-step guide are all ready and
-  waiting in the repo — the account creation and actual submission are yours to do.
+- **CurseForge**: live. "GT Companion" by RubanCreator - https://www.curseforge.com/wow/addons/gt-companion
+  - confirmed via a real fetch of the listing (6 downloads already, last update Aug 31), not just
+  taken on your word. Nothing left to do here; CLAUDE.md's own note is updated.
 
 ## What did NOT need your input tonight
 
