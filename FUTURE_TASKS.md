@@ -147,7 +147,10 @@ purchased, a 100% reliable Blizzard naming convention across every arena season
 (Merciless/Vengeful/Brutal/plain Gladiator's), unlike the vendor/quest findings above which needed
 individual per-item checking. Confirmed 6 of the 255 real gap items match this (Gladiator's
 Slicer/Cleaver, Merciless Gladiator's Quickblade/Maul, Vengeful Gladiator's Staff/Rifle) - these
-are now real "PvP: Arena purchase" tags in the report, not "Source unclear."
+are now real "PvP purchase (Arena/Honor)" tags in the report, not "Source unclear." Deliberately
+doesn't claim "Arena" specifically - a real correction the user caught: a season's Gladiator's gear
+starts arena-rating-gated, but becomes plain honor-purchasable once a later season replaces it,
+and the name alone can't tell which applies for a given profiled character.
 
 **Roughly 246 items remain genuinely unverified** (255 minus 3 overlay entries minus 6 Gladiator's-
 rule matches) - this is real, ongoing, one-item-at-a-time verification work for anything that isn't

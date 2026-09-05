@@ -5311,13 +5311,17 @@ conversion couldn't see the real source data, the Browser tool's `get_page_text(
   the schema doesn't represent (only drop/crafted/rep). Worth checking this pattern against the
   remaining unverified items before assuming each needs its own independent lookup.
 
-**Also added the same session, per the user's own suggestion**: a real, STRUCTURAL rule for arena
-gear, not per-item verification - any item whose real DB name contains "Gladiator's" is arena-
-purchased, a 100% reliable Blizzard naming convention across every arena season. Confirmed 6 of
+**Also added the same session, per the user's own suggestion**: a real, STRUCTURAL rule for PvP
+gear, not per-item verification - any item whose real DB name contains "Gladiator's" is PvP-
+sourced, a 100% reliable Blizzard naming convention across every arena season. Confirmed 6 of
 the 255 real gap items match (Gladiator's Slicer/Cleaver, Merciless Gladiator's Quickblade/Maul,
 Vengeful Gladiator's Staff/Rifle) - verified directly against real DB items, all 6 now correctly
-tagged "PvP: Arena purchase" instead of "Source unclear." `check_ledger_consistency.py` still
-clean (1389/0) after this addition too.
+tagged "PvP purchase (Arena/Honor)" instead of "Source unclear." **Real correction, caught by the
+user directly**: the first version of this label said "Arena purchase" specifically - wrong, since
+a season's Gladiator's gear starts arena-rating-gated but becomes plain honor-purchasable once a
+later season replaces it as current, and the item name alone can't say which applies for a given
+profiled character - fixed to the honest, mechanism-agnostic "PvP purchase (Arena/Honor)" instead.
+`check_ledger_consistency.py` still clean (1389/0) after both this addition and its correction.
 
 Also folded the real, agreed-on maintenance plan into `CLAUDE.md`'s own "Sim update procedure"
 runbook (step 2's db.bin bullet) - re-run `check_missing_sources.py` after every real sim-version
