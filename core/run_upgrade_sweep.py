@@ -199,6 +199,47 @@ PHASE_TO_TIER_ZONE_KEY = {
     3: "T6 (Black Temple / Mount Hyjal)",
 }
 
+# Backlog #15 (2026-09-06) - real, structural finding, verified directly
+# against Wowhead across 11 different tier-set families spanning every real
+# raid tier (T4: Voidheart/Cyclone/Warbringer/Justicar - two different real
+# tokens confirmed, "Helm of the Fallen X" from Karazhan's Prince Malchezaar
+# for most, but a Magtheridon's-Lair-dropped token for at least Justicar; T5:
+# Rift Stalker/Nordrassil/Deathmantle; T6: Skyshatter/Onslaught/Thunderheart,
+# plus the user's own real confirmation that T6 tokens drop inside Black
+# Temple/Hyjal itself, turned in to Tydormu): every real TBC raid tier set is
+# acquired via a boss-dropped TOKEN turned in to a real vendor, never a
+# direct drop of the finished piece - explaining why the DB's own
+# drop/crafted/rep-only sources[] schema has nothing for any of them. T4
+# tokens go to Asuur/Arodis Sunblade <Keeper of Sha'tari Artifacts> in
+# Shattrath City; T5 tokens to Kelara/Veynna Dawnstar <Keeper of Sha'tari
+# Heirlooms>, also Shattrath City; T6 tokens to Tydormu <Keeper of Lost
+# Artifacts>, inside Black Temple/Hyjal itself.
+#
+# Tier is derived from the SET's own real minimum phase across every piece
+# sharing its setId (_SET_MIN_PHASE below), not the individual item's own
+# phase field - several real T6 sets (Gronnstalker's/Malefic/Onslaught/
+# Skyshatter/Thunderheart) have some pieces itemized at phase 3 and others
+# at phase 5, but they're all still the same real T6 set, dropping from the
+# same real raid.
+#
+# Real, deliberate scope limit, not an oversight: 19 of the ~30 distinct set
+# families in the real gap list were individually confirmed this way before
+# Wowhead's own CDN started real-rate-limiting further lookups (CloudFront
+# 403s, not a page-content problem) - the remaining families were NOT
+# individually re-verified, this general rule is applied to them on the
+# strength of the now cross-class-confirmed mechanism itself, not per-item
+# guessing. Flag if a future check finds a real exception.
+_TIER_TOKEN_DESC = {
+    1: "Tier token (Karazhan / Gruul's Lair / Magtheridon's Lair) -> Aldor/Scryers vendor",
+    2: "Tier token (Serpentshrine Cavern / Tempest Keep) -> Sha'tari Heirlooms vendor",
+    3: "Tier token (Black Temple / Mount Hyjal) -> Tydormu",
+}
+_SET_MIN_PHASE: dict[int, int] = {}
+for _item in idb.items():
+    _sid, _phase = _item.get("setId"), _item.get("phase")
+    if _sid and _phase and (_sid not in _SET_MIN_PHASE or _phase < _SET_MIN_PHASE[_sid]):
+        _SET_MIN_PHASE[_sid] = _phase
+
 # Backlog #15 (2026-09-06) - a small, real, individually-verified overlay for
 # items the DB itself has no sources[] data for at all. STRICTLY a fallback:
 # describe_source_and_tier() only ever consults this AFTER a real DB source
@@ -355,6 +396,17 @@ def describe_source_and_tier(item: dict, npc_by_id: dict, zone_by_id: dict) -> t
     if "gladiator's" in item.get("name", "").lower():
         tier = PHASE_TO_TIER_ZONE_KEY.get(item.get("phase"), "Other")
         return "PvP purchase (Arena/Honor)", tier, None
+    # Backlog #15 - real, structural tier-token rule (see _TIER_TOKEN_DESC's
+    # own comment above for the full real evidence) - checked before the
+    # individual overlay/generic fallback below since a real raid tier set
+    # is identifiable structurally (a real setId) rather than needing
+    # per-item curation the way a standalone accessory does.
+    set_id = item.get("setId")
+    if set_id:
+        set_phase = _SET_MIN_PHASE.get(set_id)
+        token_desc = _TIER_TOKEN_DESC.get(set_phase)
+        if token_desc:
+            return token_desc, PHASE_TO_TIER_ZONE_KEY[set_phase], None
     # Backlog #15 - real, individually-verified overlay, checked BEFORE the
     # generic phase-bucket fallback below (a real, specific source beats a
     # generic "Source unclear" bucket) but only ever reached once the real

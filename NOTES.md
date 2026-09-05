@@ -5336,3 +5336,136 @@ filling the rest from the two patterns just found would violate this project's o
 data" rule (some of the 255 are legitimately correct `sources: None`, e.g. arena/honor purchases -
 see the 2026-08-31 scoping note in FUTURE_TASKS.md) - each remaining item still needs its own real,
 individual check before an overlay entry gets added for it.
+
+
+## 2026-09-06: Backlog #15 - major real progress, a structural tier-token rule (111/255 items)
+
+Continuing the same day's earlier overlay work, the user asked to check the remaining gap items
+against Wowhead. Started individually (per the established bar) but a real, general pattern
+emerged after checking 11 different tier-set families across all three real raid tiers - this
+became the session's biggest real finding on this backlog item.
+
+**The real mechanism, confirmed directly, not assumed**: every real TBC raid tier set (T4/T5/T6)
+is acquired via a boss-dropped TOKEN turned in to a real vendor - never a direct drop of the
+finished piece. This is why the DB's own `sources[]` schema (only `drop`/`crafted`/`rep`) has
+nothing for any of them; the real mechanism doesn't fit any of those three shapes. Verified via the
+Browser tool directly against Wowhead (`get_page_text()` - WebFetch can't see this, Wowhead's item
+pages are JS-rendered):
+- **T4** (phase 1): Voidheart Crown (Warlock), Cyclone Faceguard (Shaman), Warbringer Battle-Helm
+  (Warrior) - all three explicitly say "purchasable from either Asuur (The Aldor) or Arodis
+  Sunblade (The Scryers) by obtaining a [Helm of the Fallen X] token from defeating Prince
+  Malchezaar within Karazhan." Justicar Breastplate (Paladin) uses the SAME two vendors but a
+  DIFFERENT token/boss: "Chestguard of the Fallen Champion token from defeating Magtheridon within
+  Magtheridon's Lair" - real, confirmed: not every T4 token drops from the same boss, but they all
+  funnel through the same two Shattrath City vendors.
+- **T5** (phase 2): Rift Stalker Hauberk (Hunter), Nordrassil Chestpiece (Druid), Deathmantle Helm
+  (Rogue) - all "Sold by Kelara / Veynna Dawnstar <Keeper of Sha'tari Heirlooms>, Shattrath City,
+  Cost: 1." Wowhead's auto-generated descriptive paragraph (naming the specific token/boss) wasn't
+  present on these three pages the way it was for the T4 examples - the vendor/cost data is still
+  real and confirmed, just without an explicit boss name captured this session.
+- **T6** (phase 3/5): Onslaught Battle-Helm (Warrior), Thunderheart Headguard (Druid), Skyshatter
+  Headguard (Shaman) - all "Sold by Tydormu <Keeper of Lost Artifacts>, Cost: 1," no boss-drop
+  listing on the page at all. **Real correction, caught by the user directly**: an earlier version
+  of this note called these "tier .5 catch-up gear," wrongly implying a separate, lesser tier -
+  wrong, they're literally Tier 6, same ilvl and set bonuses as any other T6 piece. The user then
+  supplied the missing piece Wowhead's own page didn't spell out: "Tier 6 is bought from a vendor
+  in the hyjal raid by using the corresponding tier tokens from hyjal or black temple" - confirming
+  Tydormu sits inside Black Temple/Hyjal itself, and "Cost: 1" is a real tier token dropped by a
+  BT/Hyjal boss, not a flat currency - completing the real picture to match the T4/T5 pattern
+  exactly, just located inside the raid rather than a neutral hub city.
+
+**Implementation**: `core/run_upgrade_sweep.py` gained `_TIER_TOKEN_DESC` (phase -> real
+token/vendor description text) and `_SET_MIN_PHASE` (a real, computed map of every real `setId` in
+the DB to the MINIMUM phase across all its own pieces, built once from `idb.items()`). Real, non-
+obvious correctness point caught before shipping: several real T6 sets (Gronnstalker's/Malefic/
+Onslaught/Skyshatter/Thunderheart) have some pieces itemized at phase 3 and others at phase 5 - if
+tier were derived from each item's OWN `phase` field naively, the phase-5 pieces would either land
+in the wrong bucket or fall through to "Other," even though they're still the exact same real T6
+set as their phase-3 siblings. Deriving tier from the SET's own minimum phase across every piece
+sharing its `setId` fixes this correctly - verified directly against 12 real phase-5 tier-set items
+(Belt of the Malefic, Onslaught Belt/Bracers/Treads, Thunderheart Bands/Cord/Footwraps, etc.), all
+correctly resolving to their real T6 bucket, not "Other" or a nonexistent "phase 5" bucket.
+
+**Real coverage now**: 111 of the 255 real gap items (across ~30 distinct tier-set families) are
+now described by this real, structural rule instead of "Source unclear" - checked against the
+whole 255-item list via `check_missing_sources.py`'s own output, cross-referenced by real `setId`.
+19 of the ~30 families were individually confirmed on Wowhead before hitting a real CloudFront rate
+limit (403 responses, not a content/parsing problem - confirmed by retrying a single request after
+backing off, still blocked) partway through a batch of the remaining ones (Aldor Regalia/Malorne
+Regalia/Netherblade/Cyclone Harness/Malorne Harness/Demon Stalker Armor/Corruptor Raiment/Tirisfal
+Regalia/Cataclysm Regalia/Cataclysm Harness weren't individually re-checked). The general rule is
+still applied to all of them on the strength of the now-cross-class-confirmed mechanism (verified
+across Warlock/Shaman/Warrior/Paladin/Hunter/Druid/Rogue - 7 of the 15 classes, at all 3 real
+tiers) - not per-item guessing, but also not exhaustively re-verified for every single family.
+Flag if a future check ever finds a real exception to the token/vendor pattern.
+
+**The 2 tier-set overlay entries from earlier the same session (Onslaught Battle-Helm/Thunderheart
+Headguard) are now redundant** under this broader structural rule and were removed from
+`source_overlay.json` - the general rule produces an even more specific, accurate description
+("Tier token (Black Temple / Mount Hyjal) -> Tydormu") than the original per-item entries did
+("Vendor: Tydormu <Keeper of Lost Artifacts>"). Band of Crimson Fury's entry (a real quest reward,
+not a tier-set piece - no `setId`) stays, since it's a genuinely different case the structural rule
+doesn't cover.
+
+**Real remaining scope for whenever Wowhead access clears - 43 items already identified, not yet
+individually checked** (all standalone accessories with no reliable structural tell - rings,
+trinkets, necks, cloaks, weapons, misc gear):
+
+| item_id | name | phase |
+|---|---|---|
+| 29370 | Icon of the Silver Crescent | 1 |
+| 28411 | General's Silk Cuffs | 1 |
+| 29271 | Talisman of Kalecgos | 1 |
+| 29287 | Violet Signet of the Archmage | 1 |
+| 30834 | Shapeshifter's Signet | 1 |
+| 32387 | Idol of the Raven Goddess | 1 |
+| 29383 | Bloodlust Brooch | 1 |
+| 29381 | Choker of Vile Intent | 1 |
+| 28791 | Ring of the Recalcitrant | 1 |
+| 30734 | Leggings of the Seventh Circle | 1 |
+| 29268 | Mazthoril Honor Shield | 1 |
+| 29390 | Everbloom Idol | 1 |
+| 30257 | Shattrath Leggings | 1 |
+| 38290 | Dark Iron Smoking Pipe | 1 |
+| 24692 | Elementalist Bracelets | 1 |
+| 29272 | Orb of the Soul-Eater | 1 |
+| 30724 | Barrel-Blade Longrifle | 1 |
+| 29382 | Blood Knight War Cloak | 1 |
+| 25790 | Expedition Scout's Epaulets | 1 |
+| 30933 | Hauberk of Karabor | 1 |
+| 31281 | Mask of Veiled Death | 1 |
+| 31277 | Pathfinder's Band | 1 |
+| 30739 | Scaled Greaves of the Marksman | 1 |
+| 31106 | Stalker's Helmet of Second Sight | 1 |
+| 29294 | Band of Eternity | 2 |
+| 30015 | The Sun King's Talisman | 2 |
+| 30017 | Telonicus's Pendant of Mayhem | 2 |
+| 29305 | Band of the Eternal Sage | 3 |
+| 29301 | Band of the Eternal Champion | 3 |
+| 33881 | Vindicator's Dragonhide Bracers | 3 |
+| 33484 | Dory's Embrace | 4 |
+| 33507 | Stonebreaker's Totem | 4 |
+| 33540 | Master Assassin Wristwraps | 4 |
+| 33222 | Nyn'jah's Tabi Boots | 4 |
+| 34397 | Bladed Chaos Tunic | 5 |
+| 34392 | Demontooth Shoulderpads | 5 |
+| 34403 | Cover of Ursoc the Mighty | 5 |
+| 34391 | Spaulders of Devastation | 5 |
+| 34407 | Tranquil Moonlight Wraps | 5 |
+| 34396 | Garments of Crashing Shores | 5 |
+| 34887 | Angelista's Revenge | 5 |
+| 34928 | Trousers of the Scryers' Retainer | 5 |
+| 34893 | Vanir's Right Fist of Brutality | 5 |
+
+One real example already spotted while sampling for the tier-set pattern: **Band of Eternity**
+(29294) is a real quest reward from "Defender's Pledge" (Caverns of Time) - a genuinely different
+case from a tier-set token, confirming this remaining list needs real per-item checking, not
+another blanket rule (already found at least 2 real source categories among just 44 non-set items
+sampled overall: quest reward and, from earlier, Badge of Justice vendor purchase for Icon of the
+Silver Crescent - G'eras, Shattrath City, Cost: 41). **These two are ALSO not yet added to the
+overlay file** - spotted during pattern-sampling, not yet formally verified/recorded with a real
+Wowhead URL citation the way the file's own convention requires; do that properly when picking
+this back up, don't half-add them from memory.
+
+`check_ledger_consistency.py` stayed clean (1389/0 Béarforceone, 1696/0+1 known warning Rubán)
+across every change made this session on this backlog item.

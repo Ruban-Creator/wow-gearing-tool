@@ -126,38 +126,49 @@ structurally unreachable when real DB data exists, not just conventionally so). 
 explicit requirement: "our sourcing should always only be a fallback if no source in the wowsims
 db exists."
 
-Seeded with 3 real, individually-verified entries as a working proof of concept (checked directly
-against Wowhead via the Browser tool, not guessed):
-- **Band of Crimson Fury** (28793) - a real quest reward ("The Fall of Magtheridon"), not a raid
-  drop at all. Quest-reward is a genuine 4th real source category the DB's own `sources[]` schema
-  doesn't represent (only drop/crafted/rep) - not missing data, a schema gap.
-- **Onslaught Battle-Helm** (30972) and **Thunderheart Headguard** (31040) - real Tier 6 tier-set
-  pieces (correction: NOT a separate "lesser" tier, as an earlier version of this note
-  mischaracterized them - Thunderheart/Onslaught/Skyshatter/Cyclone are literally T6, same ilvl,
-  same real tier-set bonuses, already correctly bucketed as such) - Wowhead's own page for each
-  shows only a vendor purchase from **Tydormu <Keeper of Lost Artifacts>**, no boss-drop listing
-  at all, at least for this Classic/Anniversary ruleset specifically. Vendor/token purchase is a
-  real 5th source category the DB's own schema doesn't represent (only drop/crafted/rep). Worth
-  checking whether the remaining un-verified items in this list follow the same pattern before
-  assuming each one needs its own from-scratch Wowhead lookup.
+**Major real progress, same day - a structural tier-token rule covering 111 of the 255 items.**
+Started from 3 individually-verified entries (Onslaught Battle-Helm/Thunderheart Headguard/Band of
+Crimson Fury), which revealed a real, general mechanism once checked against 11 different tier-set
+families spanning every real raid tier: **every real TBC raid tier set is acquired via a
+boss-dropped TOKEN turned in to a real vendor, never a direct drop of the finished piece** - T4
+tokens (Karazhan's Prince Malchezaar for most pieces, confirmed a DIFFERENT token from
+Magtheridon's Lair's own boss for at least Justicar) go to Asuur/Arodis Sunblade in Shattrath City;
+T5 tokens go to Kelara/Veynna Dawnstar, also Shattrath City; T6 tokens (per the user's own real
+confirmation) drop inside Black Temple/Hyjal itself, turned in to Tydormu. This is exactly why the
+DB's own `sources[]` schema (only drop/crafted/rep) has nothing for any of them - the mechanism
+itself doesn't fit any of those three categories.
 
-**Also added, 2026-09-06, per the user's own suggestion**: a real, STRUCTURAL rule (not per-item
-verification) for arena gear - any item whose real DB name contains "Gladiator's" is arena-
-purchased, a 100% reliable Blizzard naming convention across every arena season
-(Merciless/Vengeful/Brutal/plain Gladiator's), unlike the vendor/quest findings above which needed
-individual per-item checking. Confirmed 6 of the 255 real gap items match this (Gladiator's
-Slicer/Cleaver, Merciless Gladiator's Quickblade/Maul, Vengeful Gladiator's Staff/Rifle) - these
-are now real "PvP purchase (Arena/Honor)" tags in the report, not "Source unclear." Deliberately
-doesn't claim "Arena" specifically - a real correction the user caught: a season's Gladiator's gear
-starts arena-rating-gated, but becomes plain honor-purchasable once a later season replaces it,
-and the name alone can't tell which applies for a given profiled character.
+Implemented as a real, structural rule in `core/run_upgrade_sweep.py` (`_TIER_TOKEN_DESC`/
+`_SET_MIN_PHASE`), not per-item entries: any item with a real `setId` gets tiered by the MINIMUM
+real phase across every piece sharing that set (several real T6 sets have pieces itemized at both
+phase 3 and phase 5, but they're still one real set from one real raid) and described with its
+real tier's token/vendor text. Covers **111 of the 255 real gap items** across ~30 distinct
+tier-set families - verified directly against real DB items (including the phase-3/phase-5 split
+case) and via `check_ledger_consistency.py` (clean on multiple real profiles). 19 of the ~30
+families were individually confirmed on Wowhead before its CDN started real rate-limiting further
+lookups (CloudFront 403s, not a content problem) - the rest are covered by the same
+now-cross-class-confirmed mechanism, not per-item guessing. The 2 tier-set overlay entries from the
+first pass (Onslaught/Thunderheart) are now redundant under this broader rule and were removed -
+the general rule gives an even more specific, accurate description than the original per-item ones
+did.
 
-**Roughly 246 items remain genuinely unverified** (255 minus 3 overlay entries minus 6 Gladiator's-
-rule matches) - this is real, ongoing, one-item-at-a-time verification work for anything that isn't
-covered by a reliable structural rule like the Gladiator's one, not something to bulk-fill from the
-patterns just found (most of the 255 have no such reliable naming tell). Per the user's own
-suggestion, folding periodic re-checking into #14's future sim-update agent (once built) still
-stands as the long-term maintenance plan (already added as a real runbook step in CLAUDE.md's own
-"Sim update procedure," 2026-09-06); reporting the schema gap upstream to `wowsims/tbc-new` is
-still a real, separate, not-yet-done option.
+**Also added, per the user's own suggestion**: a real, STRUCTURAL rule for PvP gear - any item
+whose real DB name contains "Gladiator's" is PvP-sourced, a 100% reliable Blizzard naming
+convention across every arena season. Confirmed 6 of the 255 real gap items match this - tagged
+"PvP purchase (Arena/Honor)," deliberately not claiming "Arena" specifically since a season's
+Gladiator's gear becomes plain honor-purchasable once a later season replaces it (a real correction
+the user caught in an earlier draft of this label).
+
+**Real remaining scope: ~137 items** (255 minus 111 tier-token minus 6 Gladiator's minus 1
+quest-reward overlay entry) - all real, standalone accessories (rings/trinkets/necks/cloaks/
+weapons/misc) with no reliable structural tell, genuinely needing one-at-a-time Wowhead
+verification. **Paused mid-pass by Wowhead's own rate limiting** (2026-09-06) - 43 of these were
+already identified and queued (see NOTES.md's dated entry for the real list) before lookups started
+returning CloudFront 403s; real next step is resuming those lookups once access clears, not a
+re-design. Per the user's own suggestion, folding periodic re-checking into #14's future sim-update
+agent (once built) still stands as the long-term maintenance plan (already added as a real runbook
+step in CLAUDE.md's own "Sim update procedure"); reporting the schema gap upstream to
+`wowsims/tbc-new` is still a real, separate, not-yet-done option. Note: `check_missing_sources.py`
+itself will keep reporting all 255 regardless of this progress - it measures the DB's own raw gap,
+not this tool's improved ability to describe it; that's expected, not a regression.
 
