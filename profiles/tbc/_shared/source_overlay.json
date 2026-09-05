@@ -4,5 +4,35 @@
     "desc": "Quest reward: The Fall of Magtheridon",
     "verified_via": "https://www.wowhead.com/tbc/item=28793/band-of-crimson-fury",
     "verified_date": "2026-09-06"
+  },
+  "29370": {
+    "desc": "Vendor: G'eras (Badge of Justice, Cost 41), Shattrath City",
+    "verified_via": "https://www.wowhead.com/tbc/item=29370",
+    "verified_date": "2026-09-06"
+  },
+  "28411": {
+    "desc": "PvP purchase (Honor + Warsong Gulch Marks of Honor) - Lady Palanseer, Orgrimmar",
+    "verified_via": "https://www.wowhead.com/tbc/item=28411",
+    "verified_date": "2026-09-06"
+  },
+  "29271": {
+    "desc": "Vendor: G'eras (Badge of Justice, Cost 25), Shattrath City",
+    "verified_via": "https://www.wowhead.com/tbc/item=29271",
+    "verified_date": "2026-09-06"
+  },
+  "29287": {
+    "desc": "Quest reward: Eminence Among the Violet Eye (Karazhan)",
+    "verified_via": "https://www.wowhead.com/tbc/item=29287",
+    "verified_date": "2026-09-06"
+  },
+  "30834": {
+    "desc": "Vendor: Nakodu <Lower City Quartermaster> (requires Lower City Exalted), Shattrath City",
+    "verified_via": "https://www.wowhead.com/tbc/item=30834",
+    "verified_date": "2026-09-06"
+  },
+  "32387": {
+    "desc": "Quest reward: Vanquish the Raven God (Heroic, Druid)",
+    "verified_via": "https://www.wowhead.com/tbc/item=32387",
+    "verified_date": "2026-09-06"
   }
 }
