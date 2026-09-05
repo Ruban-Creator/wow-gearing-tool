@@ -33,27 +33,40 @@ wiring, no agent actually watching `wowsims/tbc-new`'s tags daily and executing 
 end-to-end. Per the user (2026-08-31): plan and build this for real at some point - not scoped or
 started yet, just confirmed as real, wanted infrastructure, not lost.
 
-**Real asset attached, 2026-09-06**: `ops/dedicated-agent-machine/claude-code-machine-setup.md`
-(+ a matching `.pdf`) - a real, detailed setup guide the user had a separate Claude Code session
-write for a specific real machine (Dell OptiPlex 3050 Micro, Ubuntu Server 26.04 LTS headless,
-SSH/tmux/Tailscale access, guardrails around secrets/backups/auto-updates). This is genuinely
-different from the "dedicated sim machine" idea discussed and rejected under the old #8 (that was
-about raw sim-compute throughput for personal gear sweeps) - this is infrastructure for running
-Claude Code itself unattended, which is exactly what #14's daily update-check agent needs a home
-on.
+**Real design, attached and updated 2026-09-06**: `ops/dedicated-agent-machine/claude-code-machine-setup.md`
+- started from a guide the user had a separate Claude Code session write for a real machine (Dell
+OptiPlex 3050 Micro, Ubuntu Server 26.04 LTS headless), then rewritten in this session into a real
+TWO-MACHINE design once a genuine blocker was found: a Linux machine can cross-compile the sim's
+Windows binaries fine (`GOOS=windows GOARCH=amd64 go build` produces a real `.exe`, no Windows
+needed for that step) but can't RUN one to verify it actually works - a `.exe` needs a real Windows
+environment to execute, and the runbook's whole point at the verify stage is running real sim
+calls, not just confirming the code compiles. Split accordingly:
 
-**Real, unresolved compatibility gap found while reviewing it, not yet fixed**: this guide sets up
-a LINUX machine, but `adapters/tbc/adapter.py`, `simserver_client.py`, and `valuation.py` all
-hardcode the sim binary paths with a literal `.exe` suffix (`BRIDGE_EXE`, `WOWSIMCLI_EXE`,
-`SIMSERVER_EXE`) - a real Linux build of `sim/tbc-new` would produce extension-less ELF binaries
-(`bridge`, `wowsimcli`, `simserver`), so these lookups would fail as written. The Windows-specific
-`CREATE_NO_WINDOW` subprocess flag is ALREADY correctly cross-platform-guarded
-(`if sys.platform == "win32" else 0`) in all three files - only the exe-suffix path construction
-needs the same treatment. This only matters for steps 4+ of the runbook (rebuild/verify) - steps
-1-3 (checking the latest tag, the real risk-assessing `git diff`, bumping the submodule) are pure
-git operations and would run fine on this machine as-is. A real, small, scoped fix
-(`f"bridge{'.exe' if sys.platform == 'win32' else ''}"` or equivalent, in the three files above) -
-not started, but now a known, bounded piece of work rather than an unknown blocker.
+- **Watcher (Linux, the original OptiPlex machine)** - runs daily via cron + `claude -p`
+  (non-interactive mode): checks the latest tag, does the real risk-assessing `git diff`, bumps the
+  submodule, cross-compiles all three binaries as a cheap "does it even build" pre-flight check,
+  and pushes to a `sim-update-pending` branch - never touches `master` itself.
+- **Verifier (Windows, new)** - triggered after the Watcher pushes. Pulls the staging branch,
+  rebuilds the binaries natively (Windows-native, so the `.exe`-hardcoded paths in
+  `adapters/tbc/adapter.py`/`simserver_client.py`/`valuation.py` are correct as-is here - no code
+  fix needed after all, since this machine was always going to build real Windows binaries anyway),
+  runs the runbook's real verification steps (live sim calls, `check_ledger_consistency.py` across
+  all 15 profiles), and only on a clean pass merges to `master` and pushes.
+
+Real, checked decision on the Windows machine itself (2026-09-06): a plain, official Windows 11 Pro
+install (Microsoft's own download page), debloated with only Microsoft-supported mechanisms
+(winget app removal, documented Group Policy settings) - not Windows 11 IoT Enterprise LTSC
+(Microsoft's actually-minimal edition, checked and ruled out: not a normal individual download,
+needs an authorized distributor/volume licensing/Visual Studio subscription) and explicitly not any
+third-party "debloated" Windows ISO from a forum or reseller (unverified modified system images -
+a real risk for a machine holding this repo's GitHub credentials). No GUI is used on either
+machine for any of the actual work - every real step is a CLI tool.
+
+Not built yet - the guide is real and detailed (BIOS/OS install through daily cron wiring for the
+Watcher; Windows install/debloat/SSH/toolchain/verify-merge script for the Verifier), but no
+physical Windows machine has been set up against it yet, and the Watcher's own `run_watcher.sh`/
+cron job and the Verifier's `verify_and_merge.ps1` haven't been tested against this real repo end
+to end - real next step whenever picked up, not a re-design.
 
 ## #15 — Investigate the widespread `sources: None` DB gap (real raid tier sets across every class)
 
