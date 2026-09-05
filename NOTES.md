@@ -5149,3 +5149,31 @@ New files: `core/ledger_diff.py`. Changed: `core/build_ledger_data.py` (persist/
 argv-based `__main__`), `gui/api.py` (`build_with_diff()` call site), `core/render_report.py`
 (same), `core/report_template.html` (new "Since Your Last Sweep" section + CSS), 
 `core/check_ledger_consistency.py` (new assertions).
+
+## 2026-09-06: Backlog #8 fully closed - both remaining speed levers decided against
+
+Following up on the diff-view build (2026-09-04), walked through the two real remaining ways to
+make the sweep itself faster - the user made a real decision on both rather than leaving #8 open:
+
+1. **Per-class independence proofs** (prove a slot change doesn't ripple into other candidates'
+   MV, to safely skip re-simming them). The user's own observation settled this: "I think there
+   will always be a change to each item when the baseline changes" - correct. WoW's combat math
+   has real nonlinear interactions (Rage economy, mana/OOM thresholds, hit/expertise caps), so
+   there's no clean "provably zero effect" case, only "usually negligible" - exactly the kind of
+   assumption this tool exists to catch failing (that's the whole reason `MV(i) = DPS*(P∪{i}) -
+   DPS*(P)` sims full gear sets instead of adding up stat weights). Rejected as unsound, not just
+   risky.
+2. **A dedicated sim machine for the household.** Investigated for real: what it would need
+   (just Windows - the installer already bundles the fully-built simulator, no Go/Python toolchain
+   needed), whether it would actually help (the one CERTAIN benefit is removing contention with
+   the household's own PC/gaming use, not raw speed - a real, measured 7.4x SLOWDOWN from doubling
+   worker count on this machine means more cores might not even help, cause not fully understood),
+   and the real, currently-unbuilt gap (character data lives per-machine only, `USER_DATA_DIR` is
+   hardcoded, not networked - would need pointing it at the household's existing Synology NAS, a
+   small real code change, not built). User's verdict: "this does not sound worth it."
+
+Both #8's real underlying want (see the diff view) and its literal original ask (make it faster)
+are now resolved - one built, one explicitly declined. Removed #8's entry from FUTURE_TASKS.md
+(now closed, not open) and added the closure summary to CLAUDE.md's Future Scope section,
+matching the same pattern used for #7/#13/#16. `ACTIONS.md` rewritten fresh to reflect current
+state - #14/#15/SmartScreen cert remain the only real open items, none urgent.

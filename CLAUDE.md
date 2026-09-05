@@ -634,9 +634,27 @@ where borderline, resolved @30000 where flagged" disclosure line
 (`report_template.html`) already surfaces this. `FUTURE_TASKS.md`'s own #7 entry was simply never
 updated after this shipped - a documentation gap, not a code gap; no new code was written for this
 finding, just this note plus removing the stale entry. The remaining tail of #7's original idea
-("extend this funnel to `core/optimizer.py`'s own joint-slot search") is folded into backlog #8's
-entry below instead, since it references the same unused `optimizer.py` functions #8 already
-discusses, rather than kept as a near-duplicate third entry.
+("extend this funnel to `core/optimizer.py`'s own joint-slot search") was folded into backlog #8's
+own investigation instead, since it referenced the same unused `optimizer.py` functions - see #8's
+own closure below rather than a near-duplicate third entry.
+
+**Backlog #8 (decomposed re-sweep caching) — CLOSED, 2026-09-06, real want addressed, original ask
+decided against.** Full investigation trail in git history/NOTES.md's 2026-09-01 and 2026-09-04
+entries; short version: the "what changed since last sweep" diff view was built as the real,
+lower-risk alternative (`core/ledger_diff.py`, see the multi-profile/report-storage section above
+for where its report section lives), and the original ask - make the sweep itself faster - was
+investigated via two real levers (per-class independence proofs to safely skip cache work; a
+dedicated sim machine) and the user decided against both once they saw the real cost/payoff of
+each, rather than leaving it an open question. Independence proofs were rejected on the user's own
+correct observation that WoW's combat math has no clean "provably zero effect" case (Rage economy,
+mana/OOM thresholds, hit/expertise caps all create real, if often small, cross-slot ripples) - not
+just risky, actually unsound as a plan. A dedicated machine's only CERTAIN benefit (sweeps stop
+competing with the household's own PC use) doesn't currently justify new hardware, and its speed
+benefit is genuinely uncertain (this machine measured a real 7.4x SLOWDOWN from doubling worker
+count, cause not fully understood - more cores might not help at all) - plus the real, unbuilt gap
+of getting each household member's own synced character data onto a shared machine. Re-open only
+if the sweep's current real ~7-minute cost (post the 2026-08-24 60.7% fix, see the
+`project-bridge-exe-overhead` memory) becomes a genuine problem again - not a live question.
 
 **SmartScreen warning on the installer - accepted for now (2026-08-31), real tracked reminder to
 revisit with a code-signing cert later. See `FUTURE_TASKS.md`.**
@@ -736,6 +754,3 @@ narrowly. Originally scoped as "results.csv/winner.json outputs from §8" - both
 already effectively superseded by the real HTML ledger long before this decision, so there was no
 real remaining case for a Sheets export to begin with.
 
-**Backlog #7 (three-tier funnel 4th tier + optimizer.py extension) and #8 (decomposed
-re-sweep caching) - both idea collection, not decided, moved to `FUTURE_TASKS.md`
-(2026-08-31) to keep this file focused on active work.**
