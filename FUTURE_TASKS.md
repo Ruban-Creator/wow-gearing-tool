@@ -50,12 +50,14 @@ full trail):
    `.exe`-hardcoded paths in `adapters/tbc/adapter.py`/`simserver_client.py`/`valuation.py` need no
    code fix at all, since this machine was always going to build real Windows binaries natively.
 
-Real hardware pick: an HP EliteDesk 800 G6 Mini (10th-gen Intel, officially Windows-11-supported,
-a real ~€259 refurbished listing found and checked) or equivalent small-form-factor business PC -
-though reusing older, unofficially-supported hardware already on hand is also genuinely fine
-(Windows 11 does actually run on excluded CPUs via a well-known, routine one-time install bypass;
-the real tradeoff is Microsoft not formally guaranteeing updates on unsupported hardware
-indefinitely, not "it won't work" - a correction to this session's own first, overstated framing).
+**Real current hardware state: only the original Dell OptiPlex 3050 Micro (i5-7500T, 7th-gen) is
+actually on hand** - no replacement has been bought. Windows 11 does genuinely run on this via a
+well-known, routine one-time install bypass (the real tradeoff is Microsoft not formally
+guaranteeing updates on unsupported hardware indefinitely, not "it won't work" - a correction to
+this session's own first, overstated framing) - a real, reasonable way to start today on what's
+already owned. An HP EliteDesk 800 G6 Mini (10th-gen Intel, officially Windows-11-supported, a
+real ~€259 refurbished listing found and checked) is a real, verified option to consider if/when
+buying new hardware instead - not a decision that's been made.
 Windows install goes through Microsoft's own official download page - not Windows 11 IoT
 Enterprise LTSC (checked and ruled out: not a normal individual download) and explicitly not any
 third-party "debloated" ISO (unverified modified system images - a real risk for a machine holding

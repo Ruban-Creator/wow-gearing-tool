@@ -27,24 +27,28 @@ plain Python, git is git).
 
 ## Phase 0 — Pick the hardware
 
-Real, current pick: **HP EliteDesk 800 G6 Mini** (10th-gen Intel Core, Q470 chipset - officially
-on Windows 11's supported CPU list, no workaround needed) - a real, available refurbished listing
-exists at ~€259 (i5-10500, 8 GB RAM/250 GB SSD base config; worth taking the +€69 upgrade to
-16 GB, since 8 GB is tight running Go builds + Python + git + Windows together). Small, quiet,
-low-power business Mini form factor, same role this whole guide has always assumed.
+**Real, current state (2026-09-06): the only machine actually on hand is the original Dell
+OptiPlex 3050 Micro** (i5-7500T, 7th-gen) from this guide's first, Linux-based draft. No
+replacement has been bought - the HP EliteDesk below is a real, verified option to consider, not
+a purchase that's happened.
 
-Any similar small-form-factor business PC (Dell OptiPlex Micro, Lenovo ThinkCentre Tiny, Intel
-NUC) works equally well - the category matters more than the specific model.
+**Using the Dell you already have**: Windows 11 will genuinely install and run on CPUs Microsoft
+doesn't officially list as supported (the i5-7500T is one) - this is routine, not a fragile hack,
+done via a well-known one-time bypass at install time (a registry key, or Rufus's own built-in
+option for this). The real, honest tradeoff isn't "will it work" - it does - it's that Microsoft
+doesn't formally guarantee updates keep arriving on unsupported hardware indefinitely, though in
+practice this keeps working for most people for years. A perfectly reasonable way to start today
+on hardware already owned, with the option to move this same setup onto newer hardware later
+without redoing anything except the one-time OS install itself - everything from Phase 4 onward
+is identical either way.
 
-**On reusing hardware you already have (e.g. an older, 7th-gen-class Micro PC) instead:** Windows
-11 will genuinely install and run on CPUs Microsoft doesn't officially list as supported - this is
-routine, not a fragile hack, done via a well-known one-time bypass at install time (a registry key,
-or Rufus's own built-in option for this). The real, honest tradeoff isn't "will it work" - it
-does - it's that Microsoft doesn't formally guarantee updates keep arriving on unsupported
-hardware indefinitely, though in practice this keeps working for most people for years. A
-perfectly reasonable way to start today on hardware already on hand, with the option to move this
-same setup onto newer hardware later without redoing anything except the one-time OS install
-itself - everything from Phase 4 onward is identical either way.
+**If/when buying new hardware instead**: **HP EliteDesk 800 G6 Mini** (10th-gen Intel Core, Q470
+chipset - officially on Windows 11's supported CPU list, no workaround needed) is a real, checked
+option - a real, available refurbished listing exists at ~€259 (i5-10500, 8 GB RAM/250 GB SSD base
+config; worth taking the +€69 upgrade to 16 GB, since 8 GB is tight running Go builds + Python +
+git + Windows together). Any similar small-form-factor business PC (Dell OptiPlex Micro, Lenovo
+ThinkCentre Tiny, Intel NUC) works equally well - the category matters more than the specific
+model.
 
 16 GB RAM / 256+ GB NVMe SSD is comfortably enough - this project's own build+verify work isn't
 resource-heavy, it's the *waiting for a new tag to exist* that takes the real calendar time.
