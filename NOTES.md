@@ -5177,3 +5177,65 @@ are now resolved - one built, one explicitly declined. Removed #8's entry from F
 (now closed, not open) and added the closure summary to CLAUDE.md's Future Scope section,
 matching the same pattern used for #7/#13/#16. `ACTIONS.md` rewritten fresh to reflect current
 state - #14/#15/SmartScreen cert remain the only real open items, none urgent.
+
+## 2026-09-06: Backlog #14 machine-setup guide - three real drafts in one day, final design landed
+
+The user attached a real, detailed Ubuntu-based dedicated-machine guide (from a separate Claude
+Code session) to backlog #14. Working through what it would actually take to run the "Sim update
+procedure" runbook end to end surfaced a real chain of corrections, each one genuine, not wasted:
+
+1. **First draft (as attached)**: single Linux machine does everything. Investigated and found a
+   real blocker: Go cross-compiles Windows binaries fine from Linux (`GOOS=windows GOARCH=amd64
+   go build` - confirmed, no Windows needed for that step), but a Linux machine can't RUN a `.exe`
+   to actually verify a new sim version works - execution needs a real Windows environment. This
+   matters because the runbook's whole verification step means running real sim calls, not just
+   confirming the code compiles.
+2. **Second draft: two machines** - a new Linux "Watcher" (check/diff/bump/cross-compile,
+   push to a `sim-update-pending` staging branch) plus the user's existing Windows dev/production
+   PC as "Verifier" (pull the branch, rebuild natively, verify, merge to master). Real research
+   went into this: confirmed via WebSearch that Windows 11 IoT Enterprise LTSC (Microsoft's actual
+   minimal edition) isn't a normal individual download (authorized distributor/volume
+   license/Visual Studio subscription only), so recommended a stock official Windows 11 Pro +
+   Microsoft-supported debloat instead of any third-party "tiny" ISO. Also researched the correct,
+   current CPU generation for a real candidate machine (i5-7500T is 7th-gen, initially flagged as
+   below Windows 11's officially-supported list).
+3. **User caught the real flaw directly**: "why are you planning for 2 dev machines when we only
+   have 1? - you are currently running on a production machine" - correctly identifying that
+   "Verifier = Windows" had been misread as "buy a second new machine" rather than "use the
+   machine already sitting here." Rewrote Part 2 to use the existing production PC instead of new
+   hardware - much simpler, but then the user immediately flagged the real remaining problem:
+   "but my windows production machine might not be running when a new version is built" - true,
+   since it's an everyday-use PC, not something kept on 24/7. Added Windows Task Scheduler's real,
+   built-in "run task as soon as possible after a missed start" + "at log on" triggers as the real
+   fix - cheap to check often since the script's own first step exits immediately when nothing's
+   pending.
+4. **User then asked the better question directly**: "isn't it better to have the dev machine be
+   Windows instead of Linux? you can disagree." Genuinely agreed, not just to be agreeable - a
+   single new Windows machine collapses the whole two-machine/staging-branch design back to one
+   script that checks, builds, verifies, and pushes itself, with zero dependency on the production
+   PC's uptime. Real, live-verified concern about the specific candidate hardware: Windows 11
+   officially requires 8th-gen Intel or newer (confirmed via WebSearch) - the originally-guided
+   OptiPlex's i5-7500T (7th-gen) doesn't qualify. The user then caught a real overstatement in how
+   I presented that: "Windows 11 will run on the micro pc - i know that" - correct; Windows 11
+   genuinely installs and runs on unsupported CPUs via a well-known, routine one-time bypass
+   (registry key or Rufus's own option) - what's real is narrower than "won't work": Microsoft
+   just doesn't formally guarantee updates on unsupported hardware long-term. Corrected the guide
+   to present both real options (reuse existing hardware via the bypass, or new hardware with
+   official support) rather than steering toward a purchase.
+
+Real, live hardware research: the user linked a real refurbished listing (HP EliteDesk 800 G6
+Mini, afbshop.at, ~€259) - verified via WebSearch that the G6 generation is genuinely 10th-gen
+Intel (Q470 chipset, officially Windows-11-supported), then fetched the actual listing to confirm
+its specific configuration (i5-10500 - the standard, not low-power T-variant; 8 GB RAM, upgradable
+to 16 GB for +€69; 250 GB SSD; "Good" refurbished grade) rather than assuming the generic model
+name implied any specific config.
+
+Final guide (`ops/dedicated-agent-machine/claude-code-machine-setup.md`) is now a single,
+consolidated Windows-machine setup: hardware pick, BIOS prep, official Windows 11 install,
+Microsoft-supported debloat + OpenSSH, the existing project toolchain, one consolidated
+`run_sim_update.ps1` that runs the entire real runbook (check/diff/bump/rebuild/verify/merge/push)
+via `claude -p`, Task Scheduler wiring with real missed-run catch-up, and guardrails. Real,
+recurring lesson from this whole exchange: several of the user's own direct corrections
+("why 2 machines," "might not be running," "isn't Windows better," "it does run, I know that")
+each caught a real, substantive design flaw or overstatement, not nitpicks - worth taking this
+kind of pushback at face value and re-checking rather than defending the prior answer.

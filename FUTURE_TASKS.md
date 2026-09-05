@@ -33,40 +33,42 @@ wiring, no agent actually watching `wowsims/tbc-new`'s tags daily and executing 
 end-to-end. Per the user (2026-08-31): plan and build this for real at some point - not scoped or
 started yet, just confirmed as real, wanted infrastructure, not lost.
 
-**Real design, attached and updated 2026-09-06**: `ops/dedicated-agent-machine/claude-code-machine-setup.md`
-- started from a guide the user had a separate Claude Code session write for a real machine (Dell
-OptiPlex 3050 Micro, Ubuntu Server 26.04 LTS headless), then rewritten in this session into a real
-TWO-MACHINE design once a genuine blocker was found: a Linux machine can cross-compile the sim's
-Windows binaries fine (`GOOS=windows GOARCH=amd64 go build` produces a real `.exe`, no Windows
-needed for that step) but can't RUN one to verify it actually works - a `.exe` needs a real Windows
-environment to execute, and the runbook's whole point at the verify stage is running real sim
-calls, not just confirming the code compiles. Split accordingly:
+**Real design, attached and iterated 2026-09-06**: `ops/dedicated-agent-machine/claude-code-machine-setup.md`
+- went through three real drafts the same day as understanding sharpened, kept here so the
+reasoning isn't lost (all three were genuine, not wasted - see NOTES.md's 2026-09-06 entry for the
+full trail):
+1. Single Linux machine - wrong: it can cross-compile the sim's Windows binaries fine
+   (`GOOS=windows GOARCH=amd64 go build` produces a real `.exe`) but can't RUN one to verify it
+   works, since a `.exe` needs a real Windows environment to execute.
+2. Two machines (a new Linux "Watcher" + the user's own existing production Windows PC as
+   "Verifier") - workable, but coupled the whole pipeline to that PC's uptime, which the user
+   flagged directly ("my windows production machine might not be running when a new version is
+   built").
+3. **Final design: ONE new, dedicated Windows machine does the entire runbook itself** (check,
+   build, verify, merge, push) - the user's own real correction ("isn't it better to have the dev
+   machine be Windows instead of Linux?"). No dependency on any other machine's uptime; the
+   `.exe`-hardcoded paths in `adapters/tbc/adapter.py`/`simserver_client.py`/`valuation.py` need no
+   code fix at all, since this machine was always going to build real Windows binaries natively.
 
-- **Watcher (Linux, the original OptiPlex machine)** - runs daily via cron + `claude -p`
-  (non-interactive mode): checks the latest tag, does the real risk-assessing `git diff`, bumps the
-  submodule, cross-compiles all three binaries as a cheap "does it even build" pre-flight check,
-  and pushes to a `sim-update-pending` branch - never touches `master` itself.
-- **Verifier (Windows, new)** - triggered after the Watcher pushes. Pulls the staging branch,
-  rebuilds the binaries natively (Windows-native, so the `.exe`-hardcoded paths in
-  `adapters/tbc/adapter.py`/`simserver_client.py`/`valuation.py` are correct as-is here - no code
-  fix needed after all, since this machine was always going to build real Windows binaries anyway),
-  runs the runbook's real verification steps (live sim calls, `check_ledger_consistency.py` across
-  all 15 profiles), and only on a clean pass merges to `master` and pushes.
+Real hardware pick: an HP EliteDesk 800 G6 Mini (10th-gen Intel, officially Windows-11-supported,
+a real ~€259 refurbished listing found and checked) or equivalent small-form-factor business PC -
+though reusing older, unofficially-supported hardware already on hand is also genuinely fine
+(Windows 11 does actually run on excluded CPUs via a well-known, routine one-time install bypass;
+the real tradeoff is Microsoft not formally guaranteeing updates on unsupported hardware
+indefinitely, not "it won't work" - a correction to this session's own first, overstated framing).
+Windows install goes through Microsoft's own official download page - not Windows 11 IoT
+Enterprise LTSC (checked and ruled out: not a normal individual download) and explicitly not any
+third-party "debloated" ISO (unverified modified system images - a real risk for a machine holding
+this repo's GitHub credentials). Debloated using only Microsoft-supported mechanisms. Missed
+scheduled runs catch up automatically via Task Scheduler's own "run as soon as possible" option, so
+the machine doesn't need to be on 24/7. No GUI needed anywhere in this - every real step is a CLI
+tool.
 
-Real, checked decision on the Windows machine itself (2026-09-06): a plain, official Windows 11 Pro
-install (Microsoft's own download page), debloated with only Microsoft-supported mechanisms
-(winget app removal, documented Group Policy settings) - not Windows 11 IoT Enterprise LTSC
-(Microsoft's actually-minimal edition, checked and ruled out: not a normal individual download,
-needs an authorized distributor/volume licensing/Visual Studio subscription) and explicitly not any
-third-party "debloated" Windows ISO from a forum or reseller (unverified modified system images -
-a real risk for a machine holding this repo's GitHub credentials). No GUI is used on either
-machine for any of the actual work - every real step is a CLI tool.
-
-Not built yet - the guide is real and detailed (BIOS/OS install through daily cron wiring for the
-Watcher; Windows install/debloat/SSH/toolchain/verify-merge script for the Verifier), but no
-physical Windows machine has been set up against it yet, and the Watcher's own `run_watcher.sh`/
-cron job and the Verifier's `verify_and_merge.ps1` haven't been tested against this real repo end
-to end - real next step whenever picked up, not a re-design.
+Not built yet - the guide is real and detailed end to end (hardware pick through BIOS prep,
+Windows install/debloat/SSH, toolchain, the one consolidated `run_sim_update.ps1` job, Task
+Scheduler wiring, guardrails), but no physical machine has been set up against it yet, and the
+script itself hasn't been tested against this real repo end to end - real next step whenever
+picked up, not a re-design.
 
 ## #15 — Investigate the widespread `sources: None` DB gap (real raid tier sets across every class)
 
