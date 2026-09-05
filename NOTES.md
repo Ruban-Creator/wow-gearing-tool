@@ -5262,3 +5262,12 @@ an unrelated refactor).
 Rewrote QUESTIONS.md's own header to state its narrowed purpose plainly (open questions only, not
 a history log - remove an entry the moment it's answered rather than marking it RESOLVED and
 leaving it) so it doesn't drift back into a second memory file over time.
+
+## 2026-09-06: Affliction Warlock's no-UA build confirmed correct, not a gap
+
+Resolved QUESTIONS.md's one remaining open item. The profile follows wowsims' own literal default
+(no Unstable Affliction), found 2026-08-25 to be a real, surprising deviation from what the spec's
+name implies. Per the user's own real TBC knowledge: this isn't wowsims missing something - the
+old pre-Classic assumption that speccing UA is a DPS gain was later found to actually be a DPS
+*decrease* for Affliction. wowsims' own default matches this correctly. No profile change needed -
+`profiles/tbc/affliction_warlock/` stays exactly as built.

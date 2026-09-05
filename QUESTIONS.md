@@ -10,14 +10,4 @@ the full history of everything that used to be tracked here.
      the answer belongs in NOTES.md (if it's a real technical decision worth a build-log entry) or
      nowhere further at all (if the answer is simply "yes"/"no" and nothing else depends on it). -->
 
-## Affliction Warlock: should the profile spec into Unstable Affliction?
-
-Found 2026-08-25 while building `profiles/tbc/affliction_warlock/`: wowsims' own canonical
-Affliction talent build does NOT spec into Unstable Affliction (confirmed by counting the real
-talent-string segment length against the proto field count, then confirmed by a combat log
-showing 0 UA casts) - despite the APL script referencing it and the spec's own name strongly
-implying otherwise. The profile currently follows this literal wowsims default.
-
-If you'd rather this profile spec into UA (a real, valid alternate Affliction build some players
-prefer), that's a deliberate deviation from the literal wowsims default to make, not a bug to fix -
-flag if you want that swap made.
+Nothing open right now.
