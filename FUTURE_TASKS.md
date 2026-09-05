@@ -131,18 +131,30 @@ against Wowhead via the Browser tool, not guessed):
 - **Band of Crimson Fury** (28793) - a real quest reward ("The Fall of Magtheridon"), not a raid
   drop at all. Quest-reward is a genuine 4th real source category the DB's own `sources[]` schema
   doesn't represent (only drop/crafted/rep) - not missing data, a schema gap.
-- **Onslaught Battle-Helm** (30972) and **Thunderheart Headguard** (31040) - both real vendor
-  purchases from **Tydormu <Keeper of Lost Artifacts>**. Real, systematic finding worth carrying
-  forward: TBC's real "tier .5" catch-up gear lines (Thunderheart/Onslaught/Skyshatter/Cyclone and
-  likely more of the 255) are Tydormu vendor purchases, not raid drops - a 5th real source category
-  (vendor/token purchase) the DB schema also doesn't represent. Worth checking whether the
-  remaining un-verified items in this list follow the same pattern before assuming each one needs
-  its own from-scratch Wowhead lookup.
+- **Onslaught Battle-Helm** (30972) and **Thunderheart Headguard** (31040) - real Tier 6 tier-set
+  pieces (correction: NOT a separate "lesser" tier, as an earlier version of this note
+  mischaracterized them - Thunderheart/Onslaught/Skyshatter/Cyclone are literally T6, same ilvl,
+  same real tier-set bonuses, already correctly bucketed as such) - Wowhead's own page for each
+  shows only a vendor purchase from **Tydormu <Keeper of Lost Artifacts>**, no boss-drop listing
+  at all, at least for this Classic/Anniversary ruleset specifically. Vendor/token purchase is a
+  real 5th source category the DB's own schema doesn't represent (only drop/crafted/rep). Worth
+  checking whether the remaining un-verified items in this list follow the same pattern before
+  assuming each one needs its own from-scratch Wowhead lookup.
 
-**252 items remain genuinely unverified** - this is real, ongoing, one-item-at-a-time verification
-work (matching the same bar every other real curation pass in this project holds itself to), not
-something to bulk-fill from the two real patterns just found. Per the user's own suggestion,
-folding periodic re-checking into #14's future sim-update agent (once built) still stands as the
-long-term maintenance plan; reporting the schema gap upstream to `wowsims/tbc-new` is still a real,
-separate, not-yet-done option.
+**Also added, 2026-09-06, per the user's own suggestion**: a real, STRUCTURAL rule (not per-item
+verification) for arena gear - any item whose real DB name contains "Gladiator's" is arena-
+purchased, a 100% reliable Blizzard naming convention across every arena season
+(Merciless/Vengeful/Brutal/plain Gladiator's), unlike the vendor/quest findings above which needed
+individual per-item checking. Confirmed 6 of the 255 real gap items match this (Gladiator's
+Slicer/Cleaver, Merciless Gladiator's Quickblade/Maul, Vengeful Gladiator's Staff/Rifle) - these
+are now real "PvP: Arena purchase" tags in the report, not "Source unclear."
+
+**Roughly 246 items remain genuinely unverified** (255 minus 3 overlay entries minus 6 Gladiator's-
+rule matches) - this is real, ongoing, one-item-at-a-time verification work for anything that isn't
+covered by a reliable structural rule like the Gladiator's one, not something to bulk-fill from the
+patterns just found (most of the 255 have no such reliable naming tell). Per the user's own
+suggestion, folding periodic re-checking into #14's future sim-update agent (once built) still
+stands as the long-term maintenance plan (already added as a real runbook step in CLAUDE.md's own
+"Sim update procedure," 2026-09-06); reporting the schema gap upstream to `wowsims/tbc-new` is
+still a real, separate, not-yet-done option.
 

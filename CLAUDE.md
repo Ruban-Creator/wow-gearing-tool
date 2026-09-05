@@ -232,6 +232,15 @@ against the submodule, checked for:
 - `assets/database/db.bin`/`db.json` changes → already committed inside the submodule itself, so
   bumping the submodule pulls the new DB automatically. No separate `db2tool`/`gen_db` step needed
   (see this file's own "Local setup" section for the real exception case).
+- **Re-run `python core/check_missing_sources.py` after the bump** (backlog #15, 2026-09-06) - a
+  real, cheap DB-only check (no sim calls). Compare its output against
+  `profiles/tbc/_shared/source_overlay.json`'s own entries: if any overlaid item_id now has a real
+  `sources` entry in the new DB, the overlay entry for it is stale (harmless - the code already
+  never lets an overlay entry override a real DB source - but worth removing for cleanliness) and
+  a `wowsims/tbc-new` release note taking one of these real, individually-verified gaps upstream is
+  exactly the kind of thing worth flagging in the update's own summary, not just silently absorbed.
+  If the total gap count (255 as of 2026-09-06) shrank even for items NOT yet in the overlay,
+  that's real, positive signal upstream is filling in real drop-table data - worth a mention too.
 
 **3. Bump the submodule**: `cd sim/tbc-new && git checkout <new-tag>`. This is a real, visible
 change to the parent repo's own tracked submodule pointer - `git add sim/tbc-new` stages it, but

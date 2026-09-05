@@ -5301,11 +5301,31 @@ conversion couldn't see the real source data, the Browser tool's `get_page_text(
   Real finding: quest-reward is a genuine 4th source category the DB's `sources[]` schema doesn't
   model at all (only drop/crafted/rep), not a missing-data gap.
 - Onslaught Battle-Helm (30972) and Thunderheart Headguard (31040): both real vendor purchases
-  from Tydormu <Keeper of Lost Artifacts>. Real, systematic finding: TBC's "tier .5" catch-up gear
-  lines (Thunderheart/Onslaught/Skyshatter/Cyclone, likely more of the 255) are vendor purchases,
-  not drops - a 5th real source category (vendor/token) the schema also doesn't represent. Worth
-  checking this pattern against the remaining unverified items before assuming each needs its own
-  independent lookup.
+  from Tydormu <Keeper of Lost Artifacts>, no boss-drop listing at all on either item's Wowhead
+  page for this Classic/Anniversary ruleset. **Correction, caught by the user directly**: an
+  earlier draft of this entry called these "tier .5 catch-up gear," implying a separate, lesser
+  tier from real raid content - wrong. Thunderheart/Onslaught/Skyshatter/Cyclone ARE Tier 6, same
+  ilvl and real tier-set bonuses as any other T6 piece, already correctly bucketed as such - the
+  only real finding here is that THIS ruleset's own itemization records them as vendor-purchased,
+  not that they're some different/lesser tier. Vendor/token purchase is a real 5th source category
+  the schema doesn't represent (only drop/crafted/rep). Worth checking this pattern against the
+  remaining unverified items before assuming each needs its own independent lookup.
+
+**Also added the same session, per the user's own suggestion**: a real, STRUCTURAL rule for arena
+gear, not per-item verification - any item whose real DB name contains "Gladiator's" is arena-
+purchased, a 100% reliable Blizzard naming convention across every arena season. Confirmed 6 of
+the 255 real gap items match (Gladiator's Slicer/Cleaver, Merciless Gladiator's Quickblade/Maul,
+Vengeful Gladiator's Staff/Rifle) - verified directly against real DB items, all 6 now correctly
+tagged "PvP: Arena purchase" instead of "Source unclear." `check_ledger_consistency.py` still
+clean (1389/0) after this addition too.
+
+Also folded the real, agreed-on maintenance plan into `CLAUDE.md`'s own "Sim update procedure"
+runbook (step 2's db.bin bullet) - re-run `check_missing_sources.py` after every real sim-version
+bump and diff its output against `source_overlay.json`'s own entries, flagging any overlay entry
+that's gone stale (the real DB has since gained a source for that item) or any real shrinkage in
+the total gap count. Since #14's future automated machine is designed to just "follow all of
+CLAUDE.md's runbook steps," this real check is now inherited automatically once that machine
+exists, with no separate edit needed there.
 
 252 items remain genuinely unverified - real, deliberate scope limit, not an oversight. Bulk-
 filling the rest from the two patterns just found would violate this project's own "never invent

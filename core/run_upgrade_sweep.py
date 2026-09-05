@@ -336,6 +336,20 @@ def describe_source_and_tier(item: dict, npc_by_id: dict, zone_by_id: dict) -> t
             return f"Crafted: {prof}", "Crafted", s["crafted"].get("spellId")
         if "rep" in s:
             return "Reputation reward", "Reputation reward", None
+    # Backlog #15 (2026-09-06, per the user's own suggestion) - a real,
+    # STRUCTURAL rule, not a per-item guess: every real "Gladiator's"-named
+    # item in TBC is arena-purchased, a 100% reliable Blizzard naming
+    # convention across every arena season (Merciless/Vengeful/Brutal/plain
+    # Gladiator's), not something specific to any one item that needs
+    # individual Wowhead verification the way a real raid-drop boss/zone
+    # does. Confirmed via check_missing_sources.py: 6 of the 255 real gap
+    # items match this (Gladiator's Slicer/Cleaver, Merciless Gladiator's
+    # Quickblade/Maul, Vengeful Gladiator's Staff/Rifle) - correctly "no
+    # source" in the DB's own drop/crafted/rep schema (arena purchases have
+    # no real drop location), not a gap to individually verify.
+    if "gladiator's" in item.get("name", "").lower():
+        tier = PHASE_TO_TIER_ZONE_KEY.get(item.get("phase"), "Other")
+        return "PvP: Arena purchase", tier, None
     # Backlog #15 - real, individually-verified overlay, checked BEFORE the
     # generic phase-bucket fallback below (a real, specific source beats a
     # generic "Source unclear" bucket) but only ever reached once the real
