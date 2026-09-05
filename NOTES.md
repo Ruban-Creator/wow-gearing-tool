@@ -5239,3 +5239,26 @@ recurring lesson from this whole exchange: several of the user's own direct corr
 ("why 2 machines," "might not be running," "isn't Windows better," "it does run, I know that")
 each caught a real, substantive design flaw or overstatement, not nitpicks - worth taking this
 kind of pushback at face value and re-checking rather than defending the prior answer.
+
+## 2026-09-06: QUESTIONS.md trimmed down to genuinely open questions only
+
+Per the user's explicit request: QUESTIONS.md had grown into a second memory file (761 lines,
+dated back to 2026-08-24) rather than a live "open questions" queue - almost every entry either
+said "full writeup in NOTES.md" directly or was already explicitly marked RESOLVED/"no open
+judgment calls to flag" in its own header. Read the entire file end to end and checked (not
+assumed) that NOTES.md already covers the same ground - confirmed 54 real cross-references to the
+same stages/classes already exist in NOTES.md's own dated entries.
+
+Found exactly one item that was genuinely still open and never resolved: whether Affliction
+Warlock should deviate from wowsims' own literal default (which skips Unstable Affliction despite
+the spec's name) - kept as QUESTIONS.md's sole remaining entry. Two other items looked open at
+first read but turned out already resolved on closer check, not carried forward: the
+achieved_bis-empty check's severity (confirmed directly - `check_ledger_consistency.py` already
+uses `rep.warn`, not a hard failure, and NOTES.md already documents this) and a cosmetic CLI
+doubled-prefix quirk from the old `run_full_sweep_mv.py` (grepped the current, renamed
+`run_upgrade_sweep.py` - the specific print pattern no longer exists, presumably cleaned up during
+an unrelated refactor).
+
+Rewrote QUESTIONS.md's own header to state its narrowed purpose plainly (open questions only, not
+a history log - remove an entry the moment it's answered rather than marking it RESOLVED and
+leaving it) so it doesn't drift back into a second memory file over time.
