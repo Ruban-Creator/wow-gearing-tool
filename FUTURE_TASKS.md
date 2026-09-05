@@ -33,6 +33,28 @@ wiring, no agent actually watching `wowsims/tbc-new`'s tags daily and executing 
 end-to-end. Per the user (2026-08-31): plan and build this for real at some point - not scoped or
 started yet, just confirmed as real, wanted infrastructure, not lost.
 
+**Real asset attached, 2026-09-06**: `ops/dedicated-agent-machine/claude-code-machine-setup.md`
+(+ a matching `.pdf`) - a real, detailed setup guide the user had a separate Claude Code session
+write for a specific real machine (Dell OptiPlex 3050 Micro, Ubuntu Server 26.04 LTS headless,
+SSH/tmux/Tailscale access, guardrails around secrets/backups/auto-updates). This is genuinely
+different from the "dedicated sim machine" idea discussed and rejected under the old #8 (that was
+about raw sim-compute throughput for personal gear sweeps) - this is infrastructure for running
+Claude Code itself unattended, which is exactly what #14's daily update-check agent needs a home
+on.
+
+**Real, unresolved compatibility gap found while reviewing it, not yet fixed**: this guide sets up
+a LINUX machine, but `adapters/tbc/adapter.py`, `simserver_client.py`, and `valuation.py` all
+hardcode the sim binary paths with a literal `.exe` suffix (`BRIDGE_EXE`, `WOWSIMCLI_EXE`,
+`SIMSERVER_EXE`) - a real Linux build of `sim/tbc-new` would produce extension-less ELF binaries
+(`bridge`, `wowsimcli`, `simserver`), so these lookups would fail as written. The Windows-specific
+`CREATE_NO_WINDOW` subprocess flag is ALREADY correctly cross-platform-guarded
+(`if sys.platform == "win32" else 0`) in all three files - only the exe-suffix path construction
+needs the same treatment. This only matters for steps 4+ of the runbook (rebuild/verify) - steps
+1-3 (checking the latest tag, the real risk-assessing `git diff`, bumping the submodule) are pure
+git operations and would run fine on this machine as-is. A real, small, scoped fix
+(`f"bridge{'.exe' if sys.platform == 'win32' else ''}"` or equivalent, in the three files above) -
+not started, but now a known, bounded piece of work rather than an unknown blocker.
+
 ## #15 — Investigate the widespread `sources: None` DB gap (real raid tier sets across every class)
 
 Found 2026-08-31 while diagnosing a live bad report (see NOTES.md's dated entry for the full
