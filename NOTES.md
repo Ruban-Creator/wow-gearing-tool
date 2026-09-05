@@ -5267,7 +5267,11 @@ leaving it) so it doesn't drift back into a second memory file over time.
 
 Resolved QUESTIONS.md's one remaining open item. The profile follows wowsims' own literal default
 (no Unstable Affliction), found 2026-08-25 to be a real, surprising deviation from what the spec's
-name implies. Per the user's own real TBC knowledge: this isn't wowsims missing something - the
-old pre-Classic assumption that speccing UA is a DPS gain was later found to actually be a DPS
-*decrease* for Affliction. wowsims' own default matches this correctly. No profile change needed -
+name implies. Per the user's own real TBC knowledge, plus a Wowhead talent-guide quote they
+provided: UA is a genuinely strong DoT while leveling/undergeared (and stays a real PvP pick for
+its silence-on-cast/damage-on-dispel behavior), but "is typically swapped for Ruin with better
+gear in PvE" - Ruin is a Destruction-tree crit-damage-bonus talent, and the standard, real TBC
+optimization once gear (and crit) is high enough is to pull points out of UA and into Ruin
+instead. wowsims' own default build already reflects exactly that well-geared, raid-BiS swap -
+this profile's own use case - not a gap or a missed talent. No profile change needed -
 `profiles/tbc/affliction_warlock/` stays exactly as built.
