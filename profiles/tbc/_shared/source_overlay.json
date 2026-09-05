@@ -1,0 +1,18 @@
+{
+  "_comment": "Backlog #15 - a small, real, individually-verified overlay for items where the sim's own DB has sources:None. STRICTLY a fallback: core/run_upgrade_sweep.py's describe_source_and_tier() only ever consults this AFTER checking the real DB source first - an entry here can never override real DB data, only fill in a gap the DB genuinely has no source for. Every entry must be individually checked against a real source (Wowhead) before being added here - never bulk-filled from general knowledge. 'tier' is optional - omit it to keep using the existing phase-based bucket (PHASE_TO_TIER_ZONE_KEY); only set it when the item's real source venue doesn't match its own phase field.",
+  "28793": {
+    "desc": "Quest reward: The Fall of Magtheridon",
+    "verified_via": "https://www.wowhead.com/tbc/item=28793/band-of-crimson-fury",
+    "verified_date": "2026-09-06"
+  },
+  "30972": {
+    "desc": "Vendor: Tydormu <Keeper of Lost Artifacts>",
+    "verified_via": "https://www.wowhead.com/tbc/item=30972/onslaught-battle-helm",
+    "verified_date": "2026-09-06"
+  },
+  "31040": {
+    "desc": "Vendor: Tydormu <Keeper of Lost Artifacts>",
+    "verified_via": "https://www.wowhead.com/tbc/item=31040/thunderheart-headguard",
+    "verified_date": "2026-09-06"
+  }
+}

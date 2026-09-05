@@ -5275,3 +5275,40 @@ optimization once gear (and crit) is high enough is to pull points out of UA and
 instead. wowsims' own default build already reflects exactly that well-geared, raid-BiS swap -
 this profile's own use case - not a gap or a missed talent. No profile change needed -
 `profiles/tbc/affliction_warlock/` stays exactly as built.
+
+## 2026-09-06: Backlog #15 - started the real local source overlay
+
+Per the user's own explicit requirement ("our sourcing should always only be a fallback if no
+source in the wowsims db exists"), built the local overlay option that FUTURE_TASKS.md's #15 entry
+had only sketched as an idea before. New `profiles/tbc/_shared/source_overlay.json` + a small hook
+in `core/run_upgrade_sweep.py`'s `describe_source_and_tier()`, keyed by real item id, checked right
+before the existing phase-bucket fallback - but the ordering that actually matters (real DB source
+always wins) is enforced by the function's own control flow, not just convention: the DB-source
+loop returns immediately on any real match, so the overlay is structurally unreachable whenever
+real DB data exists.
+
+Verified directly with real inputs, not assumed: called `describe_source_and_tier()` against the
+real DB item for each of 3 seeded overlay entries and confirmed the real, specific description
+comes back instead of "Source unclear"; called it against a real non-overlaid gap item (Antlers of
+Malorne, 29093 - itself also `sources: None`, a wrong assumption I'd made earlier this session
+about it having a real drop) and confirmed the existing phase fallback still applies unchanged.
+`check_ledger_consistency.py` still clean (1389/0) afterward.
+
+Seeded the overlay with 3 real, individually-verified entries via the Browser tool against Wowhead
+directly (not WebFetch - Wowhead's item pages are JS-rendered, WebFetch's HTML-to-markdown
+conversion couldn't see the real source data, the Browser tool's `get_page_text()` could):
+- Band of Crimson Fury (28793): a real quest reward, "The Fall of Magtheridon" - not a raid drop.
+  Real finding: quest-reward is a genuine 4th source category the DB's `sources[]` schema doesn't
+  model at all (only drop/crafted/rep), not a missing-data gap.
+- Onslaught Battle-Helm (30972) and Thunderheart Headguard (31040): both real vendor purchases
+  from Tydormu <Keeper of Lost Artifacts>. Real, systematic finding: TBC's "tier .5" catch-up gear
+  lines (Thunderheart/Onslaught/Skyshatter/Cyclone, likely more of the 255) are vendor purchases,
+  not drops - a 5th real source category (vendor/token) the schema also doesn't represent. Worth
+  checking this pattern against the remaining unverified items before assuming each needs its own
+  independent lookup.
+
+252 items remain genuinely unverified - real, deliberate scope limit, not an oversight. Bulk-
+filling the rest from the two patterns just found would violate this project's own "never invent
+data" rule (some of the 255 are legitimately correct `sources: None`, e.g. arena/honor purchases -
+see the 2026-08-31 scoping note in FUTURE_TASKS.md) - each remaining item still needs its own real,
+individual check before an overlay entry gets added for it.

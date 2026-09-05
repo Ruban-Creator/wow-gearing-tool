@@ -116,3 +116,33 @@ Re-run `python core/check_missing_sources.py` any time for the current, real, fu
 list - not reproduced item-by-item here since it's long and would drift out of date; the script is
 the live source of truth.
 
+**Started for real, 2026-09-06**: the local-overlay option above is now real, working code, not
+just an idea - `profiles/tbc/_shared/source_overlay.json` (new) + a small hook in
+`core/run_upgrade_sweep.py`'s `describe_source_and_tier()`, checked BEFORE the phase-bucket
+fallback but only ever reached AFTER a real DB source has already come back empty - an overlay
+entry can never override real DB data, only fill a gap the DB genuinely has none for (verified
+directly: the DB-source check-loop returns early on any real source, so the overlay code is
+structurally unreachable when real DB data exists, not just conventionally so). Per the user's own
+explicit requirement: "our sourcing should always only be a fallback if no source in the wowsims
+db exists."
+
+Seeded with 3 real, individually-verified entries as a working proof of concept (checked directly
+against Wowhead via the Browser tool, not guessed):
+- **Band of Crimson Fury** (28793) - a real quest reward ("The Fall of Magtheridon"), not a raid
+  drop at all. Quest-reward is a genuine 4th real source category the DB's own `sources[]` schema
+  doesn't represent (only drop/crafted/rep) - not missing data, a schema gap.
+- **Onslaught Battle-Helm** (30972) and **Thunderheart Headguard** (31040) - both real vendor
+  purchases from **Tydormu <Keeper of Lost Artifacts>**. Real, systematic finding worth carrying
+  forward: TBC's real "tier .5" catch-up gear lines (Thunderheart/Onslaught/Skyshatter/Cyclone and
+  likely more of the 255) are Tydormu vendor purchases, not raid drops - a 5th real source category
+  (vendor/token purchase) the DB schema also doesn't represent. Worth checking whether the
+  remaining un-verified items in this list follow the same pattern before assuming each one needs
+  its own from-scratch Wowhead lookup.
+
+**252 items remain genuinely unverified** - this is real, ongoing, one-item-at-a-time verification
+work (matching the same bar every other real curation pass in this project holds itself to), not
+something to bulk-fill from the two real patterns just found. Per the user's own suggestion,
+folding periodic re-checking into #14's future sim-update agent (once built) still stands as the
+long-term maintenance plan; reporting the schema gap upstream to `wowsims/tbc-new` is still a real,
+separate, not-yet-done option.
+

@@ -199,6 +199,17 @@ PHASE_TO_TIER_ZONE_KEY = {
     3: "T6 (Black Temple / Mount Hyjal)",
 }
 
+# Backlog #15 (2026-09-06) - a small, real, individually-verified overlay for
+# items the DB itself has no sources[] data for at all. STRICTLY a fallback:
+# describe_source_and_tier() only ever consults this AFTER a real DB source
+# comes back empty - an overlay entry can never override real DB data, only
+# fill a gap the DB genuinely has none for. Every entry is individually
+# checked against Wowhead before being added (see the file's own _comment
+# key) - never bulk-filled from general knowledge, same verification bar
+# every other real curation pass in this project already holds itself to.
+_SOURCE_OVERLAY = repo_root.load_json(
+    os.path.join(REPO_ROOT, "profiles", "tbc", "_shared", "source_overlay.json"))
+
 
 def horizon_tag(r: dict) -> str:
     """'[BiS through P5]' when it's the guide's genuine top pick all the
@@ -325,6 +336,15 @@ def describe_source_and_tier(item: dict, npc_by_id: dict, zone_by_id: dict) -> t
             return f"Crafted: {prof}", "Crafted", s["crafted"].get("spellId")
         if "rep" in s:
             return "Reputation reward", "Reputation reward", None
+    # Backlog #15 - real, individually-verified overlay, checked BEFORE the
+    # generic phase-bucket fallback below (a real, specific source beats a
+    # generic "Source unclear" bucket) but only ever reached once the real
+    # DB source above has already come back empty - see _SOURCE_OVERLAY's
+    # own comment for why this ordering is load-bearing, not incidental.
+    overlay_entry = _SOURCE_OVERLAY.get(str(item.get("id")))
+    if overlay_entry:
+        tier = overlay_entry.get("tier") or PHASE_TO_TIER_ZONE_KEY.get(item.get("phase"), "Other")
+        return overlay_entry["desc"], tier, None
     # Real DB gap fallback (see PHASE_TO_TIER_ZONE_KEY's own comment above) -
     # no `sources` entry at all, but the item's own real `phase` field still
     # reliably places it in a real tier bucket, so it doesn't get silently
