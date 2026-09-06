@@ -58,26 +58,48 @@ assumed buff/debuff against BOTH (a) wowsims.com's own default preset (to reduce
 and (b) the user's own real raid-comp knowledge (to avoid assuming a buff/debuff from a spec that
 wouldn't realistically be grouped with this one) - not done yet, flagged here for a dedicated pass.
 
-## Baseline-honesty plan: Stage 2/3/4 still open (Stage 1 + the pet-double-counting bug it surfaced are DONE)
+## Baseline-honesty plan: Stage 3/4 still open (Stage 1 + Stage 2 + the pet-double-counting bug are DONE)
 
 Plan file: `staged-purring-lynx.md` ("Baseline gear honesty + phase-legal gems"). Stage 1 (two-config
-split, phase-legal gems, Missing Enchants rework, `best_four_of_five()` reconciliation) and the
-separately-discovered, separately-fixed pet-DPS double-counting bug are both DONE and thoroughly
-regression-tested (see NOTES.md's 2026-09-06/07 entries for the full trail). Still open:
-- **Stage 2**: `default_enchants.json` coverage completion across all 15 profiles (currently ranges
-  2/13 to 13/13 of the real enchantable slots) via existing `build_default_enchants.py`/
-  `verify_default_enchants.py` tooling - no new tooling needed, just running it per profile and
-  spot-checking each new entry against its real phase/preset source (enchants carry no DB `phase`
-  field, so this can't be automated the way the gem fix was).
+split, phase-legal gems, Missing Enchants rework, `best_four_of_five()` reconciliation), the
+separately-discovered pet-DPS double-counting bug, and Stage 2 (enchant-coverage completion) are all
+DONE and thoroughly regression-tested (see NOTES.md's 2026-09-06/07 entries for the full trail).
+Stage 2 found 2 real gains (Demonology/Destruction Warlock chest enchants), confirmed the rest of the
+sparse profiles (Balance Druid, Enhancement Shaman, and several ring/offhand slots across other
+casters) are genuinely blocked on dead preset enchant IDs or presets that never itemize a ring
+enchant at all - not a tooling gap, see the new "ring-enchant coverage" entry below. Still open:
 - **Stage 3**: a new "Missing Gems" feature mirroring the now-fixed Missing Enchants (explicitly LOWER
   priority than Stage 2, per the user).
 - **Stage 4**: `CLAUDE.md`'s own MV-formula text needs to explicitly name phase-legality as one of the
   "equip constraints" `DPS*(S)` is computed under (since that's exactly what Bug B violated while
   citing that same sentence as justification), and the stale "Dropped from §8" "fully-optimal
   gem/enchant loadout" line needs replacing with the real, corrected two-config rule.
-- **Open question, not decided**: should `chase_bonus_gems.json`'s existing sim-verified entries
-  (backlog #18 etc.) be re-run through `verify_gem_choices.py` now that gem selection is phase-aware,
-  in case a chase-bonus recommendation flips once both sides of that comparison use phase-legal gems?
+
+## Ring-enchant coverage gap (found during Stage 2 of the baseline-honesty plan, 2026-09-07)
+
+Several caster profiles (Balance Druid, Enhancement Shaman, all 3 Warlocks, Arcane Mage, Shadow
+Priest, Elemental Shaman) are missing a `default_enchants.json` entry for ring1/ring2 specifically
+(plus offhand/ranged for topologies that don't use them) - confirmed this isn't a tooling gap:
+`build_default_enchants.py`'s only real source, each profile's own wowsims preset `gear_sets/
+pN.gear.json`, never itemizes a ring enchant at all (Enchanting is an optional profession, so a
+generic preset can't assume one). Filling this needs a genuinely different source than Stage 2's
+existing tooling: hand-research a real, verified generic ring enchant per profile via Wowhead, then
+sim-verify it the same way every other `default_enchants.json` entry already is - not a "just rerun
+the script" fix. Not started.
+
+## chase_bonus_gems.json re-verification under phase-legal gems - DECIDED, not done (2026-09-07)
+
+Real decision made while finishing the baseline-honesty plan's Stage 2 (no user input needed - this
+was a mechanical judgment call, not a design choice): re-running `verify_gem_choices.py` per profile
+is worth doing since the comparison `chase_bonus_gems.json` entries were originally verified with
+(default gem vs. chase-bonus color gem) now uses phase-legal gems on the "default" side, and a
+verdict that held under the OLD, sometimes-phase-illegal comparison isn't guaranteed to hold under
+the corrected one, even though most profiles only report at Phase 3+ where the old and new default
+gem are identical anyway (no behavior change there). Real, scoped follow-up, not urgent: re-run
+`verify_gem_choices.py` for all 15 profiles, diff against each profile's existing
+`chase_bonus_gems.json`, and only touch a profile's file if a real verdict flip is found. Not done
+yet as of this entry - flagging as its own real, bounded task rather than leaving it as an open
+question with no resolution.
 
 ## Fresh-install "Run Report" doesn't start the sim on another machine - simserver.exe never appears
 

@@ -524,7 +524,7 @@ class Api:
         core/oom_check.py's own docstring for the real mechanism."""
         if name_realm not in SUPPORTED_CHARACTERS:
             return {"oom_seconds": 0.0, "oom_fraction": 0.0, "flagged": False, "recommended_duration": None}
-        return oom_check.check(name_realm, SUPPORTED_CHARACTERS[name_realm], duration)
+        return oom_check.check(name_realm, SUPPORTED_CHARACTERS[name_realm], duration, phase)
 
     def run_report(self, name_realm: str, phase: str, duration: int = 180) -> dict:
         if name_realm not in SUPPORTED_CHARACTERS:

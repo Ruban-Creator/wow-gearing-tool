@@ -52,6 +52,7 @@ import item_db as idb  # noqa: E402
 import gem_optimizer as gopt  # noqa: E402
 import marginal_value as mv  # noqa: E402
 import stat_weights  # noqa: E402
+import time_horizon  # noqa: E402
 
 PROFILE_DIR_NAME = sys.argv[1] if len(sys.argv) > 1 else "survival_hunter"
 NAME_REALM = sys.argv[2] if len(sys.argv) > 2 else None
@@ -70,6 +71,11 @@ def main():
     # DEFAULT_GEM + gem_optimizer.CHASE_BONUS_ITEM_IDS all became
     # per-profile settable state - keeps this script runnable for Hunter.
     stat_weights.set_active(stat_weights.load(PROFILE_DIR))
+    # Real, necessary as of 2026-09-07's phase-legal-gem fix (gem_optimizer.py) - gem
+    # selection now needs the current phase set before it runs. Every profile's own
+    # primary_gem_id/chase_bonus_gems.json is sourced from real Phase 3 data, so
+    # Phase 3 is the correct, consistent choice here too.
+    time_horizon.set_current_phase(3)
     profile = repo_root.load_json(os.path.join(PROFILE_DIR, "profile.json"))
     gc.set_active_default_gem(profile["primary_gem_id"])
     primary_gem = idb.gem_by_id(profile["primary_gem_id"])

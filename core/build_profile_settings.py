@@ -20,6 +20,7 @@ import optimizer as opt  # noqa: E402
 import gear_config as gc  # noqa: E402
 import gem_optimizer  # noqa: E402
 import stat_weights  # noqa: E402
+import time_horizon  # noqa: E402
 
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
@@ -41,6 +42,10 @@ def build(name_realm: str, profile_dir: str) -> dict:
     # here too since build_owned_config() below calls into gem_optimizer,
     # which fails loud (by design, Stage 6.0) if this is skipped.
     stat_weights.set_active(stat_weights.load(profile_dir))
+    # Real, necessary as of 2026-09-07's phase-legal-gem fix - gem selection now
+    # needs the current phase set first. Every profile's own settings_template.json
+    # is built/regenerated against real Phase 3 data, so Phase 3 here too.
+    time_horizon.set_current_phase(3)
     gc.set_active_default_gem(profile["primary_gem_id"])
     _default_enchants_path = os.path.join(profile_dir, "default_enchants.json")
     default_enchants = (repo_root.load_json(_default_enchants_path)

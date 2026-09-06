@@ -25,6 +25,7 @@ import gear_config as gc  # noqa: E402
 import gem_optimizer  # noqa: E402
 import stat_weights  # noqa: E402
 import marginal_value as mv  # noqa: E402
+import time_horizon  # noqa: E402
 
 REPO_ROOT = repo_root.REPO_ROOT
 USER_DATA_DIR = repo_root.USER_DATA_DIR
@@ -45,11 +46,22 @@ DURATION_SCAN_STEP = 15
 DURATION_SCAN_FLOOR = 30  # matches the duration-typo warning's own floor
 
 
-def _settings_and_baseline(profile_dir: str, char_data: dict):
+def _settings_and_baseline(profile_dir: str, char_data: dict, phase_num: int):
     """Real profile-active-state setup, same as run_upgrade_sweep.py's own
     (stat_weights/default gem+enchants/chase-bonus ids) - required before
     opt.build_owned_config() will work at all (it fails loud otherwise, by
-    design, per Stage 6.0)."""
+    design, per Stage 6.0).
+
+    Real bug fixed 2026-09-07: `phase_num` was silently never threaded
+    through at all before this - `check()`'s own real caller (gui/api.py's
+    check_oom()) already receives the real phase from the GUI, but it was
+    never passed down here, and gem_optimizer's own phase-legal gem
+    resolution (2026-09-06's baseline-honesty fix) needs
+    time_horizon.set_current_phase() called before it runs. Without this,
+    every OOM pre-check silently used whatever phase some earlier,
+    unrelated call happened to leave set - or crashed outright if nothing
+    had set it yet in this process."""
+    time_horizon.set_current_phase(phase_num)
     profile = repo_root.load_json(os.path.join(profile_dir, "profile.json"))
     stat_weights.set_active(stat_weights.load(profile_dir))
     gc.set_active_default_gem(profile["primary_gem_id"])
@@ -81,17 +93,22 @@ def _oom_at_duration(base_settings: dict, baseline_config: list, profile_dir_nam
     return oom_seconds, oom_fraction
 
 
-def check(name_realm: str, profile_dir: str, duration: int) -> dict:
+def check(name_realm: str, profile_dir: str, duration: int, phase: str) -> dict:
     """Returns {"oom_seconds", "oom_fraction", "flagged": bool,
     "recommended_duration": int | None}. `recommended_duration` is the
     LARGEST duration (stepping down from `duration` in DURATION_SCAN_STEP
     increments, floor DURATION_SCAN_FLOOR) whose own OOM fraction clears the
     threshold - None if even the floor doesn't help (a real signal the issue
-    is gear/build, not duration)."""
+    is gear/build, not duration).
+
+    `phase` is the real phase string the GUI's Run Report modal already has
+    (e.g. "phase3") - same "phaseN" -> int format run_upgrade_sweep.py's own
+    main() parses, needed now that gem selection is phase-aware (2026-09-07)."""
     char_path = os.path.join(USER_DATA_DIR, "characters", name_realm, "character.json")
     char_data = repo_root.load_json(char_path)
     profile_dir_name = os.path.basename(os.path.normpath(profile_dir))
-    base_settings, baseline_config = _settings_and_baseline(profile_dir, char_data)
+    phase_num = int(phase.removeprefix("phase"))
+    base_settings, baseline_config = _settings_and_baseline(profile_dir, char_data, phase_num)
 
     oom_seconds, oom_fraction = _oom_at_duration(base_settings, baseline_config, profile_dir_name, duration)
     flagged = oom_fraction > OOM_WARNING_THRESHOLD_FRACTION

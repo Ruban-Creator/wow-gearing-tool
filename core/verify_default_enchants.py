@@ -44,6 +44,14 @@ ITERATIONS = 3000
 def verify(profile_dir: str, name_realm: str) -> dict[str, int]:
     profile = repo_root.load_json(os.path.join(profile_dir, "profile.json"))
     stat_weights.set_active(stat_weights.load(profile_dir))
+    # Real, necessary as of 2026-09-07's phase-legal-gem fix (gem_optimizer.py) - gem
+    # selection now needs the current phase set before it runs, which this script
+    # never did before (harmless until then, since gem choice was phase-unaware).
+    # Every profile's own default_enchants.json/primary_gem_id is sourced from real
+    # Phase 3 data (see each profile's own gear_tier_note/profile.json), so Phase 3
+    # is the correct, consistent choice here too - matches every other real caller
+    # of this dev tool.
+    time_horizon.set_current_phase(3)
     time_horizon.set_active_ref_dir(os.path.join(profile_dir, "reference_bis"))
     gc.set_active_default_gem(profile["primary_gem_id"])
     # Real default-enchants active state now required by build_owned_config()

@@ -6573,10 +6573,82 @@ browser-network-tab `RaidSimRequest` payload, which DOES have that wrapper, fail
 `feedback_notify_on_phone.md` (user wants a `PushNotification` when a real decision/blocker comes up or
 a long task finishes while they may be away, not for routine progress).
 
-**Not yet done, real remaining scope from the plan**: Stage 2 (enchant-coverage completion across all
-15 profiles' sparse `default_enchants.json` files, using existing `build_default_enchants.py`/
-`verify_default_enchants.py` tooling), Stage 3 (a new "Missing Gems" feature, explicitly lower priority
-per the user), Stage 4 (`CLAUDE.md`'s own MV-formula/equip-constraints text and the stale "Dropped from
-§8" line still need the real correction the plan calls for). The plan's own "open question" (should
-`chase_bonus_gems.json`'s existing sim-verified entries be re-checked now that gem selection is
-phase-aware?) is also still open, not decided either way.
+## 2026-09-07 - Stage 2 (enchant-coverage completion) done - real gains found, real structural limit
+   found, and two more latent bugs the phase fix incidentally surfaced
+
+Real, thorough pass across all 15 profiles, using the existing `build_default_enchants.py`
+(sources fresh candidates from each profile's own real wowsims Phase 3 preset)/
+`verify_default_enchants.py` (real, isolated sim-verifies every candidate, dropping anything under
+1.0 DPS) tooling - no new tooling built, per the plan's own scope.
+
+**Real per-profile gear_set mapping resolved, not guessed**, for the 2 genuinely ambiguous cases:
+Arcane Mage's real `weapon_topology: "one_hand_plus_offhand_item"` (profile.json) confirmed
+`p3ArcaneSword.gear.json` is her real file, not `p3ArcaneStaff.gear.json`; Destruction Warlock has no
+own `destro_fire_t6`/`destro_fire_t5` variant (only a Phase-1-only `destro_fire_t4`), so all 3 Warlock
+specs share the same real `t6.gear.json` for Phase 3 - confirmed via `gear_tier_note`'s own real
+t4/t5/t6/swp -> phase1/2/3/5 mapping already on file.
+
+**Merge methodology, safe by construction**: new candidates from the preset were merged with each
+profile's EXISTING `default_enchants.json` with existing entries always winning on conflict (never
+silently replacing an already-verified value with a fresh, unverified one), then the WHOLE merged set
+(old + new) was re-run through `verify_default_enchants.py` together - a real, deliberate choice so
+existing entries also get re-confirmed under the now-corrected (phase-legal-gem, pet-fixed) sim math,
+not just newly-added ones.
+
+**Real gains**: only 2 of 15 profiles picked up a genuinely new, verified entry - Demonology Warlock
+and Destruction Warlock both gained a real `chest` enchant (+2.54 and +3.73 DPS respectively). Every
+other profile's new candidates from its own preset failed verification (mostly exact `+0.00` deltas -
+not a real, sim-recognized effect in this DB build, matching the EXACT same class of finding already
+documented in the 2026-08-25 "Missing Enchants" entry for Balance Druid/Enhancement Shaman
+specifically - now confirmed to also affect `back`/`feet` slots across several OTHER profiles too, not
+just those two).
+
+**Real, structural limit found, not a tooling gap**: the profiles still short of full coverage
+(Balance Druid 2/13, Enhancement Shaman 3/13, the 3 Warlocks 7/13, Arcane Mage 7/13, Shadow Priest
+8/13, Elemental Shaman 9/13) are missing real coverage almost entirely on **ring1/ring2** (plus
+offhand/ranged for topologies that don't use them) - the wowsims presets themselves never itemize a
+ring enchant at all (Enchanting is an optional profession, not assumed by a generic preset), so
+`build_default_enchants.py`'s only real source has nothing to offer there. Filling this would need a
+genuinely different, NEW real source (hand-research a real, verified generic ring enchant via Wowhead +
+sim-verify it, matching this project's own "never invent data" bar) - out of THIS pass's scope, tracked
+as its own real TODO item.
+
+**Two more real, latent bugs found and fixed while running this pass, neither about enchants
+specifically:**
+1. **Three more dev tools were silently broken by yesterday's own phase-legal-gem fix, the same way
+   `build_owned_config()`'s own real callers already were**: `verify_default_enchants.py`,
+   `verify_gem_choices.py`, and `build_profile_settings.py` all call into `gem_optimizer`'s gem
+   selection but never called `time_horizon.set_current_phase()` first - a real `RuntimeError` on the
+   very first attempt to use any of them post-fix. All 3 fixed the same way (`set_current_phase(3)`,
+   matching every profile's own real Phase-3-sourced data convention).
+2. **A REAL, LIVE, production bug, not a dev-tool one - `core/oom_check.py`'s `phase` parameter was
+   never actually threaded through at all.** `gui/api.py`'s `check_oom()` already receives the real
+   `phase` from the GUI's own Run Report modal, but never passed it down to `oom_check.check()` -
+   which didn't even ACCEPT a phase parameter to begin with. This means the pre-sweep OOM check
+   (shipped 2026-09-06, part of yesterday's own OOM-transparency feature) has NEVER been genuinely
+   phase-aware since it shipped - a real, latent gap in a feature from literally the day before,
+   only surfaced because gem selection now REQUIRES a set phase to run at all. Fixed: `oom_check.
+   check()` gained a real `phase: str` parameter (same `"phaseN"` format `run_upgrade_sweep.py`'s
+   own `main()` already parses), `_settings_and_baseline()` now calls `time_horizon.
+   set_current_phase()` with it, `gui/api.py`'s own call site updated to pass its already-available
+   `phase` argument through.
+
+**Real, incidental bonus fix caught while regenerating settings, unrelated to enchants**: Enhancement
+Shaman's `settings_template.json` regeneration changed gem 30550 -> 32226 in two chase-bonus candidate
+slots - confirmed real and correct, not a regression: 30550 ("Sundered Chrysoprase") is `unique: true`
+in the DB, meaning the OLD code was silently allowed to select a unique item for filling MULTIPLE
+sockets at once (illegal in real gameplay) before this session's own unique-exclusion filter (added
+while fixing the phase-legal-gem bug, see the earlier 2026-09-06/07 entry) started correctly avoiding
+it. A real, previously-undiscovered, separate latent bug this pass's own regeneration incidentally
+caught and fixed, not something this pass set out to find.
+
+**Real, thorough verification, not a partial pass**: all 15 profiles' `default_enchants.json` were
+re-verified end to end (the 8 that changed got `settings_template.json` regenerated, re-swept, and
+`check_ledger_consistency.py --skip-html`'d clean - 1126/0, 219/0, 157/0, 204/0, 160/0, 92/0, 121/0,
+352/0; the other 6 confirmed byte-identical, zero drops, no regen needed).
+
+**Real remaining scope, tracked in TODO.md**: a NEW, separate ring-enchant research task (needs real
+Wowhead lookup + sim verification per affected profile, not existing-tooling reuse); Stage 3 (Missing
+Gems feature, explicitly lower priority); Stage 4 (`CLAUDE.md`'s own MV-formula/equip-constraints text
+and stale "Dropped from §8" line); the plan's own still-open question about re-verifying
+`chase_bonus_gems.json` now that gem selection is phase-aware.
