@@ -66,7 +66,8 @@
           ]
         },
         {
-          "id": 32331
+          "id": 32331,
+          "enchant": 2621
         },
         {
           "id": 31017,
@@ -102,6 +103,7 @@
         },
         {
           "id": 32352,
+          "enchant": 2940,
           "gems": [
             32196,
             32196
@@ -317,7 +319,8 @@
       "blessingOfSalvation": true,
       "blessingOfWisdom": "TristateEffectImproved",
       "blessingOfMight": "TristateEffectImproved",
-      "unleashedRage": true
+      "unleashedRage": true,
+      "shadowPriestDps": 0
     },
     "elementalShaman": {
       "options": {

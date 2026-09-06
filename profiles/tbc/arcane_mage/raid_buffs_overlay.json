@@ -13,6 +13,7 @@
     "wrathOfAirTotem": "TristateEffectRegular"
   },
   "playerBuffs": {
-    "innervates": 1
+    "innervates": 1,
+    "shadowPriestDps": 1400
   }
 }

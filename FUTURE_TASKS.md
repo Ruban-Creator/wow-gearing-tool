@@ -7,6 +7,77 @@ storage) is being built. Same rule as everywhere else in this repo: real content
 each entry below is the full context needed to pick it back up cold, not just a one-line
 reminder. Numbering matches CLAUDE.md's own backlog numbering (§ Staging / Future scope).
 
+## #17 — Feral Cat Druid's settings_template.json is stale, needs proper regeneration + verification
+
+Found 2026-09-06 while auditing all 15 profiles for the enchant-fallback fix (see NOTES.md's dated
+entry for the full story): regenerating her `settings_template.json` via `build_profile_settings.py`
+produced a 923-line diff, dwarfing every other profile's 5-15-line enchant-only diff. Real cause,
+confirmed before touching anything: her own `consumables.json` (real fields -
+`battleElixirId`/`guardianElixirId`/sapper/scroll flags, matching the real historical fix already
+documented for her - "Feral's own real presets.ts DefaultConsumables... flaskId->battleElixirId
++guardianElixirId swap") and likely her real vendored APL source have both changed since her
+`settings_template.json` was last generated - it was simply never regenerated to match. Reverted
+the regeneration (`git checkout --`) rather than bundling an unverified, unrelated rotation/
+consumables change into an unrelated commit.
+
+Real next step: regenerate her `settings_template.json` for real, then verify properly the same way
+any real sim-update or profile change gets verified in this project - a real sim call confirming
+the (possibly-changed) rotation fires correctly, `check_ledger_consistency.py` clean, and a real
+diff review of what actually changed (rotation logic, consumables, or both) before trusting it.
+Not scoped further than that - the real cause is understood, the real fix just hasn't been done.
+
+## #18 — Balance Druid's (and possibly other profiles') gem-choice verification gap
+
+Found 2026-09-06 while investigating a live Teeth of Gruul discrepancy (see NOTES.md's dated
+entries). `core/gem_optimizer.py`'s `best_gems_for_item()` blanket-replaces every real socket with
+the profile's primary stat gem UNLESS the item is in that profile's own `chase_bonus_gems.json` -
+a real, deliberate, sim-verified policy for Survival Hunter specifically (37 real candidates
+individually tested, 9 confirmed real exceptions where chasing the socket bonus wins). **Balance
+Druid's own `chase_bonus_gems.json` is genuinely empty (`item_ids: []`)** - meaning none of her real
+candidates have ever been individually verified this way; the "pure Spell Damage everywhere" choice
+for her is an untested default, not a confirmed-correct one. Concretely surfaced: her real Pauldrons
+of Malorne (real sockets, real color-matched gems she actually has) get replaced with two identical
+Spell Damage gems in the tool's own baseline, sacrificing whatever real socket bonus her actual
+gems were chasing - unverified whether that trade is actually correct for her.
+
+Real next step: run the same `core/verify_gem_choices.py` methodology already used for Survival
+Hunter against Balance Druid's own real candidate pool, class-by-class if worth generalizing further
+(this same empty-file gap plausibly exists for other profiles too - not checked here, this entry is
+scoped to what was actually found: Balance Druid). Not urgent (the pure-primary-stat default is
+often still correct, per the Survival Hunter precedent - 28 of 37 candidates confirmed no exception)
+but a real, open question, not a settled one.
+
+## #19 — Surface the assumed raid buffs/party comp directly in the rendered report
+
+Per the user's own suggestion, 2026-09-06 (same investigation as #17/#18 - see NOTES.md): every
+report currently computes DPS against a real, but SILENT, raid-composition assumption (which totems
+are active, whether a Shadow Priest's mana return is modeled, etc.) baked into
+`raid_buffs_overlay.json`/`_shared/raid_buffs_received.json` at settings-build time - a reader of
+the report has no way to see what was assumed without reading source files. The user's own proposed
+fix: add a real section to the rendered ledger showing exactly which raid buffs/party members were
+assumed for that report, sourced directly from the real settings actually used (matching this
+project's own "never hand-type what can be read from the real thing" convention, e.g. how the
+footer's iteration-count line already reads real constants rather than hardcoded text) - not a
+hand-maintained description that could drift out of sync.
+
+Real, related context: a live, real audit of `shadowPriestDps` across all 15 profiles was done
+today (Mage=1400, Priest/Warlock=0 matching wowsims' own defaults, Balance Druid/Elemental Shaman
+corrected to 0 per the user's own real raid-strategy knowledge - boomkins group with 3 Warlocks + 1
+Elemental Shaman, not a Shadow Priest). The user also shared real detail on other classes' typical
+groups worth a fuller audit later if this feature surfaces more mismatches once built: Mage group
+(1 Prot Pal + 2 Mages + 1 Shadow Priest + 1 Resto Shaman, or 3 Mages + 1 SP + 1 Resto - already
+roughly matches `arcane_mage/raid_buffs_overlay.json`'s own real caster totems), melee group (1
+Enhancement + 1 Warrior + 1 Feral + 1 Rogue + 1 Ret Paladin), Hunter group (ideally 1 Feral + 1
+Enhancement + 3 Hunters, ideally all Beastmastery - "it really varies" per the user, sometimes 1 Arms
+instead, Survival often unlucky and left in the unsupported healer group) - per the user's own
+explicit policy decision, this tool should NOT chase each character's exact variable real placement,
+it should assume the documented "optimal" comp and make that assumption transparent via this
+feature, so a reader can judge for themselves whether it matches their real week.
+
+Not built yet - a real, concrete, scoped feature (not an idea), higher priority than #18 since it
+directly addresses how this whole class of "silent wrong assumption" bug gets caught by a reader in
+the future, not just this one instance.
+
 ## SmartScreen warning — revisit with a code-signing cert
 
 Decided 2026-08-31: accept the Windows SmartScreen warning on `RGT-Setup.exe` for now (document

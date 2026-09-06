@@ -12,5 +12,7 @@
     "chainOfTheTwilightOwl": true,
     "eyeOfTheNight": true
   },
-  "playerBuffs": {}
+  "playerBuffs": {
+    "shadowPriestDps": 0
+  }
 }

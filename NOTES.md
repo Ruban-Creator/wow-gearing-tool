@@ -5549,3 +5549,105 @@ baseline - this needs the user's real answer to "does your actual raid run a Sha
 so, what's a realistic DPS assumption" before any number goes in, per this project's own "never
 invent data" rule extended to raid-composition assumptions the same way it already applies to
 item data.
+
+
+## 2026-09-06: Systematic audit - enchant fix + shadowPriestDps applied across all profiles
+
+Per the user's explicit request ("check every bug we found on moonkin for all other profiles as
+well") and reminder to track incomplete work, systematically applied today's two real fixes
+(enchant fallback in `build_owned_config()`, the `shadowPriestDps` raid-buff gap) across every
+profile, not just Balance Druid.
+
+**Enchant fallback fix**: this is a pure code change in `core/optimizer.py`, so it was ALREADY
+active for every profile the moment it was committed - real sweeps always call
+`build_owned_config()` fresh, never read gear/enchants from a static `settings_template.json`.
+Regenerating each profile's `settings_template.json` (via `build_profile_settings.py`) was done to
+keep that static reference file honest/current, not because the fix itself needed it.
+
+Real, checked default_enchants.json coverage across all 15 profiles (out of ~13-17 real
+enchantable slots):
+
+| Profile | slots covered |
+|---|---|
+| balance_druid | 1 |
+| enhancement_shaman | 3 |
+| affliction/demonology/destruction_warlock | 6 each |
+| arcane_mage | 7 |
+| shadow_priest | 8 |
+| arms_warrior | 9 |
+| elemental_shaman | 9 |
+| retribution_paladin | 9 |
+| combat_rogue | 10 |
+| fury_warrior | 10 |
+| beastmastery_hunter | 11 |
+| feral_cat_druid | 11 |
+| survival_hunter | 13 |
+
+Regenerated `settings_template.json` for every profile with a real `build_profile_settings.py`
+driver (11 of 12 synthetic-character profiles - Beastmastery Hunter is a known, pre-existing
+exception, same as Survival Hunter: a hand-built `TypeSimple` rotation the driver doesn't support,
+unrelated to today's fixes) plus the 3 real-character profiles already done
+(balance_druid/elemental_shaman/arcane_mage). Real, meaningful enchant restorations confirmed for:
+**affliction_warlock, demonology_warlock, destruction_warlock** (3 real enchants each, same
+underlying synthetic character/gear), **enhancement_shaman** (7 real enchants - a large, real gap
+matching her own documented 3/10 coverage history), **shadow_priest** (3 real enchants).
+**fury_warrior, combat_rogue, retribution_paladin** showed zero diff - their real gear apparently
+has no enchanted slots the curated data was missing, so the bug had no practical effect for them.
+
+**Real, unrelated finding caught and NOT bundled in**: regenerating `feral_cat_druid`'s
+`settings_template.json` produced a 923-line diff, wildly larger than every other profile's
+5-15-line enchant-only diff. Investigated before committing anything - the real cause is her own
+`consumables.json` (real fields: `battleElixirId`/`guardianElixirId`/sapper/scroll flags) and
+likely her vendored APL source having been updated in a PAST session without her
+`settings_template.json` ever being regenerated to match - a real, pre-existing staleness bug,
+completely unrelated to today's enchant/raid-buff work. Reverted this specific file
+(`git checkout --`) rather than bundling an unverified, unrelated rotation/consumables change into
+today's commit - tracked as a real, separate follow-up in FUTURE_TASKS.md instead.
+
+**shadowPriestDps audit**: confirmed via direct grep that this field is genuinely absent from
+every melee/physical class's real wowsims preset (`ui/warrior/`, `ui/hunter/`, `ui/rogue/`,
+`ui/paladin/` - zero matches) - it's a real, caster-only mana-modeling field, not something missing
+from non-caster profiles. Of the 5 real caster classes that DO define it
+(Mage/Priest/Warlock/Balance Druid/Elemental Shaman), Priest and Warlock already default to 0
+(matching wowsims' own real preset), Mage was set to 1400 (matches wowsims' own default AND the
+user's own confirmation that mage groups really do run a Shadow Priest), Balance Druid and
+Elemental Shaman were both set to 0 (overriding wowsims' generic 800 default, per the user's own
+real raid-strategy correction: boomkin's real group is 3 Warlocks + 1 Elemental Shaman, no Shadow
+Priest - and Elemental Shaman shares that exact same group).
+
+**Real, live re-verification of the original Teeth of Gruul discrepancy, after both fixes**: the
+user re-ran their own manual websim test with shadowPriestDps corrected to 0 (matching our tool's
+now-corrected assumption) and got **+9.33 DPS** at 1000 iterations - the SAME direction as our
+tool's own +25.2, resolving the original sign-flip. A further precise check (30000 iterations, her
+exact real gear with no re-optimization at all, both fixes applied) found the TRUE effect using her
+literal current gems is actually small and slightly negative (-3.35 DPS, real and outside the noise
+band at this precision) - meaning the user's own +9.33 at only 1000 iterations was itself likely
+just sampling noise for a near-zero true effect, exactly the failure mode this project's own
+noise-honesty rule exists to catch. The larger, positive number our tool actually reports (+25.2)
+comes from a different, deliberate baseline choice - `build_owned_config()` also re-optimizes gems
+to the profile's primary stat gem, not just her literal current ones, which is a real, separate,
+already-documented, PARTIALLY-verified policy (see the next section) - the two numbers are
+answering genuinely different questions (marginal value against her literal current gear, vs.
+against her best achievable gear including free re-gems), not disagreeing about the same one.
+
+**Real, separate, NOT investigated further today**: whether the blanket "replace every socket with
+the primary stat gem" policy is itself correct for Balance Druid specifically.
+`gem_optimizer.best_gems_for_item()`'s own real, sim-verified findings (documented in its own
+docstring) only cover Survival Hunter's real candidates (37 tested, 9 confirmed socket-bonus
+exceptions) - Balance Druid's own `chase_bonus_gems.json` is genuinely empty (`item_ids: []`),
+meaning NONE of her real items have ever been individually verified the same way. This is a real,
+pre-existing, already-documented gap (matching the same pattern already found for Feral Cat Druid
+historically), not a new bug from today - but it's now a real, live open question given today's
+investigation surfaced it concretely (her real Pauldrons of Malorne/Haramad's Leggings socket
+bonuses are being sacrificed for a blanket Spell Damage gem, unverified whether that's actually
+correct for her). Tracked as a real follow-up in FUTURE_TASKS.md, not fixed here - same
+`core/verify_gem_choices.py` methodology already used for Lerynia would need to be run for Balance
+Druid's own real candidate pool before trusting either answer.
+
+`check_ledger_consistency.py` re-run clean for the 3 real-character profiles with cached data under
+the current filename convention (Béarforceone 1389/0, Rubán 1696/0+1 known warning, Lerynia 621/0).
+The 12 synthetic-character profiles' cached reports predate backlog #13's profile-suffixed
+filenames, so a full structural check needs a fresh sweep first - not done today (a real, separate,
+tracked follow-up), but every regenerated `settings_template.json` was confirmed to be valid,
+well-formed JSON and the `build_profile_settings.py` driver ran clean (no exceptions) for all 11
+profiles it supports.

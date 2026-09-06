@@ -14,5 +14,7 @@
     "totemOfWrath": 1,
     "wrathOfAirTotem": "TristateEffectImproved"
   },
-  "playerBuffs": {}
+  "playerBuffs": {
+    "shadowPriestDps": 0
+  }
 }

@@ -70,6 +70,7 @@
         },
         {
           "id": 29091,
+          "enchant": 1144,
           "gems": [
             32196,
             32196,
@@ -77,10 +78,12 @@
           ]
         },
         {
-          "id": 27462
+          "id": 27462,
+          "enchant": 369
         },
         {
-          "id": 35471
+          "id": 35471,
+          "enchant": 2934
         },
         {
           "id": 27783
@@ -306,7 +309,8 @@
       "blessingOfSalvation": true,
       "blessingOfWisdom": "TristateEffectImproved",
       "blessingOfMight": "TristateEffectImproved",
-      "unleashedRage": true
+      "unleashedRage": true,
+      "shadowPriestDps": 0
     },
     "balanceDruid": {
       "options": {
