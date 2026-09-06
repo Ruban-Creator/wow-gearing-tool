@@ -405,17 +405,40 @@ TOOL reports (whatever it resolves to under the correct `0`) is answering a diff
 THIS-raid question than wowsims.com's own generic-preset comparison, and the two were never
 expected to match exactly once buff assumptions differ.
 
-**Real remaining gap, not yet explained**: +11.56 (ours, shadowPriestDps=800) vs +17.31
-(wowsims.com) - still a real, ~33% difference with buffs now matched on this one field. Not
-investigated further today - candidate causes not yet checked: a sim-version difference between
-this repo's vendored `sim/tbc-new` submodule commit and whatever wowsims.com's live site currently
-runs (most likely, given this project's own real history of sim-version-driven behavior changes -
-see CLAUDE.md's sim update runbook); some other settings field still mismatched beyond
-`shadowPriestDps` (a full field-by-field diff of the user's websim JSON against this profile's real
-`settings_template.json` hasn't been completed, only spot-checked); or something item-specific to
-how either engine applies effectId 369 to item 29918 specifically. Real next step: a full,
-systematic field-by-field diff (not spot-checks) of a real websim JSON export against this profile's
-`settings_template.json`, and if a real gap still remains after every field matches, treat it as a
-genuine, reportable sim-behavior difference worth raising with wowsims/tbc-new directly rather than
-assuming our own tool is wrong by default.
+**Update, same day - a full field-by-field diff found more real mismatches, none of which closed the
+gap (several made it slightly worse).** Diffed the user's real websim JSON (the one with the full
+TypeAPL rotation, not the TypeAuto one from the very first test) against this profile's real
+`settings_template.json` field by field, not just spot-checked: found real differences in
+`raidBuffs.shadowProtection`, several `debuffs` (`exposeWeaknessHunterAgility`/`exposeWeaknessUptime`/
+`faerieFire`/`insectSwarm`/`judgementOfLight`), `partyBuffs` (`ferociousInspiration`/totem fields),
+and `player.buffs` (`blessingOfMight`/`blessingOfSalvation`/`unleashedRage`) - all real, genuine
+assumption differences, but re-testing with EVERY one of them matched to the websim JSON (on top of
+the already-matched `shadowPriestDps: 800`) gave **+10.59 DPS - slightly LOWER than the +11.56 from
+matching shadowPriestDps alone**, not closer to wowsims.com's +17.31. Rotation itself (priorityList/
+prepullActions/valueVariables) confirmed byte-identical between ours and theirs - not the cause
+either. Real conclusion: none of these settings differences explain the residual gap; ruled out as a
+category, not just unconfirmed.
+
+**Update, same day - pursued the sim-version-difference theory for real, not left as a guess.**
+Checked how current the pinned submodule commit actually was: **v0.0.124 (2026-08-30), 6 real
+releases behind v0.0.130** - a strong, concrete lead. Followed CLAUDE.md's own "Sim update
+procedure" runbook in full (see NOTES.md's dated entry for the complete real execution: risk
+assessment, submodule bump, protobuf regen, binary rebuilds, stale-process cleanup, import sweep,
+live sim calls across all 3 real weapon topologies, `check_ledger_consistency.py` clean for every
+real character, enchant/gem re-verification for Balance Druid) - committed and pushed as its own
+real, verified change, independent of this investigation.
+
+**Re-tested the exact same comparison under v0.0.130**: Crimson Bracers -> Mindstorm Wristbands
+(enchant 369 both sides, `shadowPriestDps: 800`) now gives **+13.77 DPS** (up from +11.56 under
+v0.0.124) - real, meaningful movement in the right direction, closing roughly a third of the
+remaining gap to wowsims.com's own +17.31 (1.5x gap down to ~1.26x). Confirms the sim-version-drift
+theory was real and load-bearing, not a dead end - but a real, smaller residual gap (+13.77 vs
++17.31, ~20%) still remains even now. Not investigated further today - wowsims.com itself may be
+running something even newer than v0.0.130, or there's a real, still-unidentified remaining
+difference. Given the practical size of the remaining gap has shrunk substantially across this
+whole investigation (from an unexplained 11x to a real, bounded ~1.26x, with every settings-level
+explanation now systematically ruled out or confirmed) and every profile has been re-verified clean
+on the current sim version regardless, this is a reasonable point to pause - re-open if the gap
+becomes practically significant for a real gearing decision, or revisit after a future sim update
+narrows it further.
 

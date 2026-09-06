@@ -1,4 +1,14 @@
-# Actions for you — updated 2026-09-06 (late session)
+# Actions for you — updated 2026-09-06 (backlog #17-21 pass)
+
+**#17, #18, #19, #20 all closed this pass** (see NOTES.md/FUTURE_TASKS.md for full writeups):
+Feral Cat Druid regenerated+verified, Balance Druid's gem choices individually verified (8 real
+chase-bonus exceptions found), a real "Assumed Raid Buffs" transparency section shipped, and #20 got
+a real fix (not the partial exclusion first attempted) - a genuine "Dual-Wield Alternative" analysis
+that answers "would DW beat my current 2H" with a real sim search, regardless of which one's
+currently equipped. #21 (the wowsims.com magnitude gap) is in progress - found we're 6 real releases
+behind (v0.0.124 vs v0.0.130) and are mid-way through the sim-update runbook to close that gap for
+real, not just document it further.
+
 
 Real, current list of what's actually on YOU (a decision, an account, an in-game action). Not a
 status report — see CLAUDE.md/FUTURE_TASKS.md for full technical writeups, NOTES.md for the dated

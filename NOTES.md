@@ -5921,3 +5921,69 @@ packaging/output/RGT-Setup.exe (Inno Setup, ~9046s compile) so a fresh install p
 fixes - core/*.py and profiles/tbc/* are both bundled installer payload per installer.iss.
 build/dist/RGT.exe (the GUI exe itself) did not need rebuilding - confirmed via packaging/README.md
 that it reads core/*.py as live sibling files, never bundles them via PyInstaller.
+
+
+## 2026-09-06 (cont'd): Sim update v0.0.124 -> v0.0.130 (backlog #21) - real runbook execution, not just documentation
+
+While chasing backlog #21's real, unexplained magnitude gap between our own sim and wowsims.com
+(Mindstorm Wristbands: our +11.56 DPS vs their +17.31, buffs matched), checked how far behind our
+pinned submodule commit actually was: **v0.0.124 (2026-08-30), 6 real releases behind v0.0.130** -
+a strong, concrete candidate explanation, and exactly the scenario CLAUDE.md's own "Sim update
+procedure" runbook was written for. Followed it for real, step by step, not just reading it.
+
+**Step 2 (risk assessment)**: `git diff --name-only v0.0.124 v0.0.130` inside the submodule - 292
+files changed. Flagged categories: `proto/common.proto` changed (one new, purely additive field,
+`meta_gem_disabled` on `ItemSpec` - not a breaking change, no renumbering); `item_sets.go` changed
+for druid/hunter/paladin/shaman (all small, 2-17 line diffs); `sim/core/buffs.go`/`consumes.go`
+changed (small diffs); `assets/database/db.bin`/`db.json` updated (pulled in automatically via the
+submodule bump, no separate `db2tool` step needed); no `go.mod`/`go.sum` changes.
+
+**Steps 3-4 (bump + rebuild)**: `git checkout v0.0.130` inside `sim/tbc-new`, regenerated protobuf
+bindings (clean, no errors given the additive-only proto change), rebuilt all three binaries
+(`wowsimcli.exe`/`bridge.exe` with the real prerequisite tags, `simserver.exe` with `--tags=with_db`
+- the one real, hard-won gotcha this file's own Local Setup section already documents), re-baked
+`sim_commit_sha.txt`/`sim_version_label.txt`.
+
+**Step 5**: killed 2 stale `simserver.exe` processes before verifying (confirmed via
+`Get-Process`/`Stop-Process`) - otherwise verification would have silently tested the OLD binary
+still resident in memory.
+
+**Step 6 (verify)**: real, not skipped -
+- Import-sanity sweep: 23/23 modules clean.
+- Real, live sim calls for all 3 real weapon topologies actually in use: Lerynia (dual_wield),
+  Rubán (two_hand), Béarforceone (one_hand_plus_offhand_item) - all completed with no panics, no
+  "No item with id" errors (would have meant a build-tag regression, per this file's own prior
+  hard-won lesson - checked, not an issue this time).
+- `check_ledger_consistency.py` clean for all 3 real characters (Lerynia 132/0 including a full
+  HTML-splice check, Béarforceone 941/0, Rubán 1708/0+1 known/expected warning) and
+  Test-Beastmastery-Synthetic (150/0) - confirming the new backlog #20 Dual-Wield Alternative
+  feature and backlog #19 Assumed Raid Buffs feature both survive a real sim-version bump cleanly.
+- Re-ran `verify_default_enchants.py` for Balance Druid (both her real entries - mainhand 2669,
+  wrist 2650 - still KEEP, deltas within noise of their pre-bump values: +25.96/+9.60 vs
+  +25.60/+9.46) and `verify_gem_choices.py` (the 8 already-confirmed chase-bonus items correctly
+  excluded from re-checking since their own gem choice already reflects the verified pick; the
+  remaining 15 non-chase-bonus candidates all still correctly favor her real primary gem, one tied
+  - Bracers of Havok, same as before the bump) - both per the runbook's own guidance to re-check
+  previously-verified choices after a real `buffs.go`/`consumes.go` change.
+
+**Real numbers, notably unchanged**: Lerynia's own `dual_wield_alt` figures (+4.6 DPS no-weave,
+-453.6 DPS with weave) came back byte-for-byte identical under the new sim version - confirmed this
+is a genuine fresh computation, not a stale cache hit (sim_cache keys on `sim_commit_sha()`, which
+changed with this bump, so every prior entry was correctly bypassed).
+
+**Real, honest gem-verification mislabeling bug caught live by the user** while reading this
+session's own output: `core/verify_gem_choices.py`'s print statements hardcoded the literal word
+"Agility" in every message ("Real socket-bonus wins (chase_bonus beats pure Agility)", "Pure
+Agility clearly still wins...") regardless of which profile was actually being checked - a real,
+stale leftover from this script's original Survival-Hunter-only origin, never genericized when
+reused for other classes. The user's own sharp question ("did you really check agility gems on a
+caster???") caught this immediately. Verified the UNDERLYING comparison was always correct (it
+always used `gc.get_active_default_gem()`, loaded from the profile's own real `primary_gem_id` -
+confirmed directly: Balance Druid's is 32196, "Runed Crimson Spinel", a real Spell Damage gem, not
+Agility) - only the printed English was wrong. Fixed by deriving a real gem-name label
+(`idb.gem_by_id(profile["primary_gem_id"])`) and using it in every print statement instead of the
+hardcoded word - re-ran and confirmed: "Pure Runed Crimson Spinel clearly still wins: 14 of 15
+checked", accurately describing what was actually tested.
+
+**Committed and pushed**: the submodule bump itself (`sim/tbc-new` now pinned to v0.0.130) plus the
+gem-verification label fix.

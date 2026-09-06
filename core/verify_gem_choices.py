@@ -1,17 +1,34 @@
-"""Real-sim verification of gem_optimizer's "pure Agility everywhere" default,
-broadened from the single-item spot check that originally disproved the
-crude STAT_WEIGHTS-based "smart" hybrid heuristic (Ranger-General's
-Chestguard: pure Agility 2701.4 beat the hybrid's 2651.6 - see NOTES.md).
+"""Real-sim verification of gem_optimizer's "pure primary-stat gem
+everywhere" default, broadened from the single-item spot check that
+originally disproved the crude STAT_WEIGHTS-based "smart" hybrid heuristic
+(Ranger-General's Chestguard, Survival Hunter's own pure Agility: 2701.4
+beat the hybrid's 2651.6 - see NOTES.md).
 
-That was N=1. This runs the same real-sim comparison (gem_optimizer.
-verify_gem_choice: pure Agility vs the item's own socket-bonus-chased
-loadout, real DPS, not a linear stat-weight guess) across every real
-candidate in her actual pool that has sockets - 38 of her 71 current
-candidates, more than half - to find out whether "pure Agility always
-wins" actually generalizes or whether some item's socket bonus is real
-enough to beat it. Screens all of them cheap first, only resolves the
-close calls at high iterations - same funnel discipline as
-marginal_value.mv_single_tiered.
+That was N=1, for one profile. This runs the same real-sim comparison
+(gem_optimizer.verify_gem_choice: the profile's own real primary-stat gem -
+`gc.get_active_default_gem()`, loaded from THIS profile's own
+`profile.json`'s `primary_gem_id`, e.g. Agility for Survival Hunter but
+Spell Damage for Balance Druid - never assume it's Agility just because
+that's this script's own original motivating case) vs the item's own
+socket-bonus-chased loadout, real DPS, not a linear stat-weight guess)
+across every real candidate in her actual pool that has sockets - to find
+out whether "pure primary-stat gem always wins" actually generalizes for
+THIS profile, or whether some item's socket bonus is real enough to beat
+it. Screens all of them cheap first, only resolves the close calls at high
+iterations - same funnel discipline as marginal_value.mv_single_tiered.
+
+Real, confirmed mislabeling bug fixed 2026-09-06 (caught live by the user
+directly reading a Balance Druid run's own output and asking "did you
+really check agility gems on a caster???"): every print statement below
+used to hardcode the literal word "Agility" regardless of which profile was
+actually being checked - a real, stale leftover from this script's original
+Hunter-only origin that was never genericized when reused for other
+classes. The underlying SIM COMPARISON was always correct (it always used
+`gc.get_active_default_gem()`, this profile's own real primary gem, never a
+hardcoded Agility gem id) - only the printed English was wrong, but wrong
+enough to make a Balance Druid's own gem-verification output read as if her
+own caster gems were being tested against Agility, which would have been a
+real, serious bug had it actually been true.
 
 Usage: python core/verify_gem_choices.py [profile_dir_name] [name_realm]
   Defaults to survival_hunter / the flat USER_DATA_DIR/character.json (Lerynia's
@@ -55,6 +72,8 @@ def main():
     stat_weights.set_active(stat_weights.load(PROFILE_DIR))
     profile = repo_root.load_json(os.path.join(PROFILE_DIR, "profile.json"))
     gc.set_active_default_gem(profile["primary_gem_id"])
+    primary_gem = idb.gem_by_id(profile["primary_gem_id"])
+    primary_gem_label = primary_gem["name"] if primary_gem else f"gem id {profile['primary_gem_id']}"
     _default_enchants_path = os.path.join(PROFILE_DIR, "default_enchants.json")
     gc.set_active_default_enchants(repo_root.load_json(_default_enchants_path)
                                     if os.path.exists(_default_enchants_path) else {})
@@ -91,7 +110,7 @@ def main():
         res = gopt.verify_gem_choice(item, meta_gem_id, SETTINGS_TEMPLATE, trial_config,
                                       slot_idx, SCREEN_ITERATIONS, opt.SEED)
         if not res["applicable"]:
-            continue  # every socket already Red/Meta - pure Agility trivially wins, nothing to check
+            continue  # every socket already the primary color/Meta - the profile's own primary gem trivially wins, nothing to check
         res["name"] = c.name
         res["slot"] = slot
         res["item_id"] = c.item_id
@@ -115,7 +134,7 @@ def main():
     real_losses = [r[3] for r in results if not r[3]["tied_within_noise"] and r[3]["delta"] < 0]
     ties = [r[3] for r in results if r[3]["tied_within_noise"]]
 
-    print(f"Real socket-bonus wins (chase_bonus beats pure Agility): {len(real_wins)}")
+    print(f"Real socket-bonus wins (chase_bonus beats pure {primary_gem_label}): {len(real_wins)}")
     for r in sorted(real_wins, key=lambda r: -r["delta"]):
         print(f"  {r['name']:40s} slot={r['slot']:10s} +{r['delta']:.2f} DPS "
               f"(resolved={r['resolved']}, noise={r['noise_stdev']:.2f})")
@@ -124,7 +143,7 @@ def main():
     for r in ties:
         print(f"  {r['name']:40s} slot={r['slot']:10s} delta={r['delta']:+.2f} noise={r['noise_stdev']:.2f}")
 
-    print(f"\nPure Agility clearly still wins: {len(real_losses)} of {len(results)} checked")
+    print(f"\nPure {primary_gem_label} clearly still wins: {len(real_losses)} of {len(results)} checked")
 
     out_path = os.path.join(USER_DATA_DIR, "cache", "gem_choice_verification.json")
     with open(out_path, "w", encoding="utf-8") as f:
