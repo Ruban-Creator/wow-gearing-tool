@@ -43,13 +43,25 @@ Two separate things were found/fixed today, neither of which is this concern:
   calls, not an estimate), but has never been independently cross-checked against a manual websim
   test the way the Teeth of Gruul/Mindstorm Wristbands bugs were today.
 
-Real next step: pick at least one of these 6 real Sidegrade candidates (e.g. Gauntlets of the
-Dragonslayer, the smallest claimed gain at +4.7, or Gloves of Dexterous Manipulation, the original
-2026-08-23 validating case per that function's own docstring) and manually reproduce
-`rescue_check()`'s exact scenario in wowsims.com by hand (baseline with Cowl of Defiance already
-swapped into head, breaking Rift Stalker Armor's bonus, then swap the candidate into its own slot)
-- same JSON-diff methodology already used for Teeth of Gruul/Mindstorm Wristbands. Not done today -
-explicitly deferred per the user ("we lack the tokens now").
+**Update, 2026-09-06 - the CODE's own math independently verified correct** (not the same as an
+external wowsims.com cross-check, see below). Directly called `set_bonus.rescue_check()` by hand for
+Gloves of Dexterous Manipulation (the original 2026-08-23 validating case) with real, properly-
+constructed `Candidate` objects (real enchant, real chase-bonus-aware gems - matching exactly how
+`run_upgrade_sweep.py`'s own sweep-additions loop builds them) - result: `mv_if_set_broken =
+14.063560060973032`, matching the live report's own `rescue_mv` to full floating-point precision. A
+first, sloppier attempt at this same trace (using plain unenchanted/ungemmed item entries) gave a
+wildly different, wrong-signed number (-25.24) purely from that own methodology error, not a real
+bug - worth recording so a future re-check doesn't repeat the same mistake and misdiagnose a real
+function as broken. Confirms the formula, the real candidate resolution, and the real call site all
+agree with each other - a logic/wiring bug is now ruled out.
+
+**Still open, a genuinely different question**: whether wowsims.com's OWN live site agrees with this
+same real scenario (baseline with Cowl of Defiance already swapped into head, breaking Rift Stalker
+Armor's bonus, then the candidate swapped into its own slot) - an external cross-check, not a code
+review. Not done - would need either the user's own manual websim test (same JSON-export
+methodology already used for Teeth of Gruul/Mindstorm Wristbands) or a Claude Browser-driven
+wowsims.com session reproducing the exact gear/enchants/talents/buffs by hand. Real next step
+whenever picked up.
 
 Nothing else outstanding right now - the Achieved-BiS Weapon/Ring/Trinket row bug (logged here
 2026-08-26) was fixed 2026-08-28, see NOTES.md for the full writeup.
