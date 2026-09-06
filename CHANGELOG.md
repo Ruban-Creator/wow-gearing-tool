@@ -8,6 +8,28 @@ version). For the in-game companion addon's own, separate changelog, see
 Version format: `{stage} - v{major.minor}.{build}`, e.g. `Pre-Release - v0.7.0001`. See
 `core/version.py` for the real bump rules.
 
+## Pre-Release - v0.7.0005 (2026-09-07)
+
+- **Real accuracy fix**: your report's "Baseline DPS" now reflects your gear exactly as it really
+  is - real gems, real enchants, no substitution - instead of an idealized number that assumed
+  every socket/slot was already optimally filled. Upgrade comparisons are unaffected (they still
+  fairly compare fully-optimized gear on both sides); only the headline number and Missing
+  Enchants' math changed to be honest about your actual, current DPS.
+- **Real accuracy fix**: gem recommendations for Phase 1 and Phase 2 reports no longer assume a
+  Phase 3 gem you can't actually have yet - phase-legal alternatives are used instead.
+- **Real accuracy fix**: a real pet-DPS double-counting bug affecting every report for Survival/
+  Beastmastery Hunter, all 3 Warlock specs, and Balance Druid has been fixed - the sim already
+  includes pet damage in the reported total, and this tool was adding it again on top. Affected
+  reports were inflated by roughly your pet's own DPS share.
+- **New: Missing Gems** - alongside Missing Enchants, your report now also flags any socketed item
+  where a real, phase-legal, better gem loadout is available and shows the real DPS gain.
+- **Real accuracy fix**: several classes' "chase this item's socket bonus" gem recommendations were
+  verified against a gem that isn't actually legal to use (profession-gated or already-unique
+  elsewhere) - corrected across 11 profiles, several of which had every one of their socket-bonus
+  recommendations reversed once restricted to gems you can actually obtain.
+- **Coverage improvement**: Demonology and Destruction Warlock both gained a real, newly-verified
+  chest enchant recommendation.
+
 ## Pre-Release - v0.7.0004 (2026-09-06)
 
 - **Real bug fix**: a report whose underlying file had moved or been deleted (including every
