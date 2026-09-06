@@ -1660,6 +1660,73 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
                   f"+{e['mv']:.1f} DPS")
         print()
 
+    # --- Missing Gems (Stage 3 of the baseline-honesty plan, 2026-09-07):
+    # mirrors Missing Enchants exactly (same isolate-one-slot, additive-over-
+    # true-baseline methodology), for gems instead of enchants. Needed
+    # because build_owned_config() (the IDEALIZED config) always assumes her
+    # optimal, phase-legal gem loadout - once the report's headline baseline
+    # stopped being that idealized config (2026-09-06), a genuinely
+    # suboptimal or empty real socket silently disappeared from the report
+    # with no visible gap, the same blind spot Missing Enchants closed for
+    # enchants specifically. Reuses gem_optimizer.best_gems_for_item()
+    # directly - no new curation needed, unlike Stage 2's enchant work,
+    # since gem choice is entirely DB/stat-weight/sim-verified already
+    # (including any real chase_bonus_gems.json exception).
+    def _gem_names(ids: list[int]) -> str:
+        names = [idb.gem_by_id(g)["name"] if g and idb.gem_by_id(g) else "(empty)" for g in ids]
+        return ", ".join(names)
+
+    missing_gems = []
+    for idx, real_slot in enumerate(gc.SLOT_ORDER):
+        owned = owned_items[idx] if idx < len(owned_items) else None
+        if not owned:
+            continue
+        item = idb.by_id(owned["id"])
+        if not item or not (item.get("gemSockets") or []):
+            continue
+        optimal_gems = gem_optimizer.best_gems_for_item(item, meta_gem_id)
+        current_gems = list(owned.get("gems") or [])
+        current_gems += [0] * (len(optimal_gems) - len(current_gems))
+        if current_gems == optimal_gems:
+            continue
+
+        gems_trial = list(true_baseline_config)
+        gems_trial[idx] = dict(gems_trial[idx])
+        gems_trial[idx]["gems"] = optimal_gems
+        gems_result = mv.valuation.evaluate(SETTINGS_TEMPLATE, gems_trial, RESOLVE_ITERATIONS, opt.SEED)
+
+        delta = gems_result["combined"] - true_baseline_resolved["combined"]
+        noise = mv.delta_noise(true_baseline_resolved, gems_result, RESOLVE_ITERATIONS)
+        tied_within_noise = abs(delta) < 2 * noise
+        if tied_within_noise or delta <= 0:
+            # Same real, deliberate rule as Missing Enchants: a delta <= 0
+            # means her real current gems already beat (or tie) the
+            # DB/sim-verified "optimal" loadout for this item - not a gap
+            # to close. Can legitimately happen for an item whose socket
+            # bonus IS a real, verified chase_bonus_gems.json win but whose
+            # OTHER, un-owned socket color happens to score lower than a
+            # generic default - best_gems_for_item() already accounts for
+            # verified exceptions, so this is a defensive check, not an
+            # expected common case.
+            continue
+
+        missing_gems.append({
+            "slot": SLOT_DISPLAY.get(real_slot, real_slot),
+            "item_name": owned.get("name", "?"),
+            "current_gems": _gem_names(current_gems),
+            "optimal_gems": _gem_names(optimal_gems),
+            "mv": delta,
+            "noise_stdev": noise,
+        })
+    missing_gems.sort(key=lambda e: e["mv"], reverse=True)
+
+    if missing_gems:
+        print(f"=== Missing Gems (real, phase-legal optimal gem loadout available, not currently socketed) ===")
+        for e in missing_gems:
+            print(f"  {e['slot']:<10} {e['item_name']:<35} {e['current_gems']} -> {e['optimal_gems']}  "
+                  f"+{e['mv']:.1f} DPS")
+        print()
+
     # Legend printed once, up front: Player and Raid are two distinct,
     # never-combined value dimensions (CLAUDE.md's Stage 2 ground rule).
     # No "Overall" score is computed here on purpose - collapsing Player
@@ -2201,6 +2268,7 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump({"baseline_screened": true_baseline_resolved["combined"], "achieved_bis": achieved_bis,
                    "missing_enchants": missing_enchants,
+                   "missing_gems": missing_gems,
                    "tiers": tiered_out, "two_hand": two_hand_out, "two_hand_meta": two_hand_meta,
                    "fight_duration_seconds": actual_duration,
                    "baseline_oom_seconds": baseline_oom_seconds,

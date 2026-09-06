@@ -58,22 +58,32 @@ assumed buff/debuff against BOTH (a) wowsims.com's own default preset (to reduce
 and (b) the user's own real raid-comp knowledge (to avoid assuming a buff/debuff from a spec that
 wouldn't realistically be grouped with this one) - not done yet, flagged here for a dedicated pass.
 
-## Baseline-honesty plan: Stage 3/4 still open (Stage 1 + Stage 2 + the pet-double-counting bug are DONE)
+## Baseline-honesty plan: FULLY COMPLETE, all 4 stages (2026-09-07)
 
-Plan file: `staged-purring-lynx.md` ("Baseline gear honesty + phase-legal gems"). Stage 1 (two-config
+Plan file: `staged-purring-lynx.md` ("Baseline gear honesty + phase-legal gems"). All done and
+regression-tested (see NOTES.md's 2026-09-06/07 entries for the full trail): Stage 1 (two-config
 split, phase-legal gems, Missing Enchants rework, `best_four_of_five()` reconciliation), the
-separately-discovered pet-DPS double-counting bug, and Stage 2 (enchant-coverage completion) are all
-DONE and thoroughly regression-tested (see NOTES.md's 2026-09-06/07 entries for the full trail).
-Stage 2 found 2 real gains (Demonology/Destruction Warlock chest enchants), confirmed the rest of the
-sparse profiles (Balance Druid, Enhancement Shaman, and several ring/offhand slots across other
-casters) are genuinely blocked on dead preset enchant IDs or presets that never itemize a ring
-enchant at all - not a tooling gap, see the new "ring-enchant coverage" entry below. Still open:
-- **Stage 3**: a new "Missing Gems" feature mirroring the now-fixed Missing Enchants (explicitly LOWER
-  priority than Stage 2, per the user).
-- **Stage 4**: `CLAUDE.md`'s own MV-formula text needs to explicitly name phase-legality as one of the
-  "equip constraints" `DPS*(S)` is computed under (since that's exactly what Bug B violated while
-  citing that same sentence as justification), and the stale "Dropped from §8" "fully-optimal
-  gem/enchant loadout" line needs replacing with the real, corrected two-config rule.
+separately-discovered pet-DPS double-counting bug, Stage 2 (enchant-coverage completion - 2 real
+gains, Demonology/Destruction Warlock chest enchants; the rest of the sparse profiles confirmed
+genuinely blocked on dead preset enchant IDs or ring-slot presets that don't exist, not a tooling
+gap - see "Ring-enchant coverage gap" below), Stage 3 (new Missing Gems feature, mirrors Missing
+Enchants, real-verified in-browser against 3 real profiles), and Stage 4 (`CLAUDE.md`'s MV-formula
+now names phase-legality as an equip constraint + the two-config rule spelled out; the stale
+"Dropped from §8" line corrected; `CLASSES.md` gained the phase-aware-gem convention + the
+unique/profession-gated chase-bonus trap as new real gotchas).
+
+A real, major SECOND-ORDER finding surfaced while closing out the plan's own open question (should
+`chase_bonus_gems.json` be re-verified under phase-legal gems?): yes, and 11 of 15 profiles' files
+were WRONG - several existing "socket-bonus wins" were verified against an illegally-selectable gem
+(unique/profession-gated) that this session's own earlier fix now correctly excludes, so the real
+comparison flips to a loss once restricted to legally-obtainable gems. 6 profiles' entire
+chase-bonus lists emptied out (survival_hunter, affliction_warlock, beastmastery_hunter,
+destruction_warlock, fury_warrior, demonology_warlock - every one of their real DPS reports has been
+recommending an item's socket bonus that was never actually worth chasing); 2 previously-empty files
+gained real new wins (arms_warrior, enhancement_shaman); balance_druid/arcane_mage/combat_rogue got
+a mix of real removals and real new finds. Full per-profile before/after table in NOTES.md's
+2026-09-07 entry. All 15 profiles re-swept, ledger-rebuilt, and `check_ledger_consistency.py --skip-
+html` clean afterward.
 
 ## Ring-enchant coverage gap (found during Stage 2 of the baseline-honesty plan, 2026-09-07)
 
@@ -86,20 +96,6 @@ generic preset can't assume one). Filling this needs a genuinely different sourc
 existing tooling: hand-research a real, verified generic ring enchant per profile via Wowhead, then
 sim-verify it the same way every other `default_enchants.json` entry already is - not a "just rerun
 the script" fix. Not started.
-
-## chase_bonus_gems.json re-verification under phase-legal gems - DECIDED, not done (2026-09-07)
-
-Real decision made while finishing the baseline-honesty plan's Stage 2 (no user input needed - this
-was a mechanical judgment call, not a design choice): re-running `verify_gem_choices.py` per profile
-is worth doing since the comparison `chase_bonus_gems.json` entries were originally verified with
-(default gem vs. chase-bonus color gem) now uses phase-legal gems on the "default" side, and a
-verdict that held under the OLD, sometimes-phase-illegal comparison isn't guaranteed to hold under
-the corrected one, even though most profiles only report at Phase 3+ where the old and new default
-gem are identical anyway (no behavior change there). Real, scoped follow-up, not urgent: re-run
-`verify_gem_choices.py` for all 15 profiles, diff against each profile's existing
-`chase_bonus_gems.json`, and only touch a profile's file if a real verdict flip is found. Not done
-yet as of this entry - flagging as its own real, bounded task rather than leaving it as an open
-question with no resolution.
 
 ## Fresh-install "Run Report" doesn't start the sim on another machine - simserver.exe never appears
 

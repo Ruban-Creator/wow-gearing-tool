@@ -319,6 +319,19 @@
   .enchants-text .swap{font-size:12px; color:var(--ink-muted); margin-top:2px;}
   .enchants-gain{flex:none; font-size:15.5px; font-weight:700; color:var(--sage-strong); white-space:nowrap;}
 
+  /* ---------- Missing Gems (2026-09-07) - identical treatment to Missing Enchants ---------- */
+  .gems-head h2{color:var(--warn-strong);}
+  .gems-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr)); gap:9px;}
+  .gems-card{
+    display:flex; align-items:center; gap:10px;
+    background:var(--warn-bg); border:1px solid var(--border-soft); border-left:3px solid var(--warn);
+    border-radius:9px; padding:10px 13px;
+  }
+  .gems-text{flex:1 1 auto; min-width:0;}
+  .gems-text .slot{font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--warn-strong); font-weight:700;}
+  .gems-text .name{font-size:13.5px; font-weight:600; line-height:1.3;}
+  .gems-gain{flex:none; font-size:15.5px; font-weight:700; color:var(--sage-strong); white-space:nowrap;}
+
   /* ---------- What Changed Since Your Last Sweep (2026-09-04) ----------
      Collapsed by default (2026-09-06, per user feedback: today's own
      settings fixes rippled through dozens of candidates at once, so this
@@ -490,6 +503,15 @@
     </div>
     <div class="bis-sub" id="enchants-sub">Real, sim-verified BiS enchant available for a slot you're not currently wearing it in - each figure is its own isolated sim delta, not a stat-weight estimate.</div>
     <div class="enchants-grid" id="enchants-grid"></div>
+  </section>
+
+  <section class="bis" id="gems-section" hidden>
+    <div class="bis-head gems-head">
+      <h2>Missing Gems</h2>
+      <span class="count" id="gems-count"></span>
+    </div>
+    <div class="bis-sub" id="gems-sub">Real, phase-legal optimal gem loadout available for an item you're not currently socketed for - each figure is its own isolated sim delta, not a stat-weight estimate.</div>
+    <div class="gems-grid" id="gems-grid"></div>
   </section>
 
   <nav class="tiernav" id="tiernav"></nav>
@@ -915,6 +937,28 @@ if (enchantsList.length > 0) {
       <div class="enchants-gain">+${e.mv.toFixed(1)}</div>
     `;
     enchantsGrid.appendChild(card);
+  });
+}
+
+// Missing Gems: same real-verified-only guarantee as Missing Enchants above
+// (run_upgrade_sweep.py's missing_gems computation), mirrored 1:1.
+const gemsList = DATA.missing_gems || [];
+if (gemsList.length > 0) {
+  document.getElementById('gems-section').style.display = 'block';
+  document.getElementById('gems-count').textContent =
+    gemsList.length + ' gap' + (gemsList.length === 1 ? '' : 's');
+  const gemsGrid = document.getElementById('gems-grid');
+  gemsList.forEach(e => {
+    const card = document.createElement('div');
+    card.className = 'gems-card';
+    card.innerHTML = `
+      <div class="gems-text">
+        <div class="slot">${escapeHtml(e.slot)} — ${escapeHtml(e.item_name)}</div>
+        <div class="name">${escapeHtml(e.current_gems)} &#8594; ${escapeHtml(e.optimal_gems)}</div>
+      </div>
+      <div class="gems-gain">+${e.mv.toFixed(1)}</div>
+    `;
+    gemsGrid.appendChild(card);
   });
 }
 

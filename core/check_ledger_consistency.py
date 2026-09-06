@@ -150,6 +150,15 @@ def check_tiered_report(report: dict, rep: Report) -> None:
             rep.check(field in entry, f"tiered_report.json: malformed missing_enchants entry, missing '{field}': {entry!r}")
         rep.check(entry.get("mv", 0) > 0, f"tiered_report.json: missing_enchants entry has non-positive mv (should have been filtered): {entry!r}")
 
+    # missing_gems: same soft-warning-on-absence treatment as missing_enchants
+    # (a cached report from before Stage 3 of the baseline-honesty plan,
+    # 2026-09-07, genuinely predates the key).
+    rep.warn("missing_gems" in report, "tiered_report.json: missing_gems key absent (report predates the Missing Gems feature)")
+    for entry in report.get("missing_gems", []):
+        for field in ("slot", "item_name", "current_gems", "optimal_gems", "mv", "noise_stdev"):
+            rep.check(field in entry, f"tiered_report.json: malformed missing_gems entry, missing '{field}': {entry!r}")
+        rep.check(entry.get("mv", 0) > 0, f"tiered_report.json: missing_gems entry has non-positive mv (should have been filtered): {entry!r}")
+
     # Stage 6.3 (2026-08-25): a weave-supported profile's two_hand rows must
     # ALL carry a real boolean `weave` tag (which comparison each row came
     # from - weave-on vs the real no-weave-at-all pass) so the report can
@@ -217,6 +226,8 @@ def check_transform(report: dict, ledger_data: dict, rep: Report) -> None:
                "ledger_data.json: achieved_bis does not pass through tiered_report.json unchanged")
     rep.check(ledger_data.get("missing_enchants", []) == report.get("missing_enchants", []),
                "ledger_data.json: missing_enchants does not pass through tiered_report.json unchanged")
+    rep.check(ledger_data.get("missing_gems", []) == report.get("missing_gems", []),
+               "ledger_data.json: missing_gems does not pass through tiered_report.json unchanged")
     rep.check(ledger_data.get("two_hand") == report.get("two_hand"),
                "ledger_data.json: two_hand does not pass through tiered_report.json unchanged")
     rep.check(ledger_data.get("two_hand_meta") == report.get("two_hand_meta"),

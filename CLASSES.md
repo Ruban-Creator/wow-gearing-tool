@@ -52,6 +52,28 @@ a new gotcha; don't let the lesson live only in NOTES.md's session log.
   - it did not (see above).
   </details>
 
+- **Gem selection is phase-aware as of 2026-09-06 (`time_horizon.get_current_phase()`,
+  `gem_optimizer._phase_legal_default_gem()`/`_all_gems()`) - a new profile's `primary_gem_id` gets
+  this automatically, nothing extra to wire up.** But any dev tool that calls into gem selection
+  (`build_owned_config()` and anything downstream of it) now REQUIRES
+  `time_horizon.set_current_phase()` to have been called first, or it raises loud - check every new
+  standalone script the same way `verify_default_enchants.py`/`verify_gem_choices.py`/
+  `build_profile_settings.py` needed this added on 2026-09-07.
+- **`_all_gems()`'s phase filter also excludes `unique`/`requiredProfession`-gated gems - a real,
+  separate correctness fix, not just phase-legality.** Found 2026-09-07 re-verifying
+  `chase_bonus_gems.json` under this fix: Survival Hunter's ENTIRE 9-item chase-bonus list (built
+  2026-08-24) turned out to have been verified against an illegally-selected substitute gem for
+  off-color sockets - the pre-fix `_best_gem_of_color()` picked "Crimson Sun" (33131, unique +
+  Jewelcrafting-only) as the best RED representative, a real gem no character could legally
+  multi-socket without the profession. Once excluded, every one of those 9 "wins" flipped to a
+  real, resolved LOSS (up to -11.94 DPS) - the socket-bonus loadout was never actually beating pure
+  primary-stat once restricted to legally-obtainable gems. **Any `chase_bonus_gems.json` verified
+  before 2026-09-06 needs a real re-run of `verify_gem_choices.py`-style logic with the active
+  chase-bonus set forced empty first** (comparing an item already in the file against itself is a
+  tautology - `best_gems_for_item()` special-cases listed ids to already return the chase loadout,
+  so a naive re-run of `verify_gem_choices.py` unmodified can never re-check an existing entry, only
+  find brand-new ones). See NOTES.md's 2026-09-07 entry for the full per-profile results.
+
 ## Non-obvious real filename conventions
 
 - **A `6p`/`9p` (or similar percentage-looking) suffix in a wowsims gear-set filename can mean a

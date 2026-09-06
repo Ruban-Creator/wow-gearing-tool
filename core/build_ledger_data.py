@@ -75,6 +75,7 @@ def build(name_realm: str, phase: str, profile_dir: str):
         "sim_commit_sha": sim_commit_sha,
         "achieved_bis": report["achieved_bis"],
         "missing_enchants": report.get("missing_enchants", []),
+        "missing_gems": report.get("missing_gems", []),
         "tiers": tiers_list,
         "two_hand": report["two_hand"],
         "two_hand_meta": report["two_hand_meta"],

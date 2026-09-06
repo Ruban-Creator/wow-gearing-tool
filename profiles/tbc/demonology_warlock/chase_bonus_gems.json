@@ -1,1 +1,4 @@
-{"item_ids": [24256]}
+{
+  "item_ids": [],
+  "source": "Re-verified 2026-09-07 (core/verify_gem_choices.py-equivalent methodology, active chase-bonus set forced empty first so an ALREADY-listed item can be genuinely re-checked, not compared against itself - see revalidate_chase_bonus.py in NOTES.md). Real, necessary consequence of the 2026-09-06 phase-legal-gem fix: gem_optimizer._all_gems() now also excludes unique/requiredProfession-gated gems, so the off-color \"best gem of this color\" representative used to build a chase-bonus loadout got weaker for several colors (e.g. RED: \"Crimson Sun\" 33131, unique+Jewelcrafting-only, excluded -> \"Bright Crimson Spinel\" 32197). Any item whose real win margin depended on that now-illegal substitute flips to a real, resolved loss; item_ids below are the real, re-confirmed 30k-iteration result."
+}

@@ -6648,7 +6648,146 @@ re-verified end to end (the 8 that changed got `settings_template.json` regenera
 352/0; the other 6 confirmed byte-identical, zero drops, no regen needed).
 
 **Real remaining scope, tracked in TODO.md**: a NEW, separate ring-enchant research task (needs real
-Wowhead lookup + sim verification per affected profile, not existing-tooling reuse); Stage 3 (Missing
-Gems feature, explicitly lower priority); Stage 4 (`CLAUDE.md`'s own MV-formula/equip-constraints text
-and stale "Dropped from §8" line); the plan's own still-open question about re-verifying
-`chase_bonus_gems.json` now that gem selection is phase-aware.
+Wowhead lookup + sim verification per affected profile, not existing-tooling reuse).
+
+## 2026-09-07 - `chase_bonus_gems.json` re-verification: a real, major, second-order finding from
+   the phase-legal-gem fix - most existing chase-bonus recommendations were wrong
+
+Resolved the plan's own open question ("should `chase_bonus_gems.json` be re-verified now that gem
+selection is phase-aware?") - decided yes, on the spot, without needing to ask: a real, mechanical
+reason made this urgent rather than optional (below), so this wasn't a coin-flip judgment call.
+
+**The real trap found first**: naively re-running `verify_gem_choices.py` (unmodified) against an
+ALREADY-listed `chase_bonus_gems.json` item can never actually re-check it - `best_gems_for_item()`
+special-cases any id in the active chase-bonus set to already return
+`chase_bonus_gems_for_item()`'s own output, so the "applicable" gate (`chase_gems ==
+pure_agility_gems`) is comparing the chase config against ITSELF, trivially always equal, always
+"not applicable." A new script, `revalidate_chase_bonus.py` (scratchpad, not checked in - see
+below), forces the active chase-bonus set EMPTY before screening, so `best_gems_for_item()` reverts
+to the true pure-default gem for every item, including ones already on file - reproducing the exact
+methodology the ORIGINAL 2026-08-24/31/25 verifications used (before anything was in the list yet).
+
+**Root cause of the real flips, confirmed directly against the DB, not inferred**: several colors'
+"best gem of that color" pick (`_best_gem_of_color()`, used to build a chase-bonus loadout's
+off-primary-color sockets) used to resolve to a `unique`/`requiredProfession`-gated gem BEFORE
+2026-09-06's phase-legal-gem fix added that exclusion (`_all_gems()`) - e.g. RED's top pick was
+"Crimson Sun" (33131, unique + Jewelcrafting-only, crude score 64.0), now correctly excluded,
+replaced by "Bright Crimson Spinel" (32197, score 40.0, no restrictions); YELLOW similarly dropped
+"Stone of Blades" (33143, unique + profession, 14.4) for "Smooth Lionseye" (32205, 12.0). Any real
+win whose margin depended on the illegally-strong substitute is now a real, correctly-computed
+LOSS - not a regression, a correction: the original 2026-08-24 verification was itself measuring an
+unobtainable loadout, RGT just had no way to know that until this session's own unique/profession
+filter existed.
+
+**Real, full re-verification run across all 15 profiles** (`revalidate_chase_bonus.py <profile>
+<name_realm>`, screen @3000/resolve @30000, same thresholds as `verify_gem_choices.py`):
+
+| Profile | Old list | New list | Verdict |
+|---|---|---|---|
+| survival_hunter | 9 items | **[]** | all 9 flipped to real losses (-2.9 to -11.9 DPS resolved) |
+| affliction_warlock | 10 items | **[]** | all 10 flipped |
+| beastmastery_hunter | 10 items | **[]** | all 10 flipped |
+| destruction_warlock | 9 items | **[]** | all 9 flipped |
+| fury_warrior | 4 items | **[]** | all 4 flipped |
+| demonology_warlock | 1 item | **[]** | flipped |
+| balance_druid | 8 items | **[28517, 32352]** | 6 flipped out, 2 real-confirmed survivors |
+| arcane_mage | 12 items | **[28411, 28517, 29076, 29079]** | 9 flipped out, 3 survivors, 1 new real win |
+| combat_rogue | 2 items | **[27531, 28545, 32235, 32324, 32366]** | both old survived, 3 new real wins |
+| arms_warrior | 0 items | **[28608, 32366]** | 2 new real wins (never checked before - file was empty) |
+| enhancement_shaman | 0 items | **[28545, 30190]** | 2 new real wins |
+| elemental_shaman | 0 items | 0 items | no change (re-confirmed empty is correct) |
+| feral_cat_druid | 0 items | 0 items | no change |
+| retribution_paladin | 0 items | 0 items | no change |
+| shadow_priest | 0 items | 0 items | no change |
+
+11 of 15 profiles' files changed. Every one of the 6 "pure loss" profiles (survival_hunter,
+affliction_warlock, beastmastery_hunter, destruction_warlock, fury_warrior, demonology_warlock)
+means every past report for those profiles recommended chasing a socket bonus that was never
+actually a real DPS win once restricted to legally-obtainable gems - a real, meaningful correction,
+not a rounding change (individual deltas up to -19.8 DPS resolved, e.g. Balance Druid's own
+Leggings of Channeled Elements screen-level check, though that one wasn't a chase-bonus item -
+scale example only).
+
+**Full re-sweep + rebuild for all 11 changed profiles** (`build_profile_settings.py` where
+applicable - survival_hunter/beastmastery_hunter are TypeSimple/hand-built and skip this step
+entirely, confirmed harmless since `adapters/tbc/valuation.py`'s `evaluate()` always overrides
+`settings["player"]["equipment"]` with the freshly-computed gear config regardless of whatever
+static equipment block a settings_template.json happens to carry - then `cli/gear.py best` +
+`build_ledger_data.py` + `check_ledger_consistency.py --skip-html`): all 11 clean (234/0, 153/0,
+1762/0+1 known-harmless warning, 219/0, 137/0, 149/0, 164/0, 126/0, 1155/0, 528/0, 139/0).
+
+**Real process mistake made and caught while running this**: the first attempt at the 11-profile
+rebuild loop was launched via `cmd > log &` inside an ALREADY-backgrounded Bash tool call - the
+outer tool call returns immediately after starting the detached `&` job and echoing its PID, so the
+harness's own background-tracking only ever saw the trivial wrapper, not the real pipeline. Retried
+"properly" with a second, correctly-tracked background call - which meant TWO real, independent
+copies of the same sweep pipeline were running concurrently for several minutes, confirmed directly
+via `Get-CimInstance Win32_Process`: two genuinely separate `python cli/gear.py best
+Test-CombatRogue-Synthetic phase3` processes with different PIDs and different parent PIDs. Exactly
+the same class of mistake NOTES.md's own 2026-08-31 entry already documents ("an earlier background
+test was falsely reported complete by the harness while still running, causing a real CPU-
+oversubscription slowdown") - caught this time by directly checking process list state before
+trusting a "completed" notification, not by symptom (a slow run) after the fact. Fixed: killed
+every stray pipeline process (`Stop-Process`, matched by real command line, not guessed PIDs),
+confirmed a clean process list, then re-ran the ENTIRE 11-profile pipeline once more, cleanly, from
+a single properly-tracked invocation (no nested `&`) - never trusted the possibly-corrupted partial
+output from the doubled run.
+
+**`revalidate_chase_bonus.py` is scratchpad-only, not checked in** - a deliberate call given "no
+time constraints, proper working fixes" governs correctness of the DATA this pass produced, not
+necessarily every tool used to produce it once. Real argument for checking it in anyway, flagged as
+a TODO rather than decided unilaterally: any FUTURE gem-selection change (a new exclusion rule, a
+new phase-legality wrinkle) will hit this exact same "can't re-check an already-listed item"
+trap again, and `verify_gem_choices.py` itself still can't do it. Not checked in this pass because
+it's a narrow bugfix-verification tool for one already-fixed bug, not (yet) a repeatable pattern -
+revisit if a second real case shows up.
+
+## 2026-09-07 - Stage 3 (Missing Gems feature) done, Stage 4 (`CLAUDE.md` correction) done - plan
+   fully complete
+
+**Stage 3**: mirrors Missing Enchants exactly (`core/run_upgrade_sweep.py`, right after the Missing
+Enchants block) - for each real equipped item with sockets, compares her real current gems
+(`owned.get("gems")`, padded to socket count) against `gem_optimizer.best_gems_for_item()`'s
+phase-legal optimal loadout (already handles chase-bonus-verified exceptions via
+`chase_bonus_gems.json`, no new curation needed - pure DB/sim-verified, unlike Stage 2's enchant
+work). A real gap gets one isolated sim trial against `true_baseline_config` (same additive
+methodology as 1d), reported only if the delta clears the noise floor and is positive (same
+delta<=0 defensive case as Missing Enchants - a real, verified reason her current gem choice
+already beats the "optimal" one, e.g. a chase-bonus win not yet in `chase_bonus_gems.json`, isn't
+treated as a gap). New `missing_gems` key threaded through `build_ledger_data.py`,
+`check_ledger_consistency.py` (same warn-on-absence + shape + positive-mv assertions as
+`missing_enchants`), and `report_template.html` (new `#gems-section`, CSS classes `.gems-*` mirror
+`.enchants-*` 1:1, same warn-colored card layout).
+
+**Real, live verification, not just import-clean**: rendered Béarforceone's real Phase 3 report
+(`core/render_report.py`) and confirmed in-browser - Missing Gems shows 4 real gaps (Legs +14.2,
+Chest +11.2, Shoulder +9.0, Head +1.5 DPS), each with real current-vs-optimal gem names
+side-by-side, correctly separate from and alongside the 1-gap Missing Enchants section. Rubán
+(arms_warrior) and a Combat Rogue synthetic both show real, smaller gaps too (Rubán: Neck/Wrist
++4.95 each from an off-primary-color gem left over from an old build; Rogue: Waist +1.84). Confirms
+the feature generalizes across profiles/topologies, not just one character's own data shape.
+
+**Stage 4**: `CLAUDE.md`'s MV-formula paragraph now explicitly names phase-legality as one of
+`DPS*(S)`'s "equip constraints," with a new paragraph immediately after spelling out the two-config
+rule in the project's own top-level ground-rules file (not just NOTES.md) - `MV(i)`'s own `P` always
+idealized/phase-legal, the reported baseline DPS always honest/un-idealized, Missing
+Enchants/Missing Gems bridge the two. The "Dropped from §8" paragraph's stale "every report number
+should keep assuming the fully-optimal gem/enchant loadout" line (contradicted by this whole plan)
+replaced with the corrected rule, cross-referencing the MV-formula section instead of restating it.
+`CLASSES.md` gained two new real bullets under "Gems": the phase-aware convention itself (so a
+future profile's `time_horizon.set_current_phase()` dependency isn't rediscovered from a crash), and
+the unique/profession-gated-gem chase-bonus trap above (with the concrete "re-verify with the active
+set forced empty" fix spelled out, so this exact investigation doesn't need re-deriving next time a
+DB-filter change touches gem selection).
+
+**Full regression, all 15 profiles, post both fixes**: every profile re-swept fresh (the 11
+touched by the chase_bonus fix, plus the 4 untouched ones re-swept anyway purely to pick up the new
+Missing Gems field in their own cached reports) - all clean via `check_ledger_consistency.py
+--skip-html` (survival_hunter 528/0, beastmastery_hunter 139/0, plus the 11 numbers above, plus
+elemental_shaman 360/0, feral_cat_druid 121/0, retribution_paladin 86/0, shadow_priest 122/0).
+
+**The "Baseline gear honesty + phase-legal gems" plan (`staged-purring-lynx.md`) is now fully
+complete - all 4 stages done and verified.** Real remaining, separately-tracked follow-on work (not
+part of this plan, TODO.md): the ring-enchant coverage gap (Stage 2's own finding), and
+`revalidate_chase_bonus.py` possibly graduating from scratchpad to a checked-in tool if a future
+gem-selection change needs the same re-verification methodology again.

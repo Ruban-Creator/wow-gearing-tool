@@ -11,12 +11,24 @@ copy, defaults, first-run behavior), not just this one dev machine's own conveni
 MV(i) = DPS*(P ∪ {i}) − DPS*(P)
 ```
 
-`DPS*(S)` is the best DPS achievable from pool `S` under all equip constraints — never a
-per-slot "swap and re-sim" shortcut. That shortcut undervalues set-completing items (each piece
+`DPS*(S)` is the best DPS achievable from pool `S` under all equip constraints — including
+phase-legality (a Phase 1 report may never assume a Phase 3 gem/item just because it scores
+higher - see the 2026-09-06/07 "baseline gear honesty + phase-legal gems" fix, NOTES.md) - never
+a per-slot "swap and re-sim" shortcut. That shortcut undervalues set-completing items (each piece
 looks mediocre in isolation) and overvalues hit-heavy items once already capped (it never lets
 the rest of the set rebalance away from now-worthless hit). Stat weights (EP) are the cheap
 linear approximation of this function; this tool exists to be right where EP breaks — thresholds,
 set bonuses, stacked procs, weapon-speed rotation changes. If ranking by EP alone, stop.
+
+**Two separate, deliberately different configs answer two separate questions - never conflate
+them (real bug fixed 2026-09-06/07, see NOTES.md's "Baseline gear honesty" entry).** `MV(i)`'s own
+`P` always assumes the fully-optimal, phase-legal gem/enchant loadout in every slot (a real,
+already-applied gem/enchant wins if present, else the curated default fills a genuinely empty
+slot) - this is what keeps every upgrade comparison fair (enchanted vs. enchanted, never
+unenchanted vs. enchanted). The report's own headline "baseline DPS" stat is a SEPARATE, honest
+number: her true, current, un-idealized state, real gems/enchants exactly as equipped, no
+substitution ever. These are not the same value and must never be reported as if they were -
+Missing Enchants/Missing Gems measure the real gap between them.
 
 ## Ground rules
 
@@ -389,9 +401,12 @@ this tool should factor in.** This kills two §8 items outright, not just "not y
 spend sections (already moot once acquisition-cost tracking was dropped for Wowhead linking
 instead), and the gems/enchants free-reshuffle-vs-requires-gold split (the two-number split's only
 purpose was surfacing which portion of an item's value needs gold spent to realize - once gold
-isn't a factor the tool should weigh at all, that distinction has no use). Every report number
-should keep assuming the fully-optimal gem/enchant loadout, same as it already does, with no
-"free vs. gold-gated" breakdown.
+isn't a factor the tool should weigh at all, that distinction has no use). No "free vs.
+gold-gated" breakdown - but per the 2026-09-06/07 baseline-honesty fix (see the MV formula section
+above), this does NOT mean every report number assumes the fully-optimal gem/enchant loadout
+uniformly: `MV(i)`'s own candidate comparisons still do (kept fair, enchanted vs. enchanted), but
+the report's headline "baseline DPS" is real and un-idealized (no substitution ever), with Missing
+Enchants/Missing Gems separately showing the honest, sim-verified gain from closing that gap.
 
 **Stage 6 (added 2026-08-23, Stage 6.0 done 2026-08-24): multi-class/multi-spec support** — extend
 beyond Lerynia's Survival Hunter to any class/spec `wowsims/tbc-new` itself supports, starting
