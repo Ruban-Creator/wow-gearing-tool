@@ -129,6 +129,20 @@ cp "<WoW install>/Interface/AddOns/GearingToolCompanion/GearingToolCompanion.toc
 To install on another machine: copy `addons/GearingToolCompanion/` into that machine's
 `Interface/AddOns/` directory.
 
+## RGT's own versioning
+
+RGT has its own real version identity (`core/version.py`), separate from the vendored sim's own
+version (`repo_root.sim_version_label()`) - format `"{STAGE} - v{MAJOR_MINOR}.{BUILD:04d}"`, e.g.
+`"Pre-Release - v0.7.0001"`, shown in the GUI's Settings modal. Per the user (2026-09-06):
+`STAGE`/`MAJOR_MINOR` change ONLY on the user's own explicit instruction (their stated progression:
+Pre-Release -> Alpha v0.8 -> Beta v0.9 -> Release v1.0) - never bump unilaterally. `BUILD`
+increments by 1 every time the GUI/tool is rebuilt for real, packaged distribution (a real
+PyInstaller + Inno Setup rebuild, not every code edit) - add a matching entry to `CHANGELOG.md`
+(repo root, RGT's own - explicitly separate from `addons/GearingToolCompanion/CHANGELOG.md`, the
+addon's own) at the same time. Packaging the installer needs a fresh
+`build/bin/tool_version_label.txt` generated from `core/version.py` before running ISCC.exe - see
+`packaging/README.md`.
+
 ## Stack
 
 Python 3.13 for everything except the simulator itself (Go, vendored via submodule, built to

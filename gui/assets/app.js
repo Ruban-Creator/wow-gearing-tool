@@ -67,6 +67,7 @@ const settingsWowRootResetBtn = document.getElementById("settings-wow-root-reset
 const settingsAddonStatus = document.getElementById("settings-addon-status");
 const settingsAddonInstallBtn = document.getElementById("settings-addon-install-btn");
 const settingsAddonCurseforgeLink = document.getElementById("settings-addon-curseforge-link");
+const settingsToolVersion = document.getElementById("settings-tool-version");
 const creditsVersion = document.getElementById("credits-version");
 const creditsGithubLink = document.getElementById("credits-github-link");
 const creditsPatreonLink = document.getElementById("credits-patreon-link");
@@ -386,6 +387,8 @@ async function refreshSettingsDisplay() {
 
   const wowRoot = await window.pywebview.api.get_wow_root();
   settingsWowRoot.textContent = wowRoot.path + (wowRoot.is_configured ? "" : " (auto-detected)");
+
+  settingsToolVersion.textContent = await window.pywebview.api.get_tool_version();
 
   await refreshAddonStatus();
   await refreshSimCredits();

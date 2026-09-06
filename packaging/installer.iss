@@ -22,10 +22,17 @@
 #define AppPublisher "Ruban-Creator"
 #define AppURL "https://github.com/Ruban-Creator/wow-gearing-tool"
 #define AppExeName "RGT.exe"
-; Real app version - read from build/bin/sim_version_label.txt at compile
-; time so the installer's own version always matches whatever sim build it
-; actually contains, never hand-maintained/guessed separately.
-#define AppVersion Trim(FileRead(FileOpen(SourcePath + "..\build\bin\sim_version_label.txt")))
+; Real app version - RGT's OWN version (core/version.py), NOT the vendored
+; sim's own version (that's a separate, unrelated thing - shown in the GUI's
+; own Settings modal, right next to RGT's own version, once installed). Read
+; from build/bin/tool_version_label.txt at compile time, generated fresh via
+; `python -c "import sys; sys.path.insert(0,'core'); import version;
+; open('build/bin/tool_version_label.txt','w').write(version.version_string())"`
+; right before running ISCC.exe - see packaging/README.md. Real bug fixed
+; 2026-09-06: this field used to read sim_version_label.txt instead, so the
+; installer's own Add/Remove Programs entry showed the SIM's version (e.g.
+; "v0.0.130"), not RGT's - confusing once RGT had a real version of its own.
+#define AppVersion Trim(FileRead(FileOpen(SourcePath + "..\build\bin\tool_version_label.txt")))
 
 [Setup]
 AppId={{B4E3A6F1-6C6B-4A6E-9C3A-3B7C6C7A0F00}

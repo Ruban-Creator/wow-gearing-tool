@@ -67,11 +67,19 @@ same failure mode and the same fix.
 
 `packaging/installer.iss` builds the real, shareable installer -
 `packaging/output/RGT-Setup.exe`. Requires the exe (above) and all three `build/bin/`
-binaries (`CLAUDE.md`'s Local Setup section) already built first.
+binaries (`CLAUDE.md`'s Local Setup section) already built first, PLUS a fresh
+`build/bin/tool_version_label.txt` (RGT's own version, `core/version.py` - see
+`installer.iss`'s own comment for why this is separate from the sim's version):
 
 ```
+python -c "import sys; sys.path.insert(0,'core'); import version; open('build/bin/tool_version_label.txt','w').write(version.version_string())"
 "%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" packaging\installer.iss
 ```
+
+**Whenever a real rebuild ships** (this exe or the installer), bump `core/version.py`'s `BUILD` by
+1 and add a matching entry to `CHANGELOG.md` (repo root) - see that file's own header and
+`core/version.py`'s own docstring for the real bump rules (STAGE/MAJOR_MINOR only on the user's
+explicit instruction).
 
 Inno Setup installs via `winget install --id JRSoftware.InnoSetup` and lands under
 `%LOCALAPPDATA%\Programs\Inno Setup 6\` - NOT `Program Files`, despite that being Inno Setup's own

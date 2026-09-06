@@ -94,6 +94,7 @@ import sweep_all_loot  # noqa: E402
 import source_scope  # noqa: E402
 import item_db as idb  # noqa: E402
 import report_storage  # noqa: E402
+import version  # noqa: E402
 
 # Moved to core/character_profiles.py 2026-08-25 (a real bug: cli/gear.py's
 # own sweep command had no equivalent guard and was silently defaulting
@@ -583,6 +584,12 @@ class Api:
         except OSError as e:
             return {"success": False, "error": str(e), "install_path": install_path}
         return {"success": True, "error": None, "install_path": install_path}
+
+    def get_tool_version(self) -> str:
+        """RGT's own version (see core/version.py) - separate from the
+        vendored sim's own version shown right below it in the Settings
+        modal (get_sim_credits() below)."""
+        return version.version_string()
 
     def get_sim_credits(self) -> dict:
         """Real links pulled straight from sim/tbc-new/README.md, not
