@@ -424,7 +424,7 @@ real question). `check_ledger_consistency.py` gained real structural assertions 
 Verified clean end to end (Lerynia 132/0 including a full HTML-splice check, Test-Beastmastery-
 Synthetic 150/0 with `dual_wield_alt: null` as expected for a genuinely dual-wielding character).
 
-## #21 — Real, unexplained magnitude gap between this tool's own sim and wowsims.com for at least one real item (Mindstorm Wristbands, Balance Druid)
+## #21 — CLOSED, 2026-09-06 - real, unexplained magnitude gap between this tool's own sim and wowsims.com for at least one real item (Mindstorm Wristbands, Balance Druid)
 
 Found 2026-09-06 during the wrist-enchant investigation (see NOTES.md's dated entry for the full
 trail). After fixing two real, confirmed bugs this same day (`build_owned_config()`'s enchant
@@ -509,13 +509,38 @@ Duration=180 (+19.36) bracketed wowsims' +17.31 from above while duration=240 (+
 from below - both closer than the old mismatched-baseline comparison, so duration has a real but
 modest, non-dominant effect here, not the single root cause either.
 
-Not chased further today - the remaining ~1.3-2 DPS gap is small enough that sim-version drift
+Not chased further that day - the remaining ~1.3-2 DPS gap was small enough that sim-version drift
 (wowsims.com's live site deploys off `master` continuously on every merge, confirmed separately via
 their own GitHub Actions "Build and Deploy" workflow - real commit `a176edf` is live on production
 but not yet in any tagged release, though that specific commit - an armor-damage-reduction cap for
 damage TAKEN - doesn't explain a caster's own outgoing-damage gap) or some other minor,
-still-unidentified difference are both plausible, and this is a reasonable point to pause given how
-far the gap has already closed (from an unexplained 11x down to ~7.5%, with the dominant cause now
-identified as cross-baseline comparison, not an unknown sim defect). Re-open if the gap becomes
-practically significant for a real gearing decision, or revisit after a future sim update.
+still-unidentified difference seemed plausible.
+
+**Final update, 2026-09-06 (later the same day) - CLOSED for real.** The user pulled a fresh live
+"Swap" comparison directly from wowsims.com's own Results panel for this exact item swap (two
+screenshots with full per-spell breakdowns, real DPS 1362.43/1343.17, delta **+19.26 DPS**) and
+pasted the two underlying JSON exports. Real, decisive difference from the prior best test: this
+fresh export's `encounter.duration` is **180** (matching our own profile's default exactly) - the
+earlier `user_websim_v2.json` capture used for the "~7.5% residual" conclusion above was apparently
+a slightly different/stale settings snapshot from an earlier point in the investigation, not the one
+actually underlying the live comparison being chased. Running this fresh export directly (again as
+its own complete settings blob): Crimson Bracers **1414.50**, Mindstorm Wristbands **1433.69**,
+delta **+19.19 DPS** (noise_stdev 0.58) - matching wowsims.com's own **+19.26** to within **0.07
+DPS**, fully inside the noise band. A theory floated mid-chase (that the fresh export's
+`rotation.type: "TypeAuto"` needed relabeling to `TypeAPL` before our sim would run it) was directly
+tested and DISPROVEN - reverting only the `type` field back to `TypeAuto` gave an identical result;
+the type label doesn't gate execution, only whether real `priorityList` content is actually present
+in the export does (a genuinely bare `{"type":"TypeAuto"}` export, never opened in wowsims' own
+auto-rotation UI before exporting, has nothing for our sim to run - a different, narrower gotcha than
+first suspected).
+
+**Real, closing assessment**: started as an apparently-unexplained 11x magnitude gap. Every real
+cause found across the whole investigation traced back to a settings/methodology mismatch, never a
+sim-engine defect: (1) `shadowPriestDps` materially amplifying a caster's spell-damage MV (a real
+buff-assumption difference, not a bug), (2) sim-version drift (v0.0.124->v0.0.130, closed roughly a
+third of the gap), (3) computing deltas against two DIFFERENT real character baselines instead of
+one self-contained settings blob (the dominant cause - this tool's own MV-depends-on-the-full-set
+principle applies across characters too, not just within one), and (4) simply using the correctly
+freshly-captured settings snapshot (matching duration) instead of an earlier, slightly-stale one.
+No further action needed - re-open only if a NEW, similarly-sized gap surfaces on a different item.
 

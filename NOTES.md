@@ -6145,3 +6145,47 @@ Not chased further today - the remaining ~1.3-2 DPS gap is small enough that sim
 GitHub Actions/tags investigation) or some other minor, still-unidentified settings difference are
 both plausible explanations, and this is a reasonable point to pause given how far the gap has
 already closed. FUTURE_TASKS.md's #21 entry updated with these real numbers.
+
+## 2026-09-06 (cont'd): Backlog #21 CLOSED for real - delta now matches wowsims.com within noise
+
+The user pulled a live "Swap" comparison directly from wowsims.com's own Results panel for the
+exact Crimson Bracers of Gloom -> Mindstorm Wristbands swap (two screenshots: full per-spell
+breakdowns for both sides, DPS 1362.43 and 1343.17, a real **-19.26 DPS** delta shown one direction
+= **+19.26** the other), then pasted the two full underlying JSON exports directly. Real, decisive
+fix: this fresh export's `encounter.duration` is **180** (matching our own profile's default
+exactly), not 240 like the earlier `user_websim_v2.json` capture used for the whole "narrowed to
+~7.5%" investigation above - that earlier capture was apparently a slightly different/stale settings
+snapshot from a different point in the investigation, not the one actually underlying the
+comparison being chased.
+
+Running this fresh export directly through our sim (again as its own complete, self-contained
+settings blob, not patched onto Béarforceone's own settings): Crimson Bracers baseline **1414.50**,
+Mindstorm Wristbands **1433.69**, delta **+19.19 DPS** (noise_stdev 0.58) - matching wowsims.com's
+own **+19.26** to within **0.07 DPS**, completely inside the noise band. The ~7.5% gap from the
+earlier entry is gone; this specific comparison is now, for all practical purposes, an exact match.
+
+**Real correction to a theory floated while chasing this, tested and DISPROVEN, not left
+unverified**: initially suspected the fresh export's `rotation.type: "TypeAuto"` (vs. the earlier
+`v2.json`'s `TypeAPL`) needed relabeling to `TypeAPL` before our sim would execute it, based on an
+earlier finding this same session that a DIFFERENT, truly-bare `{"type": "TypeAuto"}` export (no
+`priorityList` at all) gave 0 player DPS. Directly tested: re-running this exact fresh JSON with
+ONLY the `type` field reverted back to `"TypeAuto"` (real `priorityList`/`prepullActions`/
+`valueVariables` content left untouched) gives the same result (1415.10 vs 1414.50, within noise) -
+the type LABEL doesn't gate execution at all; what mattered for the earlier 0-DPS case was that that
+export's rotation object was genuinely empty (no real content), not its type field's literal value.
+Real, general lesson: a wowsims.com export retains whatever the UI most recently computed as its
+"Auto" rotation content (even calling it `TypeAuto`) as long as the user actually generated/viewed
+one in the UI before exporting - a genuinely bare `TypeAuto` export (never opened the auto-rotation
+view) has nothing for our sim to run.
+
+**Real, closing assessment**: backlog #21 started as an apparently-unexplained 11x magnitude gap.
+Across this whole investigation the real causes found, in order: (1) `shadowPriestDps` materially
+amplifying a caster's spell-damage MV (buff-assumption mismatch, not a bug), (2) sim-version drift
+(v0.0.124->v0.0.130 real update, closed roughly a third of the remaining gap), (3) computing deltas
+against two DIFFERENT real character baselines instead of one self-contained settings blob (the
+dominant remaining cause, per this tool's own MV-depends-on-the-full-set principle applying across
+characters too), and finally (4) simply using the CORRECT, freshly-captured settings snapshot
+(matching duration) rather than an earlier, slightly-stale one. No sim-engine defect was ever found -
+every real cause traced back to a settings/methodology mismatch between the two sides being
+compared, exactly the class of explanation the "assume the latest sim's model is correct" ground
+rule points toward first. FUTURE_TASKS.md's #21 entry marked CLOSED.
