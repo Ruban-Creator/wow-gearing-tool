@@ -1757,6 +1757,23 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
 
     source_scope_excluded = sorted(_source_key_label(k) for k in excluded_source_keys)
 
+    # Backlog #19 (2026-09-06, the user's own suggestion) - every report
+    # computes DPS against a real, but previously SILENT, raid-composition
+    # assumption (which totems/buffs are active, whether a Shadow Priest's
+    # mana return is modeled, etc.) baked into raid_buffs_overlay.json at
+    # settings-build time - a reader had no way to see what was assumed
+    # without reading source files. Read directly from the real, actual
+    # settings file this sweep just ran against (never hand-typed, never
+    # drifts out of sync with what was really simmed) - the four real
+    # buff-carrying sections wowsims' own settings schema uses.
+    _settings_for_buffs = repo_root.load_json(SETTINGS_TEMPLATE)
+    assumed_buffs = {
+        "raidBuffs": _settings_for_buffs.get("raidBuffs", {}),
+        "debuffs": _settings_for_buffs.get("debuffs", {}),
+        "partyBuffs": _settings_for_buffs.get("partyBuffs", {}),
+        "playerBuffs": _settings_for_buffs.get("player", {}).get("buffs", {}),
+    }
+
     out_dir = os.path.join(USER_DATA_DIR, "characters", name_realm, "cache")
     os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, f"tiered_report_{profile_dir_name}_{phase}.json")
@@ -1765,7 +1782,8 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
                    "missing_enchants": missing_enchants,
                    "tiers": tiered_out, "two_hand": two_hand_out, "two_hand_meta": two_hand_meta,
                    "fight_duration_seconds": actual_duration,
-                   "source_scope_excluded": source_scope_excluded}, f, indent=2)
+                   "source_scope_excluded": source_scope_excluded,
+                   "assumed_buffs": assumed_buffs}, f, indent=2)
     print(f"Wrote {out_path}")
     milestone("Done")
     return out_path

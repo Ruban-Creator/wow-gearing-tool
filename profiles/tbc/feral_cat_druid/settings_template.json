@@ -133,10 +133,22 @@
     },
     "consumables": {
       "potId": 22838,
-      "flaskId": 22854,
-      "foodId": 27658,
-      "conjuredId": 22788,
-      "drumsId": "LesserDrumsOfBattle"
+      "battleElixirId": 22831,
+      "guardianElixirId": 32067,
+      "foodId": 27664,
+      "mhImbueId": 34340,
+      "conjuredId": 12662,
+      "drumsId": "GreaterDrumsOfBattle",
+      "superSapper": true,
+      "goblinSapper": true,
+      "scrollAgi": true,
+      "scrollStr": true,
+      "potions": [
+        22838
+      ],
+      "conjuredItems": [
+        12662
+      ]
     },
     "bonusStats": {
       "apiVersion": 14,
@@ -708,7 +720,49 @@
                       "includeReactionTime": true
                     }
                   },
-                  {}
+                  {
+                    "and": {
+                      "vals": [
+                        {
+                          "cmp": {
+                            "op": "OpGt",
+                            "lhs": {
+                              "timeToNextEnergyTick": {}
+                            },
+                            "rhs": {
+                              "variableRef": {
+                                "name": "Max Wait Time"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "cmp": {
+                            "op": "OpLt",
+                            "lhs": {
+                              "currentEnergy": {}
+                            },
+                            "rhs": {
+                              "spellCurrentCost": {
+                                "spellId": {
+                                  "spellId": 27008,
+                                  "rank": 7
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "auraIsInactive": {
+                            "auraId": {
+                              "spellId": 16870
+                            },
+                            "includeReactionTime": true
+                          }
+                        }
+                      ]
+                    }
+                  }
                 ]
               }
             },
@@ -781,15 +835,331 @@
                 "vals": [
                   {
                     "cmp": {
-                      "op": "OpGe",
+                      "op": "OpEq",
                       "lhs": {
-                        "currentComboPoints": {}
+                        "spellCurrentCost": {
+                          "spellId": {
+                            "spellId": 33983,
+                            "rank": 3
+                          }
+                        }
                       },
                       "rhs": {
-                        "variableRef": {
-                          "name": "Bite Trick CP"
+                        "const": {
+                          "val": "35"
                         }
                       }
+                    }
+                  },
+                  {
+                    "cmp": {
+                      "op": "OpLe",
+                      "lhs": {
+                        "variableRef": {
+                          "name": "Rip CP"
+                        }
+                      },
+                      "rhs": {
+                        "const": {
+                          "val": "5"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "auraIsInactive": {
+                      "auraId": {
+                        "spellId": 16870
+                      },
+                      "includeReactionTime": true
+                    }
+                  },
+                  {
+                    "or": {
+                      "vals": [
+                        {
+                          "and": {
+                            "vals": [
+                              {
+                                "cmp": {
+                                  "op": "OpGt",
+                                  "lhs": {
+                                    "timeToNextEnergyTick": {}
+                                  },
+                                  "rhs": {
+                                    "variableRef": {
+                                      "name": "Trick Window"
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "cmp": {
+                                  "op": "OpGe",
+                                  "lhs": {
+                                    "currentComboPoints": {}
+                                  },
+                                  "rhs": {
+                                    "const": {
+                                      "val": "2"
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "cmp": {
+                                  "op": "OpLt",
+                                  "lhs": {
+                                    "auraRemainingTime": {
+                                      "sourceUnit": {
+                                        "type": "CurrentTarget"
+                                      },
+                                      "auraId": {
+                                        "spellId": 27008,
+                                        "rank": 7
+                                      }
+                                    }
+                                  },
+                                  "rhs": {
+                                    "const": {
+                                      "val": "2s"
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "cmp": {
+                                  "op": "OpGe",
+                                  "lhs": {
+                                    "remainingTime": {}
+                                  },
+                                  "rhs": {
+                                    "math": {
+                                      "op": "OpAdd",
+                                      "lhs": {
+                                        "variableRef": {
+                                          "name": "Rip End Threshold"
+                                        }
+                                      },
+                                      "rhs": {
+                                        "const": {
+                                          "val": "2s"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "cmp": {
+                                  "op": "OpGe",
+                                  "lhs": {
+                                    "currentEnergy": {}
+                                  },
+                                  "rhs": {
+                                    "const": {
+                                      "val": "80"
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "cmp": {
+                                  "op": "OpLt",
+                                  "lhs": {
+                                    "currentEnergy": {}
+                                  },
+                                  "rhs": {
+                                    "const": {
+                                      "val": "87"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "and": {
+                            "vals": [
+                              {
+                                "cmp": {
+                                  "op": "OpLe",
+                                  "lhs": {
+                                    "timeToNextEnergyTick": {}
+                                  },
+                                  "rhs": {
+                                    "const": {
+                                      "val": "1.0s"
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "cmp": {
+                                  "op": "OpGe",
+                                  "lhs": {
+                                    "currentComboPoints": {}
+                                  },
+                                  "rhs": {
+                                    "const": {
+                                      "val": "3"
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "cmp": {
+                                  "op": "OpLt",
+                                  "lhs": {
+                                    "auraRemainingTime": {
+                                      "sourceUnit": {
+                                        "type": "CurrentTarget"
+                                      },
+                                      "auraId": {
+                                        "spellId": 27008,
+                                        "rank": 7
+                                      }
+                                    }
+                                  },
+                                  "rhs": {
+                                    "const": {
+                                      "val": "1s"
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "cmp": {
+                                  "op": "OpGe",
+                                  "lhs": {
+                                    "remainingTime": {}
+                                  },
+                                  "rhs": {
+                                    "math": {
+                                      "op": "OpAdd",
+                                      "lhs": {
+                                        "variableRef": {
+                                          "name": "Rip End Threshold"
+                                        }
+                                      },
+                                      "rhs": {
+                                        "const": {
+                                          "val": "1s"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "cmp": {
+                                  "op": "OpGe",
+                                  "lhs": {
+                                    "currentEnergy": {}
+                                  },
+                                  "rhs": {
+                                    "const": {
+                                      "val": "45"
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "cmp": {
+                                  "op": "OpLt",
+                                  "lhs": {
+                                    "currentEnergy": {}
+                                  },
+                                  "rhs": {
+                                    "const": {
+                                      "val": "52"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "castSpell": {
+              "spellId": {
+                "spellId": 33983,
+                "rank": 3
+              }
+            }
+          }
+        },
+        {
+          "action": {
+            "condition": {
+              "and": {
+                "vals": [
+                  {
+                    "or": {
+                      "vals": [
+                        {
+                          "and": {
+                            "vals": [
+                              {
+                                "cmp": {
+                                  "op": "OpGe",
+                                  "lhs": {
+                                    "currentComboPoints": {}
+                                  },
+                                  "rhs": {
+                                    "variableRef": {
+                                      "name": "Bite Trick CP (Wolfshead)"
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "auraIsKnown": {
+                                  "auraId": {
+                                    "spellId": 17768
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "and": {
+                            "vals": [
+                              {
+                                "cmp": {
+                                  "op": "OpGe",
+                                  "lhs": {
+                                    "currentComboPoints": {}
+                                  },
+                                  "rhs": {
+                                    "variableRef": {
+                                      "name": "Bite Trick CP (Wolfsheadless)"
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "not": {
+                                  "val": {
+                                    "auraIsKnown": {
+                                      "auraId": {
+                                        "spellId": 17768
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
                     }
                   },
                   {
@@ -849,6 +1219,161 @@
               "spellId": {
                 "spellId": 24248,
                 "rank": 6
+              }
+            }
+          }
+        },
+        {
+          "action": {
+            "condition": {
+              "and": {
+                "vals": [
+                  {
+                    "or": {
+                      "vals": [
+                        {
+                          "and": {
+                            "vals": [
+                              {
+                                "cmp": {
+                                  "op": "OpGe",
+                                  "lhs": {
+                                    "currentComboPoints": {}
+                                  },
+                                  "rhs": {
+                                    "variableRef": {
+                                      "name": "Rip  Trick CP"
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "auraIsKnown": {
+                                  "auraId": {
+                                    "spellId": 17768
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "and": {
+                            "vals": [
+                              {
+                                "cmp": {
+                                  "op": "OpGe",
+                                  "lhs": {
+                                    "currentComboPoints": {}
+                                  },
+                                  "rhs": {
+                                    "variableRef": {
+                                      "name": "Rip  Trick CP"
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "not": {
+                                  "val": {
+                                    "auraIsKnown": {
+                                      "auraId": {
+                                        "spellId": 17768
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "cmp": {
+                      "op": "OpLt",
+                      "lhs": {
+                        "currentEnergy": {}
+                      },
+                      "rhs": {
+                        "spellCurrentCost": {
+                          "spellId": {
+                            "spellId": 27002,
+                            "rank": 7
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "cmp": {
+                      "op": "OpGe",
+                      "lhs": {
+                        "currentEnergy": {}
+                      },
+                      "rhs": {
+                        "spellCurrentCost": {
+                          "spellId": {
+                            "spellId": 27008,
+                            "rank": 7
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "auraIsInactive": {
+                      "auraId": {
+                        "spellId": 16870
+                      },
+                      "includeReactionTime": true
+                    }
+                  },
+                  {
+                    "cmp": {
+                      "op": "OpGt",
+                      "lhs": {
+                        "timeToNextEnergyTick": {}
+                      },
+                      "rhs": {
+                        "variableRef": {
+                          "name": "Trick Window"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "auraIsInactive": {
+                      "sourceUnit": {
+                        "type": "CurrentTarget"
+                      },
+                      "auraId": {
+                        "spellId": 27008,
+                        "rank": 7
+                      }
+                    }
+                  },
+                  {
+                    "cmp": {
+                      "op": "OpGe",
+                      "lhs": {
+                        "remainingTime": {}
+                      },
+                      "rhs": {
+                        "variableRef": {
+                          "name": "Rip End Threshold"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "castSpell": {
+              "spellId": {
+                "spellId": 27008,
+                "rank": 7
               }
             }
           }
@@ -1071,26 +1596,35 @@
                     "or": {
                       "vals": [
                         {
-                          "cmp": {
-                            "op": "OpGe",
-                            "lhs": {
-                              "currentEnergy": {}
-                            },
-                            "rhs": {
-                              "math": {
-                                "op": "OpAdd",
-                                "lhs": {
-                                  "const": {
-                                    "val": "57"
+                          "and": {
+                            "vals": [
+                              {
+                                "cmp": {
+                                  "op": "OpGe",
+                                  "lhs": {
+                                    "currentEnergy": {}
+                                  },
+                                  "rhs": {
+                                    "const": {
+                                      "val": "57"
+                                    }
                                   }
-                                },
-                                "rhs": {
-                                  "variableRef": {
-                                    "name": "Bite Energy Cutoff Mod"
+                                }
+                              },
+                              {
+                                "cmp": {
+                                  "op": "OpLe",
+                                  "lhs": {
+                                    "timeToNextEnergyTick": {}
+                                  },
+                                  "rhs": {
+                                    "const": {
+                                      "val": "1.0s"
+                                    }
                                   }
                                 }
                               }
-                            }
+                            ]
                           }
                         },
                         {
@@ -1103,20 +1637,99 @@
                                     "currentEnergy": {}
                                   },
                                   "rhs": {
-                                    "math": {
-                                      "op": "OpAdd",
-                                      "lhs": {
-                                        "const": {
-                                          "val": "15"
-                                        }
-                                      },
-                                      "rhs": {
-                                        "variableRef": {
-                                          "name": "Bite Energy Cutoff Mod"
-                                        }
-                                      }
+                                    "const": {
+                                      "val": "77"
                                     }
                                   }
+                                }
+                              },
+                              {
+                                "cmp": {
+                                  "op": "OpGt",
+                                  "lhs": {
+                                    "timeToNextEnergyTick": {}
+                                  },
+                                  "rhs": {
+                                    "const": {
+                                      "val": "1.0s"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "and": {
+                            "vals": [
+                              {
+                                "or": {
+                                  "vals": [
+                                    {
+                                      "and": {
+                                        "vals": [
+                                          {
+                                            "cmp": {
+                                              "op": "OpGe",
+                                              "lhs": {
+                                                "currentEnergy": {}
+                                              },
+                                              "rhs": {
+                                                "const": {
+                                                  "val": "15"
+                                                }
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "cmp": {
+                                              "op": "OpLe",
+                                              "lhs": {
+                                                "timeToNextEnergyTick": {}
+                                              },
+                                              "rhs": {
+                                                "const": {
+                                                  "val": "1.0s"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      "and": {
+                                        "vals": [
+                                          {
+                                            "cmp": {
+                                              "op": "OpGe",
+                                              "lhs": {
+                                                "currentEnergy": {}
+                                              },
+                                              "rhs": {
+                                                "const": {
+                                                  "val": "35"
+                                                }
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "cmp": {
+                                              "op": "OpGt",
+                                              "lhs": {
+                                                "timeToNextEnergyTick": {}
+                                              },
+                                              "rhs": {
+                                                "const": {
+                                                  "val": "1.0s"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  ]
                                 }
                               },
                               {
@@ -1425,6 +2038,7 @@
           }
         },
         {
+          "hide": true,
           "action": {
             "condition": {
               "and": {
@@ -1785,8 +2399,7 @@
                       "variableRef": {
                         "name": "Bloodlust Time"
                       }
-                    },
-                    "alignCdEnd": true
+                    }
                   }
                 },
                 "castSpell": {
@@ -1811,8 +2424,7 @@
                       "variableRef": {
                         "name": "Bloodlust Time"
                       }
-                    },
-                    "alignCdEnd": true
+                    }
                   }
                 },
                 "castSpell": {
@@ -1837,8 +2449,7 @@
                       "variableRef": {
                         "name": "Bloodlust Time"
                       }
-                    },
-                    "alignCdEnd": true
+                    }
                   }
                 },
                 "castSpell": {
@@ -1863,8 +2474,7 @@
                       "variableRef": {
                         "name": "Bloodlust Time"
                       }
-                    },
-                    "alignCdEnd": true
+                    }
                   }
                 },
                 "castSpell": {
@@ -1889,8 +2499,7 @@
                       "variableRef": {
                         "name": "Bloodlust Time"
                       }
-                    },
-                    "alignCdEnd": true
+                    }
                   }
                 },
                 "castSpell": {
@@ -1915,8 +2524,7 @@
                       "variableRef": {
                         "name": "Bloodlust Time"
                       }
-                    },
-                    "alignCdEnd": true
+                    }
                   }
                 },
                 "castSpell": {
@@ -1941,8 +2549,7 @@
                       "variableRef": {
                         "name": "Bloodlust Time"
                       }
-                    },
-                    "alignCdEnd": true
+                    }
                   }
                 },
                 "castSpell": {
@@ -1967,8 +2574,7 @@
                       "variableRef": {
                         "name": "Bloodlust Time"
                       }
-                    },
-                    "alignCdEnd": true
+                    }
                   }
                 },
                 "castSpell": {
@@ -1993,8 +2599,7 @@
                       "variableRef": {
                         "name": "Bloodlust Time"
                       }
-                    },
-                    "alignCdEnd": true
+                    }
                   }
                 },
                 "castSpell": {
@@ -2019,8 +2624,7 @@
                       "variableRef": {
                         "name": "Bloodlust Time"
                       }
-                    },
-                    "alignCdEnd": true
+                    }
                   }
                 },
                 "castSpell": {
@@ -2045,8 +2649,7 @@
                       "variableRef": {
                         "name": "Bloodlust Time"
                       }
-                    },
-                    "alignCdEnd": true
+                    }
                   }
                 },
                 "castSpell": {
@@ -2071,8 +2674,7 @@
                       "variableRef": {
                         "name": "Bloodlust Time"
                       }
-                    },
-                    "alignCdEnd": true
+                    }
                   }
                 },
                 "castSpell": {
@@ -2097,8 +2699,7 @@
                       "variableRef": {
                         "name": "Bloodlust Time"
                       }
-                    },
-                    "alignCdEnd": true
+                    }
                   }
                 },
                 "castSpell": {
@@ -2123,8 +2724,7 @@
                       "variableRef": {
                         "name": "Bloodlust Time"
                       }
-                    },
-                    "alignCdEnd": true
+                    }
                   }
                 },
                 "castSpell": {
@@ -2149,8 +2749,7 @@
                       "variableRef": {
                         "name": "Bloodlust Time"
                       }
-                    },
-                    "alignCdEnd": true
+                    }
                   }
                 },
                 "castSpell": {
@@ -2175,8 +2774,7 @@
                       "variableRef": {
                         "name": "Bloodlust Time"
                       }
-                    },
-                    "alignCdEnd": true
+                    }
                   }
                 },
                 "castSpell": {
@@ -2201,8 +2799,7 @@
                       "variableRef": {
                         "name": "Bloodlust Time"
                       }
-                    },
-                    "alignCdEnd": true
+                    }
                   }
                 },
                 "castSpell": {
@@ -2240,11 +2837,45 @@
             {
               "action": {
                 "condition": {
-                  "gcdIsReady": {}
+                  "and": {
+                    "vals": [
+                      {
+                        "cmp": {
+                          "op": "OpGe",
+                          "lhs": {
+                            "math": {
+                              "op": "OpSub",
+                              "lhs": {
+                                "maxMana": {}
+                              },
+                              "rhs": {
+                                "currentMana": {}
+                              }
+                            }
+                          },
+                          "rhs": {
+                            "const": {
+                              "val": "1200"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "gcdIsReady": {}
+                      },
+                      {
+                        "selectedConjured": {
+                          "conjuredId": {
+                            "itemId": 12662
+                          }
+                        }
+                      }
+                    ]
+                  }
                 },
                 "castSpell": {
                   "spellId": {
-                    "otherId": "OtherActionPotion"
+                    "itemId": 12662
                   }
                 }
               }
@@ -2255,27 +2886,115 @@
                   "and": {
                     "vals": [
                       {
-                        "cmp": {
-                          "op": "OpLe",
-                          "lhs": {
-                            "currentManaPercent": {}
-                          },
-                          "rhs": {
-                            "const": {
-                              "val": "75%"
-                            }
-                          }
-                        }
+                        "gcdIsReady": {}
                       },
                       {
-                        "gcdIsReady": {}
+                        "selectedConjured": {
+                          "conjuredId": {
+                            "itemId": 22788
+                          }
+                        }
                       }
                     ]
                   }
                 },
                 "castSpell": {
                   "spellId": {
-                    "itemId": 12662
+                    "itemId": 22788
+                  }
+                }
+              }
+            },
+            {
+              "action": {
+                "condition": {
+                  "and": {
+                    "vals": [
+                      {
+                        "gcdIsReady": {}
+                      },
+                      {
+                        "or": {
+                          "vals": [
+                            {
+                              "not": {
+                                "val": {
+                                  "selectedPotion": {
+                                    "potionId": {
+                                      "itemId": 22832
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "cmp": {
+                                "op": "OpGe",
+                                "lhs": {
+                                  "math": {
+                                    "op": "OpSub",
+                                    "lhs": {
+                                      "maxMana": {}
+                                    },
+                                    "rhs": {
+                                      "currentMana": {}
+                                    }
+                                  }
+                                },
+                                "rhs": {
+                                  "const": {
+                                    "val": "2300"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "or": {
+                          "vals": [
+                            {
+                              "not": {
+                                "val": {
+                                  "selectedPotion": {
+                                    "potionId": {
+                                      "itemId": 31677
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "cmp": {
+                                "op": "OpGe",
+                                "lhs": {
+                                  "math": {
+                                    "op": "OpSub",
+                                    "lhs": {
+                                      "maxMana": {}
+                                    },
+                                    "rhs": {
+                                      "currentMana": {}
+                                    }
+                                  }
+                                },
+                                "rhs": {
+                                  "const": {
+                                    "val": "2000"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                "castSpell": {
+                  "spellId": {
+                    "otherId": "OtherActionPotion"
                   }
                 }
               }
@@ -2313,7 +3032,7 @@
           "name": "Rip CP",
           "value": {
             "const": {
-              "val": "5"
+              "val": "4"
             }
           }
         },
@@ -2321,15 +3040,23 @@
           "name": "Bite CP",
           "value": {
             "const": {
-              "val": "5"
+              "val": "4"
             }
           }
         },
         {
-          "name": "Bite Trick CP",
+          "name": "Bite Trick CP (Wolfsheadless)",
           "value": {
             "const": {
-              "val": "2"
+              "val": "4"
+            }
+          }
+        },
+        {
+          "name": "Bite Trick CP (Wolfshead)",
+          "value": {
+            "const": {
+              "val": "4"
             }
           }
         },
@@ -2338,6 +3065,14 @@
           "value": {
             "const": {
               "val": "39"
+            }
+          }
+        },
+        {
+          "name": "Rip  Trick CP",
+          "value": {
+            "const": {
+              "val": "3"
             }
           }
         },

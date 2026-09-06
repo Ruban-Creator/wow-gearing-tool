@@ -1,3 +1,4 @@
 {
-  "item_ids": []
+  "item_ids": [28517, 32352, 34446, 34403, 34572, 29093, 34242, 34555],
+  "source": "core/verify_gem_choices.py, 2026-09-06 - real 30k-iteration sim comparisons (8 real wins of 23 candidates with sockets checked, 1 tied within noise, 14 clear pure-Spell-Damage wins), see NOTES.md"
 }

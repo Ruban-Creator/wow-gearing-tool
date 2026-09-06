@@ -221,6 +221,12 @@ def check_transform(report: dict, ledger_data: dict, rep: Report) -> None:
                "ledger_data.json: two_hand does not pass through tiered_report.json unchanged")
     rep.check(ledger_data.get("two_hand_meta") == report.get("two_hand_meta"),
                "ledger_data.json: two_hand_meta does not pass through tiered_report.json unchanged")
+    rep.check(ledger_data.get("assumed_buffs", {}) == report.get("assumed_buffs", {}),
+               "ledger_data.json: assumed_buffs does not pass through tiered_report.json unchanged")
+    rep.check(isinstance(report.get("assumed_buffs"), dict)
+               and set(report["assumed_buffs"]) == {"raidBuffs", "debuffs", "partyBuffs", "playerBuffs"},
+               "tiered_report.json: assumed_buffs missing or missing a real category "
+               "(backlog #19 - see run_upgrade_sweep.py's own comment on where this is built)")
 
     # 2026-09-04 - ledger_diff.compute()'s real output shape. None is a
     # legitimate value (first-ever sweep for this character/profile/phase,

@@ -118,6 +118,28 @@
   .legend-label.warn{background:var(--warn-bg); color:var(--warn-strong);}
   .legend-desc{flex:1 1 auto; min-width:0; line-height:1.5;}
 
+  /* ---------- Assumed Raid Buffs (backlog #19, 2026-09-06) ---------- */
+  .buffs-section{margin-bottom:28px;}
+  .buffs-section summary{cursor:pointer; list-style:none;}
+  .buffs-section summary::-webkit-details-marker{display:none;}
+  .buffs-section summary::before{
+    content:'▾'; display:inline-block; margin-right:8px; font-size:13px;
+    color:var(--ink-faint); transition:transform .15s ease;
+  }
+  .buffs-section:not([open]) summary::before{transform:rotate(-90deg);}
+  .buffs-groups{display:flex; flex-direction:column; gap:9px; margin-top:12px;}
+  .buffs-group{display:flex; gap:12px; align-items:baseline; flex-wrap:wrap;}
+  .buffs-group-label{
+    flex:0 0 auto; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--ink-faint); font-weight:700; min-width:82px;
+  }
+  .buffs-chips{display:flex; flex-wrap:wrap; gap:6px; flex:1 1 auto; min-width:0;}
+  .buffs-chip{
+    font-size:12px; background:var(--surface-2); border:1px solid var(--border-soft);
+    color:var(--ink-muted); border-radius:999px; padding:3px 10px; white-space:nowrap;
+  }
+  .buffs-empty{color:var(--ink-faint); font-size:13px; font-style:italic; margin-top:10px;}
+
   /* ---------- Tier nav ---------- */
   nav.tiernav{
     display:flex; flex-wrap:wrap; gap:8px; margin-bottom:30px;
@@ -354,6 +376,18 @@
     </div>
   </div>
 
+  <details class="buffs-section" id="buffs-section" open>
+    <summary class="bis-head">
+      <h2>Assumed Raid Buffs</h2>
+      <span class="count" id="buffs-count"></span>
+    </summary>
+    <div class="bis-sub">Real raid/debuff/party/personal buff assumptions this exact sweep ran
+      against, read directly from the settings actually used - not a hand-typed description that
+      could drift out of sync. If your real raid comp doesn't match this, treat every DPS number
+      below as an approximation, not gospel.</div>
+    <div class="buffs-groups" id="buffs-groups"></div>
+  </details>
+
   <section class="bis" id="bis-section">
     <div class="bis-head">
       <h2>Achieved BiS</h2>
@@ -436,6 +470,49 @@ function escapeHtml(s){
   div.textContent = s == null ? '' : s;
   return div.innerHTML;
 }
+
+// Backlog #19 (2026-09-06, the user's own suggestion): every report number
+// was computed against a real, but previously silent, raid-buff assumption -
+// this renders exactly what DATA.assumed_buffs actually says (sourced
+// straight from the real settings file the sweep ran against, never
+// hand-typed here) so a reader can judge for themselves whether it matches
+// their real raid. Generic camelCase->Title Case conversion, not a
+// hand-maintained per-field label table - matches this project's own "never
+// hand-type what can be read from the real thing" convention.
+function humanizeKey(key){
+  return key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase()).trim();
+}
+function buffChipText(key, value){
+  if (value === false || value === 0 || value === null || value === undefined) return null;
+  if (value === 'TristateEffectMissing') return null;
+  const label = humanizeKey(key);
+  if (value === true || value === 'TristateEffectRegular') return label;
+  if (value === 'TristateEffectImproved') return label + ' (Improved)';
+  if (typeof value === 'number') return label + ': ' + value;
+  if (typeof value === 'string') return label + ': ' + humanizeKey(value);
+  return label;
+}
+(function renderAssumedBuffs(){
+  const CATEGORY_LABELS = {raidBuffs: 'Raid', debuffs: 'Debuffs', partyBuffs: 'Party', playerBuffs: 'Personal'};
+  const buffs = DATA.assumed_buffs || {};
+  const groupsEl = document.getElementById('buffs-groups');
+  let total = 0;
+  Object.keys(CATEGORY_LABELS).forEach(cat => {
+    const dict = buffs[cat] || {};
+    const chips = Object.entries(dict).map(([k, v]) => buffChipText(k, v)).filter(Boolean);
+    if (chips.length === 0) return;
+    total += chips.length;
+    const row = document.createElement('div');
+    row.className = 'buffs-group';
+    row.innerHTML = '<span class="buffs-group-label">' + escapeHtml(CATEGORY_LABELS[cat]) + '</span>' +
+      '<span class="buffs-chips">' + chips.map(c => '<span class="buffs-chip">' + escapeHtml(c) + '</span>').join('') + '</span>';
+    groupsEl.appendChild(row);
+  });
+  document.getElementById('buffs-count').textContent = total + (total === 1 ? ' buff assumed' : ' buffs assumed');
+  if (total === 0) {
+    groupsEl.innerHTML = '<div class="buffs-empty">No raid buffs assumed for this sweep.</div>';
+  }
+})();
 
 function whLink(name, itemId, extraClass){
   const safeName = escapeHtml(name);

@@ -115,6 +115,11 @@ def build(name_realm: str, phase: str, profile_dir: str):
         "screen_iterations": sweep.SCREEN_ITERATIONS,
         "confirm_iterations": sweep.CONFIRM_ITERATIONS,
         "resolve_iterations": sweep.RESOLVE_ITERATIONS,
+        # Backlog #19 - real, actual raid/debuff/party/player buff
+        # assumptions this exact sweep ran against, read straight from
+        # run_upgrade_sweep.py's own settings file (see that function's own
+        # comment) - passes through unchanged, never re-derived here.
+        "assumed_buffs": report.get("assumed_buffs", {}),
     }
 
 
