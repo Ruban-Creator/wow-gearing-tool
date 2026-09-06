@@ -1206,6 +1206,8 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
 
     rescue_notes_by_item: dict[int, str] = {}
     rescue_mv_by_item: dict[int, float] = {}
+    rescue_via_item_id_by_item: dict[int, int] = {}
+    rescue_via_item_by_item: dict[int, str] = {}
     if active_set_by_slot:
         rescue_candidates = []
         for c, r in to_resolve:
@@ -1240,6 +1242,18 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
                     f"bonus is already gone once you've made that other swap too)."
                 )
                 rescue_mv_by_item[item_id] = check["mv_if_set_broken"]
+                # Real gap found live 2026-09-06 (user report): the note
+                # names `via_item` in prose ("paired with Cowl of Defiance in
+                # head") but that item is often NOT one of its own slot's
+                # top-5 displayed candidates (it's picked by
+                # best_non_set_alt() for being the best non-set option, which
+                # can still rank outside the top 5 shown overall) - so the
+                # reader has no way to see it anywhere else in the report,
+                # making the claim unverifiable. Carrying its real item_id
+                # through lets report_template.html render it as a real,
+                # clickable Wowhead link even when it's otherwise invisible.
+                rescue_via_item_id_by_item[item_id] = check["via_item_id"]
+                rescue_via_item_by_item[item_id] = check["via_item"]
         if rescue_notes_by_item:
             print(f"Sidegrade check: {len(rescue_notes_by_item)} item(s) found to be real "
                   f"future sidegrades once their set-bonus break is already priced in elsewhere "
@@ -1249,6 +1263,8 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
         for c, r in rows:
             r["rescue_note"] = rescue_notes_by_item.get(c.item_id)
             r["rescue_mv"] = rescue_mv_by_item.get(c.item_id)
+            r["rescue_via_item_id"] = rescue_via_item_id_by_item.get(c.item_id)
+            r["rescue_via_item"] = rescue_via_item_by_item.get(c.item_id)
 
     print(f"[+{time.time()-start:.1f}s] Rescue check pass done ({len(rescue_notes_by_item)} flagged).")
 

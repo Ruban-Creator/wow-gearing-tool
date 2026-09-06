@@ -167,8 +167,16 @@ it. Real options, per the user's own question ("is there any way we can fix the 
   sim-update agent, once that exists - each time it checks for a new wowsims release, it could
   also check whether upstream has filled in any of these previously-missing sources.
 
-Not scoped or started - real, confirmed, worth doing at some point, not urgent (the practical
-tier-bucketing symptom is already fixed).
+**Update, 2026-09-06: fully covered, not "not scoped" anymore.** See the two entries below (the
+tier-token structural rule + the individually-verified overlay) - between them, **0 of the current
+163 unique gap items remain unresolved** (all resolve to something other than "Source unclear"),
+confirmed by directly re-running `describe_source_and_tier()` against every unique item id in
+`check_missing_sources.py`'s current output. `check_missing_sources.py` itself will still report
+255 references / 163 unique items regardless (it measures the raw DB gap, not this tool's own
+coverage of it - it doesn't know about the overlay or the tier-token rule) - that's expected and
+correct, not a regression to chase. The "report it upstream to wowsims" option above is still real
+and not pursued; folding periodic re-checks into #14's future sim-update agent is also still real
+and not started.
 
 **Scoped down to what this tool actually surfaces (2026-08-31)**: the 200+ DB-wide figure above
 counts every real item set regardless of whether this tool ever shows it (most are PvP/honor sets,
@@ -275,13 +283,100 @@ drop table as a single reliable source, which is worse than leaving the item und
 of the overlay entirely; still genuinely `sources: None` in the DB and still bucketed by the
 existing phase fallback, same as before this pass.
 
-**Real remaining scope now**: 0 items left from this session's originally-queued 43 - the pass that
-started 2026-09-06 finished the same day. `check_missing_sources.py` will still report all 255 (by
-design, per the note above) but the overlay + structural rules together now cover 158 of them (111
-tier-token + 6 Gladiator's + 41 individually-verified entries in `source_overlay.json`, up from 7 at
-the start of this pass). The real remaining ~97-item gap is every other standalone accessory this
-tool's 15 profiles reference that hasn't been through an individual Wowhead check yet - not
-identified/queued the way this pass's 43 were; a future session would need to re-run
-`check_missing_sources.py`, cross this file's own overlay keys off its output, and start a fresh
-per-item queue the same way this pass did.
+**Corrected, 2026-09-06 (this exact "~97 remaining" text was stale and got restated to the user in
+chat before being caught and recomputed - see NOTES.md's dated entry for the real mistake and
+correction): 0 items remain unresolved, not ~97.** Directly recomputed by calling
+`describe_source_and_tier()` against every one of the 163 unique item ids in
+`check_missing_sources.py`'s current output: all 163 resolve to something other than "Source
+unclear" (111 via the tier-token rule, 6 via the Gladiator's rule, the rest via
+`source_overlay.json`'s individually-verified entries). `check_missing_sources.py` will still
+report 255 references / 163 unique items regardless (it measures the raw DB gap, not this tool's
+coverage of it - it has no knowledge of the overlay or the structural rules) - that's expected,
+not a regression to chase.
+
+## #20 — Shared-pool Weapon slot produces nonsensical MVs when real current gear is 2H but the profile's own topology is dual_wield
+
+Found 2026-09-06, live, real user report: Lerynia (Survival Hunter, `weapon_topology: "dual_wield"`)
+had genuinely re-geared in-game to a real 2H weapon (Halberd of Desolation, mainhand) with a real,
+empty offhand - her `character.json` just hadn't been re-synced yet (fixed via `python cli/gear.py
+sync`, unrelated one-off data-staleness issue, see NOTES.md). Once the sweep ran against her real,
+current 2H-equipped state, the Weapon tier list showed EVERY 1H weapon candidate in the entire pool
+- Vanilla carryover daggers included - as a `best_slot: offhand` real upgrade worth 16.5 to 80 DPS.
+
+**Root cause, confirmed**: backlog #16's shared-pool-slot logic (`marginal_value.py`'s `mv_single()`)
+independently tries a candidate in each real slot a pool key can occupy - for a 1H weapon, that's
+`mainhand`/`offhand`, unconditionally, regardless of what's ACTUALLY in the other slot right now.
+With her real mainhand holding a 2H weapon and her real offhand genuinely empty, testing "candidate
+1H weapon in offhand" against her real baseline compares "2H mainhand + empty offhand" (baseline)
+against "2H mainhand + a 1H weapon in offhand" (trial) - a gear state that isn't legal in the actual
+game (you cannot wield a 2H weapon and a 1H offhand weapon simultaneously). Every 1H candidate looks
+like a huge upgrade purely because the baseline's offhand is empty, not because any of them are
+actually good picks for her real situation.
+
+The separate "2H Weapon Options" side-section has the mirror-image problem: for a `weapon_topology:
+dual_wield` profile it always compares 2H candidates against a HYPOTHETICAL best-dual-wield baseline
+(`two_hand_meta`'s `no_weave_dw`/`weave_dw`, real numbers built from her CANDIDATE pool's own best
+1H picks, not her real current gear) - the right comparison when she's actually dual-wielding, but
+backwards once she's already real-2H-equipped: the section came back completely empty for her this
+run (2H candidates route to their own side pool regardless of what she currently has equipped), when
+the actually useful question at that point is "does any other real 2H candidate beat MY CURRENT real
+2H weapon" - a comparison this architecture doesn't currently make at all.
+
+**Not fixed today** - this is a real architecture gap (the whole `weapon_topology` model assumes her
+real current gear matches the profile's assumed topology; Survival/Beastmastery Hunter are the only
+two profiles where a player can legitimately be equipped in the OTHER topology at any given time,
+since they're the only two allowed to melee-weave with 1H weapons some fights and just shoot from
+range other fights), not a one-line patch. Real next step, not yet scoped in detail: detect which
+topology her REAL current gear actually represents (2H mainhand+empty offhand vs two 1H items) at
+sweep time and route the Weapon-slot comparison accordingly - either skip/relabel the nonsensical
+"1H into empty offhand" trials when she's really 2H-equipped, or (better) make the 2H-candidates
+side-section compare against her REAL current 2H weapon when she has one equipped, falling back to
+the hypothetical best-dual-wield baseline only when she's actually dual-wielding for real. Until
+this is fixed, treat the Weapon slot section of any weave-capable profile's report with real
+suspicion whenever the character might currently be 2H-equipped - re-sync + eyeball the achieved-BiS
+Weapon entry against what she's actually wearing before trusting the tier list underneath it.
+
+## #21 — Real, unexplained magnitude gap between this tool's own sim and wowsims.com for at least one real item (Mindstorm Wristbands, Balance Druid)
+
+Found 2026-09-06 during the wrist-enchant investigation (see NOTES.md's dated entry for the full
+trail). After fixing two real, confirmed bugs this same day (`build_owned_config()`'s enchant
+priority - her real, already-applied enchant must win over a curated "BiS" one, not the reverse;
+and filling in Balance Druid's real, missing wrist entry in `default_enchants.json`), our own sim
+agrees with the user's real wowsims.com test on DIRECTION for swapping Crimson Bracers of Gloom ->
+Mindstorm Wristbands (both enchant 369, matching exactly what the user's own websim JSON specified):
+our sim says **+1.53 DPS**, wowsims.com says **+17.31 DPS** - same sign, but an ~11x magnitude gap
+that has NOT been root-caused. (For reference: with our own curated default enchant on the candidate
+instead of matching hers exactly, our sim actually says -7.94 DPS - a real downgrade, matching the
+achieved-BiS classification the live report shows - so which of these three numbers is "the real
+answer" depends entirely on which enchant policy question is being asked; #21 is specifically about
+the still-unexplained gap between our +1.53 and wowsims.com's +17.31 for the SAME enchant on both
+items, not about the enchant-policy question itself.)
+
+**Update, same day - most (not all) of the gap explained.** Re-ran the exact same Crimson Bracers ->
+Mindstorm Wristbands (both enchant 369) comparison with `shadowPriestDps` forced to `800` (the
+user's own exact websim test value, wowsims' own generic default - vs this profile's own corrected
+`0`, per the real Boomkin-raid-comp finding from earlier the same day): delta jumped from **+1.53
+DPS to +11.56 DPS**. That closes most of the gap to wowsims.com's own **+17.31** (11x gap down to
+~1.5x) - confirms `shadowPriestDps` materially amplifies a spell-damage/crit item's marginal value
+(more mana headroom -> more casts spent capitalizing on the extra damage), not just a flat additive
+raid-DPS number. This does NOT mean this profile's own `shadowPriestDps: 0` is wrong - that value
+was independently confirmed correct for Balance Druid's real raid comp (3 Warlocks + 1 Elemental
+Shaman, no Shadow Priest, per the user's own raid-strategy knowledge) - it means the wrist MV THIS
+TOOL reports (whatever it resolves to under the correct `0`) is answering a different, correct-for-
+THIS-raid question than wowsims.com's own generic-preset comparison, and the two were never
+expected to match exactly once buff assumptions differ.
+
+**Real remaining gap, not yet explained**: +11.56 (ours, shadowPriestDps=800) vs +17.31
+(wowsims.com) - still a real, ~33% difference with buffs now matched on this one field. Not
+investigated further today - candidate causes not yet checked: a sim-version difference between
+this repo's vendored `sim/tbc-new` submodule commit and whatever wowsims.com's live site currently
+runs (most likely, given this project's own real history of sim-version-driven behavior changes -
+see CLAUDE.md's sim update runbook); some other settings field still mismatched beyond
+`shadowPriestDps` (a full field-by-field diff of the user's websim JSON against this profile's real
+`settings_template.json` hasn't been completed, only spot-checked); or something item-specific to
+how either engine applies effectId 369 to item 29918 specifically. Real next step: a full,
+systematic field-by-field diff (not spot-checks) of a real websim JSON export against this profile's
+`settings_template.json`, and if a real gap still remains after every field matches, treat it as a
+genuine, reportable sim-behavior difference worth raising with wowsims/tbc-new directly rather than
+assuming our own tool is wrong by default.
 

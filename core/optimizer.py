@@ -273,16 +273,29 @@ def build_owned_config(equipped_items: list[dict], known_professions: set[str] |
     keeps the comparison fair on both sides.
 
     Enchants used to stay real (her actual current enchant, never
-    invented) - reversed 2026-08-25 per the user ("unenchanted items must
-    never get compared to enchanted ones"): a slot she hasn't enchanted
-    yet (or has a stale/inferior one) was silently understating her own
-    baseline the same way an un-regemmed item used to, before the gem fix
-    above. Uses the real, sim-verified BiS enchant for the slot
-    (gear_config.get_active_default_enchants()) when one is curated and
-    achievable - the same treatment gems already get above - but FALLS
-    BACK to her real, already-applied current enchant when no curated
-    default exists for that slot, rather than silently dropping to
-    unenchanted.
+    invented) - the 2026-08-25 "Missing Enchants" decision was that
+    "unenchanted items must never get compared to enchanted ones" (per the
+    user's own words) - literally: a slot with NO enchant at all must not
+    be compared as if it had one. It never said a real, already-applied
+    enchant should be overridden by a hypothetically-better curated one -
+    that's a materially bigger claim ("assume she's already re-enchanted
+    to whatever this tool later decides is BiS") the quote doesn't support,
+    and the code that shipped from that decision did exactly that, unnoticed
+    until the user caught it live 2026-09-06 (Crimson Bracers of Gloom's
+    real enchant 369 was being silently replaced by a newly-curated
+    default_enchants.json wrist entry for the DPS*(P) baseline itself, not
+    just surfaced as a Missing-Enchants opportunity).
+
+    Real, corrected priority as of 2026-09-06: her REAL, already-applied
+    enchant wins whenever she has one (`it.get("enchant", 0)`, checked
+    first) - only a slot she genuinely has NO enchant on at all falls back
+    to the curated default (`gear_config.get_active_default_enchants()`),
+    exactly matching the literal 2026-08-25 rule and no further. A better
+    enchant than what she's currently wearing is a real, valid finding -
+    it just belongs in the Missing Enchants ledger section (which already
+    exists for precisely this) as an explicit "here's the DPS gain if you
+    re-enchant" line, never silently baked into the number this function's
+    own callers treat as "her current DPS."
 
     Real, confirmed bug fixed 2026-09-06 (live user report - Béarforceone,
     Teeth of Gruul showing as a false +27.67 DPS "upgrade" when a real,
@@ -294,17 +307,12 @@ def build_owned_config(equipped_items: list[dict], known_professions: set[str] |
     (no enchant) for EVERY uncurated slot, discarding her real, already-
     applied enchants (confirmed: her real Chestpiece of Malorne/enchant
     1144, Crimson Bracers of Gloom/enchant 369, and Wyrmhide Gloves/enchant
-    2934 were ALL being dropped from her own baseline). This wasn't the
-    "unenchanted vs enchanted" gap the 2026-08-25 reversal was designed to
-    fix (that was about slots she genuinely hadn't enchanted) - it was a
-    real bug where slots she HAD enchanted were being silently un-enchanted
-    in her own baseline, artificially weakening DPS*(P) and inflating
-    every candidate's marginal value against it. Falling back to her real
-    current enchant (rather than 0) when no curated default exists fixes
-    this without inventing anything - her current enchant is real, known
-    data (character.json), not a guess. (Her real current enchant still
-    gets surfaced and compared explicitly in the Missing Enchants ledger
-    section too - this function is just the optimizer's baseline.)
+    2934 were ALL being dropped from her own baseline). This part of the
+    fix (fall back to her real enchant when nothing curated exists) still
+    stands under the corrected priority above - both formulations agree
+    whenever no curated default exists for the slot; they only disagreed
+    (wrongly, per the correction above) once a curated default DID exist
+    and differed from her real one.
 
     known_professions gates Ring enchants specifically (achievable_enchant()
     - real, found 2026-08-25: only a character who personally has Enchanting
@@ -324,15 +332,18 @@ def build_owned_config(equipped_items: list[dict], known_professions: set[str] |
         item = idb.by_id(it["id"])
         gems = gem_optimizer.best_gems_for_item(item, meta_gem_id) if item else it.get("gems")
         slot = gc.SLOT_ORDER[idx]
-        # Real bug fix, 2026-09-06 (see this function's own docstring for
-        # the full story) - a curated default that's missing or unachievable
-        # must fall back to her REAL current enchant, not silently drop to
-        # unenchanted. Her real enchant is never re-gated through
-        # achievable_enchant() - it's already applied, so it's inherently
-        # achievable regardless of what profession the character check
-        # would otherwise require (e.g. a ring enchant a guildmate applied
-        # for her).
-        enchant = achievable_enchant(default_enchants.get(slot, 0), known_professions) or it.get("enchant", 0)
+        # Real fix, 2026-09-06 (see this function's own docstring for the
+        # full story): her REAL, already-applied enchant wins first - it's
+        # never re-gated through achievable_enchant() since it's already
+        # applied and therefore inherently achievable (e.g. a ring enchant
+        # a guildmate applied for her, regardless of HER OWN professions).
+        # Only a slot she genuinely has NO enchant on at all (0) falls back
+        # to the curated default_enchants.json value, matching the literal
+        # 2026-08-25 rule ("unenchanted items must never get compared to
+        # enchanted ones") and no further - a curated default is never
+        # allowed to silently outrank a real, different enchant she's
+        # actually wearing.
+        enchant = it.get("enchant", 0) or achievable_enchant(default_enchants.get(slot, 0), known_professions)
         config.append(gc.item_entry(it["id"], enchant, gems))
     return gem_optimizer.ensure_meta_requirement(config, equipped_items, meta_gem_id)
 

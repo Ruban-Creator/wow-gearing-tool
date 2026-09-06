@@ -1,4 +1,4 @@
-# Actions for you — updated 2026-09-06
+# Actions for you — updated 2026-09-06 (late session)
 
 Real, current list of what's actually on YOU (a decision, an account, an in-game action). Not a
 status report — see CLAUDE.md/FUTURE_TASKS.md for full technical writeups, NOTES.md for the dated
@@ -11,12 +11,29 @@ append-only log like NOTES.md.
 - **#14 — build the real scheduled sim-update-checking agent.** `CLAUDE.md`'s "Sim update
   procedure" is a tested runbook, but nothing runs it on a schedule yet. Real question when you
   want to pick this up: what machine/mechanism actually runs it (this dev machine on a schedule?
-  something else?).
-- **#15 — the `sources: None` DB gap** (255 real items across all 15 profiles have no known drop
-  source in the sim's own database). The practical symptom is already fixed (items still bucket
-  into the correct tier). The real fix options on file: report it upstream to `wowsims/tbc-new`,
-  or maintain a small local overlay file — both need per-item verification against something like
-  Wowhead, not bulk-guessed.
+  something else?). No physical dedicated machine set up yet - only the Dell OptiPlex 3050 Micro
+  is on hand, the HP EliteDesk 800 G6 hasn't been bought.
+- **#17 — Feral Cat Druid's `settings_template.json` is stale** (real cause understood: her
+  `consumables.json`/APL source changed since it was last generated, never regenerated to match) -
+  the actual regeneration + verification hasn't been done, just diagnosed and reverted twice now.
+- **#18 — Balance Druid's gem choices were never individually verified** the way Survival Hunter's
+  were (37 candidates tested, 9 confirmed exceptions) - her `chase_bonus_gems.json` is empty, so
+  the blanket "replace every socket with Spell Damage" policy is an untested default for her.
+- **#19 — surface the assumed raid buffs directly in the report** (your own suggestion) - not
+  built yet.
+- **#20 — new today: the Weapon tier list produces nonsensical numbers when a weave-capable
+  character (Survival/Beastmastery Hunter) is genuinely 2H-equipped in real life but the profile's
+  topology assumes dual-wield.** Real architecture gap, not a quick fix - see FUTURE_TASKS.md for
+  the full writeup. Until fixed: eyeball the Achieved-BiS Weapon entry against what she's actually
+  wearing before trusting the Weapon tier list underneath it, for either Hunter profile.
+- **#21 — new today: a real, only-partly-explained magnitude gap between this tool's own sim and
+  wowsims.com** for at least one item (Mindstorm Wristbands, Balance Druid) - same direction, but
+  our +11.56 DPS vs their +17.31 even with buffs matched. Real next step on file: a full
+  field-by-field settings diff, not spot-checks.
+- **TODO.md — verify the "Sidegrade" (rescue_check) DPS math against a real websim test.** You
+  flagged today that you don't trust most of these numbers, but don't currently have the
+  tokens/time to verify - explicitly deferred, not fixed. The one thing that WAS fixed today: the
+  note's referenced "via" item is now a real clickable link instead of an invisible name.
 - **SmartScreen cert decision** — accepted as unsigned for now; revisit once the installer is
   distributed more broadly than this dev machine (a real cost decision, ~$100-600/yr depending on
   cert type — see `FUTURE_TASKS.md`).
@@ -25,16 +42,26 @@ Nothing here is urgent or blocking anything else - genuinely just "whenever you 
 
 ## Closed since the last update
 
-- **Backlog #8 (re-sweep speed)** — fully closed 2026-09-06. The real want ("what changed after a
-  raid week") got the "Since Your Last Sweep" report section, already live. The original ask
-  (make the sweep itself faster) was investigated two real ways - proving per-item independence
-  claims (rejected as unsound, not just risky - WoW's combat math has no clean "zero effect" case)
-  and a dedicated sim machine (rejected - the one certain benefit doesn't need new hardware, the
-  speed benefit is genuinely uncertain, and the "get everyone's data to one machine" piece isn't
-  built) - and you decided not to pursue either. Nothing left open here.
-- **Backlog #7 (confirm@5000 tier)** — turned out to already be shipped (2026-08-24); just needed
-  the paperwork closed, done 2026-09-01.
+- **Backlog #15 (`sources: None` DB gap) — fully closed 2026-09-06.** All 163 unique items in the
+  current gap list resolve via structural rules (tier-token vendor mechanism, Gladiator's PvP
+  naming rule) or the individually-verified `source_overlay.json` overlay. 0 remain unresolved.
+- **A real, confirmed enchant-priority bug — fixed 2026-09-06.** A curated "best" enchant was
+  silently overriding a REAL, already-applied, different-but-real enchant in every profile's
+  baseline DPS computation (not just filling genuinely-unenchanted slots, which was the only thing
+  the original 2026-08-25 decision actually justified - you caught this precisely by challenging
+  the docstring's own quoted justification). Real, measured impact: ~11 DPS for Béarforceone alone.
+  Re-verified across all 15 profiles; Arms Warrior (Rubán) had a real, legitimate 4-slot diff from
+  this, now fixed too.
+- **The Mindstorm Wristbands / Teeth of Gruul discrepancies — investigated to the real, honest end
+  of what's explainable today**, not fully closed (see #21 above) but no longer a mystery: sign
+  agrees with wowsims.com now, only a partial, unexplained magnitude gap remains.
 - **CurseForge** — live: "GT Companion" by RubanCreator, https://www.curseforge.com/wow/addons/gt-companion
 
-No code changes are pending a rebuild right now - everything committed and pushed as of the last
-real code change (the diff-view feature, 2026-09-04).
+## Real code/data changes pending a rebuild
+
+Today's real changes touch `core/optimizer.py`, `core/run_upgrade_sweep.py`, `core/set_bonus.py`,
+`core/report_template.html`, and `profiles/tbc/balance_druid/default_enchants.json` /
+`profiles/tbc/arms_warrior/settings_template.json` - all of these are bundled into the installer
+(`packaging/installer.iss` ships `core/*.py` and `profiles/tbc/*` as static payload, see
+CLAUDE.md's Repo Layout). **A fresh installer build is pending** if you want anyone besides this
+dev machine to see today's fixes - not done automatically as part of this session's own work.

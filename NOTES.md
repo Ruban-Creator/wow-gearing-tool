@@ -5770,3 +5770,142 @@ instead of staying "Source unclear" - "World Drop" is genuine, standard WoW term
 this case (a wide, generic drop table), not an invented category. Added to
 `profiles/tbc/_shared/source_overlay.json`. Coverage now 158/255 -> same total, just 3 more items
 correctly labeled instead of blank. `check_ledger_consistency.py` clean (1389/0).
+
+
+## 2026-09-06 (cont'd): Real enchant-priority bug found and fixed - a curated "BiS" enchant was silently overriding her own real, already-applied one
+
+Live user report on Béarforceone's Mindstorm Wristbands question surfaced a THIRD real enchant bug
+today (after the enchant-fallback fix and the missing wrist default_enchants.json entry, both
+earlier this same date's NOTES.md entries): `core/optimizer.py`'s `build_owned_config()` tried
+`achievable_enchant(default_enchants.get(slot, 0), ...)` BEFORE falling back to
+`it.get("enchant", 0)` - meaning whenever a profile's `default_enchants.json` had a curated entry
+for a slot, it silently OVERRODE her real, already-applied enchant with the curated one, even when
+her real enchant was different-but-real (not "unenchanted"). Confirmed live: Crimson Bracers of
+Gloom's real enchant (369, Major Intellect) was being replaced by the newly-added wrist curated
+default (2650, Spellpower) in the baseline DPS*(P) computation itself - not just surfaced as a
+"here's a better enchant" Missing-Enchants suggestion.
+
+**The user caught this precisely by challenging the docstring's own justification, not just the
+code**: the 2026-08-25 decision this was built from was quoted as "unenchanted items must never get
+compared to enchanted ones" - the user pointed out, correctly, that this literally only forbids
+comparing a ZERO-enchant item to a some-enchant item; it says nothing about overriding a real,
+different, already-applied enchant with a hypothetically-better curated one. That's a materially
+bigger claim the quote never supported, and the shipped code had quietly gone further than the
+decision it claimed to implement, unnoticed for weeks.
+
+**Fixed**: swapped the priority - `it.get("enchant", 0) or achievable_enchant(default_enchants.get
+(slot, 0), known_professions)`. Her real enchant now wins whenever she has one; the curated default
+is only used as a fallback for a slot she genuinely has no enchant on at all - exactly matching the
+literal 2026-08-25 rule and no further. A better enchant than what she's wearing is still a real
+finding, it just belongs in the Missing Enchants ledger section (which already exists for this),
+never silently baked into "her current DPS."
+
+**Real, measured impact, not assumed**: Béarforceone's own baseline DPS at 10k iterations went from
+1330.06 (old, buggy priority - baseline silently "reforged" to the curated 2650) to 1341.09
+(corrected - her real 369 respected) - an real +11 DPS difference, so this was NOT a no-op fix
+despite `settings_template.json` itself showing no diff (equipment there is cosmetic/inert, per the
+established finding - `valuation.evaluate()` always overwrites it fresh from `build_owned_config()`
+at sweep time). Systematic re-check across all 15 profiles (regenerate `settings_template.json` via
+`build_profile_settings.py`, diff): **arms_warrior showed a real, legitimate diff** (4 slots -
+shoulder/chest/legs/hands - now show his own real, different current enchants instead of curated
+ones, e.g. real 2983 instead of curated 2986) - committed. `feral_cat_druid` showed the SAME
+923-line diff already tracked as backlog #17 (pre-existing, unrelated consumables.json/APL
+staleness) - reverted again, not re-investigated. `beastmastery_hunter`/`survival_hunter` failed
+with their own known, pre-existing TypeAPL-driver exception (unrelated). All other 11 profiles:
+no change (their real current enchants already matched their curated defaults, or no curated
+default existed for any differing slot).
+
+Re-verified via `check_ledger_consistency.py` for all 3 real characters after rebuilding their
+ledger_data/HTML from fresh sweeps: Lerynia 1171/0, Béarforceone 896/0, Rubán (pending this
+session's own fresh sweep - see below).
+
+## 2026-09-06 (cont'd): Real, live wrist-bug investigation on Mindstorm Wristbands - resolved, plus a genuine residual sim-vs-wowsims.com gap (backlog #21)
+
+The user shared a real wowsims.com screenshot showing Mindstorm Wristbands as a **+17.31 DPS**
+upgrade for Béarforceone's real gear, contradicting our own report's "Achieved BiS" claim for wrist
+(Crimson Bracers of Gloom unbeaten). Root-caused to the enchant-priority bug above (candidates were
+correctly getting the curated BiS enchant, but the OWNED baseline was ALSO being incorrectly
+"upgraded" to a hypothetical enchant rather than kept real) plus, before that, the underlying gap
+that Balance Druid's own `default_enchants.json` had no wrist entry at all (fixed earlier the same
+day, see prior entry: added `wrist: 2650`, real Enchant Bracer - Spellpower, sim-verified +9.46 DPS
+in isolation via `verify_default_enchants.py`).
+
+**Real, final, honest result after both fixes**: with our own curated enchant on the candidate
+(2650) against her now-correct real baseline (369), Mindstorm Wristbands is a real DPS LOSS
+(-7.94), matching the Achieved BiS classification - our tool is now internally consistent. But
+testing apples-to-apples with the SAME enchant on both items (369, exactly matching what the user's
+own websim JSON specified), our sim says **+1.53 DPS** - same direction as wowsims.com, but nowhere
+near their own **+17.31**. Chased this further: re-running with `shadowPriestDps` forced to `800`
+(wowsims' own generic default, matching the user's exact test settings, vs. this profile's own
+correct `0`) closed MOST of the gap - delta jumped to **+11.56 DPS**, an 11x gap down to ~1.5x.
+Confirms `shadowPriestDps` materially amplifies a spell-damage/crit item's marginal value (more mana
+headroom -> more casts capitalizing on the extra damage), not a flat additive number - and confirms
+this profile's own `shadowPriestDps: 0` (real, correct for Balance Druid's actual raid comp) and
+wowsims.com's own generic `800` preset are legitimately answering different questions, not
+disagreeing about the same one.
+
+**Real, NOT fully explained gap remains**: +11.56 (ours) vs +17.31 (wowsims.com), same buff value
+now. Not chased further today - candidate causes (sim-version drift between this repo's vendored
+submodule and wowsims.com's live site; some other settings field still mismatched; something
+effectId-369-on-item-29918-specific) are all real possibilities, none confirmed. Tracked as backlog
+#21 in FUTURE_TASKS.md with the real next step (full field-by-field JSON diff, not spot-checks).
+
+## 2026-09-06 (cont'd): Lerynia's stale character.json masked a real, separate report bug - and uncovered a genuine architecture gap (backlog #20)
+
+While investigating the user's report that survival_hunter_phase2's ledger showed "1H weapons as
+DPS increases despite an Achieved BiS 2H" and "sidegrades with an invisible referenced item," the
+Achieved BiS Weapon slot showed "Halberd of Desolation" (a real 2H item, confirmed via
+`item_db.by_id()` - handType 4) even though Lerynia's own `character.json` still listed her OLD
+real gear (Netherbane mainhand / Blade of the Unrequited offhand, both real 1H weapons) - a real
+mismatch that cost real investigation time (traced through `achieved_bis` construction, `owned_items`
+aliasing, SLOT_ORDER indexing - all correctly implemented, none of it the actual bug) before the
+user simply said "we have a 2hand equipped now": her `character.json` was stale (last synced
+2026-08-31), and she'd genuinely re-geared in real life since. Fixed via a plain `python cli/gear.py
+sync` - no code bug here at all, a pure data-staleness issue, same class of problem as the
+2026-08-24 Stage 6.0 note about `data/character.json` needing a fresh export before trusting it.
+
+**Real, separate bug THIS staleness incidentally exposed once fixed**: with her real current gear
+(2H mainhand, genuinely empty offhand) freshly synced, EVERY 1H weapon candidate in the whole pool -
+even Vanilla-carryover daggers - showed up in the Weapon tier list as a `best_slot: offhand` "real
+upgrade" worth 16.5 to 80 DPS. Root cause: backlog #16's shared-pool-slot MV logic tests a 1H
+candidate against whichever real slot it could occupy, unconditionally - with her real offhand
+truly empty, "candidate 1H weapon in offhand" vs "nothing in offhand" always looks like a huge gain,
+even though "2H mainhand + 1H offhand" isn't a legal real gear state to begin with. The mirror-image
+"2H Weapon Options" side-section came back completely empty for the same run - it compares 2H
+candidates against a HYPOTHETICAL best-dual-wield baseline (right when she's actually dual-wielding,
+backwards once she's already real-2H-equipped, since the useful question at that point is "does any
+other 2H beat MY CURRENT real 2H weapon"). Not fixed today - real architecture gap, only affects
+the two weave-capable profiles (Survival/Beastmastery Hunter, the only ones where a player can
+legitimately be equipped in either topology at different times) - tracked as backlog #20 in
+FUTURE_TASKS.md with the real next step (detect which topology her REAL current gear represents at
+sweep time, route the comparison accordingly).
+
+## 2026-09-06 (cont'd): Sidegrade note's referenced item was invisible anywhere else in the report - fixed
+
+Separately, the user flagged Lerynia's 6 "Sidegrade" notes (`core/set_bonus.py`'s `rescue_check()`,
+via `run_upgrade_sweep.py`'s rescue pass) as suspect on two counts: the notes all show heavy DPS
+DOWNGRADES for the item itself (by design - a sidegrade note only exists BECAUSE the item alone is a
+downgrade, the pairing is what makes it worthwhile later) and the item they're paired with ("Cowl of
+Defiance," referenced 6 times) never appeared anywhere else in the report - confirmed directly: 0 of
+37 distinct item names shown in the ledger matched it, since `best_non_set_alt()` picks it for being
+the best non-set alternative, which doesn't guarantee it also ranks in its own slot's displayed
+top-5. Fixed the visibility gap: `set_bonus.rescue_check()` now returns `via_item_id`, threaded
+through `run_upgrade_sweep.py` as `rescue_via_item_id`/`rescue_via_item` row fields,
+`report_template.html` renders it as a real, clickable Wowhead link next to the note. Does NOT
+address the user's separate, deeper doubt ("i don't even think most of these sidegrades are dps
+increases") about whether `mv_if_set_broken`'s own real sim math is correct - that's explicitly
+deferred, tracked in TODO.md, pending a real websim cross-check the user doesn't currently have the
+capacity for.
+
+## 2026-09-06 (cont'd): Real process mistake - stale "~97 remaining" backlog #15 claim, corrected; new standing memory added
+
+Told the user "~97 remain" on backlog #15's coverage from a stale mental running tally instead of
+recomputing - caught immediately ("why is there 97 remaining on 15?"). Direct recompute (loop every
+unique item id from `check_missing_sources.py`'s current output through `describe_source_and_tier()`)
+confirmed the real answer: 0 remain unresolved, not ~97 - the tally simply hadn't been redone since
+the background agent's 34 verified entries and this session's own 3 World Drop additions landed.
+Fixed BOTH places FUTURE_TASKS.md still had the stale figure (one from an earlier pass, missed on
+the first correction). Saved a new standing memory
+(`feedback_verify_against_source_not_summary.md`) per the user's own explicit instruction: after any
+context-window compaction on this project, check `NOTES.md`/`CLASSES.md`/similar real docs FIRST,
+before answering or restating anything the compacted summary claims - not an optional judgment call.

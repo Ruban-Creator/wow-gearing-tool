@@ -262,7 +262,22 @@
   .enchants-text .swap{font-size:12px; color:var(--ink-muted); margin-top:2px;}
   .enchants-gain{flex:none; font-size:15.5px; font-weight:700; color:var(--sage-strong); white-space:nowrap;}
 
-  /* ---------- What Changed Since Your Last Sweep (2026-09-04) ---------- */
+  /* ---------- What Changed Since Your Last Sweep (2026-09-04) ----------
+     Collapsed by default (2026-09-06, per user feedback: today's own
+     settings fixes rippled through dozens of candidates at once, so this
+     section can carry 50+ rows and was dominating the top of the report
+     before a reader ever reached the actual tier list - a real gear-change
+     sweep won't usually produce this many, but the section needed to stay
+     out of the way either way). <summary> replaces the old plain <div> for
+     the head - same .bis-head/.changes-head classes, so all existing CSS
+     still applies unchanged; only the marker/cursor rules below are new. */
+  .changes-details summary{cursor:pointer; list-style:none;}
+  .changes-details summary::-webkit-details-marker{display:none;}
+  .changes-details summary::before{
+    content:'▸'; display:inline-block; margin-right:8px; font-size:13px;
+    color:var(--ink-faint); transition:transform .15s ease;
+  }
+  .changes-details[open] summary::before{transform:rotate(90deg);}
   .changes-head h2{color:var(--brass-strong);}
   .changes-group{margin-bottom:14px;}
   .changes-group:last-child{margin-bottom:0;}
@@ -349,11 +364,11 @@
     <div class="bis-empty" id="bis-empty" hidden>No real BiS achieved yet - every slot still has a real upgrade somewhere in the pool.</div>
   </section>
 
-  <section class="bis" id="changes-section" hidden>
-    <div class="bis-head changes-head">
+  <details class="bis changes-details" id="changes-section" hidden>
+    <summary class="bis-head changes-head">
       <h2>Since Your Last Sweep</h2>
       <span class="count" id="changes-count"></span>
-    </div>
+    </summary>
     <div class="bis-sub" id="changes-sub">Compared against your previous sweep for this exact phase - real DPS-gain moves outside noise, plus what's new or no longer shown.</div>
     <div class="changes-group" id="changes-new-group" hidden>
       <div class="changes-group-label">New candidates</div>
@@ -368,7 +383,7 @@
       <div class="changes-grid" id="changes-gone-grid"></div>
     </div>
     <div class="bis-empty" id="changes-empty" hidden>Nothing changed outside noise since your last sweep for this phase.</div>
-  </section>
+  </details>
 
   <section class="bis" id="enchants-section" hidden>
     <div class="bis-head enchants-head">
@@ -712,7 +727,21 @@ DATA.tiers.forEach((tier, ti) => {
       if (it.rescue_note) {
         const note = document.createElement('div');
         note.className = 'set-note';
-        note.innerHTML = '<b>Sidegrade</b><br>' + escapeHtml(it.rescue_note);
+        // Real gap found live 2026-09-06: the note names a "via" item in
+        // prose (e.g. "paired with Cowl of Defiance in head") that's often
+        // NOT one of its own slot's displayed top-5 candidates (picked by
+        // best_non_set_alt() for being the best non-set option, which can
+        // still rank outside the top 5 shown overall) - so a reader had no
+        // way to see or verify it anywhere else in the report. Appending a
+        // real Wowhead link here (same whLink() every other item name in
+        // this report uses) makes it checkable even when otherwise
+        // invisible - unconditional MV correctness of the sidegrade math
+        // itself is a separate, tracked, NOT-yet-verified question (see
+        // TODO.md).
+        const viaLink = it.rescue_via_item_id
+          ? ' (' + whLink(it.rescue_via_item, it.rescue_via_item_id) + ')'
+          : '';
+        note.innerHTML = '<b>Sidegrade</b><br>' + escapeHtml(it.rescue_note) + viaLink;
         row.appendChild(note);
       }
 

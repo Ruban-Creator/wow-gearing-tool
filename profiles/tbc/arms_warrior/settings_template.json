@@ -60,7 +60,7 @@
         },
         {
           "id": 33173,
-          "enchant": 2986,
+          "enchant": 2983,
           "gems": [
             32193,
             32193
@@ -72,7 +72,7 @@
         },
         {
           "id": 30486,
-          "enchant": 2661,
+          "enchant": 2933,
           "gems": [
             32193,
             32193,
@@ -95,11 +95,11 @@
         },
         {
           "id": 30489,
-          "enchant": 3012
+          "enchant": 3010
         },
         {
           "id": 28997,
-          "enchant": 2939
+          "enchant": 2841
         },
         {
           "id": 28553
@@ -335,7 +335,7 @@
     },
     "talentsString": "33005001352010500221000-055000050052120300000-0000000000000000000000",
     "profession1": "Blacksmithing",
-    "profession2": "Mining",
+    "profession2": null,
     "cooldowns": {},
     "rotation": {
       "type": "TypeAPL",

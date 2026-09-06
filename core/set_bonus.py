@@ -456,6 +456,7 @@ def rescue_check(settings_path: str, candidate: "opt.Candidate", slot: str, set_
         "tied_within_noise": abs(delta) < 2 * noise,
         "via_slot": other_slot,
         "via_item": alt.name,
+        "via_item_id": alt.item_id,
     }
 
 
