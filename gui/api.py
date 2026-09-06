@@ -473,8 +473,20 @@ class Api:
     def get_reports(self, name_realm: str) -> dict:
         """Backlog #13 - nested {profile_dir_name: {phase: {...}}}, migrated
         automatically from the old flat schema if needed - see
-        report_storage.load_reports()'s own docstring."""
-        return report_storage.load_reports(name_realm)
+        report_storage.load_reports()'s own docstring.
+
+        Real fix, 2026-09-06: filtered through report_storage.
+        filter_missing_reports() before returning - a phase whose real
+        underlying report file no longer exists (moved, deleted, or a
+        pre-2026-08-29 path from before the repo-relative data/ directory
+        was removed - found live this session, every one of Lerynia's 3
+        reports and 3 of Béarforceone's 4 were stale in exactly this way)
+        is dropped from what the GUI sees and renders as "No report
+        published yet" instead of a dead "View Report" button that throws
+        when clicked. Display-only - this filtered view is never the thing
+        passed to save_reports() anywhere, so reports.json's own real
+        history is never touched by this check."""
+        return report_storage.filter_missing_reports(report_storage.load_reports(name_realm))
 
     def open_url(self, url: str) -> None:
         """Allowlisted by scheme (code review §4.3) - the JS bridge only

@@ -6374,3 +6374,67 @@ Test-ShadowPriest-Synthetic --phase phase3`; `check_ledger_consistency.py --skip
 earlier this session, while the sim's own settings field now correctly carries the internal
 dispatch code (28017) - the real-id-for-display / internal-id-for-mechanics split works for this
 profile exactly as designed. `FUTURE_TASKS.md`'s own entry for this gap marked CLOSED.
+
+## 2026-09-06 — Real GUI rebuild (v0.7.0003), then a real dead-report-link bug found and fixed
+   (v0.7.0004) while verifying it
+
+Did a full real packaged rebuild (PyInstaller `RGT.exe` + Inno Setup `RGT-Setup.exe`) to ship the
+Shadow Priest fix and everything else from v0.7.0002-0003. Both built clean, `RGT.exe` launched and
+confirmed alive with the correct window title via a live process check.
+
+**Real, live-verification mistake made and caught**: ran a scratch test install
+(`%TEMP%\GearingToolInstallTest`, matching this project's own established installer-verification
+practice) to confirm the fresh installer works. Since Inno Setup's `AppId` is fixed, this silently
+overwrote the same shared registry entry/shortcuts an EARLIER session's own test install had already
+registered - the real desktop "Ruban's Gearing Tool" shortcut turned out to have been pointing at
+that old temp test copy the whole time already (not a real production install at the actual default
+location, which didn't exist at all - confirmed directly, `%LOCALAPPDATA%\Programs\
+RubansGearingTool\` had nothing in it before today). User caught this immediately and asked "what did
+you break" - real, fair concern. Fixed by cleanly uninstalling the temp test copy via its own
+`unins000.exe` (confirmed clean - shortcut correctly removed) and installing fresh to the real
+default location instead, so the shortcut now points somewhere durable. The installer window itself
+ended up minimized during this (a real UI-automation fumble on this session's end while juggling a
+3-monitor screenshot setup, not a bug in `installer.iss` - confirmed no code in the install/uninstall
+logic was touched besides the version bump). **User revoked computer-use/screen-control permission
+after this** ("revoke your permission now to control my screen ask again if necessary") - respected
+for the rest of the session; the user finished clicking through the pending installer dialog
+themselves.
+
+**Real, separate, more important bug found while investigating the user's follow-up ("its showing
+old ledgers it didn't show before")**: checked `reports.json` directly for both real characters
+still on the default profile-suffixed convention. Confirmed `installer.iss`'s own `[Files]` list
+(checked directly, not assumed) never includes any path under `%LOCALAPPDATA%\GearingTool\` - no
+character/report data has ever shipped in the installer, that boundary is real and intact, closing
+the user's separate "did you accidentally ship reports.json files?" question with a real no.
+
+But: **every one of Lerynia's 3 phase reports, and 3 of Béarforceone's 4, had `artifact_url` still
+pointing at the OLD, pre-2026-08-29 repo-relative `E:/Claude/Gearing-Tool/data/characters/...` path**
+- confirmed via direct filesystem check that this directory no longer exists at all (deleted in the
+2026-08-29 folder-structure rework). This was a real, live, silently-broken feature: clicking "View
+Report" on any of these would throw `ValueError` from `gui/api.py`'s own `open_url()` allowlist check
+(confirmed directly by calling it) rather than opening anything. Root cause: the reports.json SCHEMA
+got migrated to the nested `{profile: {phase: {...}}}` form (backlog #13), but the stored file PATHS
+inside those entries were never touched by that migration, and nobody had clicked one of these
+specific old links since the Aug 29 move to notice.
+
+**Real fix, per the user's own explicit call** ("because users could be deleting reports or moving
+them and that would also cause the button to fail - that is the real fix"): rejected the alternative
+of just regenerating fresh reports for the affected phases (would fix today's specific instance but
+not the general class of problem - a user moving/deleting a report file at any future point would hit
+the exact same dead-button bug again). Instead, new `core/report_storage.report_file_exists()` (file://
+URL -> real `os.path.exists()` check, non-file schemes assumed to exist since nothing here generates
+one) and `filter_missing_reports()` (drops any phase entry whose file doesn't resolve). Critically,
+this filtering is **display-only, applied in `gui/api.py`'s `get_reports()` and `cli/gear.py`'s
+`cmd_report_list()`, never inside `report_storage.load_reports()` itself** - both real callers
+(`_run_report_job()`, `cmd_report_register`) do a load-mutate-save cycle when registering a fresh
+report, and filtering inside `load_reports()` would have meant every real "run a report for Phase 2"
+save-back permanently erased every OTHER phase's still-valid history the moment its file happened to
+be temporarily missing - a real, dangerous, silent-data-loss risk that was deliberately designed
+around before writing this, not stumbled into.
+
+Verified real, live, via the actual `Api.get_reports()` call: Lerynia now correctly returns
+`{"survival_hunter": {}}` (all 3 stale entries dropped, exactly matching the user's own real, current
+symptom), Béarforceone returns only her genuinely-current `phase2` entry. Confirmed the underlying
+`reports.json` files themselves are byte-identical before/after (mtime/content both checked) - the
+fix never mutates on-disk history, exactly as designed. Import-sanity clean for
+`report_storage`/`gui/api.py`/`cli/gear.py`. Shipped as v0.7.0004.

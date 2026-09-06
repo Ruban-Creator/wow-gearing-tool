@@ -18,6 +18,8 @@ import json
 import os
 import re
 import sys
+import urllib.parse
+import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import repo_root  # noqa: E402
@@ -79,3 +81,43 @@ def save_reports(name_realm: str, reports: dict) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(reports, f, indent=2)
+
+
+def report_file_exists(artifact_url: str) -> bool:
+    """Real fix, 2026-09-06: a stale reports.json entry (the underlying HTML
+    moved, got deleted, or - as found live this session - pointed at the
+    pre-2026-08-29 repo-relative data/ directory that no longer exists at
+    all post-migration) used to still render as a clickable "View Report"
+    button that threw a ValueError from gui/api.py's own open_url()
+    allowlist check the moment it was clicked. This isn't just a one-time
+    migration artifact to clean up - a user can delete or move a report file
+    themselves at any time, so the check needs to be real and live, not a
+    one-off fix. Only checked for file:// URLs (the only scheme this tool
+    ever generates for a report artifact) - a hypothetical http(s) URL is
+    assumed to exist, since there's no cheap way to check a remote resource
+    here and nothing in this codebase produces one today."""
+    parsed = urllib.parse.urlparse(artifact_url)
+    if parsed.scheme != "file":
+        return True
+    local_path = urllib.request.url2pathname(parsed.path)
+    return os.path.exists(local_path)
+
+
+def filter_missing_reports(reports: dict) -> dict:
+    """Display-only view of load_reports()'s own return value, with any
+    phase entry whose real underlying file no longer exists dropped.
+
+    Deliberately NEVER used to build a dict that then gets passed to
+    save_reports() - report_storage.py's real job is being the one shared
+    read/write implementation neither gui/api.py nor cli/gear.py hand-rolls,
+    and both of them do a real load-mutate-save cycle (registering a fresh
+    report for ONE phase) that would otherwise silently erase every OTHER
+    phase's still-valid history the moment its own file happened to be
+    temporarily missing/unmounted - this function exists specifically so
+    that read-modify-write path never sees a filtered/lossy copy. Only ever
+    call this on a dict about to be shown to a human, not saved back."""
+    return {
+        profile: {phase: entry for phase, entry in phases.items()
+                  if report_file_exists(entry.get("artifact_url", ""))}
+        for profile, phases in reports.items()
+    }

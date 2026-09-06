@@ -8,6 +8,20 @@ version). For the in-game companion addon's own, separate changelog, see
 Version format: `{stage} - v{major.minor}.{build}`, e.g. `Pre-Release - v0.7.0001`. See
 `core/version.py` for the real bump rules.
 
+## Pre-Release - v0.7.0004 (2026-09-06)
+
+- **Real bug fix**: a report whose underlying file had moved or been deleted (including every
+  report generated before the 2026-08-29 data-location migration) still showed a "View Report"
+  button that failed when clicked. The report list now checks the file actually exists first and
+  shows "No report published yet" instead - this also protects against a user manually deleting
+  or moving a report file themselves at any point.
+
+## Pre-Release - v0.7.0003 (2026-09-06)
+
+- **Real accuracy fix**: Shadow Priest's weapon oil (Superior Wizard Oil) was silently never
+  applying its Spell Damage bonus in any sim result - fixed, giving her a real ~1.5% DPS increase
+  in every report from here on.
+
 ## Pre-Release - v0.7.0002 (2026-09-06)
 
 - **Out of Mana readout**: every report now shows how much of the fight your baseline was out of

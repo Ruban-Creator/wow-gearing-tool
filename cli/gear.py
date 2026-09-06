@@ -150,7 +150,12 @@ def cmd_report_register(args):
 
 def cmd_report_list(args):
     profile_dir_name = _resolve_profile_dir_name(args.character, args.profile)
-    reports = report_storage.load_reports(args.character)
+    # Display-only filter (report_storage.filter_missing_reports) - drops any
+    # phase whose real underlying report file no longer exists (moved,
+    # deleted, or a stale pre-migration path) rather than listing a URL that
+    # would fail to open. Never fed back into save_reports() - reports.json's
+    # own real history is untouched by this.
+    reports = report_storage.filter_missing_reports(report_storage.load_reports(args.character))
     profile_reports = reports.get(profile_dir_name, {})
     if not profile_reports:
         print(f"No reports registered yet for {args.character}/{profile_dir_name}.")

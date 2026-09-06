@@ -17,7 +17,7 @@ Bump rules, per the user (2026-09-06):
 
 STAGE = "Pre-Release"
 MAJOR_MINOR = "0.7"
-BUILD = 2
+BUILD = 4
 
 
 def version_string() -> str:
