@@ -455,6 +455,15 @@ html, body {
   flex-direction: column;
   gap: 8px;
 }
+/* Real bug found live 2026-09-06, screenshot: the Melee Weave/Turret
+   playstyle row rendered for Béarforceone (a Balance Druid), not just
+   SV/BM Hunter - same class of bug as .modal-overlay's own fix above.
+   The bare .settings-row{display:flex} rule beats the UA's [hidden]
+   rule at equal specificity, so app.js's runReportWeaveRow.hidden
+   toggle had no visual effect for this one settings-row (every other
+   settings-row in the app is always visible, so this was never hit
+   until this row became the first one toggled conditionally). */
+.settings-row[hidden] { display: none; }
 .settings-row + .settings-row { margin-top: 16px; }
 
 .settings-label {
