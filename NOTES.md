@@ -6101,3 +6101,47 @@ Also fixed in passing: `run_upgrade_sweep.py`'s own bottom-of-file debug-invocat
 since `profile_dir` became a required argument (backlog #13) - any direct `python
 run_upgrade_sweep.py` invocation raised a bare `TypeError` ever since. Fixed to resolve `profile_dir`
 via `character_profiles.SUPPORTED_CHARACTERS`, same as every other real caller.
+
+## 2026-09-06 (cont'd): Backlog #21's residual gap massively narrowed - root cause was methodology, not the sim engine
+
+Real, decisive re-investigation, triggered by the user asking "encounter duration?" - a field the
+earlier "field-by-field diff" pass (raidBuffs/debuffs/partyBuffs/player.buffs/rotation) had never
+actually checked. Two of the user's own real websim JSON exports were found still saved in this
+session's own scratchpad (`user_websim_settings.json` - `rotation.type: "TypeAuto"`, wowsims' own
+UI-generated default rotation, confirmed non-functional through our own sim: 0 player DPS, only the
+3 real Treant pets producing any damage at all - and `user_websim_v2.json` - `rotation.type:
+"TypeAPL"`, the one already confirmed byte-identical to our own rotation earlier). **Real finding:
+`user_websim_v2.json`'s own `encounter.duration` is 240, not our profile's default 180** - never
+checked before.
+
+**Real methodology fix**: every earlier #21 test manually patched individual fields (buffs, debuffs,
+`shadowPriestDps`) onto Béarforceone's OWN real settings_template.json/gear, one at a time. Running
+`user_websim_v2.json` **directly, as its own complete, self-contained settings blob** (its own real
+gear/talents/consumables, not patched onto ours) - which the file's own top-level shape already
+supports one-for-one, since it carries the exact same `apiVersion`/`raidBuffs`/`debuffs`/
+`partyBuffs`/`player`/`encounter` keys `evaluate()` expects - gives Crimson Bracers of Gloom ->
+Mindstorm Wristbands (both enchant 369, wrist slot index 5) a real **+16.02 DPS** delta at its own
+real duration (240), and **+19.36 DPS** with duration forced to 180 - both dramatically closer to
+wowsims.com's own reported **+17.31** than the prior investigation's best result (+13.77, the
+~1.26x gap). Consumables checked too (per the user's own follow-up "also check consumables") - v2's
+`potId`/`flaskId`/`foodId`/`conjuredId`/`mhImbueId` are byte-identical to
+`profiles/tbc/balance_druid/consumables.json`'s own real values; ruled out as a contributor.
+
+**Real, honest residual**: +16.02 (ours, duration=240 matched) vs +17.31 (wowsims.com) is a ~7.5%
+gap, OUTSIDE this run's own 2-sigma noise band (noise_stdev 0.48, so 2-sigma = 0.96) - a real, small,
+still-unexplained difference remains, not fully closed. But the dominant lesson is real and
+important: the earlier ~1.26x "unexplained" gap was mostly an artifact of comparing DELTAS computed
+against two DIFFERENT real baselines (our own character's real gear/talents vs. the websim JSON's
+own separate real gear/talents) rather than a genuine sim-engine calculation discrepancy - this
+tool's own core principle (`MV(i) = DPS*(P ∪ {i}) − DPS*(P)` depends on the FULL set P, never a
+naive isolated swap) turned out to apply to comparing ACROSS two different real characters' P too,
+not just within one. Interestingly, duration=180 (+19.36) bracketed wowsims' +17.31 from above while
+duration=240 (+16.02) bracketed it from below - both closer than the old baseline-mismatched
+comparison, meaning duration has a real but modest, non-dominant effect on this specific item's MV,
+not the single root cause either.
+
+Not chased further today - the remaining ~1.3-2 DPS gap is small enough that sim-version drift
+(wowsims.com's live site deploys off `master` continuously, confirmed separately today - see the
+GitHub Actions/tags investigation) or some other minor, still-unidentified settings difference are
+both plausible explanations, and this is a reasonable point to pause given how far the gap has
+already closed. FUTURE_TASKS.md's #21 entry updated with these real numbers.

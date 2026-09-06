@@ -22,3 +22,19 @@ Nothing else outstanding right now - the Achieved-BiS Weapon/Ring/Trinket row bu
 question (tracked here earlier today) is now closed for real - see NOTES.md's dated entry: the
 user's own real websim comparison found a genuine design bug (the check never verified the enabling
 swap was itself worth making), fixed in `set_bonus.rescue_check()`.
+
+## Backlog #21's last ~7.5% residual gap - optional, needs the user at a PC
+
+Real progress today narrowed the Mindstorm Wristbands/Balance Druid sim-vs-wowsims.com gap from an
+unexplained 11x down to ~7.5% (+16.02 ours vs +17.31 wowsims.com) - see FUTURE_TASKS.md's #21 entry
+and NOTES.md's dated entry for the full trail. The dominant cause (comparing deltas across two
+different real character baselines instead of one self-contained settings blob) is now understood;
+what's left is small enough that it may just be sim-version drift or noise, not worth more
+investigation time on its own. If the user wants to chase it further: re-run the exact same
+Crimson Bracers of Gloom -> Mindstorm Wristbands comparison (enchant 369 both sides) on wowsims.com
+right now, and pull their per-spell "Damage Breakdown" panel for both gear variants (not just the
+final DPS number) - our own sim already tracks the same real per-spell data internally
+(`result["raidMetrics"]["parties"][0]["players"][0]["actions"]` - spellId, casts, hits, crits,
+damage, resisted damage per target - confirmed present, just never surfaced before), so the two
+could be diffed spell-by-spell to find exactly where the remaining ~1.3 DPS lives. Not urgent - flag
+if wanted.

@@ -446,12 +446,40 @@ real, verified change, independent of this investigation.
 v0.0.124) - real, meaningful movement in the right direction, closing roughly a third of the
 remaining gap to wowsims.com's own +17.31 (1.5x gap down to ~1.26x). Confirms the sim-version-drift
 theory was real and load-bearing, not a dead end - but a real, smaller residual gap (+13.77 vs
-+17.31, ~20%) still remains even now. Not investigated further today - wowsims.com itself may be
-running something even newer than v0.0.130, or there's a real, still-unidentified remaining
-difference. Given the practical size of the remaining gap has shrunk substantially across this
-whole investigation (from an unexplained 11x to a real, bounded ~1.26x, with every settings-level
-explanation now systematically ruled out or confirmed) and every profile has been re-verified clean
-on the current sim version regardless, this is a reasonable point to pause - re-open if the gap
-becomes practically significant for a real gearing decision, or revisit after a future sim update
-narrows it further.
++17.31, ~20%) still remains even now.
+
+**Update, 2026-09-06 (later the same day) - real root cause found: the methodology, not the sim
+engine.** Triggered by the user asking "encounter duration?" - a field the field-by-field diff above
+never actually checked. Found the user's own real websim JSON exports still saved in that session's
+scratchpad: `user_websim_v2.json` (the one already confirmed byte-identical rotation) has
+`encounter.duration: 240`, not our profile's default 180 - never checked before. More importantly,
+every prior test in this investigation manually patched individual fields onto BÉARFORCEONE'S OWN
+real settings/gear, one at a time - running `user_websim_v2.json` **directly, as its own complete,
+self-contained settings blob** (its own real gear/talents/consumables, not patched onto ours) gives
+Crimson Bracers -> Mindstorm Wristbands a real **+16.02 DPS** at its own real duration (240), and
+**+19.36 DPS** at duration forced to 180 - both dramatically closer to wowsims.com's own +17.31 than
+the prior best result (+13.77). Consumables checked too (per the user's own follow-up) - v2's
+`potId`/`flaskId`/`foodId`/`conjuredId`/`mhImbueId` are byte-identical to
+`profiles/tbc/balance_druid/consumables.json`; ruled out.
+
+**Real, honest remaining residual**: +16.02 (ours, duration matched) vs +17.31 (wowsims.com) is a
+real ~7.5% gap, still outside this run's own 2-sigma noise band (noise_stdev 0.48) - not fully
+closed. But the dominant lesson is real and important: the earlier "~1.26x unexplained gap" was
+mostly an artifact of computing deltas against two DIFFERENT real baselines (our character's real
+gear/talents vs. the websim JSON's own separate real gear/talents), not a genuine sim-engine
+calculation discrepancy - this tool's own core principle (MV depends on the FULL set P, never an
+isolated swap) turned out to apply across two different real characters' P too, not just within one.
+Duration=180 (+19.36) bracketed wowsims' +17.31 from above while duration=240 (+16.02) bracketed it
+from below - both closer than the old mismatched-baseline comparison, so duration has a real but
+modest, non-dominant effect here, not the single root cause either.
+
+Not chased further today - the remaining ~1.3-2 DPS gap is small enough that sim-version drift
+(wowsims.com's live site deploys off `master` continuously on every merge, confirmed separately via
+their own GitHub Actions "Build and Deploy" workflow - real commit `a176edf` is live on production
+but not yet in any tagged release, though that specific commit - an armor-damage-reduction cap for
+damage TAKEN - doesn't explain a caster's own outgoing-damage gap) or some other minor,
+still-unidentified difference are both plausible, and this is a reasonable point to pause given how
+far the gap has already closed (from an unexplained 11x down to ~7.5%, with the dominant cause now
+identified as cross-baseline comparison, not an unknown sim defect). Re-open if the gap becomes
+practically significant for a real gearing decision, or revisit after a future sim update.
 
