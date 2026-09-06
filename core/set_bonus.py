@@ -402,7 +402,7 @@ def best_four_of_five(settings_path: str, set_name: str, candidates: dict[str, l
 
 def rescue_check(settings_path: str, candidate: "opt.Candidate", slot: str, set_name: str,
                   baseline_config: list[dict], candidates: dict[str, list["opt.Candidate"]],
-                  iterations: int, seed: int) -> dict | None:
+                  iterations: int, seed: int, baseline_result: dict) -> dict | None:
     """For a candidate that's currently a real downgrade in `slot` only
     because it breaks set_name's currently-active bonus, checks whether
     it's a real upgrade against a baseline where set_name is ALREADY
@@ -423,6 +423,30 @@ def rescue_check(settings_path: str, candidate: "opt.Candidate", slot: str, set_
     a real side-by-side check showed that analytical shortcut disagreeing
     with an actual paired sim by a wide margin, so this always runs the
     real sim instead of estimating).
+
+    Real, confirmed design bug fixed 2026-09-06 (the user caught this live,
+    with a real websim comparison across two exact JSON exports): the
+    original version only ever checked `mv_if_set_broken` (candidate vs a
+    baseline where the OTHER slot is ALREADY replaced by its own best
+    non-set alternative) - but `best_non_set_alt()` picks that alternative
+    by crude EP score alone, never checking whether swapping to it is
+    itself a good idea. The real, live case: Cowl of Defiance (no meta
+    socket, itemization worse overall) scored well enough on hit rating to
+    win `best_non_set_alt()`'s pick for head, so `mv_if_set_broken` reported
+    a real +14.06 for Gloves of Dexterous Manipulation once "already
+    broken" - but the user's own real websim test of the FULL combined swap
+    (Cowl + Gloves) against her actual current gear (Rift Stalker Helm +
+    Gauntlets) showed a real **-88.30 DPS loss**. The feature was
+    recommending "banking" a combo that, even fully acted on, left her
+    strictly worse off - not a real save by any definition. Per the user's
+    own framing: "sidegrade measures... if we take this bad item can we
+    still improve overall dps - if overall dps is not getting increased
+    that is not a save." Now requires BOTH a real gain once-broken AND a
+    real gain for the FULL combined swap against her actual current gear
+    (`total_vs_current`) before calling anything a genuine sidegrade -
+    `baseline_result` (her real, already-computed current-gear result at
+    the same real iteration count) is now a required parameter so this
+    second check costs no extra sim call.
 
     Returns None if there's no other real non-set alternative available to
     break the set with (e.g. only one slot currently holds the set)."""
@@ -450,6 +474,13 @@ def rescue_check(settings_path: str, candidate: "opt.Candidate", slot: str, set_
 
     delta = trial_result["combined"] - broken_result["combined"]
     noise = mv.delta_noise(broken_result, trial_result, iterations)
+
+    # Real, required second check (see docstring) - the FULL combined swap
+    # (alt + candidate together) against her actual current gear, not just
+    # against the artificially-already-broken baseline.
+    total_vs_current = trial_result["combined"] - baseline_result["combined"]
+    total_noise = mv.delta_noise(baseline_result, trial_result, iterations)
+
     return {
         "mv_if_set_broken": delta,
         "noise_stdev": noise,
@@ -457,6 +488,9 @@ def rescue_check(settings_path: str, candidate: "opt.Candidate", slot: str, set_
         "via_slot": other_slot,
         "via_item": alt.name,
         "via_item_id": alt.item_id,
+        "total_vs_current": total_vs_current,
+        "total_noise_stdev": total_noise,
+        "total_tied_within_noise": abs(total_vs_current) < 2 * total_noise,
     }
 
 

@@ -1292,19 +1292,30 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
         def rescue_one(item):
             c, phys_slot, set_name = item
             check = set_bonus.rescue_check(SETTINGS_TEMPLATE, c, phys_slot, set_name,
-                                            baseline_config, candidates, RESOLVE_ITERATIONS, opt.SEED)
+                                            baseline_config, candidates, RESOLVE_ITERATIONS, opt.SEED,
+                                            baseline_resolved)
             return c.item_id, set_name, check
 
         rescue_results = run_with_progress(rescue_one, rescue_candidates, "Sidegrade-checking", progress_cb=progress_cb, stage_sequence=stage_sequence)
         for item_id, set_name, check in rescue_results:
-            if check and not check["tied_within_noise"] and check["mv_if_set_broken"] > 0:
+            # Real, required second condition (2026-09-06, see
+            # set_bonus.rescue_check()'s own docstring for the real bug this
+            # fixes - a user-caught, real websim-verified case where the old
+            # single-condition check recommended a combo that was a real
+            # -88 DPS loss overall): a "sidegrade" must be a real gain BOTH
+            # once the set is already broken AND for the full combined swap
+            # against her actual current gear - never just the former.
+            if (check and not check["tied_within_noise"] and check["mv_if_set_broken"] > 0
+                    and not check["total_tied_within_noise"] and check["total_vs_current"] > 0):
                 rescue_notes_by_item[item_id] = (
                     f"Don't compete for this - it's a downgrade with your current gear, "
                     f"so it's not worth outbidding someone with a real use for it. Worth "
                     f"banking if it's going free, though: paired with {check['via_item']} "
                     f"in {check['via_slot']}, it's a real {check['mv_if_set_broken']:+.1f} "
                     f"DPS sidegrade for later (breaks {set_name}'s bonus alone, but that "
-                    f"bonus is already gone once you've made that other swap too)."
+                    f"bonus is already gone once you've made that other swap too), and the "
+                    f"full combined swap is a real {check['total_vs_current']:+.1f} DPS gain "
+                    f"over your current gear overall."
                 )
                 rescue_mv_by_item[item_id] = check["mv_if_set_broken"]
                 # Real gap found live 2026-09-06 (user report): the note

@@ -5987,3 +5987,43 @@ checked", accurately describing what was actually tested.
 
 **Committed and pushed**: the submodule bump itself (`sim/tbc-new` now pinned to v0.0.130) plus the
 gem-verification label fix.
+
+
+## 2026-09-06 (cont'd): Real design bug in the "Sidegrade" (rescue_check) feature - caught live by the user with real websim data, fixed
+
+Earlier the same day, an independent hand-trace of `set_bonus.rescue_check()` confirmed its own
+math matched the live report exactly - real, but incomplete verification, as it turned out.
+Immediately after, the user ran their own real wowsims.com test with two exact JSON exports (her
+real current gear - Rift Stalker Helm + Gauntlets - vs. the Sidegrade-recommended combo - Cowl of
+Defiance + Gloves of Dexterous Manipulation) and found a genuine **-88.30 DPS loss** for the full
+combined swap, directly contradicting the report's own "+14.06 DPS sidegrade" claim.
+
+**Real root cause, not a math bug**: `rescue_check()` only ever checked `mv_if_set_broken` (is the
+candidate worth taking, GIVEN the other set slot is already replaced by its best non-set
+alternative) - it never checked whether making that ENABLING swap was itself a good idea, nor
+whether the FULL combined package beat her actual current gear. `best_non_set_alt()` picks its
+alternative by crude EP score alone, with no upgrade check - Cowl of Defiance scored well on hit
+rating despite having no meta socket and being a real overall downgrade, so it "won" the slot despite
+never being something she should actually equip. The feature could recommend "banking" a combo that,
+even fully realized, left her strictly worse off - not a real save by any definition.
+
+**The user's own framing, verbatim, is the correct spec for this feature**: "sidegrade measures not
+what if we get worse gear can save the item it asks if we take this bad item can we still improve
+overall dps - if overall dps is not getting increased that is not a save."
+
+**Real fix**: `rescue_check()` now takes `baseline_result` (her real, already-computed current-gear
+result - no extra sim call needed) and returns a second real metric, `total_vs_current` (the full
+combined swap's delta against her ACTUAL current gear, not the artificially-broken hypothetical).
+`run_upgrade_sweep.py`'s gate now requires BOTH `mv_if_set_broken > 0` (clear) AND
+`total_vs_current > 0` (clear) before calling anything a genuine sidegrade - either condition failing
+means it's not a real save, full stop.
+
+**Real, verified result**: Lerynia's 6 previously-flagged Sidegrade notes (all sharing the same
+enabling swap, Cowl of Defiance) all correctly disappeared - 0 remain. Re-verified all 3 real
+characters clean after the fix (Lerynia 35/0, Béarforceone 937/0, Rubán 1708/0+1 known warning).
+
+Real, general lesson for this project: a feature's own internal math being provably self-consistent
+(what the earlier hand-trace confirmed) is not the same as the feature asking the right QUESTION -
+this is the second time today a "verified correct" claim needed walking back once tested against
+real, independent data (the first being the "Agility" labels), reinforcing why an external,
+real-world check is worth doing even after the code review looks clean.
