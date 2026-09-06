@@ -31,17 +31,10 @@ brought our own sim's delta for Crimson Bracers of Gloom -> Mindstorm Wristbands
 against wowsims.com's own +19.26 - a 0.07 DPS difference, fully inside noise. Nothing further to do
 here.
 
-## GearingToolCompanion addon: "All Characters"/main window text overlap - fixed, NOT yet live-verified
+## GearingToolCompanion addon: "All Characters"/main window text overlap - CLOSED, 2026-09-06
 
-Flagged 2026-09-06 with a real screenshot. Real root cause found (see NOTES.md's own dated entry
-for the full trail - the initial "missing backdrop" hypothesis was checked and ruled out): both
-windows are centered at the exact same screen position, and none of the 3 real places that show
-either one (the status popup's own "All Characters" button, `/gtlist`, the minimap left-click)
-hid the other window first - trivially easy to get both open at once. Fixed by adding the missing
-`Hide()` call at all 3 sites, copied to the live install
-(`C:\Games\World of Warcraft\_anniversary_\Interface\AddOns\GearingToolCompanion\`).
-
-**Real next step, not done yet**: user tests in-game - open the status popup (minimap left-click),
-click "All Characters", confirm the popup closes and only the list shows; repeat via `/gtlist` and
-re-clicking the minimap icon while the list is open. No Lua interpreter was available this session
-to double-check syntax beyond a manual re-read. Report back before considering this closed.
+Flagged with a real screenshot, real root cause found (both windows centered at the exact same
+screen position, none of the 3 real places that show either one hid the other first - see NOTES.md's
+dated entry for the full trail), fixed (a missing `Hide()` call at all 3 toggle sites), and
+**live-confirmed working by the user in-game**. Shipped as v1.0.3 - `CHANGELOG.md`/`.toc` bumped,
+`packaging/build_addon_zip.py` re-run, live install re-synced.

@@ -6305,7 +6305,7 @@ likely ALSO a silent no-op, for a different reason than the potion bug above (an
 not a missing whitelist) - flagged in FUTURE_TASKS.md as a real, separate, not-yet-fixed gap, out of
 scope for this pass.
 
-## 2026-09-06 (cont'd): GearingToolCompanion - real overlap bug found and fixed, NOT yet live-verified
+## 2026-09-06 (cont'd): GearingToolCompanion - real overlap bug found, fixed, and live-confirmed
 
 Real, live screenshot from the user: opening the addon's "All Characters" list while the smaller
 "Gearing Tool Companion" status popup was open showed both windows' text overlapping/bleeding
@@ -6331,8 +6331,11 @@ closes the other first - `addons/GearingToolCompanion/GearingToolCompanion.lua`,
 install (`C:\Games\World of Warcraft\_anniversary_\Interface\AddOns\GearingToolCompanion\`, path
 confirmed via `local_config.json`'s own `_autodetected_wow_root`) since this session edited the repo
 copy first, not the live one - real diff confirmed clean (both files byte-identical after the
-copy). **NOT yet live-verified** - per this project's own real discipline, addon changes need actual
-in-game testing before considered done; no Lua interpreter or live client available in this session
-to confirm the syntax is even valid beyond a manual re-read. Real next step: user tests in-game
-(open the status popup, click "All Characters", confirm the popup closes and only the list shows;
-repeat via `/gtlist` and the minimap icon), report back before this is considered closed.
+copy). No Lua interpreter or live client was available in this session to confirm the syntax was
+even valid beyond a manual re-read - **live-confirmed working by the user in-game** shortly after
+("Looks good now"). Shipped as a real versioned release: `.toc`/`CHANGELOG.md` bumped to 1.0.3,
+`packaging/build_addon_zip.py` re-run to produce `packaging/output/GearingToolCompanion-v1.0.3.zip`
+(real, correct internal structure re-confirmed - top-level `GearingToolCompanion/` folder containing
+the 3 real functional files), live install re-synced with the version bump too. Per the user's own
+standing instruction: always update the addon's OWN changelog (separate from RGT's own
+`CHANGELOG.md`) and rebuild the zip whenever the addon changes, ahead of a real CurseForge upload.

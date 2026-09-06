@@ -1,5 +1,9 @@
 # GT Companion Changelog
 
+## 1.0.3 (2026-09-06)
+- Fixed the status popup and the "All Characters" list overlapping and rendering unreadable when
+  both were open at once - opening either one now always closes the other first.
+
 ## 1.0.2 (2026-08-31)
 - Fixed the minimap button icon rendering off-center inside its ring border.
 
