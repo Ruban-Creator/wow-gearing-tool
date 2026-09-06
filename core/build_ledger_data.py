@@ -120,6 +120,14 @@ def build(name_realm: str, phase: str, profile_dir: str):
         # run_upgrade_sweep.py's own settings file (see that function's own
         # comment) - passes through unchanged, never re-derived here.
         "assumed_buffs": report.get("assumed_buffs", {}),
+        # Real, real-item consumables this exact sweep actually simmed with
+        # (2026-09-06, "Used Consumables" report section) - same
+        # never-hand-typed passthrough convention as assumed_buffs above.
+        "used_consumables": report.get("used_consumables", {}),
+        # Real OOM transparency (2026-09-06) - see run_upgrade_sweep.py's own
+        # OOM_WARNING_THRESHOLD_FRACTION comment for the full motivation.
+        "baseline_oom_seconds": report.get("baseline_oom_seconds", 0.0),
+        "baseline_oom_fraction": report.get("baseline_oom_fraction", 0.0),
         # Backlog #20 - real "would dual-wield beat my current 2H" analysis,
         # only present when she's really 2H-equipped right now (None
         # otherwise - a genuinely dual-wielding character has no such

@@ -170,6 +170,7 @@
             <label class="settings-label" for="run-report-duration">Fight Duration (seconds)</label>
             <input id="run-report-duration" class="modal-select" type="number" min="1" step="1" value="180">
           </div>
+          <div class="run-report-weave-warning" id="run-report-duration-warning" hidden></div>
           <div class="settings-row" id="run-report-weave-row" hidden>
             <label class="settings-label" for="run-report-weave-mode">Playstyle</label>
             <select id="run-report-weave-mode" class="modal-select">
@@ -182,6 +183,10 @@
             playstyle you pick here. Real DPS can differ by 500+ between the two for the same exact
             gear - pick the one you actually play, don't leave this on the default without checking.
           </div>
+          <div class="settings-row" id="run-report-potion-row" hidden>
+            <label class="settings-label" for="run-report-potion-mode">Combat Potion</label>
+            <select id="run-report-potion-mode" class="modal-select"></select>
+          </div>
           <div class="settings-row">
             <div class="settings-label">Loot sources</div>
             <div class="settings-value" id="run-report-sources-summary">–</div>
@@ -191,6 +196,11 @@
           </div>
           <button id="run-report-start-btn" class="run-report-btn run-report-btn-wide">Run</button>
           <div id="run-report-error" class="run-report-error" hidden></div>
+        </div>
+        <div id="run-report-oom-check" hidden>
+          <div class="run-report-weave-warning" id="run-report-oom-text"></div>
+          <button id="run-report-oom-use-recommended-btn" class="run-report-btn run-report-btn-wide" hidden></button>
+          <button id="run-report-oom-run-anyway-btn" class="run-report-btn run-report-btn-wide modal-btn-ghost"></button>
         </div>
         <div id="run-report-progress" hidden>
           <div class="progress-stage" id="run-report-stage">Starting…</div>

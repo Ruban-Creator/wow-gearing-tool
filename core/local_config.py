@@ -276,6 +276,44 @@ def set_melee_weave_mode(name_realm: str, mode: str | None) -> None:
     save(config)
 
 
+def consumable_potion_id(name_realm: str, profile_dir: str) -> int:
+    """Real, per-character combat-potion choice for a caster profile (2026-09-06,
+    per the user: "some classes like arcane mage gain more dps from mana pot
+    over destro pot" - a real, per-gear-state tradeoff, not a fixed
+    per-class truth) - same "we should not assume" precedent as
+    melee_weave_mode() above, but the DEFAULT here isn't one fixed constant:
+    it's whatever that profile's own `consumables.json` already commits to
+    today (Destruction Potion/22839 for 6 of the 7 real caster profiles,
+    Super Mana Potion/22832 for Balance Druid specifically - confirmed via
+    direct grep during planning, she's already the outlier) - so nothing
+    changes for an existing character until they actually open the new
+    selector and pick something else. Needs profile_dir (unlike
+    melee_weave_mode(), which never varies its own single fixed default)
+    to read that real per-profile default."""
+    override = load().get("consumable_potion_id", {}).get(name_realm)
+    if override is not None:
+        return override
+    consumables = repo_root.load_json(os.path.join(profile_dir, "consumables.json"))
+    return consumables["potId"]
+
+
+def set_consumable_potion_id(name_realm: str, potion_id: int | None) -> None:
+    """Pass None to reset back to the profile's own real default - only a
+    real, explicit override needs to be persisted at all. No fixed
+    MODES-style validation tuple here (unlike melee_weave_mode) since the
+    real valid set is curated in gui/api.py's own get_potion_options(), not
+    a small closed enum this module should duplicate."""
+    config = load()
+    overrides = config.setdefault("consumable_potion_id", {})
+    if potion_id is None:
+        overrides.pop(name_realm, None)
+    else:
+        overrides[name_realm] = potion_id
+    if not overrides:
+        config.pop("consumable_potion_id", None)
+    save(config)
+
+
 def sim_concurrency() -> int:
     """The real, single source of truth for sim-call concurrency (code
     review §4.4) - core/run_upgrade_sweep.py's MAX_WORKERS and

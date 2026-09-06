@@ -98,3 +98,18 @@ def player_and_pet_dps(result: dict) -> dict:
         "player": {"avg": player["dps"]["avg"], "stdev": player["dps"].get("stdev", 0)},
         "pets": pets,
     }
+
+
+def player_seconds_oom(result: dict) -> float:
+    """Real, already-computed by the sim on every call (proto:
+    `UnitMetrics.seconds_oom_avg`, Go: `metrics_aggregator.go`'s
+    `SecondsOomAvg: unitMetrics.oomTimeSum / n`) but never surfaced anywhere
+    in this pipeline until backlog's OOM-transparency feature (2026-09-06) -
+    real, live motivation: NOTES.md's 2026-08-31 mana/OOM investigation found
+    MP5/Spirit items falsely showing as upgrades purely because the baseline
+    itself was OOM for a meaningful share of the fight, with no way for a
+    report reader to see that. `.get()`-defensive, matching
+    `player_and_pet_dps()`'s own style - 0.0 if the field is ever absent
+    rather than raising."""
+    player = result["raidMetrics"]["parties"][0]["players"][0]
+    return player.get("secondsOomAvg") or 0.0

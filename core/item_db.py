@@ -25,6 +25,7 @@ _by_id_index: dict[int, dict] | None = None
 _ids_by_name_index: dict[str, list[int]] | None = None
 _gem_by_id_index: dict[int, dict] | None = None
 _enchant_by_id_index: dict[int, dict] | None = None
+_consumable_by_id_index: dict[int, dict] | None = None
 
 
 def _load() -> dict:
@@ -33,7 +34,7 @@ def _load() -> dict:
     per-function `hasattr(fn, "_index")` memoization worked but was
     unidiomatic - same behavior, plain module-level dicts, built once here
     instead of scattered across four separate functions)."""
-    global _db, _by_id_index, _ids_by_name_index, _gem_by_id_index, _enchant_by_id_index
+    global _db, _by_id_index, _ids_by_name_index, _gem_by_id_index, _enchant_by_id_index, _consumable_by_id_index
     if _db is not None:
         return _db
     with open(DB_PATH, encoding="utf-8") as f:
@@ -44,6 +45,11 @@ def _load() -> dict:
         _ids_by_name_index.setdefault(it["name"], []).append(it["id"])
     _gem_by_id_index = {g["id"]: g for g in _db.get("gems", [])}
     _enchant_by_id_index = {e["effectId"]: e for e in _db.get("enchants", [])}
+    # Consumables (potions/flasks/food/etc.) are a REAL, SEPARATE db.json
+    # section - real, confirmed 2026-09-06 (OOM-transparency planning
+    # session): by_id()/_by_id_index only ever covers "items" (gear); a
+    # potion id like 22839 (Destruction Potion) is NOT in that index at all.
+    _consumable_by_id_index = {c["id"]: c for c in _db.get("consumables", [])}
     return _db
 
 
@@ -85,6 +91,15 @@ def ids_by_name(name: str) -> list[int]:
 def gem_by_id(gem_id: int) -> dict | None:
     _load()
     return _gem_by_id_index.get(gem_id)
+
+
+def consumable_by_id(item_id: int) -> dict | None:
+    """A potion/flask/food/etc.'s real name+effect data - a SEPARATE db.json
+    section from by_id()'s own "items" (gear) index. See _load()'s own
+    comment - added 2026-09-06 for the "Used Consumables" report feature and
+    the caster combat-potion toggle, both real, live-verified consumers."""
+    _load()
+    return _consumable_by_id_index.get(item_id)
 
 
 def enchant_by_id(effect_id: int) -> dict | None:

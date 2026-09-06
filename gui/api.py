@@ -95,6 +95,7 @@ import source_scope  # noqa: E402
 import item_db as idb  # noqa: E402
 import report_storage  # noqa: E402
 import version  # noqa: E402
+import oom_check  # noqa: E402
 
 # Moved to core/character_profiles.py 2026-08-25 (a real bug: cli/gear.py's
 # own sweep command had no equivalent guard and was silently defaulting
@@ -444,6 +445,31 @@ class Api:
         local_config.set_melee_weave_mode(name_realm, mode)
         return self.get_melee_weave_mode(name_realm)
 
+    # Real, curated 3-option set (2026-09-06, per the user: "some classes
+    # like arcane mage gain more dps from mana pot over destro pot") - see
+    # NOTES.md's dated entry for why these 3 specifically (mechanically
+    # distinct, real, verified via Wowhead + the sim's own db.json, not the
+    # noisy 11-item raw alternates array some profiles happen to carry).
+    CASTER_POTION_OPTIONS = (22839, 22832, 31677)
+
+    def get_potion_options(self, name_realm: str) -> dict:
+        """Only meaningful for a real caster profile
+        (run_upgrade_sweep.CASTER_POTION_PROFILES) - the frontend gates the
+        whole selector the same way it already does for
+        get_melee_weave_mode(), via `profile_dir_name`, not by relying on
+        this endpoint to say so."""
+        profile_dir = SUPPORTED_CHARACTERS[name_realm]
+        current = local_config.consumable_potion_id(name_realm, profile_dir)
+        options = []
+        for item_id in self.CASTER_POTION_OPTIONS:
+            c = idb.consumable_by_id(item_id)
+            options.append({"item_id": item_id, "name": c["name"] if c else f"item {item_id}"})
+        return {"options": options, "current": current}
+
+    def set_potion_choice(self, name_realm: str, potion_id: int | None) -> dict:
+        local_config.set_consumable_potion_id(name_realm, potion_id)
+        return self.get_potion_options(name_realm)
+
     def get_reports(self, name_realm: str) -> dict:
         """Backlog #13 - nested {profile_dir_name: {phase: {...}}}, migrated
         automatically from the old flat schema if needed - see
@@ -473,6 +499,20 @@ class Api:
 
     def get_supported_phases(self) -> list[str]:
         return PHASES
+
+    def check_oom(self, name_realm: str, phase: str, duration: int) -> dict:
+        """Real, cheap pre-sweep OOM check (2026-09-06) - called from
+        app.js BEFORE the real, multi-minute sweep starts, so the GUI can
+        offer a shorter, more realistic duration instead of silently
+        producing a skewed report. Synchronous (not the background-job/
+        polling pattern run_report() below uses) - the underlying sim call
+        is cheap (SCREEN_ITERATIONS, cache-assisted) and a repeat check at
+        an already-tried duration is near-instant, same reasoning as
+        get_melee_weave_mode()'s own synchronous convention. See
+        core/oom_check.py's own docstring for the real mechanism."""
+        if name_realm not in SUPPORTED_CHARACTERS:
+            return {"oom_seconds": 0.0, "oom_fraction": 0.0, "flagged": False, "recommended_duration": None}
+        return oom_check.check(name_realm, SUPPORTED_CHARACTERS[name_realm], duration)
 
     def run_report(self, name_realm: str, phase: str, duration: int = 180) -> dict:
         if name_realm not in SUPPORTED_CHARACTERS:

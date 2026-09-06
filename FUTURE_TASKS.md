@@ -144,6 +144,25 @@ path, which isn't available to a private individual outside the US/Canada:
 not yet acted on. Still a real cost/effort decision for the user to make, not urgent while the
 installer stays pre-release.
 
+## Shadow Priest's weapon oil (mhImbueId) is likely a silent no-op - real, separate gap
+
+Found 2026-09-06 while fixing the "combat potion never actually casts" bug (see NOTES.md's dated
+entry for the full trail of that separate, much bigger fix). `profiles/tbc/shadow_priest/
+consumables.json` has `"mhImbueId": 22522` - confirmed via Wowhead that 22522 IS the real item id
+for Superior Wizard Oil, but the sim's own `registerStaticImbue()`
+(`sim/tbc-new/sim/core/consumes.go`) dispatches weapon imbues by its OWN internal id scheme, NOT
+real Wowhead ids (confirmed: that function's real `case 28017: // Superior Wizard Oil`, not 22522).
+There's no `default:` case in that switch, so an unmatched id like 22522 silently does nothing - her
+weapon oil stat bonus has likely never actually applied in any real sim result for her.
+
+Real next step: change her `mhImbueId` to `28017` (the sim's own real internal dispatch code for
+Superior Wizard Oil, per the switch statement - not a guess, already confirmed this session),
+regenerate her `settings_template.json`, verify via the same raw-action-list technique used for the
+potion fix (check the imbue's real stat buff actually applies - `AddStat(stats.SpellDamage, 42)` per
+the switch's own code), and check whether this changes her real report meaningfully like the potion
+fix did. Not fixed this pass - out of scope for the Combat Potion toggle work that surfaced it, and
+a real, live sim-verification step is needed before trusting it, not just a config edit.
+
 ## #14 — Build the actual scheduled sim-update-checking agent/machine
 
 `CLAUDE.md`'s "Sim update procedure" section is a real, already-tested RUNBOOK (every step was

@@ -6189,3 +6189,118 @@ characters too), and finally (4) simply using the CORRECT, freshly-captured sett
 every real cause traced back to a settings/methodology mismatch between the two sides being
 compared, exactly the class of explanation the "assume the latest sim's model is correct" ground
 rule points toward first. FUTURE_TASKS.md's #21 entry marked CLOSED.
+
+## 2026-09-06 (cont'd): OOM transparency + duration sanity checks - implementation started, one real bug found immediately
+
+Approved plan: `C:\Users\<user>\.claude\plans\staged-purring-lynx.md` (6 real parts - OOM
+transparency in the report, a pre-sweep duration/OOM interactive check, a duration-typo warning, a
+new "Used Consumables" report button, and a real Destruction/Mana Potion toggle for casters). Full
+real motivation, empirical Béarforceone OOM-vs-duration curve, and the real per-item DB/Go-source
+verification behind the potion toggle are all recorded in the plan file itself, not duplicated here.
+
+**Real bug found and fixed while implementing part 1+2 (surfacing `oom_seconds`)**: added
+`"oom_seconds": adapter.player_seconds_oom(result)` to `valuation.evaluate()`'s return dict (new
+`adapter.player_seconds_oom()` helper, mirrors `player_and_pet_dps()`'s own style), then read it in
+`run_upgrade_sweep.py` via a direct `baseline_resolved["oom_seconds"]` index - a real, live-caught
+`KeyError` on the very first end-to-end test. Root cause: `sim_cache` stores the FINAL PYTHON DICT
+`evaluate()` returns, not the raw sim result - any pre-existing cache entry for the same (gear,
+settings, iterations, seed) key predates this code change and simply doesn't have the new key at
+all. Real fix: `.get("oom_seconds", 0.0)` instead of direct indexing - matches `ew_uptime`'s own
+already-established defensive-access convention elsewhere in this exact file, which is what should
+have been used from the start. Real, known, accepted consequence: an already-cached baseline will
+silently report 0.0 OOM (a false "no OOM" reading) until that specific cache entry naturally
+refreshes for some other reason (gear/duration/settings change) - not fixed by bulk-invalidating the
+whole sim cache, which would be a far more disruptive real cost than a temporarily-stale OOM readout
+for characters whose reports haven't been touched since. **Verified**: re-ran with a cache-busting
+duration (181s instead of her real 180s) to force a genuinely fresh compute - came back
+`baseline_oom_seconds: 36.34`, `baseline_oom_fraction: 20.08%`, matching the empirical planning-time
+curve (35.78s/19.9% at 180s) almost exactly. Restored her real production report back to 180s
+afterward.
+
+**Second real bug found the same pass, "Used Consumables" section**: `_resolve_consumable()`
+initially used `item_db.by_id()` as a fallback for `mhImbueId` (weapon oil) - real, live-caught
+wrong result: id 25122 resolved to "Khorium Plated Bludgeon" (a real, unrelated weapon), not
+Brilliant Wizard Oil. Root cause: weapon imbues aren't reliably indexed in EITHER `db.json` section
+("items" or the newer "consumables") - `item_db.by_id()`'s own "items" list happens to have an
+unrelated real item collided onto the same id. Real fix: a small, hand-maintained
+`WEAPON_IMBUE_NAMES` dict sourced directly from the sim's own authoritative Go source
+(`sim/tbc-new/sim/core/consumes.go`'s `registerStaticImbue()` switch statement, which IS what
+actually interprets `mhImbueId`/`ohImbueId` at runtime) - every real case in that switch (Mana Oil
+25123, Brilliant Wizard Oil 25122, Superior Wizard Oil 28017, Adamantite Sharpening Stone 29453,
+Adamantite Weightstone 34340, Consecrated Sharpening Stone 28891), not guessed or partially copied.
+Real, general lesson: `item_db.by_id()`'s "items" index isn't authoritative for EVERY numeric id
+this pipeline encounters - a real item id can coincidentally collide with an unrelated real gear
+item in that specific index; check the sim's own Go source for what a field actually means before
+trusting a DB lookup that happens to return SOMETHING.
+
+## 2026-09-06 (cont'd): MAJOR real bug found while building the Combat Potion toggle - all 7 caster profiles have NEVER actually used a combat potion in any real sim result
+
+While live-verifying the new Destruction/Mana Potion toggle for Balance Druid (part of the OOM/
+duration-sanity plan's part 6), a real, direct test came back with BIT-IDENTICAL `combined` DPS for
+both potion choices - impossible if either was genuinely being consumed. Traced via the raw sim
+result's own `actions` list: NEITHER 22832 (Super Mana Potion, her real committed default) NOR 22839
+(Destruction Potion) ever appeared as a cast action at all, across 500 real iterations. Root cause,
+confirmed via `sim/tbc-new/sim/core/consumes.go`'s `registerPotionCD()`: the sim only registers a
+usable "Major Cooldown" for whichever potion in `consumables.Potions` (the real, PLURAL whitelist
+array) matches `consumables.potId` - and Balance Druid's own real, committed
+`profiles/tbc/balance_druid/consumables.json` has NO `"potions"` array at all, only `potId`. With
+that whitelist empty, `registerPotionCD()`'s own loop iterates zero times - NOTHING ever gets
+registered, regardless of what `potId` says.
+
+**Checked all 7 real caster profiles - every single one has the same gap**: balance_druid,
+elemental_shaman, shadow_priest, arcane_mage, affliction_warlock, demonology_warlock,
+destruction_warlock all have `potId` but no `potions` array. This means **every real report ever
+generated for these 7 profiles has silently computed its whole baseline (and therefore every item's
+MV) without the character's own configured combat potion ever actually being used** - not a
+theoretical gap, a real, measured one: Béarforceone's real `combined` at SCREEN_ITERATIONS jumped
+from 1358.8 (potion never cast) to **1564.7** (Super Mana Potion actually casting, confirmed via a
+real `casts_total=1000` over 500 iterations) - a ~15% DPS swing from fixing this alone, dwarfing
+almost every individual item MV in her whole report.
+
+**Real fix**: added a real `"potions": [22839, 22832, 31677]` array (Destruction Potion, Super Mana
+Potion, Fel Mana Potion - the same 3 real, mechanically-distinct options the new toggle curates, see
+this session's own Combat-Potion-toggle planning notes for why these 3 specifically) to all 7
+profiles' `consumables.json`, regenerated each profile's real `settings_template.json` via
+`build_profile_settings.py`, confirmed every diff was a clean, isolated addition (git diff reviewed
+per profile - one had a harmless +1/-1 trailing-comma reformat, nothing else). Verified via the same
+raw-action-list technique: Béarforceone's potion now genuinely casts, and now correctly differs by
+potion choice (Destruction Potion 1363.5 vs Super Mana Potion 1564.7 at screen-tier precision for
+her real, current, genuinely mana-constrained gear - a real, decisive, sensible result matching her
+known ~20% OOM problem, not noise).
+
+**Real, necessary consequence, not optional cleanup**: every one of the 7 profiles' EXISTING reports
+is now meaningfully stale (computed under the broken "no potion ever used" baseline) and needs a
+real fresh resweep to reflect this corrected, more-accurate behavior - tracked as a real follow-up
+task, not just this feature's own verification. This is a genuine accuracy fix independent of the
+Combat Potion toggle feature itself (even a profile that NEVER uses the new toggle now gets a real,
+correct combat-potion baseline for the first time) - the toggle just happened to be what surfaced it.
+
+**Checked the other 8 non-caster profiles too, not assumed fine**: 5 already had a real `potions`
+array (survival_hunter, beastmastery_hunter, arms_warrior, fury_warrior, feral_cat_druid - likely
+inherited from a real wowsims-preset import at construction time, e.g. survival_hunter's own real
+12-item alternates list) - but **3 more had the exact same gap**: combat_rogue, enhancement_shaman,
+retribution_paladin, all `potId: 22838` (Haste Potion) with no whitelist. Same real fix, matching
+Arms Warrior's own already-correct minimal pattern (`"potions": [22838]`, not the fuller 3-option
+caster list, since Haste Potion is the only real option relevant to these physical-DPS profiles) -
+**10 of 15 total profiles affected**, not just the 7 casters. Regenerating Combat Rogue's own
+settings also picked up real, unrelated vendored-APL drift (a new `OR` condition gating
+`autocastOtherCooldowns` on a second real debuff, spellId 25225 rank 6, alongside the original
+26866 rank 6 check) - same "sim update, not a bug" class of finding as the earlier Feral Cat Druid
+drift this same session, kept bundled rather than artificially separated (verified via a real sim
+call, non-crashing, sane DPS, before keeping it).
+
+**Full real regression pass completed, not left partial**: all 10 newly-fixed profiles got a fresh
+resweep + ledger rebuild + `check_ledger_consistency.py` (all clean, 0 failures) to pick up the
+corrected potion baseline. The remaining 5 profiles that already had a correct `potions` array, plus
+all 3 real characters (Lerynia/survival_hunter, Béarforceone/balance_druid, Rubán/arms_warrior),
+also got a fresh resweep + rebuild + consistency check purely to pick up the NEW `baseline_oom_*`/
+`used_consumables` report fields this same session's OOM-transparency work added - all clean,
+0 failures across all 15 profiles + 3 real characters.
+
+**Related, separate finding, not fixed here**: Shadow Priest's own `consumables.json` has
+`"mhImbueId": 22522` - the REAL Wowhead item id for Superior Wizard Oil, NOT the sim's own internal
+dispatch code (28017, confirmed via `registerStaticImbue()`'s switch statement having no `case
+22522` and no default case - an unmatched id silently does nothing). Her weapon oil setting is
+likely ALSO a silent no-op, for a different reason than the potion bug above (an id-scheme mismatch,
+not a missing whitelist) - flagged in FUTURE_TASKS.md as a real, separate, not-yet-fixed gap, out of
+scope for this pass.

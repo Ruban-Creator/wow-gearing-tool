@@ -138,6 +138,9 @@
     },
     "consumables": {
       "potId": 22838,
+      "potions": [
+        22838
+      ],
       "battleElixirId": 22831,
       "guardianElixirId": 32062,
       "foodId": 33872,
@@ -461,15 +464,43 @@
         {
           "action": {
             "condition": {
-              "auraIsActive": {
-                "sourceUnit": {
-                  "type": "CurrentTarget"
-                },
-                "auraId": {
-                  "spellId": 26866,
-                  "rank": 6
-                },
-                "includeReactionTime": true
+              "or": {
+                "vals": [
+                  {
+                    "auraIsActive": {
+                      "sourceUnit": {
+                        "type": "CurrentTarget"
+                      },
+                      "auraId": {
+                        "spellId": 26866,
+                        "rank": 6
+                      },
+                      "includeReactionTime": true
+                    }
+                  },
+                  {
+                    "cmp": {
+                      "op": "OpEq",
+                      "lhs": {
+                        "auraNumStacks": {
+                          "sourceUnit": {
+                            "type": "CurrentTarget"
+                          },
+                          "auraId": {
+                            "spellId": 25225,
+                            "rank": 6
+                          },
+                          "includeReactionTime": true
+                        }
+                      },
+                      "rhs": {
+                        "const": {
+                          "val": "5"
+                        }
+                      }
+                    }
+                  }
+                ]
               }
             },
             "autocastOtherCooldowns": {}

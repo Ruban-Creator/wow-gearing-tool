@@ -135,6 +135,11 @@
     },
     "consumables": {
       "potId": 22839,
+      "potions": [
+        22839,
+        22832,
+        31677
+      ],
       "flaskId": 22861,
       "foodId": 27657,
       "conjuredId": 12662,

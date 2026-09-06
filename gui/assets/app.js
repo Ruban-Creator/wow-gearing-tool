@@ -105,9 +105,14 @@ const runReportModal = document.getElementById("run-report-modal");
 const runReportCharacter = document.getElementById("run-report-character");
 const runReportPhaseSelect = document.getElementById("run-report-phase");
 const runReportDurationInput = document.getElementById("run-report-duration");
+const runReportDurationWarning = document.getElementById("run-report-duration-warning");
 const runReportStartBtn = document.getElementById("run-report-start-btn");
 const runReportForm = document.getElementById("run-report-form");
 const runReportError = document.getElementById("run-report-error");
+const runReportOomCheck = document.getElementById("run-report-oom-check");
+const runReportOomText = document.getElementById("run-report-oom-text");
+const runReportOomUseRecommendedBtn = document.getElementById("run-report-oom-use-recommended-btn");
+const runReportOomRunAnywayBtn = document.getElementById("run-report-oom-run-anyway-btn");
 const runReportProgress = document.getElementById("run-report-progress");
 const runReportStage = document.getElementById("run-report-stage");
 const runReportBar = document.getElementById("run-report-bar");
@@ -124,6 +129,61 @@ const runReportWeaveModeSelect = document.getElementById("run-report-weave-mode"
 // local_config.melee_weave_mode()'s own docstring) - per the user's own
 // reminder, every other class must never see this control at all.
 const WEAVE_CAPABLE_PROFILES = ["survival_hunter", "beastmastery_hunter"];
+
+const runReportPotionRow = document.getElementById("run-report-potion-row");
+const runReportPotionModeSelect = document.getElementById("run-report-potion-mode");
+// Combat Potion toggle (2026-09-06, per the user: "some classes like arcane
+// mage gain more dps from mana pot over destro pot") - real, curated list,
+// same pattern as WEAVE_CAPABLE_PROFILES, matching
+// run_upgrade_sweep.CASTER_POTION_PROFILES exactly.
+const CASTER_POTION_PROFILES = [
+  "balance_druid", "elemental_shaman", "shadow_priest", "arcane_mage",
+  "affliction_warlock", "demonology_warlock", "destruction_warlock",
+];
+
+async function refreshPotionModeRow() {
+  const c = characters.find((x) => x.name_realm === selectedNameRealm);
+  const isCaster = c && CASTER_POTION_PROFILES.includes(c.profile_dir_name);
+  runReportPotionRow.hidden = !isCaster;
+  if (!isCaster) return;
+  const result = await window.pywebview.api.get_potion_options(selectedNameRealm);
+  runReportPotionModeSelect.innerHTML = result.options
+    .map((o) => `<option value="${o.item_id}">${o.name}</option>`)
+    .join("");
+  runReportPotionModeSelect.value = result.current;
+}
+
+runReportPotionModeSelect.addEventListener("change", async () => {
+  if (!selectedNameRealm) return;
+  await window.pywebview.api.set_potion_choice(selectedNameRealm, parseInt(runReportPotionModeSelect.value, 10));
+});
+
+// Real duration-typo guard (2026-09-06, per the user: "fights under 30
+// seconds could also trigger the typo warning - too short fights won't
+// result in real numbers"). Client-side only, no backend call - purely a
+// caution, never blocks Run (matches gui/api.py's own run_report() comment
+// explicitly declining a hard upper bound for the same reason - a real,
+// deliberately long or short test is still the user's call).
+const DURATION_WARNING_MIN = 30;
+const DURATION_WARNING_MAX = 600;
+
+function refreshDurationWarning() {
+  const duration = parseInt(runReportDurationInput.value, 10);
+  if (!duration || duration < DURATION_WARNING_MIN) {
+    runReportDurationWarning.hidden = false;
+    runReportDurationWarning.textContent =
+      `${runReportDurationInput.value || 0}s is unusually short for a raid encounter - too short a ` +
+      "fight won't produce real numbers. Double check this isn't a typo.";
+  } else if (duration > DURATION_WARNING_MAX) {
+    runReportDurationWarning.hidden = false;
+    runReportDurationWarning.textContent =
+      `${duration}s is unusually long for a raid encounter - double check this isn't a typo ` +
+      "(e.g. an extra digit) before running.";
+  } else {
+    runReportDurationWarning.hidden = true;
+  }
+}
+runReportDurationInput.addEventListener("input", refreshDurationWarning);
 
 const runReportSourcesSummary = document.getElementById("run-report-sources-summary");
 const runReportSourcesBtn = document.getElementById("run-report-sources-btn");
@@ -581,6 +641,7 @@ settingsWowRootResetBtn.addEventListener("click", async () => {
 
 function resetRunReportModal() {
   runReportForm.hidden = false;
+  runReportOomCheck.hidden = true;
   runReportProgress.hidden = true;
   runReportDone.hidden = true;
   runReportError.hidden = true;
@@ -629,8 +690,10 @@ runReportBtn.addEventListener("click", async () => {
   runReportCharacter.textContent = selectedNameRealm;
   runReportPhaseSelect.innerHTML = PHASES.map((p) => `<option value="${p}">${PHASE_LABELS[p]}</option>`).join("");
   runReportDurationInput.value = 180;
+  refreshDurationWarning();
   await refreshSourcesSummary();
   await refreshWeaveModeRow();
+  await refreshPotionModeRow();
   openModal(runReportModal);
 });
 
@@ -836,6 +899,27 @@ function pollRunStatus() {
   }, 1500);
 }
 
+// Real, actual "kick off the sweep" step - split out from the Run button's
+// own click handler (below) so both the plain path (no OOM issue) and the
+// two OOM-decision-panel buttons can reach it without duplicating logic.
+async function startRunReport(phase, duration) {
+  const res = await window.pywebview.api.run_report(selectedNameRealm, phase, duration);
+  if (!res.started) {
+    runReportStartBtn.disabled = false;
+    runReportOomCheck.hidden = true;
+    runReportForm.hidden = false;
+    runReportError.hidden = false;
+    runReportError.textContent = res.error;
+    return;
+  }
+
+  runReportOomCheck.hidden = true;
+  runReportForm.hidden = true;
+  runReportProgress.hidden = false;
+  runReportStartedAt = Date.now();
+  pollRunStatus();
+}
+
 runReportStartBtn.addEventListener("click", async () => {
   const phase = runReportPhaseSelect.value;
   runReportStartBtn.disabled = true;
@@ -845,18 +929,41 @@ runReportStartBtn.addEventListener("click", async () => {
   if (!runReportWeaveRow.hidden) {
     await window.pywebview.api.set_melee_weave_mode(selectedNameRealm, runReportWeaveModeSelect.value);
   }
-  const res = await window.pywebview.api.run_report(selectedNameRealm, phase, duration);
-  if (!res.started) {
-    runReportStartBtn.disabled = false;
-    runReportError.hidden = false;
-    runReportError.textContent = res.error;
+  if (!runReportPotionRow.hidden) {
+    await window.pywebview.api.set_potion_choice(selectedNameRealm, parseInt(runReportPotionModeSelect.value, 10));
+  }
+
+  // Real, cheap pre-sweep OOM check (2026-09-06) - see core/oom_check.py's
+  // own docstring. Never blocks Run silently - if flagged, hands the user a
+  // real choice (shorter duration vs. run anyway) instead of quietly
+  // producing a skewed report; part 2's real baseline OOM readout still
+  // ends up in the delivered report either way, so the caveat is never
+  // lost even on override.
+  const oom = await window.pywebview.api.check_oom(selectedNameRealm, phase, duration);
+  if (oom.flagged) {
+    runReportForm.hidden = true;
+    runReportOomCheck.hidden = false;
+    const pct = (oom.oom_fraction * 100).toFixed(1);
+    runReportOomText.textContent = `At ${duration}s, this character is out of mana for ` +
+      `${oom.oom_seconds.toFixed(1)}s (${pct}%) of the fight - mana/spirit item values would be ` +
+      "skewed by this.";
+    if (oom.recommended_duration != null) {
+      runReportOomUseRecommendedBtn.hidden = false;
+      runReportOomUseRecommendedBtn.textContent = `Use ${oom.recommended_duration}s instead`;
+      runReportOomUseRecommendedBtn.onclick = () => {
+        runReportDurationInput.value = oom.recommended_duration;
+        refreshDurationWarning();
+        startRunReport(phase, oom.recommended_duration);
+      };
+    } else {
+      runReportOomUseRecommendedBtn.hidden = true;
+    }
+    runReportOomRunAnywayBtn.textContent = `Run at ${duration}s anyway`;
+    runReportOomRunAnywayBtn.onclick = () => startRunReport(phase, duration);
     return;
   }
 
-  runReportForm.hidden = true;
-  runReportProgress.hidden = false;
-  runReportStartedAt = Date.now();
-  pollRunStatus();
+  await startRunReport(phase, duration);
 });
 
 async function init() {

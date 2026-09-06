@@ -98,6 +98,15 @@
   .stat .k{font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-faint); font-weight:600;}
   .stat .v{font-size:17px; font-weight:700; margin-top:2px;}
   .stat .v.mono{font-size:16px;}
+  /* OOM transparency (2026-09-06) - real, meaningful OOM gets the same
+     --bad red treatment as every other "take this with caution" signal in
+     this report (see .legend-label.bad above), not a separate new color. */
+  .stat.oom-warning{border-color:var(--bad); background:var(--bad-bg);}
+  .stat.oom-warning .v{color:var(--bad);}
+  .oom-warning-note{
+    font-size:11.5px; color:var(--bad); background:var(--bad-bg); border:1px solid var(--bad);
+    border-radius:8px; padding:8px 12px; margin-top:-10px; margin-bottom:20px; line-height:1.5;
+  }
 
   /* ---------- Legend ---------- */
   .legend{
@@ -372,6 +381,10 @@
         <div class="k">Baseline DPS</div>
         <div class="v mono" id="stat-baseline">–</div>
       </div>
+      <div class="stat" id="stat-oom-box">
+        <div class="k">Out of Mana</div>
+        <div class="v mono" id="stat-oom">–</div>
+      </div>
       <div class="stat">
         <div class="k">Sim commit</div>
         <div class="v mono" id="stat-sha" style="font-size:13px;">–</div>
@@ -380,8 +393,14 @@
         <div class="k">Raid Buffs</div>
         <div class="v" id="stat-buffs-count">–</div>
       </button>
+      <button class="stat stat-button" id="consumables-open-btn" type="button" hidden>
+        <div class="k">Used Consumables</div>
+        <div class="v" id="stat-consumables-count">–</div>
+      </button>
     </div>
   </header>
+
+  <div class="sub oom-warning-note" id="oom-warning-note" style="display:none;"></div>
 
   <div class="modal-overlay" id="buffs-modal-overlay" hidden>
     <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="buffs-modal-title">
@@ -394,6 +413,19 @@
         could drift out of sync. If your real raid comp doesn't match this, treat every DPS number
         in this report as an approximation, not gospel.</div>
       <div class="buffs-groups" id="buffs-groups"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="consumables-modal-overlay" hidden>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="consumables-modal-title">
+      <div class="modal-head">
+        <h2 id="consumables-modal-title">Used Consumables</h2>
+        <button class="modal-close" id="consumables-modal-close" type="button" aria-label="Close">&times;</button>
+      </div>
+      <div class="bis-sub">The real potion/flask/food/weapon-oil this exact sweep actually simmed
+        with, read directly from the settings actually used - not a hand-typed description that
+        could drift out of sync.</div>
+      <div class="buffs-groups" id="consumables-groups"></div>
     </div>
   </div>
 
@@ -627,6 +659,60 @@ function horizonTag(it){
 
 document.getElementById('stat-baseline').textContent = DATA.baseline_dps.toFixed(1) + ' DPS';
 document.getElementById('stat-sha').textContent = DATA.sim_commit_sha.slice(0, 10);
+
+// OOM transparency (2026-09-06) - real, always-present fields (see
+// run_upgrade_sweep.py's own OOM_WARNING_THRESHOLD_FRACTION comment for the
+// full motivation/data). Threshold duplicated here (JS can't import the
+// Python constant) - keep in sync with run_upgrade_sweep.py's own value.
+(function renderOom(){
+  const OOM_WARNING_THRESHOLD_FRACTION = 0.015;
+  const oomSeconds = DATA.baseline_oom_seconds || 0;
+  const oomFraction = DATA.baseline_oom_fraction || 0;
+  document.getElementById('stat-oom').textContent = oomSeconds.toFixed(1) + 's (' + (oomFraction * 100).toFixed(1) + '%)';
+  if (oomFraction > OOM_WARNING_THRESHOLD_FRACTION) {
+    document.getElementById('stat-oom-box').classList.add('oom-warning');
+    const note = document.getElementById('oom-warning-note');
+    note.style.display = '';
+    note.textContent = 'This baseline was out of mana for ' + (oomFraction * 100).toFixed(1) +
+      '% of the fight (' + oomSeconds.toFixed(1) + 's of ' + DATA.fight_duration_seconds +
+      's) - mana/spirit item values in this report may be inflated relative to a real, ' +
+      'sustainable rotation. Consider a shorter fight duration if this number looks high.';
+  }
+})();
+
+// "Used Consumables" (2026-09-06) - same real header-button + modal pattern
+// as Assumed Raid Buffs above, real Wowhead item links via the same
+// whLink() every other item name in this report already uses.
+(function renderUsedConsumables(){
+  const SLOT_LABELS = {potion: 'Potion', flask: 'Flask', food: 'Food', conjured: 'Conjured', weapon_oil: 'Weapon Oil'};
+  const used = DATA.used_consumables || {};
+  const groupsEl = document.getElementById('consumables-groups');
+  const chips = Object.entries(SLOT_LABELS)
+    .map(([key, label]) => {
+      const item = used[key];
+      if (!item) return null;
+      return '<span class="buffs-chip">' + escapeHtml(label) + ': ' + whLink(item.name, item.item_id) + '</span>';
+    })
+    .filter(Boolean);
+  if (chips.length === 0) {
+    groupsEl.innerHTML = '<div class="buffs-empty">No consumables assumed for this sweep.</div>';
+  } else {
+    groupsEl.innerHTML = '<div class="buffs-group"><span class="buffs-chips">' + chips.join('') + '</span></div>';
+  }
+
+  const openBtn = document.getElementById('consumables-open-btn');
+  const overlay = document.getElementById('consumables-modal-overlay');
+  const closeBtn = document.getElementById('consumables-modal-close');
+  document.getElementById('stat-consumables-count').textContent = chips.length + (chips.length === 1 ? ' used' : ' used');
+  openBtn.hidden = chips.length === 0;
+
+  function openModal(){ overlay.hidden = false; }
+  function closeModal(){ overlay.hidden = true; }
+  openBtn.addEventListener('click', openModal);
+  closeBtn.addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !overlay.hidden) closeModal(); });
+})();
 
 // Backlog #5 (CLAUDE.md Future Scope) - real, human-readable labels for any
 // loot sources excluded below the phase gate (e.g. "Black Temple" for

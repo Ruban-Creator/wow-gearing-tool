@@ -134,6 +134,29 @@ TOP_N_2H = 5  # flat leaderboard across ALL tiers/zones, not grouped per tier -
 # weak options padding the list); the real question is just "what are her
 # best few 2H options, period", so only the overall top N are shown at all.
 
+# Real, empirically-grounded threshold, not a round guess (2026-09-06) - see
+# NOTES.md's own dated entry for the full trail. Probed Béarforceone's real
+# gear across a real duration sweep during planning: 0.0% OOM at 90s, 3.9% at
+# 120s, already 19.9% at this tool's own long-standing 180s default. Per the
+# user's own real mechanical reasoning: the GCD is 1.5s and her real casts run
+# 2-3s each, so even a couple seconds of OOM already costs a real, whole lost
+# cast - 1.5% (not the initially-floated 5%) is the real bar for "this baseline
+# was meaningfully OOM, treat mana/spirit item values in this report with
+# real caution."
+OOM_WARNING_THRESHOLD_FRACTION = 0.015
+
+# Real, curated list (2026-09-06, per the user's own "the 7 real caster
+# profiles" confirmation) - the classes that actually cast for their damage
+# and can run into a real Destruction-vs-Mana-Potion tradeoff. Deliberately
+# NOT derived from a generic "uses mana" resource check - Enhancement
+# Shaman/Retribution Paladin/Hunters also use mana but aren't part of this
+# real choice, same curation principle as gui/assets/app.js's own
+# WEAVE_CAPABLE_PROFILES.
+CASTER_POTION_PROFILES = {
+    "balance_druid", "elemental_shaman", "shadow_priest", "arcane_mage",
+    "affliction_warlock", "demonology_warlock", "destruction_warlock",
+}
+
 TYPE_TO_SLOT = {
     1: "head", 2: "neck", 3: "shoulder", 4: "back", 5: "chest", 6: "wrist",
     7: "hands", 8: "waist", 9: "legs", 10: "feet", 11: "ring", 12: "trinket",
@@ -647,6 +670,51 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     # stale just because the primary settings changed.
     if SETTINGS_2H != SETTINGS_TEMPLATE and local_config.melee_weave_mode(name_realm) == "weave":
         SETTINGS_TEMPLATE, SETTINGS_2H = SETTINGS_2H, SETTINGS_TEMPLATE
+
+    # Real, per-character Combat Potion choice for a real caster profile
+    # (2026-09-06, per the user: "some classes like arcane mage gain more
+    # dps from mana pot over destro pot" - see
+    # local_config.consumable_potion_id()'s own docstring for the full real
+    # motivation/data). Only ever does anything for the curated
+    # CASTER_POTION_PROFILES set - a caster profile never has a real
+    # SETTINGS_2H weave variant (no overlap with WEAVE_CAPABLE_PROFILES),
+    # so only SETTINGS_TEMPLATE itself needs mutating here.
+    if profile_dir_name in CASTER_POTION_PROFILES:
+        chosen_potion_id = local_config.consumable_potion_id(name_realm, profile_dir)
+        real_default_potion_id = repo_root.load_json(os.path.join(profile_dir, "consumables.json"))["potId"]
+        if chosen_potion_id != real_default_potion_id:
+            settings = repo_root.load_json(SETTINGS_TEMPLATE)
+            settings["player"]["consumables"]["potId"] = chosen_potion_id
+
+            def _replace_item_id(node):
+                if isinstance(node, dict):
+                    if node.get("itemId") == real_default_potion_id:
+                        node["itemId"] = chosen_potion_id
+                    for v in node.values():
+                        _replace_item_id(v)
+                elif isinstance(node, list):
+                    for v in node:
+                        _replace_item_id(v)
+
+            # Real, necessary beyond the plain potId swap above: at least 2
+            # of the 7 real caster profiles (Balance Druid, Shadow Priest -
+            # confirmed via direct grep during planning) ALSO hardcode their
+            # potion's exact itemId directly inside their own rotation's
+            # explicit mana-gated cast action, on top of the generic
+            # Major-Cooldown auto-cast the plain potId swap alone drives
+            # (`sim/tbc-new/sim/core/consumes.go`'s `registerPotionCD()`) -
+            # a potId-only swap would leave those two profiles' rotations
+            # still trying to cast the OLD, no-longer-registered potion. A
+            # generic recursive replace is a safe no-op for the other 5
+            # profiles with no such reference, real and necessary for the 2
+            # that have one.
+            _replace_item_id(settings)
+            cache_dir = os.path.join(USER_DATA_DIR, "cache")
+            os.makedirs(cache_dir, exist_ok=True)
+            out_path = os.path.join(cache_dir, f"_settings_{profile_dir_name}_potion{chosen_potion_id}.json")
+            with open(out_path, "w", encoding="utf-8") as f:
+                json.dump(settings, f)
+            SETTINGS_TEMPLATE = out_path
 
     profile = repo_root.load_json(os.path.join(profile_dir, "profile.json"))
     # Real, ordered list of every stage this run will show, for the GUI's
@@ -1232,6 +1300,18 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
 
     # --- Pass 2b: resolve only what's still close enough to matter after confirm ---
     baseline_resolved = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
+    # Real OOM transparency (2026-09-06, see OOM_WARNING_THRESHOLD_FRACTION's own
+    # comment above for the full motivation/data) - surfaced in the final report
+    # regardless of whether it clears the warning threshold, so a reader always
+    # has the real number, not just a binary flag. .get()-defensive, NOT a
+    # direct index - real bug hit immediately while testing this: sim_cache
+    # stores the final Python dict (not the raw sim result), so any
+    # pre-existing cache entry from before this field existed lacks it
+    # entirely, and a real cache hit raised a bare KeyError here. Matches
+    # ew_uptime's own already-established .get()-based access pattern
+    # elsewhere in this file - same real class of gotcha, same real fix.
+    baseline_oom_seconds = baseline_resolved.get("oom_seconds", 0.0)
+    baseline_oom_fraction = baseline_oom_seconds / actual_duration if actual_duration else 0.0
 
     # raid_ap_per_attacker is computed at whichever precision tier produces
     # the final number for a given item (confirm or resolve) - only items
@@ -2021,6 +2101,75 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
         "playerBuffs": _settings_for_buffs.get("player", {}).get("buffs", {}),
     }
 
+    # "Used Consumables" report section (2026-09-06, same real motivation as
+    # assumed_buffs above - a reader has no way to see what flask/food/potion/
+    # weapon-oil this sweep actually simmed with without reading source
+    # files). Only the single real item ACTUALLY used per slot - never the
+    # settings file's own "potions"/"conjuredItems" alternate-options arrays
+    # (a separate, already-flagged judgment-call area, see QUESTIONS.md).
+    # drumsId is deliberately excluded - it's a PARTY buff (partyBuffs.drums),
+    # already covered by the existing Assumed Raid Buffs section, not a
+    # personal consumable. Uses item_db.consumable_by_id() (NOT by_id() -
+    # potions/flasks/food live in db.json's own separate "consumables"
+    # section, confirmed while building this) since these are consumable
+    # items, not gear.
+    _consumables_used = _settings_for_buffs.get("player", {}).get("consumables", {})
+
+    # Real, hand-maintained (not invented) - weapon imbues aren't reliably in
+    # EITHER db.json section. Real bug chain found while building this:
+    # mhImbueId 25122 resolved via item_db.by_id() to "Khorium Plated
+    # Bludgeon" - a real, unrelated weapon. Tried sourcing names from the
+    # sim's own hardcoded switch instead
+    # (`sim/tbc-new/sim/core/consumes.go`'s `registerStaticImbue()`, which
+    # IS authoritative for what mhImbueId actually triggers) - but a live
+    # Wowhead check caught a SECOND real bug: that switch's own numeric ids
+    # are the sim's own internal dispatch keys, NOT real Wowhead item ids -
+    # id 25122 in the switch means "apply Brilliant Wizard Oil's effect" to
+    # the sim, but 25122 on Wowhead is a real, unrelated weapon (confirmed
+    # directly: page title "Khorium Plated Bludgeon"), so a whLink() built
+    # from the switch's own id would link to the WRONG real item. Real,
+    # verified REAL Wowhead ids looked up directly (not guessed) and
+    # effect-cross-checked against the switch's own stat values for the two
+    # spell-related ones (Wizard/Mana Oil - the only ones relevant to any
+    # CASTER_POTION_PROFILES profile; the 3 physical ones aren't currently
+    # consumed by any caster profile but are included for completeness/any
+    # future melee profile use, name-verified via Wowhead search but not
+    # independently effect-cross-checked):
+    #   25123 (sim id) "Mana Oil" -> really "Brilliant Wizard Oil"'s mana
+    #     sibling, real id 20748 "Brilliant Mana Oil" (effect confirmed:
+    #     "restores 12 mana...increases healing...by up to 25" - exact match
+    #     to the switch's HealingPower+25/MP5+12).
+    #   25122 -> real id 20749 "Brilliant Wizard Oil" (effect confirmed:
+    #     "spell damage by up to 36...critical strike rating by 14" - exact
+    #     match).
+    #   28017 -> real id 22522 "Superior Wizard Oil" (effect confirmed:
+    #     "spell damage by up to 42" - exact match).
+    #   29453 -> real id 23529 "Adamantite Sharpening Stone".
+    #   34340 -> real id 28421 "Adamantite Weightstone".
+    #   28891 -> real id 23122 "Consecrated Sharpening Stone".
+    WEAPON_IMBUE_REAL_IDS = {
+        25123: (20748, "Brilliant Mana Oil"), 25122: (20749, "Brilliant Wizard Oil"),
+        28017: (22522, "Superior Wizard Oil"), 29453: (23529, "Adamantite Sharpening Stone"),
+        34340: (28421, "Adamantite Weightstone"), 28891: (23122, "Consecrated Sharpening Stone"),
+    }
+
+    def _resolve_consumable(item_id, real_id_override_map=None):
+        if not item_id:
+            return None
+        if real_id_override_map and item_id in real_id_override_map:
+            real_id, name = real_id_override_map[item_id]
+            return {"name": name, "item_id": real_id}
+        c = idb.consumable_by_id(item_id)
+        return {"name": c["name"], "item_id": item_id} if c else {"name": f"item {item_id}", "item_id": item_id}
+
+    used_consumables = {
+        "potion": _resolve_consumable(_consumables_used.get("potId")),
+        "flask": _resolve_consumable(_consumables_used.get("flaskId")),
+        "food": _resolve_consumable(_consumables_used.get("foodId")),
+        "conjured": _resolve_consumable(_consumables_used.get("conjuredId")),
+        "weapon_oil": _resolve_consumable(_consumables_used.get("mhImbueId"), WEAPON_IMBUE_REAL_IDS),
+    }
+
     out_dir = os.path.join(USER_DATA_DIR, "characters", name_realm, "cache")
     os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, f"tiered_report_{profile_dir_name}_{phase}.json")
@@ -2029,8 +2178,11 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
                    "missing_enchants": missing_enchants,
                    "tiers": tiered_out, "two_hand": two_hand_out, "two_hand_meta": two_hand_meta,
                    "fight_duration_seconds": actual_duration,
+                   "baseline_oom_seconds": baseline_oom_seconds,
+                   "baseline_oom_fraction": baseline_oom_fraction,
                    "source_scope_excluded": source_scope_excluded,
-                   "assumed_buffs": assumed_buffs, "dual_wield_alt": dual_wield_alt}, f, indent=2)
+                   "assumed_buffs": assumed_buffs, "used_consumables": used_consumables,
+                   "dual_wield_alt": dual_wield_alt}, f, indent=2)
     print(f"Wrote {out_path}")
     milestone("Done")
     return out_path

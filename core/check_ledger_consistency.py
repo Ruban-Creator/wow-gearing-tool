@@ -227,6 +227,36 @@ def check_transform(report: dict, ledger_data: dict, rep: Report) -> None:
                and set(report["assumed_buffs"]) == {"raidBuffs", "debuffs", "partyBuffs", "playerBuffs"},
                "tiered_report.json: assumed_buffs missing or missing a real category "
                "(backlog #19 - see run_upgrade_sweep.py's own comment on where this is built)")
+    # OOM transparency (2026-09-06) - real, always-present fields (never None,
+    # unlike dual_wield_alt) since every profile gets a baseline OOM reading
+    # regardless of class (a non-mana resource, e.g. Rogue Energy, naturally
+    # reads 0.0 - see run_upgrade_sweep.py's own OOM_WARNING_THRESHOLD_FRACTION
+    # comment).
+    rep.check(ledger_data.get("baseline_oom_seconds") == report.get("baseline_oom_seconds"),
+               "ledger_data.json: baseline_oom_seconds does not pass through tiered_report.json unchanged")
+    rep.check(ledger_data.get("baseline_oom_fraction") == report.get("baseline_oom_fraction"),
+               "ledger_data.json: baseline_oom_fraction does not pass through tiered_report.json unchanged")
+    oom_seconds = report.get("baseline_oom_seconds")
+    actual_duration = report.get("fight_duration_seconds")
+    rep.check(isinstance(oom_seconds, (int, float)) and oom_seconds >= 0,
+               f"tiered_report.json: baseline_oom_seconds is not a real non-negative number ({oom_seconds!r})")
+    if isinstance(oom_seconds, (int, float)) and isinstance(actual_duration, (int, float)):
+        rep.check(oom_seconds <= actual_duration + 0.01,
+                   f"tiered_report.json: baseline_oom_seconds ({oom_seconds}) exceeds the real fight "
+                   f"duration ({actual_duration}) - can never happen for a real sim result")
+    # "Used Consumables" (2026-09-06) - same real, always-present passthrough
+    # convention as assumed_buffs above.
+    rep.check(ledger_data.get("used_consumables", {}) == report.get("used_consumables", {}),
+               "ledger_data.json: used_consumables does not pass through tiered_report.json unchanged")
+    used_consumables = report.get("used_consumables")
+    rep.check(isinstance(used_consumables, dict)
+               and set(used_consumables) == {"potion", "flask", "food", "conjured", "weapon_oil"},
+               "tiered_report.json: used_consumables missing or missing a real slot "
+               "(see run_upgrade_sweep.py's own comment on where this is built)")
+    if isinstance(used_consumables, dict):
+        for slot, entry in used_consumables.items():
+            rep.check(entry is None or (isinstance(entry, dict) and entry.get("name") and entry.get("item_id")),
+                       f"tiered_report.json: used_consumables.{slot} is present but missing a real name/item_id")
     rep.check(ledger_data.get("dual_wield_alt") == report.get("dual_wield_alt"),
                "ledger_data.json: dual_wield_alt does not pass through tiered_report.json unchanged")
     dw_alt = report.get("dual_wield_alt")

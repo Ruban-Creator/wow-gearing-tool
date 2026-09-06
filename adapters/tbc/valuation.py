@@ -303,6 +303,10 @@ def evaluate(settings_path: str, items: list[dict], iterations: int, seed: int,
         # never appeared (e.g. Expose Weakness untalented in this settings
         # background).
         "ew_uptime": expose_weakness.measured_ew_uptime(result),
+        # Real, already-computed by the sim, never surfaced until the OOM
+        # transparency feature (2026-09-06) - see adapter.player_seconds_oom()'s
+        # own docstring for the real motivating bug this closes.
+        "oom_seconds": adapter.player_seconds_oom(result),
     }
     sim_cache.put(cache_key, out)
     return out

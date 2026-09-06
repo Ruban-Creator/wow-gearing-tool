@@ -4,6 +4,7 @@
   "conjuredId": 12662,
   "mhImbueId": 25122,
   "potId": 22839,
+  "potions": [22839, 22832, 31677],
   "explosiveId": 30217,
   "petScrollAgi": true,
   "petScrollStr": true

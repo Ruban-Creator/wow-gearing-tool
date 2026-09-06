@@ -3,5 +3,6 @@
   "battleElixirId": 28103,
   "foodId": 27657,
   "mhImbueId": 25122,
-  "potId": 22839
+  "potId": 22839,
+  "potions": [22839, 22832, 31677]
 }

@@ -30,3 +30,15 @@ dated entry for the full trail. A fresh, correctly-captured wowsims.com export (
 brought our own sim's delta for Crimson Bracers of Gloom -> Mindstorm Wristbands to +19.19 DPS
 against wowsims.com's own +19.26 - a 0.07 DPS difference, fully inside noise. Nothing further to do
 here.
+
+## GearingToolCompanion addon: "All Characters"/main window text overlap - real, scoped, not yet fixed
+
+Flagged 2026-09-06 with a real screenshot: opening the addon's "All Characters" list overlaps
+visually with its own character-info window - text from both renders on top of each other,
+unreadable. Per the user's own real diagnosis: neither window appears to have an opaque background
+(a missing/stale `BackdropTemplate`/`SetBackdrop` call on one or both frames, letting content behind
+them show through and visually collide). Real next step: check
+`addons/GearingToolCompanion/GearingToolCompanion.lua`'s frame-creation code for both windows,
+confirm each has a real, opaque backdrop, fix and re-verify in-game (real addon changes need live
+testing, per `CLAUDE.md`'s own "Addon sync" section - copy the fix back into this repo from the live
+WoW install afterward, don't hand-edit the repo copy directly then forget to test it).
