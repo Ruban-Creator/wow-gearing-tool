@@ -97,16 +97,52 @@ Decided 2026-08-31: accept the Windows SmartScreen warning on `RGT-Setup.exe` fo
 the "More info" -> "Run anyway" workaround, see `packaging/README.md`), rather than buy a
 certificate immediately. `installer.iss` has zero code-signing configuration (confirmed via
 direct grep) - a fully unsigned exe always gets SmartScreen's strongest warning, regardless of
-download count. Real reminder, revisit once this ships more broadly:
+download count. Not scoped or budgeted - a real cost decision for the user to make once the
+installer is being distributed more broadly (currently pre-release, not yet published as a GitHub
+Release).
 
-- A standard cert (~$100-400/yr, e.g. DigiCert/Sectigo/SSL.com) removes the "Unknown Publisher"
-  text but SmartScreen still needs weeks/months of real download reputation before the warning
-  itself goes away.
-- An EV cert (~$300-600/yr, usually a hardware token + business identity verification) is the
-  only option that clears the warning immediately, from the very first download.
+**Real research done 2026-09-06 (this entry's original EV/OV framing above was WRONG, corrected
+here, not just appended)**: per Microsoft's own current documentation, **EV certificates stopped
+granting instant SmartScreen trust in a March 2024 policy change** - an EV-signed file now goes
+through the exact same reputation-building process as any other signed file (weeks, hundreds of
+clean downloads, no exact threshold). Paying EV pricing (~$300-600/yr) buys no SmartScreen
+advantage over a cheaper option anymore - confirmed directly from Microsoft's own
+`smartscreen-reputation` doc, not a third-party claim. What signing DOES still buy, at any
+validation level: the warning shows a verified publisher name instead of "Unknown Publisher," and
+the file/publisher can start accumulating reputation at all - an unsigned file never can.
 
-Not scoped or budgeted - a real cost decision for the user to make once the installer is being
-distributed more broadly (currently pre-release, not yet published as a GitHub Release).
+**Real options, given the user is a self-employed (EPU) Austrian with an existing business
+registration** - this matters because it opens Microsoft's own "Organization" identity-validation
+path, which isn't available to a private individual outside the US/Canada:
+
+1. **Azure Artifact Signing (formerly "Trusted Signing"), Microsoft's own recommended service for
+   non-Store distribution** - Basic tier **$9.99/month** (~€110/yr, ~€550 over 5 years), 5,000
+   signatures/month (RGT needs a handful per release). No hardware token needed - Microsoft holds
+   the private key in their own FIPS 140-3 Level 3 HSM. Requires: a paid Azure subscription (not
+   free/trial), a business website + monitored email on that domain, a "Business Identifier" (exact
+   accepted format for an Austrian EPU without a Firmenbuch entry - Gewerbeschein number vs.
+   Steuernummer vs. UID-Nummer - NOT confirmed, would need trying during actual signup), and a
+   government-ID verification of the individual representative (AU10TIX, same process regardless of
+   entity type). Processing: 1-20 business days. If billed with a valid Austrian UID-Nummer, Azure
+   B2B billing normally reverse-charges VAT (0% charged by Microsoft, self-assessed on the
+   business's own return) - not independently verified for this specific case, standard EU Azure
+   practice.
+2. **SSL.com's Individual Validated (IV) Code Signing Certificate** (third-party CA, doesn't
+   require a registered business at all - explicitly marketed at hobbyists/open-source/students) -
+   $129/yr (1-year) or ~$97/yr if prepaid as a "5-year" plan (~$484 total - really re-issued every
+   458 days under the CA/Browser Forum's new March 2026 max-validity cap, not one single 5-year
+   cert - confirm the actual renewal mechanic with SSL.com before prepaying). Still requires a
+   FIPS-certified USB hardware token (~$30-70 one-time) OR their eSigner cloud-signing add-on
+   (~$20/month per credential on top of the cert) - a hardware-key-in-some-form requirement is
+   universal industry policy since June 2023, not specific to this provider or to OV vs EV.
+   5-year total: ~$695 (annual renewal + token) or ~$534 (5-yr prepaid + token) - both more
+   expensive than the Azure option, before EVEN accounting for eSigner's much higher ~$1,700+
+   5-year total if avoiding the physical token.
+
+**Given the user already has the business registration Option 1 needs, Azure Artifact Signing
+(Basic, $9.99/mo) is the cheaper, simpler, no-hardware-token recommendation** - real numbers above,
+not yet acted on. Still a real cost/effort decision for the user to make, not urgent while the
+installer stays pre-release.
 
 ## #14 — Build the actual scheduled sim-update-checking agent/machine
 
