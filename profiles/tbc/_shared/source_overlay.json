@@ -204,5 +204,20 @@
     "desc": "Vendor: Anwehu (Shattrath City) / Smith Hauthaa (Isle of Quel'Danas) <Weapons & Armorsmith>, Cost 105",
     "verified_via": "https://www.wowhead.com/tbc/item=34893",
     "verified_date": "2026-09-06"
+  },
+  "24692": {
+    "desc": "World Drop",
+    "verified_via": "https://www.wowhead.com/tbc/item=24692",
+    "verified_date": "2026-09-06"
+  },
+  "31281": {
+    "desc": "World Drop",
+    "verified_via": "https://www.wowhead.com/tbc/item=31281",
+    "verified_date": "2026-09-06"
+  },
+  "31277": {
+    "desc": "World Drop",
+    "verified_via": "https://www.wowhead.com/tbc/item=31277",
+    "verified_date": "2026-09-06"
   }
 }

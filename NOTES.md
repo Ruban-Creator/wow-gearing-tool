@@ -5760,3 +5760,13 @@ pre-identified the way this pass's 43 were. A future session picking this back u
 re-run `check_missing_sources.py`, diff its output against `source_overlay.json`'s own keys (plus
 the tier-token/Gladiator's structural coverage) to build a fresh queue, then repeat this same
 one-at-a-time verification process with the same rate-limit-backoff discipline.
+
+## 2026-09-06: Added "World Drop" for the 3 genuinely-diffuse items
+
+Per the user's suggestion: the 3 items the background verification agent left unresolved
+(Elementalist Bracelets, Mask of Veiled Death, Pathfinder's Band - each with 37-200+ near-equal-odds
+real drop sources per that agent's own real Wowhead check) get a real, standard, honest label
+instead of staying "Source unclear" - "World Drop" is genuine, standard WoW terminology for exactly
+this case (a wide, generic drop table), not an invented category. Added to
+`profiles/tbc/_shared/source_overlay.json`. Coverage now 158/255 -> same total, just 3 more items
+correctly labeled instead of blank. `check_ledger_consistency.py` clean (1389/0).
