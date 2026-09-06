@@ -284,6 +284,25 @@ def load_candidates(pool_path: str, owned_items: list[dict],
     return result
 
 
+def resolve_idealized_owned_entry(it: dict, meta_gem_id: int | None, default_enchants: dict[str, int],
+                                   slot: str, known_professions: set[str]) -> dict:
+    """Shared per-item resolution logic factored out of build_owned_config() below
+    (2026-09-06) so core/set_bonus.py's best_four_of_five() can build an owned tier
+    piece the exact same, idealized way instead of its own third, inconsistent
+    version (curated-enchant-only with no real-enchant-wins carve-out; literal-real
+    gems with no gem-optimizer fallback at all). One real implementation, not three.
+
+    Gems: ALWAYS gem_optimizer.best_gems_for_item() - unconditional, no "respect her
+    real currently-socketed gems" carve-out, matching the original 2026-08-25 decision
+    ("mirroring gems exactly" was the enchant fix's own stated goal, not the reverse).
+    Enchants: her real, already-applied one wins if present; only a genuinely
+    unenchanted slot falls back to the curated default (also fixed 2026-09-06)."""
+    item = idb.by_id(it["id"])
+    gems = gem_optimizer.best_gems_for_item(item, meta_gem_id) if item else it.get("gems")
+    enchant = it.get("enchant", 0) or achievable_enchant(default_enchants.get(slot, 0), known_professions)
+    return gc.item_entry(it["id"], enchant, gems)
+
+
 def build_owned_config(equipped_items: list[dict], known_professions: set[str] | None = None) -> list[dict]:
     """Optimal gems for her CURRENT gear, not her literal real (possibly
     outdated) socketed gems - matching CLAUDE.md's own MV(i) = DPS*(P∪{i})
@@ -354,23 +373,38 @@ def build_owned_config(equipped_items: list[dict], known_professions: set[str] |
         if not it:
             config.append({})
             continue
-        item = idb.by_id(it["id"])
-        gems = gem_optimizer.best_gems_for_item(item, meta_gem_id) if item else it.get("gems")
         slot = gc.SLOT_ORDER[idx]
-        # Real fix, 2026-09-06 (see this function's own docstring for the
-        # full story): her REAL, already-applied enchant wins first - it's
-        # never re-gated through achievable_enchant() since it's already
-        # applied and therefore inherently achievable (e.g. a ring enchant
-        # a guildmate applied for her, regardless of HER OWN professions).
-        # Only a slot she genuinely has NO enchant on at all (0) falls back
-        # to the curated default_enchants.json value, matching the literal
-        # 2026-08-25 rule ("unenchanted items must never get compared to
-        # enchanted ones") and no further - a curated default is never
-        # allowed to silently outrank a real, different enchant she's
-        # actually wearing.
-        enchant = it.get("enchant", 0) or achievable_enchant(default_enchants.get(slot, 0), known_professions)
-        config.append(gc.item_entry(it["id"], enchant, gems))
+        config.append(resolve_idealized_owned_entry(it, meta_gem_id, default_enchants, slot, known_professions))
     return gem_optimizer.ensure_meta_requirement(config, equipped_items, meta_gem_id)
+
+
+def build_true_owned_config(equipped_items: list[dict]) -> list[dict]:
+    """The honest counterpart to build_owned_config() above - added 2026-09-06 after the
+    user caught a real design conflation: build_owned_config()'s idealized substitution
+    (always-optimal gems, curated-default enchant for a genuinely empty slot) is real,
+    deliberate, and CORRECT for one job - building the config every candidate's MV(i)
+    trial is based on (marginal_value.py's `trial = list(baseline_config)`), so an
+    upgrade comparison never pits her current item, possibly unenchanted, against an
+    always-optimally-enchanted candidate (the original 2026-08-25 rule this exists to
+    satisfy). But that same idealized config was ALSO being used, wrongly, as the
+    report's own headline "baseline DPS" - a number that's supposed to answer "what is
+    she actually getting right now," not "what would she get if every empty slot were
+    already optimally filled."
+
+    This function answers the honest question: no substitution at all, for either gems
+    or enchants - whatever she's really wearing/socketed, including a genuinely empty
+    socket or unenchanted slot, is used exactly as-is. Used ONLY for what's actually
+    reported to a human: the report's headline baseline_resolved/baseline_screen,
+    core/oom_check.py's baseline (her real rotation, not a hypothetical one), and
+    Missing Enchants'/Missing Gems' own honest starting point. Never used to build a
+    candidate's MV(i) trial - that still goes through build_owned_config(), unchanged."""
+    config = []
+    for it in equipped_items:
+        if not it:
+            config.append({})
+            continue
+        config.append(gc.item_entry(it["id"], it.get("enchant", 0), it.get("gems")))
+    return config
 
 
 def is_unique_conflict(config: list[dict], slot_idx: int, item_id: int) -> bool:

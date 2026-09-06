@@ -42,6 +42,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import item_db as idb  # noqa: E402
 import gear_config as gc  # noqa: E402
 import stat_weights  # noqa: E402
+import time_horizon  # noqa: E402
 
 import repo_root  # noqa: E402
 REPO_ROOT = repo_root.REPO_ROOT
@@ -62,7 +63,31 @@ GEM_MATCHES = {
 }
 
 def _all_gems() -> list[dict]:
-    return idb.gems()
+    """Real, confirmed bug fixed 2026-09-06: this used to return every gem in the DB
+    regardless of phase, so _best_gem_of_color()/_best_green_gem() (and therefore the
+    default gem itself, see _phase_legal_default_gem()) could pick a gem that isn't
+    actually obtainable yet at the report's own current phase - unlike candidate GEAR
+    items, which were already phase-gated (item["phase"] <= current_phase) everywhere
+    else in this pipeline. All 15 profiles' real primary_gem_id resolves to a Phase 3
+    gem, so every Phase 1/2 report was affected. Filtered here, once, so every real
+    caller (_best_gem_of_color, _best_green_gem) is automatically phase-legal.
+
+    Also excludes `unique` and `requiredProfession`-gated gems - a real, second bug
+    caught while testing the phase fix itself (2026-09-06): the naive phase-only filter
+    picked "Don Julio's Heart" (33133, real Phase 1, +14/+14) as Balance Druid's
+    Phase 1 substitute - a unique, Jewelcrafting-only item. This function fills the
+    SAME gem into every matching socket, so a unique item would be illegally
+    "equipped" multiple times at once, and a profession-gated one assumes a
+    profession never confirmed - same conservative principle as achievable_enchant()'s
+    ring-profession gate elsewhere in this pipeline (default to NOT assuming a
+    profession unless proven). Excluding both leaves real, generally-equippable gems
+    like "Bright Living Ruby" (24031, +16/+16, no restrictions) - confirmed via direct
+    DB query, not guessed."""
+    current_phase = time_horizon.get_current_phase()
+    return [g for g in idb.gems()
+            if g.get("phase", 1) <= current_phase
+            and not g.get("unique")
+            and not g.get("requiredProfession")]
 
 
 def _crude_score(stats: list[float]) -> float:
@@ -148,6 +173,7 @@ def ensure_meta_requirement(config: list[dict], equipped_items: list, meta_gem_i
     if green_gem is None:
         return config  # nothing real to swap to - leave as-is rather than invent one
 
+    default_gem = _phase_legal_default_gem()
     new_config = [dict(entry) for entry in config]
     swapped = 0
     for entry_idx, it in enumerate(equipped_items):
@@ -159,7 +185,7 @@ def ensure_meta_requirement(config: list[dict], equipped_items: list, meta_gem_i
         for socket_idx, color in enumerate(sockets):
             if swapped >= swaps_needed:
                 break
-            if socket_idx < len(gems) and gems[socket_idx] == gc.get_active_default_gem():
+            if socket_idx < len(gems) and gems[socket_idx] == default_gem:
                 gems[socket_idx] = green_gem
                 swapped += 1
         if gems:
@@ -177,6 +203,27 @@ def _best_gem_of_color(color: int) -> int | None:
     matching = [g for g in _all_gems() if g["color"] == color]
     best = _best_gem(matching)
     return best[0] if best else None
+
+
+def _phase_legal_default_gem() -> int:
+    """Real fix, 2026-09-06: the profile's own curated primary_gem_id (gear_config.
+    get_active_default_gem()) is a single, phase-unaware value - all 15 profiles
+    resolve to a real Phase 3 gem (confirmed via db.json), so using it unconditionally
+    means every Phase 1/2 report computes with gear that isn't actually legal yet.
+    Mechanical, DB-driven fix, not invented data: if the curated gem's own real phase
+    is already legal for the current report, return it unchanged (the common case,
+    Phase 3+ reports - no behavior change at all). Otherwise derive its real socket
+    color and fall back to the best real, phase-legal gem of that SAME color via the
+    already-trusted _best_gem_of_color() stat_weights scoring (the same function
+    chase-bonus picks already use) - reusing real, existing scoring rather than
+    hand-curating a "phase 1 gem"/"phase 2 gem" per profile."""
+    default_gem = gc.get_active_default_gem()
+    current_phase = time_horizon.get_current_phase()
+    gem = idb.gem_by_id(default_gem)
+    if gem is None or gem.get("phase", 1) <= current_phase:
+        return default_gem
+    legal = _best_gem_of_color(gem["color"])
+    return legal if legal is not None else default_gem
 
 
 def chase_bonus_gems_for_item(item: dict, meta_gem_id: int | None) -> list[int]:
@@ -198,7 +245,7 @@ def chase_bonus_gems_for_item(item: dict, meta_gem_id: int | None) -> list[int]:
         if color == idb.META_GEM_COLOR:
             gems.append(meta_gem)
         else:
-            gems.append(_best_gem_of_color(color) or gc.get_active_default_gem())
+            gems.append(_best_gem_of_color(color) or _phase_legal_default_gem())
     return gems
 
 
@@ -319,4 +366,5 @@ def best_gems_for_item(item: dict, meta_gem_id: int | None) -> list[int]:
     if item.get("id") in get_active_chase_bonus_ids():
         return chase_bonus_gems_for_item(item, meta_gem_id)
     meta_gem = meta_gem_id if meta_gem_id is not None else 0
-    return [meta_gem if color == idb.META_GEM_COLOR else gc.get_active_default_gem() for color in sockets]
+    default_gem = _phase_legal_default_gem()
+    return [meta_gem if color == idb.META_GEM_COLOR else default_gem for color in sockets]

@@ -88,6 +88,14 @@ def _current() -> int:
         )
     return _current_phase
 
+
+def get_current_phase() -> int:
+    """Public accessor for gem_optimizer.py's phase-legal gem selection (2026-09-06) -
+    the default gem itself needs to respect the report's own current phase the same way
+    candidate gear already does (item["phase"] <= current_phase), which it never did
+    before. Same failure mode as _current() if unset."""
+    return _current()
+
 # WoW's own item-quality color language, reused here since it's already a
 # shared vocabulary: green (uncommon) < blue (rare) < purple (epic) <
 # orange (legendary). Purple and orange are layered, not parallel - orange

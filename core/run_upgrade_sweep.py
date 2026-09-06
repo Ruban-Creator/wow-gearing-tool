@@ -1083,7 +1083,8 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
         # all 5 (rare) or fewer (weak bonuses) - determined by real sim
         # comparison across all five leave-one-out combos, not assumed.
         combo = set_bonus.best_four_of_five(SETTINGS_TEMPLATE, set_name, candidates,
-                                             baseline_config, owned_items, SCREEN_ITERATIONS)
+                                             baseline_config, owned_items, SCREEN_ITERATIONS,
+                                             known_professions)
         if combo is not None:
             if combo["excluded_slot"] is not None:
                 alt = combo["excluded_slot_alt"]
@@ -1300,6 +1301,19 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
 
     # --- Pass 2b: resolve only what's still close enough to matter after confirm ---
     baseline_resolved = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
+    # Real fix, 2026-09-06: baseline_resolved above is the IDEALIZED config (real
+    # enchant if present, else curated default; always-optimal gems) - correct for
+    # feeding every candidate's MV(i) trial (mv.mv_single() calls below), since that's
+    # what keeps an upgrade comparison fair (never unenchanted-vs-enchanted), but wrong
+    # for anything actually REPORTED to a human as "her current DPS" - a curated
+    # default silently filled into a slot she hasn't actually enchanted/gemmed yet is
+    # not what she's really getting right now. true_baseline_resolved answers that
+    # honest question instead (opt.build_true_owned_config() - no substitution at all,
+    # ever) - used ONLY for what gets reported: the OOM stat below, and
+    # baseline_screened/used_consumables/Missing Enchants further down. Never fed into
+    # an MV(i) trial.
+    true_baseline_config = opt.build_true_owned_config(owned_items)
+    true_baseline_resolved = mv.valuation.evaluate(SETTINGS_TEMPLATE, true_baseline_config, RESOLVE_ITERATIONS, opt.SEED)
     # Real OOM transparency (2026-09-06, see OOM_WARNING_THRESHOLD_FRACTION's own
     # comment above for the full motivation/data) - surfaced in the final report
     # regardless of whether it clears the warning threshold, so a reader always
@@ -1310,7 +1324,9 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     # entirely, and a real cache hit raised a bare KeyError here. Matches
     # ew_uptime's own already-established .get()-based access pattern
     # elsewhere in this file - same real class of gotcha, same real fix.
-    baseline_oom_seconds = baseline_resolved.get("oom_seconds", 0.0)
+    # Sourced from the TRUE baseline (her real rotation/gear), not the idealized one -
+    # OOM should reflect what she'd actually experience, not a hypothetical loadout.
+    baseline_oom_seconds = true_baseline_resolved.get("oom_seconds", 0.0)
     baseline_oom_fraction = baseline_oom_seconds / actual_duration if actual_duration else 0.0
 
     # raid_ap_per_attacker is computed at whichever precision tier produces
@@ -1562,17 +1578,22 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     # verified BiS enchant on file (profile's default_enchants.json) that
     # she isn't actually wearing right now - per the user ("show the BiS
     # enchants available for that slot... make sure unenchanted items
-    # never get compared to enchanted ones"). baseline_config already
-    # carries the real BiS enchant in every slot (build_owned_config()'s
-    # own unconditional-default policy, see optimizer.py) and
-    # baseline_resolved is its real RESOLVE_ITERATIONS-precision result -
-    # already computed above, reused here rather than re-run. Only the
-    # gap slot itself needs a second real sim call, with just that one
-    # slot's enchant reverted to what she's actually wearing (or none) -
-    # same "hold everything else constant, isolate the one real variable"
-    # methodology as set_bonus.isolate_bonus_value() and
-    # core/verify_default_enchants.py. Never a static "you're missing X"
-    # list with no sim number attached.
+    # never get compared to enchanted ones").
+    #
+    # Real fix, 2026-09-06: this used to measure against baseline_resolved
+    # (the IDEALIZED config, already carrying the curated BiS enchant in every
+    # slot by build_owned_config()'s own design) by REVERTING the tested slot
+    # back to her real enchant and subtracting - i.e. curated-baseline minus
+    # reverted-to-real. That only worked because the idealized config was
+    # (wrongly) also being used as the reported "baseline DPS." Now that
+    # true_baseline_resolved is the real, honest starting point (her actual
+    # current enchant, or none), the comparison inverts cleanly to a simple
+    # additive one: take the TRUE config and force just the tested slot's
+    # enchant to the curated BiS value, then measure the gain over the real
+    # baseline directly - same "hold everything else constant, isolate the
+    # one real variable" methodology as set_bonus.isolate_bonus_value() and
+    # core/verify_default_enchants.py, just measured from the honest side now.
+    # Never a static "you're missing X" list with no sim number attached.
     default_enchants = gc.get_active_default_enchants()
     missing_enchants = []
     for slot, raw_bis_enchant_id in default_enchants.items():
@@ -1592,16 +1613,13 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
         if current_enchant_id == bis_enchant_id:
             continue
 
-        current_trial = list(baseline_config)
-        current_trial[idx] = dict(current_trial[idx])
-        if current_enchant_id:
-            current_trial[idx]["enchant"] = current_enchant_id
-        else:
-            current_trial[idx].pop("enchant", None)
-        current_result = mv.valuation.evaluate(SETTINGS_TEMPLATE, current_trial, RESOLVE_ITERATIONS, opt.SEED)
+        enchanted_trial = list(true_baseline_config)
+        enchanted_trial[idx] = dict(enchanted_trial[idx])
+        enchanted_trial[idx]["enchant"] = bis_enchant_id
+        enchanted_result = mv.valuation.evaluate(SETTINGS_TEMPLATE, enchanted_trial, RESOLVE_ITERATIONS, opt.SEED)
 
-        delta = baseline_resolved["combined"] - current_result["combined"]
-        noise = mv.delta_noise(baseline_resolved, current_result, RESOLVE_ITERATIONS)
+        delta = enchanted_result["combined"] - true_baseline_resolved["combined"]
+        noise = mv.delta_noise(true_baseline_resolved, enchanted_result, RESOLVE_ITERATIONS)
         tied_within_noise = abs(delta) < 2 * noise
         if tied_within_noise or delta <= 0:
             # A real, verified BiS enchant that's indistinguishable from what
@@ -2170,11 +2188,18 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
         "weapon_oil": _resolve_consumable(_consumables_used.get("mhImbueId"), WEAPON_IMBUE_REAL_IDS),
     }
 
+    # "baseline_screened" key name predates this fix and is kept for compatibility
+    # (build_ledger_data.py/check_ledger_consistency.py/report_template.html all
+    # reference it) - its VALUE is now true_baseline_resolved["combined"] (her real,
+    # honest current DPS, RESOLVE_ITERATIONS precision), not the old 500-iteration
+    # idealized screen. baseline_screen itself is still real and still used above for
+    # the actual MV(i) screening pass (mv.mv_single() calls) - only this one reported
+    # value changed source.
     out_dir = os.path.join(USER_DATA_DIR, "characters", name_realm, "cache")
     os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, f"tiered_report_{profile_dir_name}_{phase}.json")
     with open(out_path, "w", encoding="utf-8") as f:
-        json.dump({"baseline_screened": baseline_screen["combined"], "achieved_bis": achieved_bis,
+        json.dump({"baseline_screened": true_baseline_resolved["combined"], "achieved_bis": achieved_bis,
                    "missing_enchants": missing_enchants,
                    "tiers": tiered_out, "two_hand": two_hand_out, "two_hand_meta": two_hand_meta,
                    "fight_duration_seconds": actual_duration,

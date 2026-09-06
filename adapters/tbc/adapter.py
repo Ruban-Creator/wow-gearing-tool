@@ -83,12 +83,21 @@ def run(individual_sim_settings_path: str, iterations: int, seed: int) -> dict:
 
 
 def player_and_pet_dps(result: dict) -> dict:
-    """Extracts the player's own dps and each pet's dps separately. The sim's
-    raid/party-level 'dps' rollup mirrors the player's dps field exactly and
-    does NOT include pet damage - confirmed empirically (see NOTES.md, "pet
-    vs player damage split"). Callers that want total combined DPS must sum
-    player + pets themselves; this function does not do that summing so the
-    two stay visibly separate per the noise-honesty ground rule."""
+    """Extracts the player's own dps and each pet's dps separately.
+
+    Real correction, 2026-09-06 (this docstring used to claim the opposite,
+    "confirmed empirically" - that claim was wrong): the sim's own
+    `player.dps` field ALREADY includes pet damage, unconditionally, for every
+    class - confirmed directly from Go source (sim/core/character.go:701,
+    `character.Metrics.AddFinalPetMetrics(&pet.Metrics)`, called for every pet
+    with an explicit comment "to include metrics from Pets in those of their
+    owner") and independently cross-checked against wowsims.com's own live
+    results for three real cases (Balance Druid Treants, Hunter Owl, Hunter
+    Ravager) - `player.dps` alone matched wowsims' reported total in every
+    case; adding pets on top overshot it by roughly the pet's own share.
+    `valuation.evaluate()`'s "combined" field is just `player.dps` now - see
+    its own comment. This function still returns pets separately, for
+    informational display only (never add them to player again)."""
     player = result["raidMetrics"]["parties"][0]["players"][0]
     pets = [
         {"name": p.get("name"), "avg": p["dps"]["avg"], "stdev": p["dps"].get("stdev", 0)}

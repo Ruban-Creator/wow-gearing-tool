@@ -292,12 +292,28 @@ def evaluate(settings_path: str, items: list[dict], iterations: int, seed: int,
                 pass
 
     dps = adapter.player_and_pet_dps(result)
-    total_pet = sum(p["avg"] for p in dps["pets"])
+    # Real, confirmed bug fixed 2026-09-06: this used to add total_pet on top of
+    # dps["player"]["avg"], on the assumption (adapter.player_and_pet_dps()'s own
+    # docstring, "confirmed empirically") that the sim's player dps field excludes
+    # pet damage. That assumption is wrong - confirmed directly from the sim's own
+    # Go source (sim/core/character.go:701, `character.Metrics.AddFinalPetMetrics
+    # (&pet.Metrics)`, called unconditionally for every pet, every class, with an
+    # explicit comment: "to include metrics from Pets in those of their owner") and
+    # independently cross-checked against wowsims.com's own live results for three
+    # separate real cases (Balance Druid's Treants, a Hunter's Owl, a Hunter's
+    # Ravager) - in every case, dps["player"]["avg"] ALONE already matched
+    # wowsims.com's own reported total DPS almost exactly, while player+pets
+    # overshot it by roughly the pet's own DPS. So "combined" is just the player
+    # field now - the pets breakdown is kept for informational display only
+    # (e.g. "how much of this came from my pet"), never added again. This affects
+    # every profile with a real pet (Survival/BM Hunter, all 3 Warlock specs,
+    # Balance/Feral Cat Druid) - their past "combined" DPS was inflated by roughly
+    # their pet's own share, this whole time.
     out = {
         "player_dps": dps["player"]["avg"],
         "player_stdev": dps["player"]["stdev"],
         "pets": dps["pets"],
-        "combined": dps["player"]["avg"] + total_pet,
+        "combined": dps["player"]["avg"],
         # Real per-iteration measurement from this exact run, not assumed -
         # see NOTES.md's "ComputeStats wired in" entry. None if the aura
         # never appeared (e.g. Expose Weakness untalented in this settings

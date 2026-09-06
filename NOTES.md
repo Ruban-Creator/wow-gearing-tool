@@ -6438,3 +6438,145 @@ symptom), Béarforceone returns only her genuinely-current `phase2` entry. Confi
 `reports.json` files themselves are byte-identical before/after (mtime/content both checked) - the
 fix never mutates on-disk history, exactly as designed. Import-sanity clean for
 `report_storage`/`gui/api.py`/`cli/gear.py`. Shipped as v0.7.0004.
+
+## 2026-09-06/07 - Two major, real bugs found and fixed: baseline gear honesty + universal pet-DPS
+   double-counting
+
+Started when the user tried to independently replicate Béarforceone's Phase 1 baseline DPS (1571) via
+their own hand-built websim JSON and only got 1330.58. Chasing this gap (Plan Mode:
+`staged-purring-lynx.md`, "Baseline gear honesty + phase-legal gems") surfaced two separate, real,
+structural bugs - not one, and not a data mistake.
+
+**Bug A (the plan's own primary target) - `build_owned_config()`'s idealized substitution was ALSO
+being used as the reported "baseline DPS."** `core/optimizer.py`'s `build_owned_config()` deliberately,
+by design (2026-08-25's own "unenchanted items must never get compared to enchanted ones" decision),
+always fills every slot with the curated-optimal gem/enchant - real and necessary for building a fair
+`MV(i)` candidate-comparison trial, but wrong when that same config was used as the number reported to
+a human as "her current DPS." Confirmed directly: her real weapon has no enchant at all, but
+`build_owned_config()` put `enchant: 2669` (Major Spellpower) into her baseline anyway.
+
+**Bug B - the "always use the optimal gem" policy had zero phase-awareness, repo-wide.** Audited
+directly: **all 15 profiles'** `profile.json` `primary_gem_id` resolves to a real Phase-3 gem (32193/
+32194/32196, all "Crimson Spinel" family) - `core/gear_config.py`'s `get_active_default_gem()` never
+checked phase at all, so every Phase 1/2 report, for every profile, computed with gear that wasn't
+actually legal yet. Same unfiltered pattern drove chase-bonus color-matched gem picks too.
+
+**Real design correction caught mid-plan, before it shipped wrong**: an early draft of the fix
+considered just making `build_owned_config()` itself 100% real, no substitution ever. The user caught
+this was wrong - re-reading the ACTUAL 2026-08-25 decision (not just a later correction) confirmed the
+idealized substitution was deliberate specifically so `MV(i)` never compares her real (possibly
+unenchanted) current item against an always-optimally-enchanted candidate. The real fix needed TWO
+separate configs: `build_owned_config()` kept exactly as-is (idealized, feeds every candidate `MV(i)`
+trial, now with 1a's phase-legal-gem fix baked in), and a NEW `build_true_owned_config()` (100% real,
+no substitution ever, used ONLY for what's reported to a human - the headline baseline stat, the OOM
+check, and Missing Enchants' own honest starting point).
+
+**Implementation, all verified via real sim calls, not just written:**
+- `core/time_horizon.py` gained a public `get_current_phase()` wrapper (was private `_current()`) -
+  `core/gem_optimizer.py` imports it directly, no new phase-threading mechanism needed since
+  `time_horizon.set_current_phase()` was already called before gem-selection code runs.
+- `gem_optimizer._all_gems()` now filters to `phase <= current_phase`, AND excludes `unique`/
+  `requiredProfession`-gated gems - a real, second bug caught WHILE testing the phase fix itself: the
+  naive phase-only filter picked "Don Julio's Heart" (33133, real Phase 1, +14/+14) as Balance Druid's
+  substitute - a unique, Jewelcrafting-only item that can't legally fill multiple sockets at once or be
+  assumed without a confirmed profession. Excluding both correctly surfaces "Runed Living Ruby" (24030,
+  +9/+9, no restrictions) instead. New `gem_optimizer._phase_legal_default_gem()` wraps this: returns
+  the curated default unchanged if already phase-legal (the common case, zero behavior change for
+  Phase 3+), else the best real phase-legal gem of the same color via the already-trusted
+  `_best_gem_of_color()` scoring.
+- `core/optimizer.py` gained `build_true_owned_config()` (new) and `resolve_idealized_owned_entry()` (a
+  shared per-item helper factored OUT of `build_owned_config()`'s own body, so `set_bonus.py` could
+  reuse the identical logic instead of a third, independently-inconsistent version).
+- `core/set_bonus.py`'s `best_four_of_five()` (an owned-tier-piece resolver for the leave-one-out
+  5-piece-set comparison) was found backwards from the intended rule: enchant was curated-only (the
+  exact over-eager bug already fixed elsewhere), gems were literal-real-only (no phase-legal fallback
+  for a genuinely empty socket at all) - the INVERSE asymmetry from `build_owned_config()`. Fixed to
+  call the same `resolve_idealized_owned_entry()` helper. Real, live confirmation this code path
+  actually got exercised (not just imported): Lerynia's and Beastmastery Hunter's Phase 3 sweeps both
+  printed real "Best combo for Beast Lord Armor/Gronnstalker's Armor/Rift Stalker Armor" lines and
+  completed clean (505/0, 132/0) - not just a theoretical no-crash.
+- `core/run_upgrade_sweep.py`: `main()` now builds and threads BOTH configs - `baseline_config`
+  (idealized, unchanged, feeds every real candidate MV) and `true_baseline_config`/
+  `true_baseline_resolved` (new, feeds the reported `baseline_screened` JSON key - name kept for
+  compatibility despite no longer being the 500-iteration screen value, now RESOLVE_ITERATIONS
+  precision - and the OOM stat). Missing Enchants inverted: used to revert baseline_config's tested
+  slot back to real and subtract from the already-inflated number; now builds a trial from the TRUE
+  config with just the tested slot forced to curated, diffing directly against the honest baseline -
+  same real per-slot isolation methodology, simpler arithmetic, same kind of real DPS-gain number
+  reported (+29.9 DPS for Béarforceone's weapon, same magnitude as before the fix, ~+30.2).
+
+**Real, live verification for the actual motivating case**: Béarforceone's Phase 1 baseline dropped
+from the old 1571 (idealized, wrong) to a true, honest 1496.69 at first - then to 1417.89 once Bug C
+below was also fixed (see next entry) - matching what direct engine-vs-engine testing confirmed was
+correct.
+
+## 2026-09-06/07 (cont'd) - Bug C, found DURING Bug A/B's own verification: universal pet-DPS
+   double-counting, confirmed via three independent real cases
+
+While independently verifying Béarforceone's new "true baseline" number against her own websim export
+(running the user's exact JSON directly through `wowsimcli.exe`, unmodified - same decisive methodology
+that closed backlog #21), a real, ~80 DPS residual gap remained even after every buff/debuff/gear field
+was confirmed byte-identical between our settings and the export. Traced to `adapter.player_and_pet_dps()`'s
+own docstring, which claimed (as "confirmed empirically" from an earlier session) that the sim's player
+`dps` field excludes pet damage. **That claim was wrong.** Confirmed directly from the sim's own Go
+source: `sim/core/character.go:701`, `character.Metrics.AddFinalPetMetrics(&pet.Metrics)`, called
+UNCONDITIONALLY for every pet, every class, with an explicit comment: "to include metrics from Pets in
+those of their owner." `adapters/tbc/valuation.py`'s `evaluate()` was then ADDING `total_pet` on top of
+this already-pet-inclusive player number - a genuine, confirmed double-count.
+
+**Three independent real cases, all agreeing, before touching any code:**
+1. Béarforceone's own websim export (Balance Druid, 3 Treants): our `player.dps.avg` alone (1345.48)
+   matched wowsims.com's own reported total (1337.26) within noise; `player + pets` (1417.94) massively
+   overshot it.
+2. Lerynia's real profile (Survival Hunter, Owl pet): reported `player.dps.avg` (2361.10) minus the sum
+   of her own tracked per-spell actions (~1915.96) landed on ~445 - matching her Owl's own reported DPS
+   (443.43) almost exactly, meaning the pet's damage was already folded into the "player" total via a
+   path the per-action list doesn't capture separately.
+3. A fresh Hunter websim export (Ravager pet, melee weave): our `player.dps.avg` alone (2934.84) matched
+   wowsims' reported total (2936.50) almost exactly; our pet alone (482.19) matched wowsims' own listed
+   "Ravager" row (481.76) almost exactly; `player + pets` (3417.04) overshot by roughly the pet's own
+   share, again.
+
+**Real fix**: `valuation.evaluate()`'s `"combined"` field is now just `dps["player"]["avg"]` - the
+`pets` breakdown is still returned for informational display, never added again.
+`adapter.player_and_pet_dps()`'s own docstring corrected (it had the claim backwards).
+
+**Real cache-correctness problem this immediately created, fixed properly, not by brute-forcing a full
+wipe**: `sim_cache` stores the FULL "out" dict per key, including the now-stale "combined" value baked
+in from before this fix - a cache hit would keep serving the old, wrong number forever even after the
+code fix landed. Wiping the entire 15.6MB/49,158-entry cache would have needlessly discarded valid,
+expensive results for the 9 real NON-pet profiles too. Instead: a targeted, in-place migration - loaded
+the full cache dict, and for every entry with a real, non-empty `pets` list, recomputed
+`combined = player_dps` directly (both fields already independently stored per-entry), then rewrote the
+journal via `sim_cache._atomic_write_journal()`. **31,265 of 47,559 entries had real pet data; 29,417
+were actually corrected** (the remainder already happened to match, e.g. zero-pet-damage edge cases) -
+real, near-2/3-of-the-whole-cache scope, confirming pet-class candidate sweeps make up the bulk of this
+project's own real usage/testing.
+
+**Real, thorough regression, not a spot check** (per the user's own explicit "no time constraints,
+proper working fixes" instruction): re-swept and `check_ledger_consistency.py --skip-html`'d every real
+pet-having profile (all 6: Survival Hunter 505/0, Beastmastery Hunter 132/0, Balance Druid 440/0 [P1] +
+1126/0 [P3], Affliction Warlock 157/0, Demonology Warlock 204/0, Destruction Warlock 160/0) plus two
+real non-pet profiles to confirm Bug A/B's own fix independently (Shadow Priest 121/0, Rubán/Arms
+Warrior 1747/0 with only the same already-understood "achieved_bis empty" non-bug warning already
+documented for non-Hunter characters). Every one clean.
+
+**This affected every past report for every one of the 6 real pet-having profiles, for as long as this
+tool has existed** - "combined" DPS was inflated by roughly that profile's own pet's share (looks like
+roughly 15-20% in the cases actually measured) the whole time, not something introduced by today's own
+Bug A/B work.
+
+**Real, saved memories from this session's own detours**: `reference_wowsims_import_format.md`
+(wowsims.com's own "Import" text box wants an `IndividualSimSettings`-shaped JSON - flat
+`raidBuffs`/`debuffs`/`partyBuffs`/`player`/`encounter` keys, no `raid.parties` wrapper - a captured
+browser-network-tab `RaidSimRequest` payload, which DOES have that wrapper, fails to import silently);
+`feedback_notify_on_phone.md` (user wants a `PushNotification` when a real decision/blocker comes up or
+a long task finishes while they may be away, not for routine progress).
+
+**Not yet done, real remaining scope from the plan**: Stage 2 (enchant-coverage completion across all
+15 profiles' sparse `default_enchants.json` files, using existing `build_default_enchants.py`/
+`verify_default_enchants.py` tooling), Stage 3 (a new "Missing Gems" feature, explicitly lower priority
+per the user), Stage 4 (`CLAUDE.md`'s own MV-formula/equip-constraints text and the stale "Dropped from
+§8" line still need the real correction the plan calls for). The plan's own "open question" (should
+`chase_bonus_gems.json`'s existing sim-verified entries be re-checked now that gem selection is
+phase-aware?) is also still open, not decided either way.

@@ -253,7 +253,8 @@ def best_non_set_alt(slot: str, set_name: str,
 
 
 def best_four_of_five(settings_path: str, set_name: str, candidates: dict[str, list["opt.Candidate"]],
-                       baseline_config: list[dict], owned_items: list[dict], iterations: int) -> dict | None:
+                       baseline_config: list[dict], owned_items: list[dict], iterations: int,
+                       known_professions: set[str]) -> dict | None:
     """Which 4 of a 5-piece armor set's slots should actually hold the set
     piece, and which slot is better left to its real BiS alternative
     instead - determined by comparing all five real 4-piece combinations
@@ -287,6 +288,8 @@ def best_four_of_five(settings_path: str, set_name: str, candidates: dict[str, l
     Returns None if fewer than 5 of the 5 canonical armor slots have a real
     tier piece available (owned or in the pool) - the leave-one-out
     comparison isn't meaningful for an incomplete set."""
+    meta_gem_id = opt.find_owned_meta_gem(owned_items)
+    default_enchants = gc.get_active_default_enchants()
     tier_item_by_slot: dict[str, "opt.Candidate"] = {}
     for slot in ARMOR_SET_SLOTS:
         idx = gc.SLOT_ORDER.index(slot)
@@ -294,14 +297,21 @@ def best_four_of_five(settings_path: str, set_name: str, candidates: dict[str, l
         if owned_entry:
             owned_db_item = idb.by_id(owned_entry["id"])
             if owned_db_item and owned_db_item.get("setName") == set_name:
-                # Real BiS enchant for the slot, not her literal current one
-                # (Missing Enchants fix, 2026-08-25) - same unconditional
-                # treatment as optimizer.py's build_owned_config()/
-                # load_candidates().
-                enchant = gc.get_active_default_enchants().get(slot, 0)
+                # Real fix, 2026-09-06: this used to be curated-enchant-only
+                # (no real-enchant-wins carve-out - the exact over-eager bug
+                # already fixed elsewhere) and literal-real-gems-only (no
+                # gem-optimizer fallback at all) - the inverse asymmetry from
+                # optimizer.py's own build_owned_config(). Now shares that
+                # SAME function's real per-item resolution logic
+                # (resolve_idealized_owned_entry) instead of a third,
+                # independently-inconsistent version - real enchant wins if
+                # present else the curated (now phase-legal) default; gems
+                # always the phase-legal optimal choice.
+                idealized = opt.resolve_idealized_owned_entry(
+                    owned_entry, meta_gem_id, default_enchants, slot, known_professions)
                 tier_item_by_slot[slot] = opt.Candidate(
                     owned_db_item["name"], owned_entry["id"],
-                    enchant, owned_entry.get("gems"))
+                    idealized.get("enchant", 0), idealized.get("gems"))
     for slot, cand in set_pieces_in_pool(set_name, candidates):
         if slot in ARMOR_SET_SLOTS:
             tier_item_by_slot[slot] = cand  # pool entry (real gems/enchant already resolved) wins if both exist
