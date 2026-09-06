@@ -166,6 +166,25 @@ def achievable_enchant(enchant_id: int, known_professions: set[str]) -> int:
     return enchant_id
 
 
+def real_gear_is_two_hand_mainhand(owned_items: list[dict]) -> bool:
+    """True if her REAL, currently-equipped mainhand item is a 2H weapon -
+    backlog #20 (2026-09-06). Meaningful only for a dual_wield-topology
+    profile (Survival/Beastmastery Hunter), the only two where she can
+    legitimately be equipped in the OTHER topology than the profile assumes
+    at any given moment (a real 2H weapon, real empty offhand) - every
+    other topology's real current gear always matches what the profile
+    itself expects by construction. Used by BOTH real candidate-building
+    paths (load_candidates()'s own curated pool below, and
+    run_upgrade_sweep.py's separate full-DB sweep-additions path) so a 1H
+    weapon candidate is gated the same way regardless of which path found
+    it - see load_candidates()'s own real_mainhand_is_two_hand usage for
+    the full real bug this fixes."""
+    mh_idx = gc.SLOT_ORDER.index("mainhand")
+    mh_entry = owned_items[mh_idx] if mh_idx < len(owned_items) else None
+    mh_item = idb.by_id(mh_entry["id"]) if mh_entry and mh_entry.get("id") else None
+    return bool(mh_item and mh_item.get("handType") == HAND_TWOHAND)
+
+
 def load_candidates(pool_path: str, owned_items: list[dict],
                      known_professions: set[str] | None = None,
                      pool_key_to_slots: dict[str, list[str]] | None = None,
@@ -189,6 +208,8 @@ def load_candidates(pool_path: str, owned_items: list[dict],
     pool = repo_root.load_json(pool_path)
     owned_by_name = {it["name"]: it for it in owned_items if it}
     meta_gem_id = find_owned_meta_gem(owned_items)
+
+    real_mainhand_is_two_hand = real_gear_is_two_hand_mainhand(owned_items)
 
     result = {slot: [] for slot in gc.SLOT_ORDER}
     for pool_key, entries in pool.items():
@@ -242,6 +263,11 @@ def load_candidates(pool_path: str, owned_items: list[dict],
             req_prof = idb.required_profession_name(item) if item else None
             if req_prof and req_prof not in known_professions:
                 cands.append(Candidate(name, item_id, excluded_reason=f"requires {req_prof}"))
+                continue
+            if pool_key == "weapon_dual_wield" and real_mainhand_is_two_hand:
+                cands.append(Candidate(name, item_id, excluded_reason=(
+                    "requires a real dual-wield re-gear (both weapons) - you're currently "
+                    "2H-equipped; see the 2H Weapon Options section instead")))
                 continue
             if owned:
                 # Unconditionally the real default now, same as the

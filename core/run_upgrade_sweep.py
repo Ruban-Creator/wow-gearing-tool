@@ -754,12 +754,23 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     # profile, which is what correctly skips the whole Hunter-only 2H
     # side-analysis section below.
     weapon_2h_candidates: list[opt.Candidate] = []
+    # Backlog #20 (2026-09-06) - this full-DB sweep-additions path builds
+    # its own opt.Candidate objects directly, bypassing optimizer.py's
+    # load_candidates() entirely - so THAT function's own real_mainhand_
+    # is_two_hand gate (see its own docstring for the full real bug this
+    # fixes) never applied here, the actual root cause of why the fix
+    # first landed in load_candidates() alone had zero effect: nearly
+    # every "Weapon" tier row in a real report comes from THIS path (every
+    # DB item not already in the curated pool), not the curated one.
+    real_mainhand_is_two_hand = opt.real_gear_is_two_hand_mainhand(owned_items)
 
     for item in sweep_items:
         if item["id"] in curated_ids:
             continue
         slot = slot_for_item(item, profile["weapon_topology"])
         if slot is None:
+            continue
+        if slot == "weapon_dual_wield" and real_mainhand_is_two_hand:
             continue
         req_prof = idb.required_profession_name(item)
         if req_prof and req_prof not in known_professions:

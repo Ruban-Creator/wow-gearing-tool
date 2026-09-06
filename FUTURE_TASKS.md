@@ -294,7 +294,7 @@ report 255 references / 163 unique items regardless (it measures the raw DB gap,
 coverage of it - it has no knowledge of the overlay or the structural rules) - that's expected,
 not a regression to chase.
 
-## #20 — Shared-pool Weapon slot produces nonsensical MVs when real current gear is 2H but the profile's own topology is dual_wield
+## #20 — CLOSED, 2026-09-06 - Shared-pool Weapon slot produced nonsensical MVs when real current gear is 2H but the profile's own topology is dual_wield
 
 Found 2026-09-06, live, real user report: Lerynia (Survival Hunter, `weapon_topology: "dual_wield"`)
 had genuinely re-geared in-game to a real 2H weapon (Halberd of Desolation, mainhand) with a real,
@@ -303,38 +303,43 @@ sync`, unrelated one-off data-staleness issue, see NOTES.md). Once the sweep ran
 current 2H-equipped state, the Weapon tier list showed EVERY 1H weapon candidate in the entire pool
 - Vanilla carryover daggers included - as a `best_slot: offhand` real upgrade worth 16.5 to 80 DPS.
 
-**Root cause, confirmed**: backlog #16's shared-pool-slot logic (`marginal_value.py`'s `mv_single()`)
-independently tries a candidate in each real slot a pool key can occupy - for a 1H weapon, that's
-`mainhand`/`offhand`, unconditionally, regardless of what's ACTUALLY in the other slot right now.
-With her real mainhand holding a 2H weapon and her real offhand genuinely empty, testing "candidate
-1H weapon in offhand" against her real baseline compares "2H mainhand + empty offhand" (baseline)
+**Root cause, confirmed**: candidates route into the shared "mainhand"/"offhand" pool unconditionally
+for a dual_wield-topology profile, regardless of what's ACTUALLY in the other slot right now. With
+her real mainhand holding a 2H weapon and her real offhand genuinely empty, testing "candidate 1H
+weapon in offhand" against her real baseline compares "2H mainhand + empty offhand" (baseline)
 against "2H mainhand + a 1H weapon in offhand" (trial) - a gear state that isn't legal in the actual
-game (you cannot wield a 2H weapon and a 1H offhand weapon simultaneously). Every 1H candidate looks
-like a huge upgrade purely because the baseline's offhand is empty, not because any of them are
-actually good picks for her real situation.
+game. Every 1H candidate looked like a huge upgrade purely because the baseline's offhand was empty.
 
-The separate "2H Weapon Options" side-section has the mirror-image problem: for a `weapon_topology:
-dual_wield` profile it always compares 2H candidates against a HYPOTHETICAL best-dual-wield baseline
-(`two_hand_meta`'s `no_weave_dw`/`weave_dw`, real numbers built from her CANDIDATE pool's own best
-1H picks, not her real current gear) - the right comparison when she's actually dual-wielding, but
-backwards once she's already real-2H-equipped: the section came back completely empty for her this
-run (2H candidates route to their own side pool regardless of what she currently has equipped), when
-the actually useful question at that point is "does any other real 2H candidate beat MY CURRENT real
-2H weapon" - a comparison this architecture doesn't currently make at all.
+**Correction to this entry's own earlier draft (same day)**: the first version of this writeup also
+claimed the separate "2H Weapon Options" side-section had a mirror-image bug (comparing 2H candidates
+against a hypothetical best-dual-wield baseline instead of her real current 2H weapon). That claim
+was WRONG - caught before shipping a fix for it, by actually re-reading the code instead of trusting
+the previous night's own analysis (see the new `feedback_verify_against_source_not_summary.md`
+memory this exact kind of mistake prompted). `two_hand_meta`'s `no_weave_dw`/`weave_dw` are computed
+by evaluating settings against `baseline_config` directly - which already reflects her REAL current
+gear (2H, when that's real), never a hypothetical. The section's real, empty `two_hand` list for
+Lerynia wasn't a bug at all - it correctly found no 2H candidate in her pool beats her actual current
+Halberd of Desolation. Melee-weave itself doesn't require an offhand either (Raptor Strike swings
+whatever's in mainhand) - `weave_dw`'s real, nonzero delta over `no_weave_dw` while genuinely
+2H-equipped is a legitimate number, not evidence of a hidden dual-wield assumption.
 
-**Not fixed today** - this is a real architecture gap (the whole `weapon_topology` model assumes her
-real current gear matches the profile's assumed topology; Survival/Beastmastery Hunter are the only
-two profiles where a player can legitimately be equipped in the OTHER topology at any given time,
-since they're the only two allowed to melee-weave with 1H weapons some fights and just shoot from
-range other fights), not a one-line patch. Real next step, not yet scoped in detail: detect which
-topology her REAL current gear actually represents (2H mainhand+empty offhand vs two 1H items) at
-sweep time and route the Weapon-slot comparison accordingly - either skip/relabel the nonsensical
-"1H into empty offhand" trials when she's really 2H-equipped, or (better) make the 2H-candidates
-side-section compare against her REAL current 2H weapon when she has one equipped, falling back to
-the hypothetical best-dual-wield baseline only when she's actually dual-wielding for real. Until
-this is fixed, treat the Weapon slot section of any weave-capable profile's report with real
-suspicion whenever the character might currently be 2H-equipped - re-sync + eyeball the achieved-BiS
-Weapon entry against what she's actually wearing before trusting the tier list underneath it.
+**Real fix, implemented**: two SEPARATE candidate-building paths both needed the same gate, which is
+exactly why the first attempted fix (only in `optimizer.py`'s `load_candidates()`) had ZERO visible
+effect on a live resweep - nearly every real "Weapon" tier row comes from `run_upgrade_sweep.py`'s
+own full-DB sweep-additions loop (every DB item not already in the curated candidate pool), which
+builds its own `Candidate` objects directly, bypassing `load_candidates()` entirely. New shared
+helper `optimizer.real_gear_is_two_hand_mainhand(owned_items)` (true iff her real, currently-equipped
+mainhand item has `handType == HAND_TWOHAND`), called from both places - a 1H candidate destined for
+the shared dual-wield pool is now excluded (`excluded_reason` in `load_candidates()`, a plain `continue`
+in the sweep-additions loop) whenever this is true. Verified live: Lerynia's Weapon tier list now
+shows 0 candidates (down from 92 nonsensical ones), achieved_bis correctly shows her real Halberd of
+Desolation, `two_hand`/`two_hand_meta` unchanged (already correct, per the correction above).
+`check_ledger_consistency.py` clean (130/0, down from 1171/0 - the flood of nonsense candidates was
+itself inflating that count). Regression-checked against Test-Beastmastery-Synthetic (genuinely
+dual-wielding, `real_gear_is_two_hand_mainhand()` correctly returns False, unaffected) and confirmed
+by construction that every other `weapon_topology` never reaches this check at all (no profile
+besides Survival/Beastmastery Hunter ever has a "weapon_dual_wield"/"weapon_dual_wield" pool key or
+slot in the first place).
 
 ## #21 — Real, unexplained magnitude gap between this tool's own sim and wowsims.com for at least one real item (Mindstorm Wristbands, Balance Druid)
 
