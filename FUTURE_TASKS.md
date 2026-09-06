@@ -7,7 +7,7 @@ storage) is being built. Same rule as everywhere else in this repo: real content
 each entry below is the full context needed to pick it back up cold, not just a one-line
 reminder. Numbering matches CLAUDE.md's own backlog numbering (§ Staging / Future scope).
 
-## #17 — Feral Cat Druid's settings_template.json is stale, needs proper regeneration + verification
+## #17 — CLOSED, 2026-09-06 - Feral Cat Druid's settings_template.json was stale, regenerated + verified
 
 Found 2026-09-06 while auditing all 15 profiles for the enchant-fallback fix (see NOTES.md's dated
 entry for the full story): regenerating her `settings_template.json` via `build_profile_settings.py`
@@ -15,39 +15,42 @@ produced a 923-line diff, dwarfing every other profile's 5-15-line enchant-only 
 confirmed before touching anything: her own `consumables.json` (real fields -
 `battleElixirId`/`guardianElixirId`/sapper/scroll flags, matching the real historical fix already
 documented for her - "Feral's own real presets.ts DefaultConsumables... flaskId->battleElixirId
-+guardianElixirId swap") and likely her real vendored APL source have both changed since her
-`settings_template.json` was last generated - it was simply never regenerated to match. Reverted
-the regeneration (`git checkout --`) rather than bundling an unverified, unrelated rotation/
-consumables change into an unrelated commit.
++guardianElixirId swap") and her real vendored APL source had both changed since her
+`settings_template.json` was last generated - it was simply never regenerated to match.
 
-Real next step: regenerate her `settings_template.json` for real, then verify properly the same way
-any real sim-update or profile change gets verified in this project - a real sim call confirming
-the (possibly-changed) rotation fires correctly, `check_ledger_consistency.py` clean, and a real
-diff review of what actually changed (rotation logic, consumables, or both) before trusting it.
-Not scoped further than that - the real cause is understood, the real fix just hasn't been done.
+**Real fix, same day (commit `9b4aa63`)**: regenerated for real and verified - a real sim call
+(2663.2 DPS, non-crashing), a fresh sweep, `check_ledger_consistency.py` clean (108/0).
 
-## #18 — Balance Druid's (and possibly other profiles') gem-choice verification gap
+**Follow-up drift found and fixed 2026-09-06 (later the same day, this session)**: the sim got
+bumped v0.0.124→v0.0.130 (commit `91fd86e`) AFTER this regeneration, and nobody re-regenerated
+Feral Cat Druid's settings to match - her vendored APL had picked up a real, new safety gate
+(mana-cost checks against `spellId 768` = Cat Form, `sim/druid/forms.go`, guarding Engineering
+trinket/potion usage so she doesn't get stuck unable to shift back into Cat Form) that her
+settings file never got. Regenerated again, verified via a real sim call (2657.7 DPS) and a fresh
+`check_ledger_consistency.py` pass. This is the same class of staleness as the original finding,
+just recurring - worth remembering that ANY future sim bump can silently re-introduce this same gap
+for any weave/APL-source-driven profile, not just a one-time fix.
+
+## #18 — CLOSED, 2026-09-06 - Balance Druid's gem-choice verification gap, filled
 
 Found 2026-09-06 while investigating a live Teeth of Gruul discrepancy (see NOTES.md's dated
 entries). `core/gem_optimizer.py`'s `best_gems_for_item()` blanket-replaces every real socket with
 the profile's primary stat gem UNLESS the item is in that profile's own `chase_bonus_gems.json` -
 a real, deliberate, sim-verified policy for Survival Hunter specifically (37 real candidates
 individually tested, 9 confirmed real exceptions where chasing the socket bonus wins). **Balance
-Druid's own `chase_bonus_gems.json` is genuinely empty (`item_ids: []`)** - meaning none of her real
-candidates have ever been individually verified this way; the "pure Spell Damage everywhere" choice
-for her is an untested default, not a confirmed-correct one. Concretely surfaced: her real Pauldrons
-of Malorne (real sockets, real color-matched gems she actually has) get replaced with two identical
-Spell Damage gems in the tool's own baseline, sacrificing whatever real socket bonus her actual
-gems were chasing - unverified whether that trade is actually correct for her.
+Druid's own `chase_bonus_gems.json` was genuinely empty (`item_ids: []`)** - meaning none of her real
+candidates had ever been individually verified this way; the "pure Spell Damage everywhere" choice
+for her was an untested default, not a confirmed-correct one.
 
-Real next step: run the same `core/verify_gem_choices.py` methodology already used for Survival
-Hunter against Balance Druid's own real candidate pool, class-by-class if worth generalizing further
-(this same empty-file gap plausibly exists for other profiles too - not checked here, this entry is
-scoped to what was actually found: Balance Druid). Not urgent (the pure-primary-stat default is
-often still correct, per the Survival Hunter precedent - 28 of 37 candidates confirmed no exception)
-but a real, open question, not a settled one.
+**Real fix, same day (commit `9b4aa63`)**: ran the same `core/verify_gem_choices.py` methodology
+already used for Survival Hunter against Balance Druid's own real candidate pool - 23 real socketed
+candidates tested, 8 confirmed real chase-bonus wins (Boots of Foretelling +9.6 DPS being the
+largest), 1 tied, 14 clear pure-Spell-Damage wins. `chase_bonus_gems.json` populated with the 8
+real, sim-verified exceptions. Whether this same empty-file gap exists for other profiles besides
+Balance Druid was NOT checked - if a similar discrepancy surfaces for another profile, same
+treatment applies.
 
-## #19 — Surface the assumed raid buffs/party comp directly in the rendered report
+## #19 — CLOSED, 2026-09-06 - Assumed raid buffs/party comp now surfaced directly in the rendered report
 
 Per the user's own suggestion, 2026-09-06 (same investigation as #17/#18 - see NOTES.md): every
 report currently computes DPS against a real, but SILENT, raid-composition assumption (which totems
@@ -74,9 +77,19 @@ explicit policy decision, this tool should NOT chase each character's exact vari
 it should assume the documented "optimal" comp and make that assumption transparent via this
 feature, so a reader can judge for themselves whether it matches their real week.
 
-Not built yet - a real, concrete, scoped feature (not an idea), higher priority than #18 since it
-directly addresses how this whole class of "silent wrong assumption" bug gets caught by a reader in
-the future, not just this one instance.
+**Real fix, same day (commit `9b4aa63`)**: built exactly as scoped - a new "Assumed Raid Buffs"
+report section, sourced directly from the real settings file each sweep actually ran against
+(`run_upgrade_sweep.py` reads it, `build_ledger_data.py` threads it through,
+`report_template.html` renders it - never hand-typed). `check_ledger_consistency.py` gained a real
+structural assertion for the field's pass-through and presence. (This session, 2026-09-06, later
+the same day, the section was further redesigned from an inline `<details>` block into a header
+stat-strip button + modal with real Wowhead tooltips on every buff/debuff chip - see NOTES.md's
+dated entry.)
+
+The fuller per-class raid-comp audit noted above (Mage/melee/Hunter group compositions) was not
+done as part of this closure - only the Shadow Priest `shadowPriestDps` correction across all 15
+profiles was. Re-open as a fresh, separately-scoped item if a future mismatch surfaces via this
+new transparency feature.
 
 ## SmartScreen warning — revisit with a code-signing cert
 
@@ -143,7 +156,7 @@ Scheduler wiring, guardrails), but no physical machine has been set up against i
 script itself hasn't been tested against this real repo end to end - real next step whenever
 picked up, not a re-design.
 
-## #15 — Investigate the widespread `sources: None` DB gap (real raid tier sets across every class)
+## #15 — CLOSED, 2026-09-06 - Investigated the widespread `sources: None` DB gap (real raid tier sets across every class)
 
 Found 2026-08-31 while diagnosing a live bad report (see NOTES.md's dated entry for the full
 story) - confirmed via a direct DB query that 200+ real item sets across every class have
