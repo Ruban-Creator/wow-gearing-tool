@@ -341,6 +341,40 @@ by construction that every other `weapon_topology` never reaches this check at a
 besides Survival/Beastmastery Hunter ever has a "weapon_dual_wield"/"weapon_dual_wield" pool key or
 slot in the first place).
 
+**Rejected by the user as incomplete, same day: "No partial fixes today WE have to compare dw to
+2hand No Matter what the starting point is."** Silently excluding the nonsensical 1H candidates (the
+fix above) stops the false "upgrade" numbers but never actually answers "would dual-wield beat my
+current 2H weapon" when she's really 2H-equipped - exactly the mirror-image of the question the
+existing "2H Weapon Options" section already answers when she's really dual-wielding. Real, complete
+fix, same day: a new "Dual-Wield Alternative" analysis, gated on
+`profile["weapon_topology"] == "dual_wield" and real_gear_is_two_hand_mainhand()` (the topology check
+itself was a real bug caught before shipping - the original version ran for EVERY profile, which
+would have incorrectly fired for Balance Druid's own real, legitimate "2H staff some phases"
+alternative, whose "offhand" is an unrelated single-item pool, not a dual-wield weapon slot; not
+actually triggered today since her current mainhand happens to be 1H, but a real latent bug
+regardless).
+
+Every 1H weapon candidate that would have hit the old nonsensical path (curated pool AND full-DB
+sweep additions - `dw_pair_candidates`) now feeds a real, bounded, sim-based greedy search instead of
+a full pairwise combinatorial one (weapon-pair interactions beyond additive stats are rare, matching
+this project's own established "screen cheap, verify the winner for real" discipline): screen every
+real mainhand-eligible candidate alone (offhand empty) to find the best one, then screen every real
+offhand-eligible candidate against THAT fixed mainhand to find the best pairing, then resolve the
+winning pair AND her real current 2H baseline at full precision - for a weave-capable profile, both
+weave-on and weave-off variants, since melee weave never actually required dual-wielding to begin
+with (Raptor Strike swings whatever's in mainhand, confirmed while building this).
+
+**Real, live result for Lerynia**: best achievable pair (Blade of the Unrequited + Claw of the
+Phoenix) is a genuine, if small, **+4.6 DPS upgrade over her current 2H with no melee weaving** - but
+a massive **-453.6 DPS** if she's actually weaving (her 2H's much higher per-swing weapon damage
+dominates once Raptor Strikes are actually landing) - a real, decisive, mechanically-sound answer,
+not a tie either way. New `dual_wield_alt` field (tiered_report/ledger_data), rendered as its own
+"Dual-Wield Alternative" report section (independent of the existing "2H Weapon Options" section,
+which can be simultaneously empty - that only means no OTHER 2H beats her current one, a separate
+real question). `check_ledger_consistency.py` gained real structural assertions for this field.
+Verified clean end to end (Lerynia 132/0 including a full HTML-splice check, Test-Beastmastery-
+Synthetic 150/0 with `dual_wield_alt: null` as expected for a genuinely dual-wielding character).
+
 ## #21 — Real, unexplained magnitude gap between this tool's own sim and wowsims.com for at least one real item (Mindstorm Wristbands, Balance Druid)
 
 Found 2026-09-06 during the wrist-enchant investigation (see NOTES.md's dated entry for the full

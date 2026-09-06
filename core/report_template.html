@@ -441,6 +441,15 @@
     <div id="two-hand-body"></div>
   </section>
 
+  <section class="two-hand" id="dw-alt-section" hidden>
+    <div class="tier-head">
+      <h2>Dual-Wield Alternative</h2>
+      <span class="count" id="dw-alt-count"></span>
+    </div>
+    <div class="bis-sub" id="dw-alt-sub"></div>
+    <div id="dw-alt-body"></div>
+  </section>
+
 
   <footer>
     <span id="footer-methodology"></span>
@@ -925,6 +934,52 @@ if (twoHand.length > 0) {
   } else {
     renderTwoHandGroup(null, twoHand);
   }
+}
+
+// Backlog #20 (2026-09-06) - only present when she's really 2H-equipped
+// right now (see run_upgrade_sweep.py's own Dual-Wield Alternative
+// section). Shows the real, sim-found BEST achievable dual-wield pair
+// against her real current 2H weapon - answers "would dual-wield beat
+// this" regardless of the two_hand section above (which can be, and often
+// is, empty at the same time - that just means no OTHER 2H beats her
+// current one, a separate real question).
+const dwAlt = DATA.dual_wield_alt;
+if (dwAlt) {
+  document.getElementById('dw-alt-section').hidden = false;
+  document.getElementById('dw-alt-count').textContent = dwAlt.tied_within_noise ? 'tied within noise' :
+    (dwAlt.mv > 0 ? 'real upgrade' : 'not worth it');
+  document.getElementById('dw-alt-sub').textContent =
+    'Best achievable dual-wield pair from your candidate pool, found via a real sim search - ' +
+    'compared against your current 2H weapon, both at full precision.';
+
+  const body = document.getElementById('dw-alt-body');
+  const block = document.createElement('div');
+  block.className = 'slot-block';
+
+  function dwRow(label, mainMv, current, dw, tied) {
+    const d = fmtDelta(mainMv);
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.innerHTML = `
+      <div class="name-col">
+        <div class="item-name">${escapeHtml(label)}: ${whLink(dwAlt.mainhand.name, dwAlt.mainhand.item_id)} + ${whLink(dwAlt.offhand.name, dwAlt.offhand.item_id)}</div>
+        <div class="item-source">${dw.toFixed(1)} DPS dual-wield vs ${current.toFixed(1)} DPS current 2H${tied ? ' (tied within noise)' : ''}</div>
+      </div>
+      <div class="delta dps">
+        <div class="k">Player (DPS)</div>
+        <div class="v ${d.cls}">${d.text}</div>
+      </div>
+    `;
+    return row;
+  }
+
+  if (dwAlt.weave_supported && dwAlt.dw_dps_weave != null) {
+    block.appendChild(dwRow('Weaving ON', dwAlt.mv_weave, dwAlt.current_2h_dps_weave, dwAlt.dw_dps_weave, dwAlt.tied_within_noise_weave));
+    block.appendChild(dwRow('Weaving OFF', dwAlt.mv, dwAlt.current_2h_dps, dwAlt.dw_dps, dwAlt.tied_within_noise));
+  } else {
+    block.appendChild(dwRow('Dual-wield', dwAlt.mv, dwAlt.current_2h_dps, dwAlt.dw_dps, dwAlt.tied_within_noise));
+  }
+  body.appendChild(block);
 }
 
 </script>

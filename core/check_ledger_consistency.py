@@ -227,6 +227,14 @@ def check_transform(report: dict, ledger_data: dict, rep: Report) -> None:
                and set(report["assumed_buffs"]) == {"raidBuffs", "debuffs", "partyBuffs", "playerBuffs"},
                "tiered_report.json: assumed_buffs missing or missing a real category "
                "(backlog #19 - see run_upgrade_sweep.py's own comment on where this is built)")
+    rep.check(ledger_data.get("dual_wield_alt") == report.get("dual_wield_alt"),
+               "ledger_data.json: dual_wield_alt does not pass through tiered_report.json unchanged")
+    dw_alt = report.get("dual_wield_alt")
+    if dw_alt is not None:
+        rep.check(isinstance(dw_alt.get("mainhand"), dict) and isinstance(dw_alt.get("offhand"), dict)
+                   and dw_alt.get("mainhand", {}).get("item_id") and dw_alt.get("offhand", {}).get("item_id"),
+                   "tiered_report.json: dual_wield_alt present but missing a real mainhand/offhand pick "
+                   "(backlog #20 - see run_upgrade_sweep.py's own Dual-Wield Alternative section)")
 
     # 2026-09-04 - ledger_diff.compute()'s real output shape. None is a
     # legitimate value (first-ever sweep for this character/profile/phase,

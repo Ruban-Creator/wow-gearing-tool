@@ -722,6 +722,47 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
             kept.append(c)
         candidates[slot] = kept
     curated_ids = {c.item_id for cands in candidates.values() for c in cands if c.item_id}
+
+    # Backlog #20 (2026-09-06) - real, complete fix per the user's explicit
+    # requirement ("No partial fixes... WE have to compare dw to 2hand No
+    # Matter what the starting point is"): a dual_wield-topology profile's
+    # shared mainhand/offhand pool assumes she's actually dual-wielding two
+    # 1H weapons right now. When she's genuinely 2H-equipped instead (a
+    # real, live case - Survival/Beastmastery Hunter can legitimately be in
+    # either state), testing a 1H candidate into either slot alone compares
+    # against an illegal resulting gear state (2H mainhand + a lone 1H
+    # item) - not just "worse", genuinely never a real option. The
+    # unconditional per-slot testing that produced this bug is pulled out
+    # of the normal pipeline entirely below; `dw_pair_candidates` collects
+    # every real 1H weapon candidate (curated here + full-DB sweep
+    # additions, see the sweep_items loop further below - curated_ids
+    # above is computed BEFORE this clears mainhand/offhand, so the sweep
+    # loop below correctly treats these ids as "already known" and routes
+    # them into dw_pair_candidates too, never double-adding them) for a
+    # real, honest joint best-pair search instead (see "Dual-wield
+    # alternative analysis" further down) - this answers the real question
+    # ("does dual-wield beat my current 2H") regardless of which one she
+    # happens to have equipped right now, rather than silently hiding it.
+    # Real, caught-before-shipping bug: this must be gated to dual_wield
+    # topology specifically - a one_hand_plus_offhand_item profile (Balance
+    # Druid) can ALSO legitimately have a 2H weapon equipped (her own real
+    # "weapon_2h" side-pool already exists for exactly that), but her
+    # "offhand" slot there is a real, independent single-item pool (a
+    # caster off-hand frill, never itself a dual-wield weapon) - routing
+    # her through this dual_wield-specific logic would incorrectly clear
+    # that unrelated pool. Only Survival/Beastmastery Hunter ever have a
+    # real "weapon_dual_wield" shared pool to begin with.
+    real_mainhand_is_two_hand = (profile["weapon_topology"] == "dual_wield"
+                                  and opt.real_gear_is_two_hand_mainhand(owned_items))
+    dw_pair_candidates: list[opt.Candidate] = []
+    seen_dw_ids: set[int] = set()
+    if real_mainhand_is_two_hand:
+        for c in candidates.get("mainhand", []) + candidates.get("offhand", []):
+            if c.item_id and c.item_id not in seen_dw_ids and not c.excluded_reason:
+                seen_dw_ids.add(c.item_id)
+                dw_pair_candidates.append(c)
+        candidates["mainhand"] = []
+        candidates["offhand"] = []
     # Curated-pool items' real Wowhead source text/tier, so they show up in
     # the right tier bucket too, not just the sweep additions.
     curated_source_text = {}
@@ -754,15 +795,6 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     # profile, which is what correctly skips the whole Hunter-only 2H
     # side-analysis section below.
     weapon_2h_candidates: list[opt.Candidate] = []
-    # Backlog #20 (2026-09-06) - this full-DB sweep-additions path builds
-    # its own opt.Candidate objects directly, bypassing optimizer.py's
-    # load_candidates() entirely - so THAT function's own real_mainhand_
-    # is_two_hand gate (see its own docstring for the full real bug this
-    # fixes) never applied here, the actual root cause of why the fix
-    # first landed in load_candidates() alone had zero effect: nearly
-    # every "Weapon" tier row in a real report comes from THIS path (every
-    # DB item not already in the curated pool), not the curated one.
-    real_mainhand_is_two_hand = opt.real_gear_is_two_hand_mainhand(owned_items)
 
     for item in sweep_items:
         if item["id"] in curated_ids:
@@ -770,10 +802,32 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
         slot = slot_for_item(item, profile["weapon_topology"])
         if slot is None:
             continue
-        if slot == "weapon_dual_wield" and real_mainhand_is_two_hand:
-            continue
         req_prof = idb.required_profession_name(item)
         if req_prof and req_prof not in known_professions:
+            continue
+        if slot == "weapon_dual_wield" and real_mainhand_is_two_hand:
+            # Backlog #20 - this full-DB sweep-additions path builds its
+            # own opt.Candidate objects directly, bypassing
+            # optimizer.py's load_candidates() entirely - so a 1H
+            # candidate found ONLY here (not in the curated pool) still
+            # needs the same real joint-search routing as a curated one
+            # (see dw_pair_candidates' own construction above). This is
+            # in fact where nearly every real "Weapon" tier candidate
+            # actually comes from - the first attempted version of this
+            # fix only handled the curated-pool path and had zero visible
+            # effect on a live resweep for exactly this reason.
+            if item["id"] not in seen_dw_ids:
+                seen_dw_ids.add(item["id"])
+                owned_here = owned_by_id.get(item["id"])
+                gems = owned_here.get("gems") if owned_here else opt.gems_for_item(item, meta_gem_id)
+                enchant = 0
+                for s in ("mainhand", "offhand"):
+                    enchant = opt.achievable_enchant(gc.get_active_default_enchants().get(s, 0), known_professions)
+                    if enchant:
+                        break
+                dw_pair_candidates.append(opt.Candidate(item["name"], item["id"], enchant, gems))
+                item_meta[item["id"]] = describe_source_and_tier(item, npc_by_id, zone_by_id)
+                new_count += 1
             continue
 
         # Same treatment as optimizer.py's load_candidates() (Missing
@@ -1738,6 +1792,102 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     # straight through the normal pipeline above) - there's no separate
     # "should I go 2H" question to print anything about at all.
 
+    # Backlog #20 (2026-09-06) - "Dual-Wield Alternative" analysis: the
+    # mirror-image question of the 2H section above, needed specifically
+    # when she's REALLY 2H-equipped right now (dw_pair_candidates was
+    # populated earlier precisely for this - see its own comment for the
+    # real bug this replaces). Per the user's explicit requirement ("No
+    # partial fixes... WE have to compare dw to 2hand No Matter what the
+    # starting point is"), this can't just exclude these candidates - it
+    # has to actually answer "would switching to dual-wield beat my
+    # current 2H weapon" with a real, honest number. A full joint search
+    # over every (mainhand, offhand) pair is combinatorially large for no
+    # real benefit (weapon-pair interactions beyond additive stats are
+    # rare) - bounded, sim-based greedy search instead, same "screen cheap,
+    # verify the winner for real" discipline used everywhere else in this
+    # file: screen every real mainhand-eligible candidate alone (offhand
+    # empty) to find the best one, then screen every real offhand-eligible
+    # candidate against THAT fixed mainhand to find the best pairing - both
+    # passes are real sim calls (SCREEN_ITERATIONS), never an EP guess.
+    dual_wield_alt: dict | None = None
+    if real_mainhand_is_two_hand and dw_pair_candidates:
+        milestone("Screening dual-wield alternative")
+        dw_mh_idx = gc.SLOT_ORDER.index("mainhand")
+        dw_oh_idx = gc.SLOT_ORDER.index("offhand")
+        mainhand_eligible = [c for c in dw_pair_candidates if not opt.is_hand_restricted_conflict(c.item_id, "mainhand")]
+        offhand_eligible = [c for c in dw_pair_candidates if not opt.is_hand_restricted_conflict(c.item_id, "offhand")]
+
+        def screen_dw_mainhand(c):
+            trial = list(baseline_config)
+            trial[dw_mh_idx] = c.as_entry()
+            trial[dw_oh_idx] = {}
+            r = mv.valuation.evaluate(SETTINGS_TEMPLATE, trial, SCREEN_ITERATIONS, opt.SEED)
+            return c, r["combined"]
+
+        mh_screened = run_with_progress(screen_dw_mainhand, mainhand_eligible, "Screening dual-wield mainhand",
+                                          progress_cb=progress_cb, stage_sequence=stage_sequence)
+        best_mh_c, _ = max(mh_screened, key=lambda t: t[1])
+
+        def screen_dw_offhand(c):
+            trial = list(baseline_config)
+            trial[dw_mh_idx] = best_mh_c.as_entry()
+            trial[dw_oh_idx] = c.as_entry()
+            r = mv.valuation.evaluate(SETTINGS_TEMPLATE, trial, SCREEN_ITERATIONS, opt.SEED)
+            return c, r["combined"]
+
+        oh_screened = run_with_progress(screen_dw_offhand, offhand_eligible, "Screening dual-wield offhand",
+                                          progress_cb=progress_cb, stage_sequence=stage_sequence)
+        best_oh_c, _ = max(oh_screened, key=lambda t: t[1])
+
+        milestone("Resolving dual-wield alternative")
+        trial_final = list(baseline_config)
+        trial_final[dw_mh_idx] = best_mh_c.as_entry()
+        trial_final[dw_oh_idx] = best_oh_c.as_entry()
+        # Real current-2H baseline at full resolve precision - recomputed
+        # here rather than assumed available from the 2H section above
+        # (which only runs `if ... and weapon_2h_candidates` - a real but
+        # fragile assumption that pool is never empty). sim_cache makes
+        # this an instant hit whenever that section DID already compute
+        # it (identical config+settings+iterations), a real but cheap
+        # extra call otherwise.
+        current_2h_no_weave = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
+        dw_no_weave = mv.valuation.evaluate(SETTINGS_TEMPLATE, trial_final, RESOLVE_ITERATIONS, opt.SEED)
+        delta_no_weave = dw_no_weave["combined"] - current_2h_no_weave["combined"]
+        noise_no_weave = mv.delta_noise(current_2h_no_weave, dw_no_weave, RESOLVE_ITERATIONS)
+
+        dual_wield_alt = {
+            "mainhand": {"name": best_mh_c.name, "item_id": best_mh_c.item_id},
+            "offhand": {"name": best_oh_c.name, "item_id": best_oh_c.item_id},
+            "dw_dps": dw_no_weave["combined"], "current_2h_dps": current_2h_no_weave["combined"],
+            "mv": delta_no_weave, "noise_stdev": noise_no_weave,
+            "tied_within_noise": abs(delta_no_weave) < 2 * noise_no_weave,
+            "weave_supported": is_weave_profile,
+        }
+        print(f"=== Dual-Wield Alternative ===")
+        print(f"Best achievable pair: {best_mh_c.name} + {best_oh_c.name}: {dw_no_weave['combined']:.1f} DPS")
+        print(f"Your current 2H weapon: {current_2h_no_weave['combined']:.1f} DPS")
+        print(f"Real delta: {delta_no_weave:+.1f} DPS (tied={dual_wield_alt['tied_within_noise']})")
+
+        # A weave-capable profile can melee-weave with EITHER weapon setup
+        # (Raptor Strike swings whatever's in mainhand regardless of hand
+        # count - dual-wield was never actually required for it, a real
+        # thing confirmed while investigating this same backlog item, see
+        # NOTES.md) - so the fair comparison needs the weave-ON variant
+        # for both sides too, not just weave-OFF.
+        if is_weave_profile:
+            current_2h_weave = mv.valuation.evaluate(SETTINGS_2H, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
+            dw_weave = mv.valuation.evaluate(SETTINGS_2H, trial_final, RESOLVE_ITERATIONS, opt.SEED)
+            delta_weave = dw_weave["combined"] - current_2h_weave["combined"]
+            noise_weave = mv.delta_noise(current_2h_weave, dw_weave, RESOLVE_ITERATIONS)
+            dual_wield_alt["dw_dps_weave"] = dw_weave["combined"]
+            dual_wield_alt["current_2h_dps_weave"] = current_2h_weave["combined"]
+            dual_wield_alt["mv_weave"] = delta_weave
+            dual_wield_alt["noise_stdev_weave"] = noise_weave
+            dual_wield_alt["tied_within_noise_weave"] = abs(delta_weave) < 2 * noise_weave
+            print(f"With weave: pair {dw_weave['combined']:.1f} vs current 2H {current_2h_weave['combined']:.1f} "
+                  f"({delta_weave:+.1f} DPS, tied={dual_wield_alt['tied_within_noise_weave']})")
+        print()
+
     # Stage 5 (§7, the pairwise interaction matrix) is dropped from the
     # active pipeline per the user (2026-08-23) - its real cost (128
     # candidates -> 7558 pairs, ~19 minutes just for the cheapest screening
@@ -1794,7 +1944,7 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
                    "tiers": tiered_out, "two_hand": two_hand_out, "two_hand_meta": two_hand_meta,
                    "fight_duration_seconds": actual_duration,
                    "source_scope_excluded": source_scope_excluded,
-                   "assumed_buffs": assumed_buffs}, f, indent=2)
+                   "assumed_buffs": assumed_buffs, "dual_wield_alt": dual_wield_alt}, f, indent=2)
     print(f"Wrote {out_path}")
     milestone("Done")
     return out_path

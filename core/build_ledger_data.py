@@ -120,6 +120,12 @@ def build(name_realm: str, phase: str, profile_dir: str):
         # run_upgrade_sweep.py's own settings file (see that function's own
         # comment) - passes through unchanged, never re-derived here.
         "assumed_buffs": report.get("assumed_buffs", {}),
+        # Backlog #20 - real "would dual-wield beat my current 2H" analysis,
+        # only present when she's really 2H-equipped right now (None
+        # otherwise - a genuinely dual-wielding character has no such
+        # question to answer, the existing "two_hand"/"two_hand_meta"
+        # fields already cover her real comparison direction).
+        "dual_wield_alt": report.get("dual_wield_alt"),
     }
 
 

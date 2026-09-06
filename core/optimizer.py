@@ -173,12 +173,18 @@ def real_gear_is_two_hand_mainhand(owned_items: list[dict]) -> bool:
     legitimately be equipped in the OTHER topology than the profile assumes
     at any given moment (a real 2H weapon, real empty offhand) - every
     other topology's real current gear always matches what the profile
-    itself expects by construction. Used by BOTH real candidate-building
-    paths (load_candidates()'s own curated pool below, and
-    run_upgrade_sweep.py's separate full-DB sweep-additions path) so a 1H
-    weapon candidate is gated the same way regardless of which path found
-    it - see load_candidates()'s own real_mainhand_is_two_hand usage for
-    the full real bug this fixes."""
+    itself expects by construction. Used entirely from run_upgrade_sweep.py
+    (both real candidate-building paths - the curated pool from
+    load_candidates() and the separate full-DB sweep-additions loop) to
+    reroute 1H weapon candidates into a real joint best-dual-wield-combo
+    search instead of the normal single-slot MV pipeline, which produces
+    nonsensical results when the other real slot is genuinely empty (a 2H
+    mainhand + a lone 1H item is not a legal gear state) - see
+    run_upgrade_sweep.py's own dw_pair_candidates section for the real fix
+    this enables, per the user's explicit requirement that a partial fix
+    (silently hiding the comparison) wasn't acceptable - the real question
+    ("does dual-wield beat my current 2H, or vice versa") must be answered
+    regardless of which one she happens to have equipped right now."""
     mh_idx = gc.SLOT_ORDER.index("mainhand")
     mh_entry = owned_items[mh_idx] if mh_idx < len(owned_items) else None
     mh_item = idb.by_id(mh_entry["id"]) if mh_entry and mh_entry.get("id") else None
@@ -208,8 +214,6 @@ def load_candidates(pool_path: str, owned_items: list[dict],
     pool = repo_root.load_json(pool_path)
     owned_by_name = {it["name"]: it for it in owned_items if it}
     meta_gem_id = find_owned_meta_gem(owned_items)
-
-    real_mainhand_is_two_hand = real_gear_is_two_hand_mainhand(owned_items)
 
     result = {slot: [] for slot in gc.SLOT_ORDER}
     for pool_key, entries in pool.items():
@@ -263,11 +267,6 @@ def load_candidates(pool_path: str, owned_items: list[dict],
             req_prof = idb.required_profession_name(item) if item else None
             if req_prof and req_prof not in known_professions:
                 cands.append(Candidate(name, item_id, excluded_reason=f"requires {req_prof}"))
-                continue
-            if pool_key == "weapon_dual_wield" and real_mainhand_is_two_hand:
-                cands.append(Candidate(name, item_id, excluded_reason=(
-                    "requires a real dual-wield re-gear (both weapons) - you're currently "
-                    "2H-equipped; see the 2H Weapon Options section instead")))
                 continue
             if owned:
                 # Unconditionally the real default now, same as the
