@@ -5909,3 +5909,15 @@ the first correction). Saved a new standing memory
 (`feedback_verify_against_source_not_summary.md`) per the user's own explicit instruction: after any
 context-window compaction on this project, check `NOTES.md`/`CLASSES.md`/similar real docs FIRST,
 before answering or restating anything the compacted summary claims - not an optional judgment call.
+
+
+## 2026-09-06 (cont'd): Session wrap-up - all real changes committed, pushed, installer rebuilt
+
+Re-verified all 3 real characters end to end after the enchant-priority fix landed (fresh sweep,
+rebuilt ledger_data+html, check_ledger_consistency.py): Lerynia 1171/0, Béarforceone 896/0, Rubán
+1710/0+1 known/expected warning (achieved_bis empty - large, not-yet-optimized candidate pool, same
+non-bug already documented for non-Hunter characters). Committed (ef326f3) and pushed. Rebuilt
+packaging/output/RGT-Setup.exe (Inno Setup, ~9046s compile) so a fresh install picks up today's real
+fixes - core/*.py and profiles/tbc/* are both bundled installer payload per installer.iss.
+build/dist/RGT.exe (the GUI exe itself) did not need rebuilding - confirmed via packaging/README.md
+that it reads core/*.py as live sibling files, never bundles them via PyInstaller.

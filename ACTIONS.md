@@ -57,11 +57,10 @@ Nothing here is urgent or blocking anything else - genuinely just "whenever you 
   agrees with wowsims.com now, only a partial, unexplained magnitude gap remains.
 - **CurseForge** — live: "GT Companion" by RubanCreator, https://www.curseforge.com/wow/addons/gt-companion
 
-## Real code/data changes pending a rebuild
+## Installer
 
-Today's real changes touch `core/optimizer.py`, `core/run_upgrade_sweep.py`, `core/set_bonus.py`,
-`core/report_template.html`, and `profiles/tbc/balance_druid/default_enchants.json` /
-`profiles/tbc/arms_warrior/settings_template.json` - all of these are bundled into the installer
-(`packaging/installer.iss` ships `core/*.py` and `profiles/tbc/*` as static payload, see
-CLAUDE.md's Repo Layout). **A fresh installer build is pending** if you want anyone besides this
-dev machine to see today's fixes - not done automatically as part of this session's own work.
+Rebuilt fresh, 2026-09-06 05:56 - `packaging/output/RGT-Setup.exe` now bundles today's real fixes
+(enchant-priority fix, sidegrade link, the corrected Balance Druid/Arms Warrior profile data).
+`build/dist/RGT.exe` (the GUI itself) did NOT need rebuilding - it reads `core/*.py` as live
+sibling files from the checkout rather than bundling them in, per `packaging/README.md`. Nothing
+pending here right now.
