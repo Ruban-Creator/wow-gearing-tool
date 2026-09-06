@@ -1038,6 +1038,9 @@ SlashCmdList["GTLIST"] = function()
     if charListFrame:IsShown() then
         charListFrame:Hide()
     else
+        -- Same real overlap fix as the "All Characters" button below - both
+        -- windows share the same centered screen position.
+        statusFrame:Hide()
         charListFrame:Show()
     end
 end
@@ -1047,6 +1050,13 @@ listButton:SetSize(140, 24)
 listButton:SetPoint("BOTTOM", 0, 46)
 listButton:SetText("All Characters")
 listButton:SetScript("OnClick", function()
+    -- Real bug fixed 2026-09-06, caught live via screenshot: both windows
+    -- are centered at the same screen position (SetPoint("CENTER")), so
+    -- opening the character list from this button without hiding the
+    -- status popup left both shown at once, overlapping - looked like a
+    -- missing/transparent backdrop but was really just two real dialogs
+    -- open simultaneously on top of each other.
+    statusFrame:Hide()
     charListFrame:Show()
 end)
 
@@ -1055,6 +1065,9 @@ minimapButton:SetScript("OnClick", function(_, button)
         if statusFrame:IsShown() then
             statusFrame:Hide()
         else
+            -- Same real overlap fix as above - don't let this open on top
+            -- of an already-open character list at the same screen position.
+            charListFrame:Hide()
             statusFrame:Show()
         end
     else

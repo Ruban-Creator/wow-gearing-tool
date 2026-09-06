@@ -6304,3 +6304,35 @@ dispatch code (28017, confirmed via `registerStaticImbue()`'s switch statement h
 likely ALSO a silent no-op, for a different reason than the potion bug above (an id-scheme mismatch,
 not a missing whitelist) - flagged in FUTURE_TASKS.md as a real, separate, not-yet-fixed gap, out of
 scope for this pass.
+
+## 2026-09-06 (cont'd): GearingToolCompanion - real overlap bug found and fixed, NOT yet live-verified
+
+Real, live screenshot from the user: opening the addon's "All Characters" list while the smaller
+"Gearing Tool Companion" status popup was open showed both windows' text overlapping/bleeding
+together, unreadable. Initial hypothesis (missing/transparent backdrop on one or both frames) was
+checked and ruled out directly - confirmed the live, installed addon file is byte-identical to this
+repo's own copy (`diff` clean, no sync gap), and both frames already have real
+`BackdropTemplateMixin`/`SetBackdrop()` calls; a real web search also confirmed `BackdropTemplate`
+was backported to all Classic flavors back in patch 1.14.0 (2021), so a missing mixin on a modern
+Anniversary client would be surprising, not the likely cause.
+
+**Real root cause, found by reading the actual toggle code, not guessed**: `statusFrame` and
+`charListFrame` are both positioned with `SetPoint("CENTER")` - the exact same screen position. All
+3 real places that show either window only ever checked/toggled THAT window's own visibility,
+never hiding the other: the "All Characters" button (inside `statusFrame`) called
+`charListFrame:Show()` with no `statusFrame:Hide()`; `/gtlist` and the minimap left-click handler had
+the identical gap in the opposite direction. With no mutual exclusivity, having both open at once
+was trivially easy (click the status popup's own "All Characters" button) and produces exactly the
+overlapping-text symptom in the screenshot - two real, separate opaque dialogs both centered on the
+same point, not a rendering/transparency bug at all.
+
+**Real fix**: added the missing `Hide()` call at all 3 sites so opening either window now always
+closes the other first - `addons/GearingToolCompanion/GearingToolCompanion.lua`, copied to the live
+install (`C:\Games\World of Warcraft\_anniversary_\Interface\AddOns\GearingToolCompanion\`, path
+confirmed via `local_config.json`'s own `_autodetected_wow_root`) since this session edited the repo
+copy first, not the live one - real diff confirmed clean (both files byte-identical after the
+copy). **NOT yet live-verified** - per this project's own real discipline, addon changes need actual
+in-game testing before considered done; no Lua interpreter or live client available in this session
+to confirm the syntax is even valid beyond a manual re-read. Real next step: user tests in-game
+(open the status popup, click "All Characters", confirm the popup closes and only the list shows;
+repeat via `/gtlist` and the minimap icon), report back before this is considered closed.
