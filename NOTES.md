@@ -6339,3 +6339,38 @@ even valid beyond a manual re-read - **live-confirmed working by the user in-gam
 the 3 real functional files), live install re-synced with the version bump too. Per the user's own
 standing instruction: always update the addon's OWN changelog (separate from RGT's own
 `CHANGELOG.md`) and rebuild the zip whenever the addon changes, ahead of a real CurseForge upload.
+
+## 2026-09-06 — Shadow Priest's weapon oil (mhImbueId) fixed: same real id-scheme bug as the imbue
+   display-name mismatch, this time actually mattering (a silent no-op, not just a wrong label)
+
+Flagged in `FUTURE_TASKS.md` while fixing the "combat potion never actually casts" bug the same
+day (see that entry above for the full trail): `profiles/tbc/shadow_priest/consumables.json` had
+`"mhImbueId": 22522` - the real Wowhead item id for Superior Wizard Oil, confirmed directly. But
+the sim's own `registerStaticImbue()` (`sim/tbc-new/sim/core/consumes.go`) dispatches weapon imbues
+by its OWN internal numeric code, not real Wowhead ids - that function's real case is `28017: //
+Superior Wizard Oil`, not 22522. No `default:` case exists in that switch, so an unmatched id
+silently does nothing - her real weapon-oil stat bonus had likely never applied in any past sim
+result for her, the same underlying id-scheme bug already found and fixed for the "Used
+Consumables" display feature's `WEAPON_IMBUE_REAL_IDS` mapping, just this time affecting the actual
+sim math rather than only a rendered label.
+
+**Fix, real and verified end to end**: changed `mhImbueId` to `28017` in `consumables.json`.
+Regenerated `settings_template.json` via `build_profile_settings.py` - clean, isolated 1-line diff
+(confirmed via `git diff`, matching every other profile-data fix this session's own verification
+bar). Verified the fix actually changes sim behavior, not just the config: ran a paired sim call at
+identical settings (5000 iterations, seed 4242) before and after regenerating - combined DPS
+1734.83 -> 1760.65 (+25.8 DPS, ~1.5%), consistent with the previously-inert `AddStat(stats.
+SpellDamage, 42)` effect now actually landing (the switch's own real stat value for this case).
+
+Ran a fresh full sweep (`python cli/gear.py best Test-ShadowPriest-Synthetic phase3` - note:
+`run_upgrade_sweep.py`'s own `if __name__ == "__main__":` block is a hardcoded Lerynia-only debug
+fallback per its own comment, NOT a real CLI - the real entry point is `gear best <character>
+<phase>` via `cli/gear.py`, confirmed directly after an initial direct-invocation attempt silently
+produced Lerynia's report instead of Shadow Priest's). Baseline came back 1760.8, matching the
+paired verification. Rebuilt `ledger_data` via `build_ledger_data.py --character
+Test-ShadowPriest-Synthetic --phase phase3`; `check_ledger_consistency.py --skip-html` clean
+(121/0). Confirmed the "Used Consumables" modal still shows the correct real display name/id
+("Superior Wizard Oil", 22522) via the existing `WEAPON_IMBUE_REAL_IDS` display-mapping added
+earlier this session, while the sim's own settings field now correctly carries the internal
+dispatch code (28017) - the real-id-for-display / internal-id-for-mechanics split works for this
+profile exactly as designed. `FUTURE_TASKS.md`'s own entry for this gap marked CLOSED.
