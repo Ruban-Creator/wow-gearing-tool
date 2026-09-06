@@ -243,3 +243,45 @@ step in CLAUDE.md's own "Sim update procedure"); reporting the schema gap upstre
 itself will keep reporting all 255 regardless of this progress - it measures the DB's own raw gap,
 not this tool's improved ability to describe it; that's expected, not a regression.
 
+**Real completion pass, 2026-09-06 (second session the same day): the rest of the 43-item queue
+finished.** Of the 43 items NOTES.md's first pass had identified and queued, 6 (Icon of the Silver
+Crescent/29370, General's Silk Cuffs/28411, Talisman of Kalecgos/29271, Violet Signet of the
+Archmage/29287, Shapeshifter's Signet/30834, Idol of the Raven Goddess/32387) were already verified
+and in the overlay before this pass started, and 1 (Band of Eternity/29294) had been spotted and
+confirmed during that session's own pattern-sampling but not yet formally recorded - added directly
+this pass, per the user's own instruction, with no re-check needed. The remaining 36 were
+individually checked against Wowhead this pass (Browser tool's `get_page_text()` against a live
+page, never WebFetch, never bulk-guessed, same bar as every prior entry) - **33 added to the
+overlay, 3 deliberately excluded** (see below). Real per-item source categories found: the large
+majority are Badge of Justice vendor purchases from G'eras (Shattrath City, phase 1) or the two
+phase-5 Isle of Quel'Danas armorsmiths (Yrma / Anwehu / Smith Hauthaa); the rest split across quest
+rewards (several distinct quest chains - Fall of Magtheridon, Special Delivery to Shattrath City,
+Fel Embers, Varedis Must Be Stopped, Teron Gorefiend I am..., Kael'thas and the Verdant Sphere, and
+the Caverns of Time "Band of Eternity" ring-chain siblings Sage's/Champion's Covenant), 4 real
+world-boss/event-boss drops from 3 distinct bosses (Doom Lord Kazzak dropping 2 of the queued
+items, Doomwalker, Coren Direbrew - the last a real Brewfest holiday-event boss in Blackrock
+Depths, not a raid), and 1 real PvP-honor purchase item
+whose name does NOT contain "Gladiator's" (Vindicator's Dragonhide Bracers - the existing
+name-based structural rule correctly does not fire for it, confirmed instead by individually
+verifying it, exactly the "still needs one-at-a-time checking" case that rule was never meant to
+cover).
+
+**Real, deliberate exclusion, not an oversight**: 3 of the 36 (Elementalist Bracelets/24692,
+Mask of Veiled Death/31281, Pathfinder's Band/31277) were
+checked and found to be genuine random world-drop BoE items with 37-200 real, roughly-equal-odds
+mob sources apiece (ordinary Outland leveling trash, not one specific boss) - forcing any one of
+those sources into the overlay's `"Drop: <boss> (<zone>)"` convention would misrepresent a diffuse
+drop table as a single reliable source, which is worse than leaving the item undescribed. Left out
+of the overlay entirely; still genuinely `sources: None` in the DB and still bucketed by the
+existing phase fallback, same as before this pass.
+
+**Real remaining scope now**: 0 items left from this session's originally-queued 43 - the pass that
+started 2026-09-06 finished the same day. `check_missing_sources.py` will still report all 255 (by
+design, per the note above) but the overlay + structural rules together now cover 158 of them (111
+tier-token + 6 Gladiator's + 41 individually-verified entries in `source_overlay.json`, up from 7 at
+the start of this pass). The real remaining ~97-item gap is every other standalone accessory this
+tool's 15 profiles reference that hasn't been through an individual Wowhead check yet - not
+identified/queued the way this pass's 43 were; a future session would need to re-run
+`check_missing_sources.py`, cross this file's own overlay keys off its output, and start a fresh
+per-item queue the same way this pass did.
+

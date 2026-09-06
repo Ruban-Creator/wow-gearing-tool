@@ -5651,3 +5651,112 @@ filenames, so a full structural check needs a fresh sweep first - not done today
 tracked follow-up), but every regenerated `settings_template.json` was confirmed to be valid,
 well-formed JSON and the `build_profile_settings.py` driver ran clean (no exceptions) for all 11
 profiles it supports.
+
+## 2026-09-06: Backlog #15 - the queued 43-item Wowhead pass finished (33 new overlay entries)
+
+Picked up exactly where the earlier same-day entry above left off: the 43-item queue it had
+identified (see that entry's own table) but only partly checked before Wowhead's CloudFront
+started 403-blocking further lookups. Of those 43, 6 (Icon of the Silver Crescent/29370,
+General's Silk Cuffs/28411, Talisman of Kalecgos/29271, Violet Signet of the Archmage/29287,
+Shapeshifter's Signet/30834, Idol of the Raven Goddess/32387) were already real, verified overlay
+entries before this pass started. Added Band of Eternity (29294) directly per the user's own
+instruction - a real quest reward from "Defender's Pledge" (Caverns of Time), already confirmed
+during the earlier session's pattern-sampling but never formally recorded with its own citation
+until now. The remaining 36 were individually checked this pass, one Wowhead page at a time via
+the Browser tool's `get_page_text()` (never WebFetch - confirmed again this session that Wowhead's
+item pages are JS-rendered and WebFetch's markdown conversion can't see the real source data).
+
+**Rate limiting was real and persistent** - handled by backing off with a genuine wall-clock wait
+(a backgrounded `sleep`/Python busy-wait, checked via the harness's own background-task
+notifications) between batches of 3-4 lookups, never by retrying in a tight loop. Roughly 4-8
+items landed per clear window before the next 403 - consistent with the CLAUDE.md-documented
+pattern from the first pass, not a new finding.
+
+**33 of the 36 added to the overlay**, real source categories confirmed per item (not guessed from
+the earlier session's two discovered patterns - each one individually verified even where it
+matched a pattern already seen):
+- **Badge of Justice vendor purchases from G'eras, Shattrath City** (phase 1) - the single largest
+  category: Bloodlust Brooch/29383 (41), Choker of Vile Intent/29381 (25), Mazthoril Honor
+  Shield/29268 (33), Everbloom Idol/29390 (15), Orb of the Soul-Eater/29272 (25), Blood Knight War
+  Cloak/29382 (25).
+- **Phase-5 Isle of Quel'Danas vendor purchases** - a real, distinct sub-pattern not seen in the
+  first pass (everything before was phase 1-3): Yrma <Transmuter of Sin'dorei Relics> sells 6 real
+  Sunwell-recolor tier-lookalike pieces for a "Cost: 1 1" currency (Bladed Chaos Tunic/34397,
+  Demontooth Shoulderpads/34392, Cover of Ursoc the Mighty/34403, Spaulders of Devastation/34391,
+  Tranquil Moonlight Wraps/34407, Garments of Crashing Shores/34396 - all real "Sunwell Regalia/
+  Battlegear" transmog-set members, itemized as phase 5 but NOT sharing a real raid tier `setId`,
+  confirmed by their `tier` bucket resolving to "Other" rather than T6, which is correct: these are
+  badge-equivalent catch-up gear, not an actual raid tier set); separately, Anwehu (Shattrath City)
+  / Smith Hauthaa (Isle of Quel'Danas) <Weapons & Armorsmith> sell 3 more for a flat gold-equivalent
+  Badge-style cost (Angelista's Revenge/34887 - 60, Trousers of the Scryers' Retainer/34928 - 100,
+  Vanir's Right Fist of Brutality/34893 - 105).
+- **Quest rewards**, several distinct real quest chains, each individually confirmed: Ring of the
+  Recalcitrant/28791 and Leggings of the Seventh Circle/30734's neighbor-quest "The Fall of
+  Magtheridon" (Hellfire Peninsula, same quest as the already-overlaid Band of Crimson Fury/28793 -
+  a "Pick one" reward set, confirmed by Wowhead listing 2 reward rows for 28791); Shattrath
+  Leggings/30257 via "Special Delivery to Shattrath City"; Expedition Scout's Epaulets/25790 via
+  "Fel Embers" (Hellfire Citadel dungeon quest, real Alliance-only reward per Wowhead's own `Side:
+  Alliance` field - noted in the overlay desc since a Horde character could never actually obtain
+  this one this way, though the item itself has no faction restriction); Hauberk of Karabor/30933
+  via "Varedis Must Be Stopped" (Shadowmoon Valley group quest); Stalker's Helmet of Second
+  Sight/31106 via "Teron Gorefiend, I am..." (Shadowmoon Valley); The Sun King's Talisman/30015 and
+  Telonicus's Pendant of Mayhem/30017 both via "Kael'thas and the Verdant Sphere" (Tempest Keep);
+  Band of the Eternal Sage/29305 via "Sage's Covenant" and Band of the Eternal Champion/29301 via
+  "Champion's Covenant" - both real siblings of Band of Eternity's own "Band of Eternity" Caverns of
+  Time quest chain (each of these 3 rings is a `Unique-Equipped: Band of Eternity (1)` item, i.e.
+  Blizzard's own real in-game grouping confirms they're the same reward-chain family, not a
+  coincidence of similar naming).
+- **Real drops**, one genuine surprise: Doom Lord Kazzak (a real Hellfire Peninsula world boss)
+  drops both Leggings of the Seventh Circle/30734 and Scaled Greaves of the Marksman/30739; the
+  Shadowmoon Valley world boss Doomwalker drops Barrel-Blade Longrifle/30724; Dark Iron Smoking
+  Pipe/38290 turned out to be a real Brewfest holiday-event drop from Coren Direbrew in Blackrock
+  Depths - a genuinely different source TYPE from anything the first pass found (a recurring
+  seasonal-event boss, not a raid/world boss or a quest), confirming the DB's `sources:None` gap
+  really does span more real categories than initially assumed.
+- **One real PvP-honor item whose name breaks the existing "Gladiator's" naming heuristic**:
+  Vindicator's Dragonhide Bracers/33881 - sold by Captain Dirgehammer (Alliance)/Lady Palanseer
+  (Horde) <Armor Quartermaster> in every honor battleground for 9199 Honor, and separately by Kayri
+  <Exotic Gear Purveyor> on the Isle of Quel'Danas for a Cost-1 currency. Confirms the existing
+  structural "Gladiator's"-in-name rule (`describe_source_and_tier()`) is correctly narrow - this
+  item is real PvP gear (part of the "Vengeful Gladiator's Dragonhide Armor" transmog set even
+  though its own item name doesn't say "Gladiator's") that the name heuristic would have missed,
+  exactly why individually verifying rather than pattern-guessing every remaining item still
+  matters.
+
+**3 of the 36 deliberately excluded from the overlay, not an oversight**: Elementalist
+Bracelets/24692, Mask of Veiled Death/31281, and Pathfinder's Band/31277 all turned out to be
+genuine random-enchant/plain BoE **world drops** with a real "Dropped by" list of 37-200 distinct,
+roughly-equal-odds mobs (ordinary Outland leveling trash spread across many zones - Blade's Edge
+Mountains, Netherstorm, Nagrand, Sethekk Halls, etc.) rather than one specific boss or vendor.
+Per this project's own "never invent data" rule, picking any single name off a 37-to-200-row list
+to satisfy the overlay's `"Drop: <boss> (<zone>)"` convention would misrepresent a genuinely diffuse
+drop table as a single reliable source - actively worse than leaving the item as "Source unclear."
+Left out of `source_overlay.json` entirely; still correctly `sources:None` in the DB and still
+bucketed by the existing phase-based fallback, unchanged from before this pass.
+
+**Verification, same standard as every prior pass**: ran
+`sweep.describe_source_and_tier(db_item, {}, {})` against all 34 newly-added item ids (the 33 plus
+Band of Eternity) and confirmed every one resolves to its real, specific description (never falls
+through to "Source unclear" or silently no-ops) - full output captured in this session's own
+transcript. `check_ledger_consistency.py --skip-html` re-run clean on all 3 real characters
+afterward, identical assertion counts to the pre-session baseline: Béarforceone-Thunderstrike/
+balance_druid 1389/0, Lerynia-Thunderstrike (default survival_hunter profile) 621/0, Rubán-
+Thunderstrike/arms_warrior 1696/0+1 (the same already-understood "achieved_bis empty" warning as
+every prior session, not new).
+
+`source_overlay.json` now holds 41 real, individually-verified entries (up from 7 at the start of
+this pass) - combined with the existing 111-item tier-token rule and 6-item Gladiator's-naming
+rule, 158 of the DB's own 255 real `sources:None` gap items (across this tool's 15 profiles) now
+have a real, specific, non-generic description instead of falling through to the phase-only
+fallback. `check_missing_sources.py` will keep reporting the full 255 regardless (by design - it
+measures the DB's raw gap, not this tool's improved ability to describe it), so that number alone
+isn't the right progress signal any more; `source_overlay.json`'s own entry count plus the two
+structural rules' known coverage is the real measure now.
+
+Real remaining scope: this session's originally-queued 43-item list is now fully resolved (0 left).
+The broader ~97-item remaining gap (255 minus the 158 now covered) is every other standalone
+accessory across the 15 profiles that hasn't been through an individual Wowhead check yet - not
+pre-identified the way this pass's 43 were. A future session picking this back up needs to
+re-run `check_missing_sources.py`, diff its output against `source_overlay.json`'s own keys (plus
+the tier-token/Gladiator's structural coverage) to build a fresh queue, then repeat this same
+one-at-a-time verification process with the same rate-limit-backoff discipline.
