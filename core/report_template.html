@@ -1030,40 +1030,62 @@ if (twoHand.length > 0) {
 const dwAlt = DATA.dual_wield_alt;
 if (dwAlt) {
   document.getElementById('dw-alt-section').hidden = false;
-  document.getElementById('dw-alt-count').textContent = dwAlt.tied_within_noise ? 'tied within noise' :
-    (dwAlt.mv > 0 ? 'real upgrade' : 'not worth it');
+  // Real refinement (2026-09-06, per the user): up to 3 real upgrade pairs
+  // are now shown per scenario when they exist (never padded out with more
+  // than 1 when none do) - each list's own first row already carries the
+  // real verdict, so the summary tag just names each scenario that has at
+  // least one real upgrade.
+  function scenarioVerdict(rows){
+    if (!rows || !rows.length) return null;
+    const best = rows[0];
+    return best.tied_within_noise ? 'tied' : (best.mv > 0 ? 'upgrade' : 'not worth it');
+  }
+  const noWeaveVerdict = scenarioVerdict(dwAlt.pairs);
+  const weaveVerdict = scenarioVerdict(dwAlt.pairs_weave);
+  const tagText = (dwAlt.weave_supported && dwAlt.pairs_weave)
+    ? 'weave: ' + weaveVerdict + ' · no weave: ' + noWeaveVerdict
+    : noWeaveVerdict;
+  document.getElementById('dw-alt-count').textContent = tagText;
   document.getElementById('dw-alt-sub').textContent =
-    'Best achievable dual-wield pair from your candidate pool, found via a real sim search - ' +
-    'compared against your current 2H weapon, both at full precision.';
+    'Best achievable dual-wield pair(s) from your candidate pool, found via a real sim search - ' +
+    'compared against your current 2H weapon, both at full precision. Up to 3 real upgrades shown ' +
+    'when they exist; never more than one real downgrade.';
 
   const body = document.getElementById('dw-alt-body');
-  const block = document.createElement('div');
-  block.className = 'slot-block';
 
-  function dwRow(label, mainMv, current, dw, tied) {
-    const d = fmtDelta(mainMv);
-    const row = document.createElement('div');
-    row.className = 'item-row';
-    row.innerHTML = `
-      <div class="name-col">
-        <div class="item-name">${escapeHtml(label)}: ${whLink(dwAlt.mainhand.name, dwAlt.mainhand.item_id)} + ${whLink(dwAlt.offhand.name, dwAlt.offhand.item_id)}</div>
-        <div class="item-source">${dw.toFixed(1)} DPS dual-wield vs ${current.toFixed(1)} DPS current 2H${tied ? ' (tied within noise)' : ''}</div>
-      </div>
-      <div class="delta dps">
-        <div class="k">Player (DPS)</div>
-        <div class="v ${d.cls}">${d.text}</div>
-      </div>
-    `;
-    return row;
+  function renderScenario(label, rows, currentDps){
+    if (!rows || !rows.length) return;
+    const block = document.createElement('div');
+    block.className = 'slot-block';
+    const labelEl = document.createElement('div');
+    labelEl.className = 'slot-label';
+    labelEl.textContent = label + ' — your current 2H: ' + currentDps.toFixed(1) + ' DPS';
+    block.appendChild(labelEl);
+    rows.forEach(r => {
+      const d = fmtDelta(r.mv);
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.innerHTML = `
+        <div class="name-col">
+          <div class="item-name">${whLink(r.mainhand.name, r.mainhand.item_id)} + ${whLink(r.offhand.name, r.offhand.item_id)}</div>
+          <div class="item-source">${r.dw_dps.toFixed(1)} DPS dual-wield${r.tied_within_noise ? ' (tied within noise)' : ''}</div>
+        </div>
+        <div class="delta dps">
+          <div class="k">Player (DPS)</div>
+          <div class="v ${d.cls}">${d.text}</div>
+        </div>
+      `;
+      block.appendChild(row);
+    });
+    body.appendChild(block);
   }
 
-  if (dwAlt.weave_supported && dwAlt.dw_dps_weave != null) {
-    block.appendChild(dwRow('Weaving ON', dwAlt.mv_weave, dwAlt.current_2h_dps_weave, dwAlt.dw_dps_weave, dwAlt.tied_within_noise_weave));
-    block.appendChild(dwRow('Weaving OFF', dwAlt.mv, dwAlt.current_2h_dps, dwAlt.dw_dps, dwAlt.tied_within_noise));
+  if (dwAlt.weave_supported && dwAlt.pairs_weave) {
+    renderScenario('Weaving ON', dwAlt.pairs_weave, dwAlt.current_2h_dps_weave);
+    renderScenario('Weaving OFF', dwAlt.pairs, dwAlt.current_2h_dps);
   } else {
-    block.appendChild(dwRow('Dual-wield', dwAlt.mv, dwAlt.current_2h_dps, dwAlt.dw_dps, dwAlt.tied_within_noise));
+    renderScenario('Dual-wield', dwAlt.pairs, dwAlt.current_2h_dps);
   }
-  body.appendChild(block);
 }
 
 </script>

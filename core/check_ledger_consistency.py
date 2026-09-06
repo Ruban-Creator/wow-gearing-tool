@@ -231,10 +231,21 @@ def check_transform(report: dict, ledger_data: dict, rep: Report) -> None:
                "ledger_data.json: dual_wield_alt does not pass through tiered_report.json unchanged")
     dw_alt = report.get("dual_wield_alt")
     if dw_alt is not None:
-        rep.check(isinstance(dw_alt.get("mainhand"), dict) and isinstance(dw_alt.get("offhand"), dict)
-                   and dw_alt.get("mainhand", {}).get("item_id") and dw_alt.get("offhand", {}).get("item_id"),
-                   "tiered_report.json: dual_wield_alt present but missing a real mainhand/offhand pick "
-                   "(backlog #20 - see run_upgrade_sweep.py's own Dual-Wield Alternative section)")
+        # Real, shape-changed 2026-09-06 (per the user - top 3 real
+        # upgrades shown when they exist, never more than 1 when they
+        # don't) - "pairs"/"pairs_weave" are now lists, each entry a real
+        # resolved (mainhand, offhand) pick, not a single top-level pair.
+        for key in ("pairs", "pairs_weave"):
+            rows = dw_alt.get(key)
+            if rows is None:
+                continue
+            rep.check(isinstance(rows, list) and len(rows) >= 1,
+                       f"tiered_report.json: dual_wield_alt.{key} present but empty "
+                       "(backlog #20 - see run_upgrade_sweep.py's own Dual-Wield Alternative section)")
+            for row in rows:
+                rep.check(isinstance(row.get("mainhand"), dict) and isinstance(row.get("offhand"), dict)
+                           and row.get("mainhand", {}).get("item_id") and row.get("offhand", {}).get("item_id"),
+                           f"tiered_report.json: dual_wield_alt.{key} row missing a real mainhand/offhand pick")
 
     # 2026-09-04 - ledger_diff.compute()'s real output shape. None is a
     # legitimate value (first-ever sweep for this character/profile/phase,

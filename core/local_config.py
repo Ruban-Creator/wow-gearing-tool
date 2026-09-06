@@ -230,6 +230,52 @@ def set_source_scope_exclusions(name_realm: str, keys: list[str] | None) -> None
     save(config)
 
 
+MELEE_WEAVE_MODES = ("turret", "weave")
+DEFAULT_MELEE_WEAVE_MODE = "turret"
+
+
+def melee_weave_mode(name_realm: str) -> str:
+    """Backlog #20 follow-up (2026-09-06, per the user, real live finding):
+    a weave-capable profile's (Survival/Beastmastery Hunter) real DPS can
+    differ by 500+ points depending on whether she actually melee-weaves or
+    plays pure ranged "turret" style - confirmed live for Lerynia (2812.8
+    no-weave vs 3338.6 weave-on, same exact real gear). This was previously
+    silently baked into which settings file (`settings_template.json` vs
+    `settings_template_2h.json`) happened to be treated as "primary" for
+    the WHOLE report (every slot's MV, not just the weapon-choice side
+    analysis) - the user's own explicit call: "we should not assume if the
+    use is weaving or not" - a real, per-character, user-visible choice,
+    not a silent default baked into which file a profile happens to load.
+
+    Defaults to "turret" (no weave) - matches this tool's own real,
+    historical default behavior for every existing Survival/Beastmastery
+    Hunter report before this setting existed, so nothing changes for an
+    existing character until they actually open the new selector and pick
+    "Melee Weave" - per the user's own follow-up: "we could default to
+    turret and add a red info text about the selector" (the GUI's own job,
+    not this function's - this just needs an honest, unsurprising default).
+    Meaningless for every non-weave-capable profile - callers should gate
+    on `is_weave_profile` themselves rather than rely on this returning
+    anything meaningful for e.g. a caster."""
+    return load().get("melee_weave_mode", {}).get(name_realm, DEFAULT_MELEE_WEAVE_MODE)
+
+
+def set_melee_weave_mode(name_realm: str, mode: str | None) -> None:
+    """Pass None (or "turret", the default) to reset back to the default -
+    only a real, explicit "weave" choice needs to be persisted at all."""
+    if mode is not None and mode not in MELEE_WEAVE_MODES:
+        raise ValueError(f"Unknown melee_weave_mode {mode!r} - expected one of {MELEE_WEAVE_MODES}")
+    config = load()
+    overrides = config.setdefault("melee_weave_mode", {})
+    if mode is None or mode == DEFAULT_MELEE_WEAVE_MODE:
+        overrides.pop(name_realm, None)
+    else:
+        overrides[name_realm] = mode
+    if not overrides:
+        config.pop("melee_weave_mode", None)
+    save(config)
+
+
 def sim_concurrency() -> int:
     """The real, single source of truth for sim-call concurrency (code
     review §4.4) - core/run_upgrade_sweep.py's MAX_WORKERS and

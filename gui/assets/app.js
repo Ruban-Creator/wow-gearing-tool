@@ -115,6 +115,15 @@ const runReportStageEta = document.getElementById("run-report-stage-eta");
 const runReportDone = document.getElementById("run-report-done");
 const runReportViewBtn = document.getElementById("run-report-view-btn");
 
+const runReportWeaveRow = document.getElementById("run-report-weave-row");
+const runReportWeaveWarning = document.getElementById("run-report-weave-warning");
+const runReportWeaveModeSelect = document.getElementById("run-report-weave-mode");
+// Backlog #20 follow-up (2026-09-06) - real playstyle choice only exists
+// for Survival/Beastmastery Hunter (a real weave rotation mechanic - see
+// local_config.melee_weave_mode()'s own docstring) - per the user's own
+// reminder, every other class must never see this control at all.
+const WEAVE_CAPABLE_PROFILES = ["survival_hunter", "beastmastery_hunter"];
+
 const runReportSourcesSummary = document.getElementById("run-report-sources-summary");
 const runReportSourcesBtn = document.getElementById("run-report-sources-btn");
 const sourceScopeModal = document.getElementById("source-scope-modal");
@@ -618,7 +627,30 @@ runReportBtn.addEventListener("click", async () => {
   runReportPhaseSelect.innerHTML = PHASES.map((p) => `<option value="${p}">${PHASE_LABELS[p]}</option>`).join("");
   runReportDurationInput.value = 180;
   await refreshSourcesSummary();
+  await refreshWeaveModeRow();
   openModal(runReportModal);
+});
+
+// Backlog #20 follow-up (2026-09-06) - only shown for a real weave-capable
+// profile (Survival/Beastmastery Hunter). Per the user: default to Turret
+// (matches this tool's own real, historical behavior for every existing
+// report - nothing changes for an existing character unless they actually
+// touch this), with a real, un-missable red warning next to it rather than
+// silently assuming either playstyle - "we should not assume if the use is
+// weaving or not."
+async function refreshWeaveModeRow() {
+  const c = characters.find((x) => x.name_realm === selectedNameRealm);
+  const isWeaveCapable = c && WEAVE_CAPABLE_PROFILES.includes(c.profile_dir_name);
+  runReportWeaveRow.hidden = !isWeaveCapable;
+  runReportWeaveWarning.hidden = !isWeaveCapable;
+  if (!isWeaveCapable) return;
+  const current = await window.pywebview.api.get_melee_weave_mode(selectedNameRealm);
+  runReportWeaveModeSelect.value = current.mode;
+}
+
+runReportWeaveModeSelect.addEventListener("change", async () => {
+  if (!selectedNameRealm) return;
+  await window.pywebview.api.set_melee_weave_mode(selectedNameRealm, runReportWeaveModeSelect.value);
 });
 
 // ---- Loot-source scope (backlog #5) ----
@@ -807,6 +839,9 @@ runReportStartBtn.addEventListener("click", async () => {
   runReportError.hidden = true;
 
   const duration = parseInt(runReportDurationInput.value, 10) || 180;
+  if (!runReportWeaveRow.hidden) {
+    await window.pywebview.api.set_melee_weave_mode(selectedNameRealm, runReportWeaveModeSelect.value);
+  }
   const res = await window.pywebview.api.run_report(selectedNameRealm, phase, duration);
   if (!res.started) {
     runReportStartBtn.disabled = false;

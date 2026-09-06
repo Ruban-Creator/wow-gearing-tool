@@ -6027,3 +6027,77 @@ Real, general lesson for this project: a feature's own internal math being prova
 this is the second time today a "verified correct" claim needed walking back once tested against
 real, independent data (the first being the "Agility" labels), reinforcing why an external,
 real-world check is worth doing even after the code review looks clean.
+
+## 2026-09-06 (cont'd): Feral Cat Druid's settings_template.json drifted AGAIN, after the sim v0.0.130 bump - real, expected recurrence, not a repeat mistake
+
+Backlog #17 (see FUTURE_TASKS.md, now marked CLOSED) regenerated her `settings_template.json` for
+real earlier the same day (commit `9b4aa63`). Later the same day, the sim got bumped v0.0.124 ->
+v0.0.130 (commit `91fd86e`, backlog #21's investigation) - and nobody re-regenerated Feral Cat
+Druid's settings to match. Found while working through open backlog items during an idle stretch:
+regenerating again produced a real, small (72-line) diff, not the noise/stale-nothing-changed
+result expected if the file were still current.
+
+**What changed, confirmed via the diff, not guessed**: her real, vendored APL
+(`sim/tbc-new/ui/druid/feral_cat/apls/*.apl.json`) picked up a new real safety gate - a mana-cost
+check against `spellId 768` (Cat Form - confirmed via `grep -rn "SpellID: *768" sim/tbc-new/sim/`,
+landing on `sim/druid/forms.go`) now guards Engineering trinket/potion usage in her rotation, so she
+doesn't pop one of those while too low on mana to shift back into Cat Form afterward. A real,
+sensible upstream rotation refinement - per this project's own ground rule ("assume the latest sim's
+model is correct... a rewritten rotation is exactly what 'update the sim' means to pick up"), not a
+bug to second-guess.
+
+**Real verification, same standard as #17's original closure**: a direct sim call via
+`adapters/tbc/valuation.py:evaluate()` against her real current gear confirmed the rotation still
+fires correctly, non-crashing (2657.7 DPS, close to the pre-regen 2663.2 - the new gate rarely
+actually triggers, since she's not typically mana-starved as a physical-damage spec, explaining why
+the DPS delta is small). Full fresh `run_upgrade_sweep.py` resweep afterward, `build_ledger_data.py`
+rebuilt, `check_ledger_consistency.py` clean (109/0).
+
+**Real, general lesson worth remembering, not just for Feral Cat Druid**: a profile's
+`settings_template.json` isn't a write-once artifact - ANY future sim bump can silently reintroduce
+this exact same "stale settings, never regenerated to match" gap for any profile whose real rotation
+is APL-source-driven (built via `build_profile_settings.py`, not hand-maintained like Hunter's own).
+Worth adding an explicit `build_profile_settings.py --check-diff <profile>`-style step to CLAUDE.md's
+"Sim update procedure" runbook (step 2's `ui/<class>/<spec>/apls/*.json` bullet already calls this
+out as a real, expected finding to note - but doesn't currently prompt regenerating every profile's
+settings file against it) - not done this pass, flagging for the next real sim-update pass to pick up.
+
+## 2026-09-06 (cont'd): Real, live-verified "Melee Weave vs Turret" GUI feature for Survival/Beastmastery Hunter
+
+Per the user's own explicit request, made live while reviewing the Dual-Wield-Alternative section's
+real weave-on/weave-off DPS gap (~500+ DPS for the same exact gear, confirmed earlier the same
+session): "We need a dropdown in the gui for bm and sv hunter to go meleeweave or turret (meleeweave
+off)." The user then refined the design twice: "we should not assume if the use is weaving or not"
+(ruling out a silent default either way) and "usually 2hand assumes weave and dw does not assume
+weave - we could default to turret and add a red info text about the selector" (the actual shipped
+default/warning design) - plus two explicit scope reminders: "remember melee/turret only exists for
+hunters though" and "remember we don't want to show weave/turret in the gui for other classes."
+
+**Real architectural subtlety, found while implementing, not anticipated upfront**: simply swapping
+which file `SETTINGS_TEMPLATE`/`SETTINGS_2H` point at (to make the chosen playstyle "primary" for
+the WHOLE sweep, not just the weapon-choice side analysis) would have broken the hardcoded "weave
+ON"/"weave OFF" labels the 2H-Options and Dual-Wield-Alternative sections print, which assume those
+two variable names have fixed, unswapped semantics. Fixed with two NEW, NEVER-swapped references
+(`SETTINGS_NO_WEAVE_REAL`/`SETTINGS_WEAVE_REAL`, captured right after the duration-override logic so
+they stay correctly duration-adjusted) used exclusively by those labeled sections, while
+`SETTINGS_TEMPLATE`/`SETTINGS_2H` (which the real mode swap affects) keep driving every other call
+site in the main sweep. The swap itself only ever fires when `SETTINGS_2H != SETTINGS_TEMPLATE`
+(i.e. a real weave-capable profile) AND `local_config.melee_weave_mode() == "weave"` - so a caster
+profile's `melee_weave_mode()` is never even consulted, matching the user's own scope reminder by
+construction, not by a class-name check.
+
+**Real end-to-end verification, live sweep, not just a code read**: set Lerynia's mode to `"weave"`,
+ran a full fresh sweep - the report's own whole-sweep baseline (`baseline_screened`) came back
+**3341.76** (matches the real weave-on figure, ~3338 at full resolve precision, confirmed earlier
+same session), while `dual_wield_alt`'s own `current_2h_dps`/`current_2h_dps_weave` fields stayed
+correctly fixed at **2813.2**/**3338.0** regardless - confirming the labels never go stale no matter
+which mode is primary, exactly the design intent. `check_ledger_consistency.py` clean (539/0).
+**Reset her back to `"turret"` (the real default) immediately afterward and re-ran a real sweep** to
+restore her actual production report/cache - the "weave" setting used for this test was never a real
+request to change her own assumed playstyle, only a verification of the mechanism.
+
+Also fixed in passing: `run_upgrade_sweep.py`'s own bottom-of-file debug-invocation fallback
+(`if __name__ == "__main__": main("Lerynia-Thunderstrike", "phase3")`) had been silently broken
+since `profile_dir` became a required argument (backlog #13) - any direct `python
+run_upgrade_sweep.py` invocation raised a bare `TypeError` ever since. Fixed to resolve `profile_dir`
+via `character_profiles.SUPPORTED_CHARACTERS`, same as every other real caller.

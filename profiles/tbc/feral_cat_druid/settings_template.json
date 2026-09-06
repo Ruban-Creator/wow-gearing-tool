@@ -2817,7 +2817,28 @@
             {
               "action": {
                 "condition": {
-                  "gcdIsReady": {}
+                  "and": {
+                    "vals": [
+                      {
+                        "gcdIsReady": {}
+                      },
+                      {
+                        "cmp": {
+                          "op": "OpGe",
+                          "lhs": {
+                            "currentMana": {}
+                          },
+                          "rhs": {
+                            "spellCurrentCost": {
+                              "spellId": {
+                                "spellId": 768
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
                 },
                 "groupReference": {
                   "groupName": "Engineering"
@@ -2892,6 +2913,21 @@
                         "selectedConjured": {
                           "conjuredId": {
                             "itemId": 22788
+                          }
+                        }
+                      },
+                      {
+                        "cmp": {
+                          "op": "OpGe",
+                          "lhs": {
+                            "currentMana": {}
+                          },
+                          "rhs": {
+                            "spellCurrentCost": {
+                              "spellId": {
+                                "spellId": 768
+                              }
+                            }
                           }
                         }
                       }
@@ -2982,6 +3018,41 @@
                                 "rhs": {
                                   "const": {
                                     "val": "2000"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "or": {
+                          "vals": [
+                            {
+                              "selectedPotion": {
+                                "potionId": {
+                                  "itemId": 22832
+                                }
+                              }
+                            },
+                            {
+                              "selectedPotion": {
+                                "potionId": {
+                                  "itemId": 31677
+                                }
+                              }
+                            },
+                            {
+                              "cmp": {
+                                "op": "OpGe",
+                                "lhs": {
+                                  "currentMana": {}
+                                },
+                                "rhs": {
+                                  "spellCurrentCost": {
+                                    "spellId": {
+                                      "spellId": 768
+                                    }
                                   }
                                 }
                               }

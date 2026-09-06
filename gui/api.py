@@ -429,6 +429,20 @@ class Api:
         local_config.set_source_scope_exclusions(name_realm, excluded_keys)
         return {"saved": True}
 
+    def get_melee_weave_mode(self, name_realm: str) -> dict:
+        """Backlog #20 follow-up (2026-09-06) - only meaningful for a real
+        weave-capable profile (Survival/Beastmastery Hunter); the frontend
+        gates the whole selector on `is_weave_profile` (checked via
+        `profile_dir_name` - see list_characters()'s own docstring) rather
+        than relying on this endpoint to say so, per the user's own
+        reminder that other classes shouldn't see this control at all."""
+        return {"mode": local_config.melee_weave_mode(name_realm),
+                "is_configured": name_realm in local_config.load().get("melee_weave_mode", {})}
+
+    def set_melee_weave_mode(self, name_realm: str, mode: str | None) -> dict:
+        local_config.set_melee_weave_mode(name_realm, mode)
+        return self.get_melee_weave_mode(name_realm)
+
     def get_reports(self, name_realm: str) -> dict:
         """Backlog #13 - nested {profile_dir_name: {phase: {...}}}, migrated
         automatically from the old flat schema if needed - see

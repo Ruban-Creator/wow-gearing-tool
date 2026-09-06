@@ -11,6 +11,7 @@
   --accent-dim: #a87d33;
   --good: #6bbf6b;
   --warn: #d98c3a;
+  --danger: #e05c5c;
 
   --class-warrior: #C79C6E;
   --class-druid: #FF7D0A;
@@ -619,6 +620,17 @@ html, body {
   cursor: pointer;
 }
 .source-scope-item input { cursor: pointer; }
+
+.run-report-weave-warning {
+  margin: -4px 0 10px;
+  background: rgba(224, 92, 92, 0.1);
+  border: 1px solid rgba(224, 92, 92, 0.4);
+  color: var(--danger);
+  border-radius: 6px;
+  padding: 9px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+}
 
 .run-report-error {
   margin-top: 10px;

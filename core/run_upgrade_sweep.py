@@ -616,6 +616,38 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     else:
         actual_duration = repo_root.load_json(SETTINGS_TEMPLATE)["encounter"]["duration"]
 
+    # Real, permanent (never swapped below) references to the real
+    # no-weave/weave-on files, captured HERE (after any real duration
+    # override above, so they stay correctly duration-adjusted) - the 2H
+    # Weapon Options / Dual-Wield Alternative sections print real labels
+    # ("weave ON"/"weave OFF") that must stay honest regardless of which
+    # file the main sweep below ends up treating as "primary".
+    SETTINGS_NO_WEAVE_REAL = SETTINGS_TEMPLATE
+    SETTINGS_WEAVE_REAL = SETTINGS_2H
+
+    # Backlog #20 follow-up (2026-09-06, per the user's own real, live
+    # finding): a weave-capable profile's real DPS differs by 500+ points
+    # depending on whether she melee-weaves or plays pure-ranged "turret" -
+    # this used to be silently baked into which file happened to be
+    # "primary" (SETTINGS_TEMPLATE, used for the WHOLE report's tier list,
+    # every slot's own MV) vs which was only ever consulted by the
+    # 2H-options/dual-wield-alternative side analysis. Per the user: "we
+    # should not assume if the use is weaving or not" - a real, explicit,
+    # per-character GUI choice (local_config.melee_weave_mode()) now
+    # decides which file is primary for the WHOLE sweep. The `!=` check
+    # means this only ever does anything for a profile that actually HAS a
+    # real weave variant (Survival/Beastmastery Hunter) - every other
+    # profile's SETTINGS_2H already equals SETTINGS_TEMPLATE by the
+    # fallback above, so melee_weave_mode() is never even consulted for
+    # e.g. a caster, matching the user's own reminder that this choice only
+    # exists for Hunters. Only SETTINGS_TEMPLATE/SETTINGS_2H (which decide
+    # what the MAIN sweep uses) are swapped - SETTINGS_NO_WEAVE_REAL/
+    # SETTINGS_WEAVE_REAL above stay fixed, so the 2H-Options/Dual-Wield-
+    # Alternative sections' own "weave ON"/"weave OFF" labels can never go
+    # stale just because the primary settings changed.
+    if SETTINGS_2H != SETTINGS_TEMPLATE and local_config.melee_weave_mode(name_realm) == "weave":
+        SETTINGS_TEMPLATE, SETTINGS_2H = SETTINGS_2H, SETTINGS_TEMPLATE
+
     profile = repo_root.load_json(os.path.join(profile_dir, "profile.json"))
     # Real, ordered list of every stage this run will show, for the GUI's
     # "Stage X of Y" indicator - the 2H section (its own two stages) is
@@ -1666,8 +1698,8 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
             # to a 2H weapon help further" - not "should I abandon DW
             # entirely". The no-weave baseline is printed alongside for
             # context, never silently dropped.
-            weave_dw_result = mv.valuation.evaluate(SETTINGS_2H, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
-            no_weave_result = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
+            weave_dw_result = mv.valuation.evaluate(SETTINGS_WEAVE_REAL, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
+            no_weave_result = mv.valuation.evaluate(SETTINGS_NO_WEAVE_REAL, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
             print(f"=== 2H Weapon Options (melee weave rotation) ===")
             print(f"Baseline, current DW gear, weave OFF: {no_weave_result['combined']:.1f}")
             print(f"Baseline, current DW gear, weave ON:  {weave_dw_result['combined']:.1f} "
@@ -1763,8 +1795,8 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
                 r.pop("trial")
             return top_2h, len(real_upgrades_2h)
 
-        top_2h, real_upgrades_2h_count = run_2h_pass(SETTINGS_2H, weave_dw_result, "",
-                                                       True if is_weave_profile else None)
+        top_2h, real_upgrades_2h_count = run_2h_pass(SETTINGS_WEAVE_REAL if is_weave_profile else SETTINGS_TEMPLATE,
+                                                       weave_dw_result, "", True if is_weave_profile else None)
         two_hand_out = list(top_2h)
 
         vs_text = "vs weaving with current DW gear" if is_weave_profile else "vs current gear"
@@ -1782,7 +1814,7 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
 
         if is_weave_profile:
             top_2h_no_weave, real_upgrades_2h_no_weave_count = run_2h_pass(
-                SETTINGS_TEMPLATE, no_weave_result, " (no weave)", False)
+                SETTINGS_NO_WEAVE_REAL, no_weave_result, " (no weave)", False)
             two_hand_out.extend(top_2h_no_weave)
 
             print(f"  -- Top {len(top_2h_no_weave)} 2H upgrade(s), no weave, vs current DW gear (weave OFF) --")
@@ -1820,83 +1852,126 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     # empty) to find the best one, then screen every real offhand-eligible
     # candidate against THAT fixed mainhand to find the best pairing - both
     # passes are real sim calls (SCREEN_ITERATIONS), never an EP guess.
+    #
+    # Real, serious bug found and fixed the SAME day, caught live by the
+    # user's own mechanical instinct ("i can't see a dagger beating a 2.6
+    # speed weapon on weave") and confirmed by direct testing: the search
+    # used to screen the best mainhand ONCE, using the no-weave settings
+    # only, then reuse that same pick for BOTH the no-weave AND weave-on
+    # final comparison. For Lerynia this picked Blade of the Unrequited
+    # (1.6 speed) as "best mainhand" - correct for no-weave, but with weave
+    # ON, Netherbane (2.6 speed) + Claw of the Phoenix beat Blade + Claw by
+    # a real, decisive **+276.7 DPS** - a slower weapon hitting harder on
+    # every real Raptor Strike, exactly the kind of weapon-speed/rotation
+    # interaction a linear, single-scenario screen can silently miss (the
+    # same class of error this whole tool exists to catch via real sims,
+    # not EP). Fixed by screening mainhand/offhand SEPARATELY per real
+    # settings variant when the profile is weave-capable - the best pair
+    # for weave-on and the best pair for no-weave are now allowed to be
+    # (and, confirmed live, actually are) two different real answers.
+    # Real refinement, same day, per the user: "if on weaving off both
+    # netherbane + claw and blade + claw are a dps increase we should maybe
+    # show both - we should probably show top 3 dps increases on the dw vs
+    # 2hand part aswell - but we don't have to show more than 1 decrease."
+    # DW_TOP_N mainhand candidates (not just the single best) each get
+    # their own real best-offhand pairing, producing up to DW_TOP_N
+    # distinct real pairs - every real upgrade among them is shown (up to
+    # DW_TOP_N), but if none of them are real upgrades, only the single
+    # least-bad one is shown (matching the "Achieved BiS"/tier-list
+    # convention elsewhere: a real downgrade is worth confirming exists,
+    # never worth padding out with more downgrades).
+    DW_TOP_N = 3
     dual_wield_alt: dict | None = None
     if real_mainhand_is_two_hand and dw_pair_candidates:
-        milestone("Screening dual-wield alternative")
         dw_mh_idx = gc.SLOT_ORDER.index("mainhand")
         dw_oh_idx = gc.SLOT_ORDER.index("offhand")
         mainhand_eligible = [c for c in dw_pair_candidates if not opt.is_hand_restricted_conflict(c.item_id, "mainhand")]
         offhand_eligible = [c for c in dw_pair_candidates if not opt.is_hand_restricted_conflict(c.item_id, "offhand")]
 
-        def screen_dw_mainhand(c):
-            trial = list(baseline_config)
-            trial[dw_mh_idx] = c.as_entry()
-            trial[dw_oh_idx] = {}
-            r = mv.valuation.evaluate(SETTINGS_TEMPLATE, trial, SCREEN_ITERATIONS, opt.SEED)
-            return c, r["combined"]
+        def find_top_dw_pairs(settings_path: str, stage_suffix: str, current_result: dict) -> list[dict]:
+            def screen_mainhand(c):
+                trial = list(baseline_config)
+                trial[dw_mh_idx] = c.as_entry()
+                trial[dw_oh_idx] = {}
+                r = mv.valuation.evaluate(settings_path, trial, SCREEN_ITERATIONS, opt.SEED)
+                return c, r["combined"]
 
-        mh_screened = run_with_progress(screen_dw_mainhand, mainhand_eligible, "Screening dual-wield mainhand",
-                                          progress_cb=progress_cb, stage_sequence=stage_sequence)
-        best_mh_c, _ = max(mh_screened, key=lambda t: t[1])
+            mh_screened = run_with_progress(screen_mainhand, mainhand_eligible, f"Screening dual-wield mainhand{stage_suffix}",
+                                              progress_cb=progress_cb, stage_sequence=stage_sequence)
+            mh_screened.sort(key=lambda t: t[1], reverse=True)
+            top_mainhands = [c for c, _ in mh_screened[:DW_TOP_N]]
 
-        def screen_dw_offhand(c):
-            trial = list(baseline_config)
-            trial[dw_mh_idx] = best_mh_c.as_entry()
-            trial[dw_oh_idx] = c.as_entry()
-            r = mv.valuation.evaluate(SETTINGS_TEMPLATE, trial, SCREEN_ITERATIONS, opt.SEED)
-            return c, r["combined"]
+            # Each of the top mainhands gets its OWN real best-offhand
+            # pairing - a strong 2nd-place mainhand can still pair with a
+            # very different offhand than the 1st-place one (real weapon-
+            # pair interactions, same reason a single greedy pick isn't
+            # enough - see this whole section's own top comment).
+            pairs: list[tuple["opt.Candidate", "opt.Candidate"]] = []
+            for mh_c in top_mainhands:
+                def screen_offhand(c, _mh=mh_c):
+                    trial = list(baseline_config)
+                    trial[dw_mh_idx] = _mh.as_entry()
+                    trial[dw_oh_idx] = c.as_entry()
+                    r = mv.valuation.evaluate(settings_path, trial, SCREEN_ITERATIONS, opt.SEED)
+                    return c, r["combined"]
 
-        oh_screened = run_with_progress(screen_dw_offhand, offhand_eligible, "Screening dual-wield offhand",
-                                          progress_cb=progress_cb, stage_sequence=stage_sequence)
-        best_oh_c, _ = max(oh_screened, key=lambda t: t[1])
+                oh_screened = run_with_progress(screen_offhand, offhand_eligible, f"Screening dual-wield offhand{stage_suffix}",
+                                                  progress_cb=progress_cb, stage_sequence=stage_sequence)
+                best_oh, _ = max(oh_screened, key=lambda t: t[1])
+                pairs.append((mh_c, best_oh))
 
-        milestone("Resolving dual-wield alternative")
-        trial_final = list(baseline_config)
-        trial_final[dw_mh_idx] = best_mh_c.as_entry()
-        trial_final[dw_oh_idx] = best_oh_c.as_entry()
-        # Real current-2H baseline at full resolve precision - recomputed
-        # here rather than assumed available from the 2H section above
-        # (which only runs `if ... and weapon_2h_candidates` - a real but
-        # fragile assumption that pool is never empty). sim_cache makes
-        # this an instant hit whenever that section DID already compute
-        # it (identical config+settings+iterations), a real but cheap
-        # extra call otherwise.
-        current_2h_no_weave = mv.valuation.evaluate(SETTINGS_TEMPLATE, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
-        dw_no_weave = mv.valuation.evaluate(SETTINGS_TEMPLATE, trial_final, RESOLVE_ITERATIONS, opt.SEED)
-        delta_no_weave = dw_no_weave["combined"] - current_2h_no_weave["combined"]
-        noise_no_weave = mv.delta_noise(current_2h_no_weave, dw_no_weave, RESOLVE_ITERATIONS)
+            milestone(f"Resolving dual-wield alternative{stage_suffix}")
+            results = []
+            for mh_c, oh_c in pairs:
+                trial = list(baseline_config)
+                trial[dw_mh_idx] = mh_c.as_entry()
+                trial[dw_oh_idx] = oh_c.as_entry()
+                resolved = mv.valuation.evaluate(settings_path, trial, RESOLVE_ITERATIONS, opt.SEED)
+                delta = resolved["combined"] - current_result["combined"]
+                noise = mv.delta_noise(current_result, resolved, RESOLVE_ITERATIONS)
+                results.append({
+                    "mainhand": {"name": mh_c.name, "item_id": mh_c.item_id},
+                    "offhand": {"name": oh_c.name, "item_id": oh_c.item_id},
+                    "dw_dps": resolved["combined"], "mv": delta, "noise_stdev": noise,
+                    "tied_within_noise": abs(delta) < 2 * noise,
+                })
+            results.sort(key=lambda r: r["mv"], reverse=True)
+            real_upgrades = [r for r in results if not r["tied_within_noise"] and r["mv"] > 0]
+            return real_upgrades[:DW_TOP_N] if real_upgrades else results[:1]
+
+        milestone("Screening dual-wield alternative")
+        current_2h_no_weave = mv.valuation.evaluate(SETTINGS_NO_WEAVE_REAL, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
+        pairs_no_weave = find_top_dw_pairs(SETTINGS_NO_WEAVE_REAL, " (no weave)" if is_weave_profile else "", current_2h_no_weave)
 
         dual_wield_alt = {
-            "mainhand": {"name": best_mh_c.name, "item_id": best_mh_c.item_id},
-            "offhand": {"name": best_oh_c.name, "item_id": best_oh_c.item_id},
-            "dw_dps": dw_no_weave["combined"], "current_2h_dps": current_2h_no_weave["combined"],
-            "mv": delta_no_weave, "noise_stdev": noise_no_weave,
-            "tied_within_noise": abs(delta_no_weave) < 2 * noise_no_weave,
+            "current_2h_dps": current_2h_no_weave["combined"],
+            "pairs": pairs_no_weave,
             "weave_supported": is_weave_profile,
         }
-        print(f"=== Dual-Wield Alternative ===")
-        print(f"Best achievable pair: {best_mh_c.name} + {best_oh_c.name}: {dw_no_weave['combined']:.1f} DPS")
+        print(f"=== Dual-Wield Alternative{' (no weave)' if is_weave_profile else ''} ===")
         print(f"Your current 2H weapon: {current_2h_no_weave['combined']:.1f} DPS")
-        print(f"Real delta: {delta_no_weave:+.1f} DPS (tied={dual_wield_alt['tied_within_noise']})")
+        for r in pairs_no_weave:
+            print(f"  {r['mainhand']['name']} + {r['offhand']['name']}: {r['dw_dps']:.1f} DPS "
+                  f"({r['mv']:+.1f}, tied={r['tied_within_noise']})")
 
         # A weave-capable profile can melee-weave with EITHER weapon setup
         # (Raptor Strike swings whatever's in mainhand regardless of hand
         # count - dual-wield was never actually required for it, a real
         # thing confirmed while investigating this same backlog item, see
-        # NOTES.md) - so the fair comparison needs the weave-ON variant
-        # for both sides too, not just weave-OFF.
+        # NOTES.md) - so the fair comparison needs its OWN, separately
+        # screened top pairs too, not the no-weave pairs re-resolved under
+        # weave settings (see this whole section's own top comment for the
+        # real, decisive case this matters for).
         if is_weave_profile:
-            current_2h_weave = mv.valuation.evaluate(SETTINGS_2H, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
-            dw_weave = mv.valuation.evaluate(SETTINGS_2H, trial_final, RESOLVE_ITERATIONS, opt.SEED)
-            delta_weave = dw_weave["combined"] - current_2h_weave["combined"]
-            noise_weave = mv.delta_noise(current_2h_weave, dw_weave, RESOLVE_ITERATIONS)
-            dual_wield_alt["dw_dps_weave"] = dw_weave["combined"]
+            current_2h_weave = mv.valuation.evaluate(SETTINGS_WEAVE_REAL, baseline_config, RESOLVE_ITERATIONS, opt.SEED)
+            pairs_weave = find_top_dw_pairs(SETTINGS_WEAVE_REAL, " (weave)", current_2h_weave)
             dual_wield_alt["current_2h_dps_weave"] = current_2h_weave["combined"]
-            dual_wield_alt["mv_weave"] = delta_weave
-            dual_wield_alt["noise_stdev_weave"] = noise_weave
-            dual_wield_alt["tied_within_noise_weave"] = abs(delta_weave) < 2 * noise_weave
-            print(f"With weave: pair {dw_weave['combined']:.1f} vs current 2H {current_2h_weave['combined']:.1f} "
-                  f"({delta_weave:+.1f} DPS, tied={dual_wield_alt['tied_within_noise_weave']})")
+            dual_wield_alt["pairs_weave"] = pairs_weave
+            print(f"=== Dual-Wield Alternative (weave) ===")
+            print(f"Your current 2H weapon: {current_2h_weave['combined']:.1f} DPS")
+            for r in pairs_weave:
+                print(f"  {r['mainhand']['name']} + {r['offhand']['name']}: {r['dw_dps']:.1f} DPS "
+                      f"({r['mv']:+.1f}, tied={r['tied_within_noise']})")
         print()
 
     # Stage 5 (§7, the pairwise interaction matrix) is dropped from the
@@ -1965,5 +2040,12 @@ if __name__ == "__main__":
     # Real CLI entry point is `gear best <character> <phase>` (cli/gear.py) -
     # this direct-invocation fallback exists only for quick manual debugging
     # against today's one real character/phase, matching the pipeline's
-    # exact behavior before this file took real arguments.
-    main("Lerynia-Thunderstrike", "phase3")
+    # exact behavior before this file took real arguments. profile_dir became
+    # a required arg under backlog #13 (no silent default - see main()'s own
+    # docstring for the real bug that caused) - this fallback silently broke
+    # then and has raised a bare TypeError on every direct invocation since;
+    # fixed 2026-09-06 by resolving it the same way every other real caller
+    # does, via character_profiles.SUPPORTED_CHARACTERS.
+    import character_profiles
+    _debug_name = "Lerynia-Thunderstrike"
+    main(_debug_name, "phase3", character_profiles.SUPPORTED_CHARACTERS[_debug_name])
