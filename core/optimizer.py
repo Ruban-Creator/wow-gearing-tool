@@ -277,14 +277,34 @@ def build_owned_config(equipped_items: list[dict], known_professions: set[str] |
     never get compared to enchanted ones"): a slot she hasn't enchanted
     yet (or has a stale/inferior one) was silently understating her own
     baseline the same way an un-regemmed item used to, before the gem fix
-    above. Now unconditionally uses the real, sim-verified BiS enchant
-    for the slot (gear_config.get_active_default_enchants()), the same
-    treatment gems already get above - DPS*(P) is the best achievable
-    from P, never "whatever's actually socketed/enchanted right now",
-    for gems OR enchants. (Her real, possibly-different current enchant
-    still gets surfaced and compared explicitly in the Missing Enchants
-    ledger section - this function is the optimizer's baseline, not the
-    place that reports what she actually has equipped.)
+    above. Uses the real, sim-verified BiS enchant for the slot
+    (gear_config.get_active_default_enchants()) when one is curated and
+    achievable - the same treatment gems already get above - but FALLS
+    BACK to her real, already-applied current enchant when no curated
+    default exists for that slot, rather than silently dropping to
+    unenchanted.
+
+    Real, confirmed bug fixed 2026-09-06 (live user report - Béarforceone,
+    Teeth of Gruul showing as a false +27.67 DPS "upgrade" when a real,
+    independently-run websim comparison using her exact real gear found a
+    genuine -5.80 DPS decrease): `default_enchants.json` for several
+    profiles has real, documented gaps (Balance Druid's own coverage was
+    0/11 real entries at the time - see NOTES.md's 2026-08-25 "Missing
+    Enchants" entry) - `default_enchants.get(slot, 0)` silently returned 0
+    (no enchant) for EVERY uncurated slot, discarding her real, already-
+    applied enchants (confirmed: her real Chestpiece of Malorne/enchant
+    1144, Crimson Bracers of Gloom/enchant 369, and Wyrmhide Gloves/enchant
+    2934 were ALL being dropped from her own baseline). This wasn't the
+    "unenchanted vs enchanted" gap the 2026-08-25 reversal was designed to
+    fix (that was about slots she genuinely hadn't enchanted) - it was a
+    real bug where slots she HAD enchanted were being silently un-enchanted
+    in her own baseline, artificially weakening DPS*(P) and inflating
+    every candidate's marginal value against it. Falling back to her real
+    current enchant (rather than 0) when no curated default exists fixes
+    this without inventing anything - her current enchant is real, known
+    data (character.json), not a guess. (Her real current enchant still
+    gets surfaced and compared explicitly in the Missing Enchants ledger
+    section too - this function is just the optimizer's baseline.)
 
     known_professions gates Ring enchants specifically (achievable_enchant()
     - real, found 2026-08-25: only a character who personally has Enchanting
@@ -304,7 +324,15 @@ def build_owned_config(equipped_items: list[dict], known_professions: set[str] |
         item = idb.by_id(it["id"])
         gems = gem_optimizer.best_gems_for_item(item, meta_gem_id) if item else it.get("gems")
         slot = gc.SLOT_ORDER[idx]
-        enchant = achievable_enchant(default_enchants.get(slot, 0), known_professions)
+        # Real bug fix, 2026-09-06 (see this function's own docstring for
+        # the full story) - a curated default that's missing or unachievable
+        # must fall back to her REAL current enchant, not silently drop to
+        # unenchanted. Her real enchant is never re-gated through
+        # achievable_enchant() - it's already applied, so it's inherently
+        # achievable regardless of what profession the character check
+        # would otherwise require (e.g. a ring enchant a guildmate applied
+        # for her).
+        enchant = achievable_enchant(default_enchants.get(slot, 0), known_professions) or it.get("enchant", 0)
         config.append(gc.item_entry(it["id"], enchant, gems))
     return gem_optimizer.ensure_meta_requirement(config, equipped_items, meta_gem_id)
 

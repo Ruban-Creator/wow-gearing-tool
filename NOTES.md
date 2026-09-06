@@ -5469,3 +5469,83 @@ this back up, don't half-add them from memory.
 
 `check_ledger_consistency.py` stayed clean (1389/0 Béarforceone, 1696/0+1 known warning Rubán)
 across every change made this session on this backlog item.
+
+## 2026-09-06: Real bug fixed - build_owned_config() was silently discarding real enchants
+
+Live user report: Béarforceone's Phase 2 report showed Teeth of Gruul as a +27.7 DPS "upgrade" for
+her neck slot. The user independently ran the exact same comparison on the real wowsims website
+using her exact real gear and got -5.80 DPS (a decrease) - a serious, confirmed discrepancy, not a
+matter of opinion (both numbers came from a real sim, not estimation).
+
+**Root cause, confirmed via a systematic, isolated series of real sim calls (not guessed):**
+`core/optimizer.py`'s `build_owned_config()` (the function that builds the sim's own baseline `P`
+for `MV(i) = DPS*(P∪{i}) - DPS*(P)`) computes each slot's enchant as
+`achievable_enchant(default_enchants.get(slot, 0), known_professions)` - if the profile's own
+curated `default_enchants.json` has no entry for a slot, this silently returns 0 (no enchant),
+with NO fallback to the character's own real, already-applied enchant. Balance Druid's own
+`default_enchants.json` was previously found to have real coverage gaps (0/11 real entries per the
+2026-08-25 "Missing Enchants" entry) - so her baseline was silently missing her real Chestpiece of
+Malorne (enchant 1144), Crimson Bracers of Gloom (enchant 369), and Wyrmhide Gloves (enchant 2934)
+- three real, already-applied enchants she actually has, discarded from her own comparison
+baseline. This isn't the "unenchanted vs enchanted" gap the 2026-08-25 policy change was designed
+to fix (that was about slots she genuinely hadn't enchanted yet) - it's a real bug where slots she
+HAD enchanted got silently un-enchanted in her own baseline, understating DPS*(P) and inflating
+every candidate's marginal value against it.
+
+**Real, isolated verification, step by step, before touching any code:**
+1. Ran the user's own exact settings JSON (her real gear, real buffs/debuffs, real talents)
+   directly through our own sim - it initially returned 0 DPS across the board. Real cause: her
+   JSON used `"rotation": {"type": "TypeAuto"}`, a rotation type our older vendored sim build
+   doesn't execute (same real "non-functional rotation type" class of bug already found for Arcane
+   Mage/Retribution Paladin, per CLASSES.md). Substituted in our own real, working APL rotation
+   (keeping her real buffs/debuffs/gear/consumables exactly as given) and re-ran: **-9.66 DPS** -
+   matches the DIRECTION of her real websim result, confirming the discrepancy isn't a sim-version
+   difference.
+2. Diffed our tool's own `build_owned_config()` output against her raw real gear item-by-item -
+   found the enchant-discarding bug above directly (3 real enchants missing).
+3. Fixed the code, re-verified the fix restores all 3 real enchants correctly.
+4. Re-ran the FULL comparison through our tool's OWN pipeline with the fix applied - the fixed
+   baseline correctly went up (1252.08 -> 1340.63, a real +88.5 DPS from restoring 3 real enchants)
+   but Teeth of Gruul's own delta was STILL positive (+24.69) - the enchant fix alone did not fully
+   resolve the discrepancy.
+5. Controlled for gear entirely (ran her RAW real gear, no re-gem/re-enchant treatment at all,
+   through our tool's real settings_template.json) - still +23.34. This conclusively isolated the
+   remaining cause to something in the SETTINGS (buffs/debuffs/raid comp), not gear/enchants at
+   all.
+6. Diffed our settings_template.json against the user's real websim JSON field by field. One real,
+   standout difference: her JSON had `"shadowPriestDps": 800` in `player.buffs` (models a raid
+   Shadow Priest's mana-return contribution) - completely ABSENT from our settings_template.json.
+   Added it back in a scratch test (still using her raw real gear) - the delta flipped to
+   **-10.28 DPS**, matching the real direction and magnitude.
+
+**Confirmed real, project-wide gap, not Balance-Druid-specific**: `grep -rl "shadowPriestDps"
+profiles/tbc/` returns ZERO files - no profile's settings, and no `_shared/raid_buffs_received.json`
+entry, models a Shadow Priest's mana-return contribution at all, anywhere in this tool. Given a
+Shadow Priest's Vampiric Touch/Misery mana return is exactly the kind of "real fact about the raid
+composition every caster would realistically receive" that `_shared/raid_buffs_received.json`
+already exists to model (per its own 2026-08-25 design note), this looks like a real, structural
+gap in the shared raid-buffs baseline, not a one-off the user happened to add for their own test -
+but the REAL value to assume (is 800 representative? does the user's actual raid even run a Shadow
+Priest?) is real, external knowledge I can't invent - flagged to the user as a real, open decision,
+not fixed unilaterally. This is also the likely answer to the user's own direct question "we had
+the same issues at elemental shaman did we not?" - `shadowPriestDps` is equally absent from
+Elemental Shaman's own settings, so the same real mana-sustain-item-mischaracterization pattern
+from that earlier investigation (Memento of Tyrande, healer items falsely showing as DPS gains)
+plausibly shares this same root cause, not a separate, already-explained issue.
+
+**Fix applied**: `core/optimizer.py`'s `build_owned_config()` now falls back to the item's real
+current enchant (`it.get("enchant", 0)`) whenever no curated default exists or the curated default
+isn't achievable - her real enchant is never re-gated through `achievable_enchant()` (it's already
+applied, so it's inherently achievable regardless of what a hypothetical profession check would
+otherwise require). Verified directly: her 3 real enchants (1144/369/2934) now correctly appear in
+her baseline. `check_ledger_consistency.py` clean across 3 real, diverse profiles (Béarforceone
+1389/0, Rubán 1696/0+1 known warning, Lerynia 621/0) - structural check only; a fresh real sweep
+re-run to see the corrected numbers propagate into a new report hasn't been done yet, since the
+magnitude of change (a real baseline shift, affecting every candidate's MV) is worth the user
+seeing and confirming before committing to new production numbers.
+
+**Real, deliberately NOT done**: adding a `shadowPriestDps` value to the shared raid-buffs
+baseline - this needs the user's real answer to "does your actual raid run a Shadow Priest, and if
+so, what's a realistic DPS assumption" before any number goes in, per this project's own "never
+invent data" rule extended to raid-composition assumptions the same way it already applies to
+item data.
