@@ -7244,3 +7244,25 @@ first place - the existing `destruction_warlock` profile's own gear recommendati
 player choosing either priority equally well, regardless of which one is live-optimal in a given
 raid comp/phase. Closed for real this time: not blocked on missing data, just genuinely out of this
 tool's own scope (a rotation-priority question, not a "what to gear next" question).
+
+## 2026-09-07 - Fresh-install "Run Report doesn't start" bug: real confirmation closes it out
+
+Picked back up when the user did a real, genuine fresh-install test: reinstalled RGT and deleted
+Béarforceone-Thunderstrike's entire production-data folder (not a rename this time - the actual
+directory never existed, matching the ORIGINAL report from a different machine more closely than
+this dev machine's earlier folder-rename repro did) to simulate a true first-ever run.
+
+**Result, exactly as the earlier fix (same day, see TODO.md's own entry) predicted**:
+- 1st Run Report click: no `character.json` exists yet, so `check_oom()`'s try/except correctly
+  swallowed the `FileNotFoundError` and returned "nothing flagged" - the sweep proceeded into
+  `run_report()`, which synced fresh character data and completed normally, producing a real report
+  at `characters\Béarforceone-Thunderstrike\reports\balance_druid_phase1.html`. No OOM prompt shown
+  - correct, since there was no prior data to check against yet.
+- 2nd Run Report click (character.json now exists): the OOM pre-check engaged normally and
+  correctly flagged 240s (11.3% OOM), offering the real "Use 180s instead" / "Run at 240s anyway"
+  choice - confirming the fix didn't disable the feature, just made it fail safely when no data
+  exists yet.
+
+This is the real-world confirmation the fix's own NOTES.md entry (search "Real scope note, not yet
+independently confirmed") explicitly flagged as still needed before closing TODO.md's entry -
+closed now.

@@ -119,7 +119,7 @@ guess) - 5 casters picked "Enchant Ring - Spellpower" (+8.98 to +14.48 DPS), the
 offhand item and wand/ranged slot have no enchant in actual TBC, so their absence from
 `default_enchants.json` is correct, not a coverage hole.
 
-## Fresh-install "Run Report" doesn't start - REAL ROOT CAUSE FOUND AND FIXED (2026-09-07), not yet confirmed on a second machine
+## Fresh-install "Run Report" doesn't start - CLOSED, 2026-09-07 (real root cause fixed and confirmed)
 
 Reported live by the user (2026-09-06): installed the latest `RGT-Setup.exe` on a DIFFERENT machine
 (not this dev machine) and clicked "Run Report" - the sweep never actually starts, and `simserver.exe`
@@ -171,11 +171,22 @@ Confirmed by directly deleting a real synthetic profile's `character.json` and c
 `Api().check_oom()` - crashed before the fix, returned a clean "not flagged" result after. Fixed:
 `check_oom()` now catches any failure and falls back to "nothing flagged," since the OOM pre-check
 is a pure nicety that should never be able to block Run Report from starting. See NOTES.md's
-2026-09-07 entry for the full trail. **Left open, not closed**: this explains and fixes the exact
-symptom already reproduced on THIS machine, but the ORIGINAL report was from a different machine
-entirely - if that machine has some other, separate cause too (e.g. a real packaging/payload gap),
-this fix wouldn't catch it. Close this entry only after a real test confirms Run Report now works
-on a genuinely fresh install elsewhere.
+2026-09-07 entry for the full trail.
+
+**Update, 2026-09-07 - real confirmation on a genuinely fresh install, closing this for real.** The
+user reinstalled RGT and deleted Béarforceone-Thunderstrike's real production-data folder entirely
+(not just renamed) to simulate a true first-ever run, then ran Report twice in a row:
+- **1st run** (no `character.json` yet): the OOM warning correctly did NOT appear (no data yet for
+  `check_oom()` to work with, exactly the fallback path this fix added) - the sweep itself still ran
+  through to completion and produced a real report
+  (`characters\Béarforceone-Thunderstrike\reports\balance_druid_phase1.html`). This is the exact
+  "Run Report doesn't start" symptom from the original report, and it's gone.
+- **2nd run** (character.json now exists from the 1st run's own sync): the OOM warning DID appear
+  correctly (240s flagged at 11.3% OOM, offering "Use 180s instead" / "Run at 240s anyway") -
+  confirming the pre-check itself still works normally once real data exists, the fix didn't
+  disable it outright.
+Real, live proof the fix generalizes beyond this dev machine's own earlier repro (folder rename) to
+the actual reported scenario (fresh install, folder never existed) - closing this out.
 
 ## GearingToolCompanion addon: "All Characters"/main window text overlap - CLOSED, 2026-09-06
 
