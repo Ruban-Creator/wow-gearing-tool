@@ -7234,3 +7234,13 @@ the same real upstream data gap, not blocked because the spec itself stopped mat
 wowsims ever ships Phase 3+ gear data for it, or if the user wants to commit to hand-curating that
 progression themselves knowing it's genuinely comp-conditional (Fire Mage or Shadow Priest presence),
 not universally correct for every raid.
+
+**Final, actually-decisive point from the user: this was the wrong question to chase at all, for
+this specific tool.** Fire and Shadow-Bolt-priority Destruction share the same real BiS gear set - per
+the user, looking at the actual BiS lists confirms this. Since this whole tool's purpose is gear
+valuation (`MV(i)` - which item is worth getting), and Fire vs Shadow is a pure ROTATION/PRIORITY
+choice with no itemization difference, there was never a real gearing question here to solve in the
+first place - the existing `destruction_warlock` profile's own gear recommendations already serve a
+player choosing either priority equally well, regardless of which one is live-optimal in a given
+raid comp/phase. Closed for real this time: not blocked on missing data, just genuinely out of this
+tool's own scope (a rotation-priority question, not a "what to gear next" question).
