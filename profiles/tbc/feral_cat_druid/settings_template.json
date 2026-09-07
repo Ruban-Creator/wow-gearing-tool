@@ -32,7 +32,7 @@
     "drums": "LesserDrumsOfBattle",
     "graceOfAirTotem": "TristateEffectImproved",
     "strengthOfEarthTotem": "TristateEffectImproved",
-    "windfuryTotem": "TristateEffectRegular",
+    "windfuryTotem": "TristateEffectImproved",
     "totemTwisting": true,
     "battleShout": "TristateEffectImproved"
   },

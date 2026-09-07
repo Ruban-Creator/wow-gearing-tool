@@ -7045,5 +7045,49 @@ uptimes, not a hypothetical):
   selection logic was checked directly for all 5 phases (1080/1150/1210/1210/1250 resolve exactly
   as expected, Phase 1 short-circuits to the original file).
 
-Next: continue the class-by-class walkthrough for the remaining, not-yet-reviewed profiles (Druid,
-Rogue, Priest, Paladin, Shaman x2, Warlock x3, Mage) - same per-item DPS-effect-first approach.
+**Druid (Balance, Feral Cat) - every flagged item resolved, zero code changes needed.** Balance
+Druid deals ~100% spell damage, so every physical-only effect flagged against her (Demoralizing
+Roar/Shout, Scorpid Sting, Screech, Shadow Embrace, Thunder Clap, Blessing of Might, Blood Frenzy,
+Curse of Recklessness, Expose Armor, Faerie Fire, Gift of Arthas, Hunter's Mark, Sunder Armor,
+Unleashed Rage, Judgement of Light) is a confirmed no-op - each one's real sim implementation
+targets Attack Power or physical-damage-dealt/taken, never spell damage. Moonkin Aura and Leader of
+the Pack are both self-applied automatically by the sim's own per-class `AddPartyBuffs()` hook
+(`sim/tbc-new/sim/druid/druid.go:164-169` - a Moonkin-form Druid or a Cat/Bear-form Druid with the
+matching talent unconditionally grants herself at least the Regular rank, Improved with Idol of the
+Raven Goddess equipped) - same self-cast pattern already found for Warrior's Battle Shout, so our
+own explicit setting (or lack of one) genuinely doesn't matter either way. The one field that looked
+like a real, open question - `shadowPriestDps: 0` (feeds Vampiric Touch's real mana-return-to-raid
+mechanic, `sim/tbc-new/sim/core/buffs.go:363`) - checked against the reference comp's actual raid
+layout: the Shadow Priest sits in Group 4, Balance Druid in Group 3, and per the user, Vampiric
+Touch's mana return is party-scoped, not raid-wide - so 0 is the real, correct answer for this comp,
+not an oversight. Feral Cat Druid's list is almost entirely the SAME shared physical-damage raid-buff
+assumptions already validated at the Hunter/Warrior stage (Battle Shout, Blood Frenzy, Curse of
+Recklessness, Expose Armor, Faerie Fire, Gift of Arthas, Mangle, Sunder Armor, totems, Unleashed
+Rage) - not new decisions, same underlying `_shared/raid_buffs_received.json` values.
+
+**Combat Rogue - one real, repo-wide fix: Windfury Totem's shared default bumped Regular ->
+Improved.** Every other flagged item was a confirmed no-op (100% physical melee, so Arcane
+Brilliance/Blessing of Salvation/Blessing of Wisdom/Curse of Elements/Divine Spirit/Insect
+Swarm/Judgement of Light+Wisdom/Power Word Fortitude/Shadow Protection all do nothing for her), and
+Leader of the Pack/Expose Weakness Agility were already correctly assumed or already fixed. Windfury
+Totem (`sim/tbc-new/sim/core/buffs.go:1090` - Improved is +578 AP on the proc vs Regular's +445, a
+real ~30% bigger proc) turned out not to be Rogue-specific: Combat Rogue and Feral Cat Druid were
+the only two profiles with no per-profile override, silently inheriting `_shared/
+raid_buffs_received.json`'s own flat `Regular` default, while Warrior/Hunter/Retribution Paladin had
+each already independently overridden to `Improved` in their own overlays - a real, latent
+inconsistency for the exact same hypothetical raid Shaman. Per the user, bumped the shared default
+itself to `Improved` (verified this doesn't affect any of the 7 caster profiles, which correctly
+override to `TristateEffectMissing` regardless - they don't melee, so no external Windfury
+assumption applies to them at all) rather than patching Rogue alone. Every one of all 15 profiles'
+committed `settings_template.json` re-verified byte-exact against a clean base+overlay rebuild after
+this change - only `combat_rogue` and `feral_cat_druid`'s committed files actually needed patching to
+match. Incidental find while checking every settings file, unrelated to this session's own change:
+`survival_hunter/settings_template_2h.json` (the melee-weave variant) had been left stale at
+`Regular` even though her own overlay has forced `Improved` since before this session - a real,
+pre-existing drift between her two settings files, fixed in the same pass. Real, live-sim-verified
+DPS effect for Combat Rogue (synthetic fixture, 3000 iterations): +4.7 DPS, smaller than Leader of
+the Pack's effect but confirmed real and non-zero, not silently ignored.
+
+Next: continue the class-by-class walkthrough for the remaining, not-yet-reviewed profiles (Shadow
+Priest, Retribution Paladin, Elemental/Enhancement Shaman, Affliction/Demonology/Destruction
+Warlock, Arcane Mage) - same per-item DPS-effect-first approach.
