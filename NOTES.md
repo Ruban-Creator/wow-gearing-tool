@@ -6791,3 +6791,49 @@ complete - all 4 stages done and verified.** Real remaining, separately-tracked 
 part of this plan, TODO.md): the ring-enchant coverage gap (Stage 2's own finding), and
 `revalidate_chase_bonus.py` possibly graduating from scratchpad to a checked-in tool if a future
 gem-selection change needs the same re-verification methodology again.
+
+## 2026-09-07 - Real root cause found and fixed for the "Run Report doesn't start, simserver.exe
+   never appears" bug (open in TODO.md since 2026-09-06)
+
+Per the standing overnight authorization to pick up open backlog/TODO items once the plan finished:
+picked this up next since it already had strong, real repro detail on file (three separate,
+increasingly-narrowed real reproductions the same day it was reported - folder rename, folders-
+present-but-no-character.json, and the CLI sweep ruled out as unaffected).
+
+**Root cause, confirmed by direct reproduction, not inferred**: `gui/api.py`'s `check_oom()` -
+called synchronously from `app.js`'s Run Report click handler BEFORE `run_report()` itself - calls
+straight into `oom_check.check()`, which reads `character.json` directly
+(`repo_root.load_json(char_path)`) with no fallback at all. A genuinely first-run character (no
+`character.json` yet - a fresh install, or the user's own folder-rename repro) makes this raise an
+uncaught `FileNotFoundError`. `app.js`'s click handler `await`s this call with no try/catch, so the
+exception becomes a rejected promise that kills the handler dead right there - `startRunReport()`/
+`run_report()` (the ONLY code path that actually knows how to sync/build a missing
+`character.json`, see `_run_report_job()`'s own real handling of exactly this case) is never even
+reached. Explains every one of the user's own real observations precisely: the sweep never starts,
+`simserver.exe` never appears (it's spawned from inside `run_report()`'s own pipeline, which never
+runs), and copying a real `character.json` back in "fixes" it purely by making `check_oom()`
+survive long enough for the click handler to reach the next line.
+
+**Reproduced directly, twice** (deleting a real synthetic profile's `character.json`, calling
+`Api().check_oom()` directly - confirmed `FileNotFoundError` both times, restored the file
+immediately after each test): before the fix, a hard crash with the exact real traceback; after,
+a clean `{"oom_seconds": 0.0, "oom_fraction": 0.0, "flagged": False, "recommended_duration": None}`
+- letting the JS flow proceed into `run_report()`, which is where a missing character.json is
+*actually* supposed to be handled (real re-sync for a real character via `build_character.build()`,
+or a visible, non-silent error status for a synthetic test fixture with no underlying data at all -
+matching the difference in blast radius: `check_oom()`'s bug killed the flow with NO visible error
+at all, `run_report()`'s own equivalent failure at least surfaces through the polled status).
+
+**Fix**: `check_oom()` now wraps its one real call in a broad `try/except`, logs the real traceback
+for diagnosis (`traceback.print_exc()`, same convention `_run_report_job()`'s own catch-all
+already uses), and falls back to the same "nothing flagged" default already used for an
+unrecognized character - the OOM pre-check is a pure nicety, never something that should be able to
+block Run Report from starting at all. No change to `oom_check.py` itself - the real fix belongs at
+the GUI boundary that was letting an internal failure escape as a silent, unhandled promise
+rejection, not inside the cheap check's own real logic.
+
+Real scope note, not yet independently confirmed: this explains and fixes the specific symptom
+already reproduced (missing `character.json`) - if a genuinely fresh installer install on another
+machine has some OTHER, separate root cause (e.g. a packaging/payload gap), this fix wouldn't catch
+that. TODO.md's entry kept open rather than closed outright, pending a real test on a second
+machine to confirm this was the whole story.

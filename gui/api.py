@@ -521,10 +521,39 @@ class Api:
         is cheap (SCREEN_ITERATIONS, cache-assisted) and a repeat check at
         an already-tried duration is near-instant, same reasoning as
         get_melee_weave_mode()'s own synchronous convention. See
-        core/oom_check.py's own docstring for the real mechanism."""
+        core/oom_check.py's own docstring for the real mechanism.
+
+        Real bug found and fixed 2026-09-07 - this is the actual root cause
+        of the long-standing "Run Report doesn't start, simserver.exe never
+        appears" TODO item (reported 2026-09-06, reproduced multiple times
+        by renaming/emptying a character's data folder): `oom_check.check()`
+        reads `character.json` directly with no fallback, so a genuinely
+        first-run character (no character.json yet - the exact real-world
+        case of a fresh install, or the folder-rename repro) raised an
+        uncaught FileNotFoundError here. This method runs SYNCHRONOUSLY from
+        app.js's click handler, awaited with no try/catch on the JS side
+        (see app.js's runReportStartBtn listener) - so the exception became
+        a rejected promise that silently stopped the click handler dead
+        before it ever reached `startRunReport()`/`run_report()` below,
+        which is the ONLY place that actually knows how to build/sync a
+        missing character.json (see `_run_report_job()`'s own real handling
+        of exactly this case). Confirmed by direct reproduction: deleting a
+        real synthetic profile's character.json and calling this method
+        raised `FileNotFoundError` every time, matching the user's own real
+        report precisely ("even when all folders exist the error still
+        occurs - it only starts working when I copy in the character.json").
+        Fix: treat any failure to read/use the character's data here as "no
+        OOM signal available yet" rather than letting it propagate - this is
+        only ever a pre-flight nicety, never the thing that should gate
+        whether Run Report can start at all. The real sync/build still
+        happens correctly inside `run_report()` immediately afterward."""
         if name_realm not in SUPPORTED_CHARACTERS:
             return {"oom_seconds": 0.0, "oom_fraction": 0.0, "flagged": False, "recommended_duration": None}
-        return oom_check.check(name_realm, SUPPORTED_CHARACTERS[name_realm], duration, phase)
+        try:
+            return oom_check.check(name_realm, SUPPORTED_CHARACTERS[name_realm], duration, phase)
+        except Exception:
+            traceback.print_exc()
+            return {"oom_seconds": 0.0, "oom_fraction": 0.0, "flagged": False, "recommended_duration": None}
 
     def run_report(self, name_realm: str, phase: str, duration: int = 180) -> dict:
         if name_realm not in SUPPORTED_CHARACTERS:

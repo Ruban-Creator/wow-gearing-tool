@@ -97,7 +97,7 @@ existing tooling: hand-research a real, verified generic ring enchant per profil
 sim-verify it the same way every other `default_enchants.json` entry already is - not a "just rerun
 the script" fix. Not started.
 
-## Fresh-install "Run Report" doesn't start the sim on another machine - simserver.exe never appears
+## Fresh-install "Run Report" doesn't start - REAL ROOT CAUSE FOUND AND FIXED (2026-09-07), not yet confirmed on a second machine
 
 Reported live by the user (2026-09-06): installed the latest `RGT-Setup.exe` on a DIFFERENT machine
 (not this dev machine) and clicked "Run Report" - the sweep never actually starts, and `simserver.exe`
@@ -137,6 +137,23 @@ the GUI's report job will actually start - worth checking `gui/api.py`'s pre-fli
 silently no-op or hang if `character.json` is missing, rather than surfacing a real error?) and
 whether `adapters/tbc/simserver_client.py`'s own spawn is gated behind a successful character-data read
 that fails quietly.
+
+**Update, 2026-09-07 - real root cause found and fixed, reproduced directly (not guessed).**
+`gui/api.py`'s `check_oom()` (runs synchronously, called by `app.js`'s Run Report click handler
+BEFORE `run_report()` itself) called `oom_check.check()` with no error handling at all -
+`oom_check.check()` reads `character.json` directly with no fallback, so a genuinely missing file
+(exactly the folder-rename repro's own end state) raised an uncaught `FileNotFoundError` that
+became a rejected JS promise with no try/catch on the click handler - `run_report()` (the only code
+path that actually knows how to build/sync a missing `character.json`) was never reached at all.
+Confirmed by directly deleting a real synthetic profile's `character.json` and calling
+`Api().check_oom()` - crashed before the fix, returned a clean "not flagged" result after. Fixed:
+`check_oom()` now catches any failure and falls back to "nothing flagged," since the OOM pre-check
+is a pure nicety that should never be able to block Run Report from starting. See NOTES.md's
+2026-09-07 entry for the full trail. **Left open, not closed**: this explains and fixes the exact
+symptom already reproduced on THIS machine, but the ORIGINAL report was from a different machine
+entirely - if that machine has some other, separate cause too (e.g. a real packaging/payload gap),
+this fix wouldn't catch it. Close this entry only after a real test confirms Run Report now works
+on a genuinely fresh install elsewhere.
 
 ## GearingToolCompanion addon: "All Characters"/main window text overlap - CLOSED, 2026-09-06
 
