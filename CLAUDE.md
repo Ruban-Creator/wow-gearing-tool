@@ -159,6 +159,16 @@ addon's own) at the same time. Packaging the installer needs a fresh
 `build/bin/tool_version_label.txt` generated from `core/version.py` before running ISCC.exe - see
 `packaging/README.md`.
 
+**Publish a GitHub Release for every real `BUILD` bump, not just the first one.** Per the user
+(2026-09-07): whenever a rebuild wraps up a genuinely significant change - a real bug fix (not a
+cosmetic tweak), a completed multi-step investigation, a sim version update - the standing workflow
+is commit+push -> bump `BUILD` + `CHANGELOG.md` entry -> rebuild (`RGT.exe` then `RGT-Setup.exe`,
+see `packaging/README.md`) -> `gh release create v{MAJOR_MINOR}.{BUILD:04d}
+"packaging/output/RGT-Setup.exe" --title "..." --notes "..." --prerelease` (see the
+`reference-github-cli-setup` memory for the exact real invocation used before). Don't wait to be
+asked each time once a rebuild is already warranted - a routine one-line settings tweak doesn't need
+its own release, but finishing a real fix or feature does.
+
 ## Stack
 
 Python 3.13 for everything except the simulator itself (Go, vendored via submodule, built to
