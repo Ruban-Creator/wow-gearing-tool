@@ -7266,3 +7266,33 @@ this dev machine's earlier folder-rename repro did) to simulate a true first-eve
 This is the real-world confirmation the fix's own NOTES.md entry (search "Real scope note, not yet
 independently confirmed") explicitly flagged as still needed before closing TODO.md's entry -
 closed now.
+
+## 2026-09-07 - OOM pre-check now fires on a genuinely first run too, not just the second
+
+Follow-up to the fresh-install confirmation above, per the user's own question ("Is it possible to
+somehow run the oom check also for the first run?"). The earlier fix (same day) made `check_oom()`
+fail SAFELY on a missing `character.json` (catch + "not flagged"), but that meant the pre-check
+never actually ran on a true first click - it just silently skipped itself, relying on the 2nd run
+to catch anything.
+
+**Real fix**: `core/oom_check.py`'s `check()` no longer reads `character.json` from disk itself -
+it now takes `char_data` as a plain argument. Resolving that data (cached file vs. a fresh sync) is
+an orchestration decision, so it moved to `gui/api.py`'s `check_oom()`, which now: loads
+`character.json` if it already exists, else calls `build_character.build(name_realm)` directly -
+this is cheap (a local WowSimsExporter/GT-Companion SavedVariables read, no sim call at all), so
+doing it synchronously on the very first Run Report click is safe. Deliberately NOT written to disk
+here - `_run_report_job()` stays the sole owner of actually persisting `character.json`, so this
+preview sync can never race or diverge from the real one.
+
+Per the user: synthetic test fixtures get NO OOM check at all now (`character_profiles.
+is_synthetic_character()` short-circuits to "not flagged" before touching any of this) - they're
+dev/verification data, not a real player's own fight-duration decision, and `build_character.
+build()` would raise `SystemExit` for one anyway (no real WSE export exists for a fixture).
+
+**Verified live**: moved Béarforceone-Thunderstrike's real `character.json` aside (simulating a true
+first run with zero cached data) and called `Api().check_oom()` directly at 240s - got back
+`{'oom_seconds': 27.01, 'oom_fraction': 0.1125, 'flagged': True, 'recommended_duration': 180}`,
+matching the exact real numbers from the user's own earlier screenshot (27.0s/11.3%/"Use 180s
+instead") - proving the OOM warning now appears correctly on the FIRST run, not just the second.
+File restored immediately after. Confirmed `oom_check.check()` has exactly one real call site
+(`gui/api.py`), so the signature change (`name_realm` -> `char_data`) has no other callers to break.

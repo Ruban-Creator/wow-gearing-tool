@@ -523,35 +523,46 @@ class Api:
         get_melee_weave_mode()'s own synchronous convention. See
         core/oom_check.py's own docstring for the real mechanism.
 
-        Real bug found and fixed 2026-09-07 - this is the actual root cause
-        of the long-standing "Run Report doesn't start, simserver.exe never
-        appears" TODO item (reported 2026-09-06, reproduced multiple times
-        by renaming/emptying a character's data folder): `oom_check.check()`
-        reads `character.json` directly with no fallback, so a genuinely
-        first-run character (no character.json yet - the exact real-world
-        case of a fresh install, or the folder-rename repro) raised an
-        uncaught FileNotFoundError here. This method runs SYNCHRONOUSLY from
-        app.js's click handler, awaited with no try/catch on the JS side
-        (see app.js's runReportStartBtn listener) - so the exception became
-        a rejected promise that silently stopped the click handler dead
-        before it ever reached `startRunReport()`/`run_report()` below,
-        which is the ONLY place that actually knows how to build/sync a
-        missing character.json (see `_run_report_job()`'s own real handling
-        of exactly this case). Confirmed by direct reproduction: deleting a
-        real synthetic profile's character.json and calling this method
-        raised `FileNotFoundError` every time, matching the user's own real
-        report precisely ("even when all folders exist the error still
-        occurs - it only starts working when I copy in the character.json").
-        Fix: treat any failure to read/use the character's data here as "no
-        OOM signal available yet" rather than letting it propagate - this is
-        only ever a pre-flight nicety, never the thing that should gate
-        whether Run Report can start at all. The real sync/build still
-        happens correctly inside `run_report()` immediately afterward."""
+        Real bug found and fixed 2026-09-07 (the "Run Report doesn't start"
+        TODO item): a genuinely first-run character (no character.json yet)
+        used to raise an uncaught FileNotFoundError here, which killed
+        app.js's click handler dead (no try/catch there) before it ever
+        reached run_report() below - the only place that actually knew how
+        to sync one. First fix just caught the failure and returned "not
+        flagged," which correctly stopped the crash but meant the OOM
+        pre-check silently never fired on a real first run (confirmed live
+        by the user: no warning on run 1, correct warning on run 2 once
+        character.json existed from run 1's own sync).
+
+        Real follow-up fix, same day: this method now resolves char_data
+        itself instead of delegating that to oom_check.check() - reads the
+        cached character.json when present, else calls build_character.
+        build() directly (cheap: a local WowSimsExporter/GT-Companion
+        SavedVariables read, no sim call at all) so the pre-check has real
+        data to work with even on the very first run. Deliberately NOT
+        persisted to disk here - run_report()/_run_report_job() stays the
+        sole owner of actually writing character.json, so this preview
+        sync can never race or diverge from the real one. Per the user
+        (2026-09-07): synthetic test fixtures never get an OOM check at all
+        (they're dev/verification data, not a real player's own fight-
+        duration decision) - build_character.build() would raise SystemExit
+        for one anyway (no real WSE export exists for a fixture)."""
         if name_realm not in SUPPORTED_CHARACTERS:
             return {"oom_seconds": 0.0, "oom_fraction": 0.0, "flagged": False, "recommended_duration": None}
+        if character_profiles.is_synthetic_character(name_realm):
+            return {"oom_seconds": 0.0, "oom_fraction": 0.0, "flagged": False, "recommended_duration": None}
         try:
-            return oom_check.check(name_realm, SUPPORTED_CHARACTERS[name_realm], duration, phase)
-        except Exception:
+            char_path = os.path.join(USER_DATA_DIR, "characters", name_realm, "character.json")
+            if os.path.exists(char_path):
+                char_data = repo_root.load_json(char_path)
+            else:
+                char_data = build_character.build(name_realm)
+            return oom_check.check(char_data, SUPPORTED_CHARACTERS[name_realm], duration, phase)
+        except (Exception, SystemExit):
+            # SystemExit (not an Exception subclass) is what build_character
+            # .build() raises when no WSE export exists at all yet - still
+            # just "no OOM signal available," not something that should
+            # block Run Report from starting.
             traceback.print_exc()
             return {"oom_seconds": 0.0, "oom_fraction": 0.0, "flagged": False, "recommended_duration": None}
 

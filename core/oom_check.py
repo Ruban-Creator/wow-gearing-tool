@@ -93,7 +93,7 @@ def _oom_at_duration(base_settings: dict, baseline_config: list, profile_dir_nam
     return oom_seconds, oom_fraction
 
 
-def check(name_realm: str, profile_dir: str, duration: int, phase: str) -> dict:
+def check(char_data: dict, profile_dir: str, duration: int, phase: str) -> dict:
     """Returns {"oom_seconds", "oom_fraction", "flagged": bool,
     "recommended_duration": int | None}. `recommended_duration` is the
     LARGEST duration (stepping down from `duration` in DURATION_SCAN_STEP
@@ -103,9 +103,17 @@ def check(name_realm: str, profile_dir: str, duration: int, phase: str) -> dict:
 
     `phase` is the real phase string the GUI's Run Report modal already has
     (e.g. "phase3") - same "phaseN" -> int format run_upgrade_sweep.py's own
-    main() parses, needed now that gem selection is phase-aware (2026-09-07)."""
-    char_path = os.path.join(USER_DATA_DIR, "characters", name_realm, "character.json")
-    char_data = repo_root.load_json(char_path)
+    main() parses, needed now that gem selection is phase-aware (2026-09-07).
+
+    Takes `char_data` directly rather than loading `character.json` from
+    disk itself (real change, 2026-09-07) - resolving whether to read the
+    cached file or sync a fresh one is an ingest/orchestration concern that
+    belongs in gui/api.py (which already does exactly this for the real
+    sweep in _run_report_job()), not this module's job. This is also what
+    makes the OOM pre-check actually work on a character's genuinely first
+    run: gui/api.py's check_oom() can now build fresh character data on the
+    fly (cheap - a local addon-export read, no sim call) instead of the
+    pre-check simply giving up when no character.json exists yet."""
     profile_dir_name = os.path.basename(os.path.normpath(profile_dir))
     phase_num = int(phase.removeprefix("phase"))
     base_settings, baseline_config = _settings_and_baseline(profile_dir, char_data, phase_num)
