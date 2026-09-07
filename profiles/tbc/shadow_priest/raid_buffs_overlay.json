@@ -8,8 +8,9 @@
     "battleShout": "TristateEffectMissing",
     "leaderOfThePack": "TristateEffectMissing",
     "totemTwisting": false,
-    "manaSpringTotem": "TristateEffectRegular",
-    "wrathOfAirTotem": "TristateEffectImproved",
+    "manaSpringTotem": "TristateEffectImproved",
+    "manaTideTotems": 1,
+    "wrathOfAirTotem": "TristateEffectRegular",
     "eyeOfTheNight": true,
     "chainOfTheTwilightOwl": true
   },

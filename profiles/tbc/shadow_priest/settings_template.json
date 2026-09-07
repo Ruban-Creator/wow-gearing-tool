@@ -35,8 +35,9 @@
     "windfuryTotem": "TristateEffectMissing",
     "totemTwisting": false,
     "battleShout": "TristateEffectMissing",
-    "manaSpringTotem": "TristateEffectRegular",
-    "wrathOfAirTotem": "TristateEffectImproved",
+    "manaSpringTotem": "TristateEffectImproved",
+    "manaTideTotems": 1,
+    "wrathOfAirTotem": "TristateEffectRegular",
     "eyeOfTheNight": true,
     "chainOfTheTwilightOwl": true
   },

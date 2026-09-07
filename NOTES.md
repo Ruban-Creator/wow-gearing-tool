@@ -7088,6 +7088,26 @@ pre-existing drift between her two settings files, fixed in the same pass. Real,
 DPS effect for Combat Rogue (synthetic fixture, 3000 iterations): +4.7 DPS, smaller than Leader of
 the Pack's effect but confirmed real and non-zero, not silently ignored.
 
-Next: continue the class-by-class walkthrough for the remaining, not-yet-reviewed profiles (Shadow
-Priest, Retribution Paladin, Elemental/Enhancement Shaman, Affliction/Demonology/Destruction
-Warlock, Arcane Mage) - same per-item DPS-effect-first approach.
+**Shadow Priest - the captured wowsims comparison itself was broken, real fix found a different
+way.** Every other profile's captured wowsims.com export had 10-20+ real populated fields; Shadow
+Priest's had exactly one (`raidBuffs.bloodlust: true`) - almost certainly grabbed from an empty/
+reset preset during data collection, not a real default state. Per the user: rather than re-capture,
+sanity-check Shadow Priest's own settings against Arcane Mage's, since a Shadow Priest usually sits
+in the Mage's own group in a real raid (confirmed true in the reference comp: Group 4 has 2x Arcane,
+1x Shadow, matching). Direct diff of the two profiles' own `raid_buffs_overlay.json` found 4 real,
+group-shared totem/cooldown fields that should logically match since they're grouped together but
+didn't: `manaSpringTotem` (Priest had Regular, Mage Improved), `wrathOfAirTotem` (reversed - Priest
+Improved, Mage Regular), and `manaTideTotems` (Mage assumed 1, Priest had no such key at all).
+`innervates` also differed (Mage: 1, Priest: absent) but per the user, a Shadow Priest doesn't
+receive Innervate in practice - left as-is. Fixed the first three to match Arcane Mage's own values
+(the reference, per the user) in both `raid_buffs_overlay.json` and the committed
+`settings_template.json`; `eyeOfTheNight`/`chainOfTheTwilightOwl` differing between the two profiles
+is NOT a group-buff inconsistency (checked the sim source: these represent each profile's own
+self-equipped trinket assumption, `sim/tbc-new/sim/core/buffs.go:205-210` - a real, legitimate
+per-character gear difference, not a shared raid-comp question). Verified byte-exact against a clean
+base+overlay rebuild across all 15 profiles, and a real live sim call confirmed the new
+`manaTideTotems` key works end to end (1720.8 DPS, no error).
+
+Next: continue the class-by-class walkthrough for the remaining, not-yet-reviewed profiles
+(Retribution Paladin, Elemental/Enhancement Shaman, Affliction/Demonology/Destruction Warlock,
+Arcane Mage) - same per-item DPS-effect-first approach.
