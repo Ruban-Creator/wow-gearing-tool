@@ -7360,3 +7360,46 @@ byte-for-byte identical DPS both times (1384.71). Confirms this bump is safe (no
 profile under live investigation) AND confirms it does NOT explain the small residual ~1.1% gap
 against wowsims.com's live site seen this session - that gap is still real and unexplained, not a
 sim-version-lag artifact. Ruled out via a genuine test, not assumed away.
+
+## 2026-09-07 - Real, significant bug found and fixed: conjured items never actually registered for 9 profiles
+
+Found while chasing the last piece of the Balance Druid DPS-gap investigation above (why our tool
+showed 2.2-3.0s of OOM for the exact same settings wowsims.com shows ~0.02s for). Ran the LITERAL
+RaidSimRequest the user captured from a real wowsims.com run (seed=1, 30000 iterations) directly
+through our own `wowsimcli.exe` and got an EXACT match to their result (1400.97 DPS, 0.0159s OOM) -
+proving our sim engine itself is correct. Diffed that exact request against what our own
+`bridge.exe` produces from the equivalent profile settings and found exactly one real difference:
+`player.consumables.conjuredItems` was `[]` in ours, `[22105, 12662, 22788, 23334, 23381]` in the
+real capture (the used `conjuredId` was `12662` in both - identical).
+
+**Root cause, confirmed via source** (`sim/tbc-new/sim/core/consumes.go:361-369`,
+`registerConjuredCD()`): a conjured item ONLY gets registered as a real, castable Major Cooldown if
+its id appears in the `conjuredItems` LIST - `conjuredId` alone (which item to actually use) is not
+enough. Same real pattern for potions (`registerPotionCD()`, line 154-168) - confirmed both
+profiles' `potId` values already happened to appear in their own `potions` lists, so that half was
+never actually broken for any profile, just the mirror-image `conjuredItems` field.
+
+Real, live-verified effect (before/after, `conjuredItems` cleared vs. present, same seed/iterations):
+Balance Druid +16.3 DPS (OOM 3.0s -> 0.016s, exact match to the real wowsims.com capture), Elemental
+Shaman +20.1 DPS (OOM 1.57s -> 0.01s), Retribution Paladin +4.5 DPS (OOM 1.95s -> 0s), Shadow Priest
++0.6 DPS (never meaningfully OOM to begin with, correctly near-zero effect - the fix only matters
+when the character actually needs the mana/proc, exactly as expected).
+
+**9 profiles were affected** (real audit: `conjuredId` set but `conjuredItems` empty) -
+affliction_warlock, balance_druid, combat_rogue, demonology_warlock, destruction_warlock,
+elemental_shaman, enhancement_shaman, retribution_paladin, shadow_priest. Both Hunter profiles
+(survival/beastmastery) already had the full, correct list from day one - per the user's own
+correct instinct ("hunter and other mana melees also use demonic runes") - confirming they were
+never part of this bug. Fixed both the source `consumables.json` and the derived
+`settings_template.json` for each of the 9 (minimal fix: `conjuredItems: [conjuredId]` - sufficient
+per the source code, since `registerConjuredCD`'s loop only actually registers the ONE id matching
+the class's own chosen `conjuredId`, so listing just that one id has the identical real effect to
+listing every possible alternative). `destruction_warlock/settings_template_fire.json` (already
+flagged stale/deferred, "we will forfeit fire destro for now") was NOT touched - same standing
+decision as before, not reopened by this fix.
+
+**Real, separate, NOT-yet-investigated gap flagged, not fixed**: `arcane_mage`'s `conjuredId` is `0`
+- she has no conjured item assigned at all, a different kind of gap (never chosen one, vs. chosen-
+but-broken) - flagged for a future look, not touched this pass.
+
+Verified: `check_ledger_consistency.py --skip-html` passes clean for all 15 profiles after the fix.

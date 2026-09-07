@@ -136,7 +136,10 @@
       "foodId": 27657,
       "conjuredId": 12662,
       "mhImbueId": 25122,
-      "drumsId": "LesserDrumsOfBattle"
+      "drumsId": "LesserDrumsOfBattle",
+      "conjuredItems": [
+        12662
+      ]
     },
     "bonusStats": {
       "apiVersion": 14,

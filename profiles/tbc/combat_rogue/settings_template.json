@@ -145,7 +145,10 @@
       "guardianElixirId": 32062,
       "foodId": 33872,
       "conjuredId": 7676,
-      "ohImbueId": 27186
+      "ohImbueId": 27186,
+      "conjuredItems": [
+        7676
+      ]
     },
     "bonusStats": {
       "apiVersion": 14,

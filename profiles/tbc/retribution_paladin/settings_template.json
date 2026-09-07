@@ -145,7 +145,10 @@
       "superSapper": true,
       "goblinSapper": true,
       "scrollAgi": true,
-      "scrollStr": true
+      "scrollStr": true,
+      "conjuredItems": [
+        12662
+      ]
     },
     "bonusStats": {
       "apiVersion": 14,

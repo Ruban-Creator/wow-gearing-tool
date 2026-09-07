@@ -133,7 +133,10 @@
       "flaskId": 22854,
       "foodId": 27658,
       "conjuredId": 22788,
-      "drumsId": "LesserDrumsOfBattle"
+      "drumsId": "LesserDrumsOfBattle",
+      "conjuredItems": [
+        22788
+      ]
     },
     "bonusStats": {
       "apiVersion": 14,

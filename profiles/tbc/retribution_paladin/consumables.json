@@ -1,6 +1,8 @@
 {
   "potId": 22838,
-  "potions": [22838],
+  "potions": [
+    22838
+  ],
   "flaskId": 22854,
   "foodId": 27658,
   "conjuredId": 12662,
@@ -8,5 +10,8 @@
   "superSapper": true,
   "goblinSapper": true,
   "scrollAgi": true,
-  "scrollStr": true
+  "scrollStr": true,
+  "conjuredItems": [
+    12662
+  ]
 }

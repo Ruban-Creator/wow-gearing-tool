@@ -151,7 +151,10 @@
       ],
       "explosiveId": 30217,
       "petScrollAgi": true,
-      "petScrollStr": true
+      "petScrollStr": true,
+      "conjuredItems": [
+        12662
+      ]
     },
     "bonusStats": {
       "apiVersion": 14,
