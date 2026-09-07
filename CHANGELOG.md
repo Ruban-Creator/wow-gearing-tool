@@ -8,6 +8,12 @@ version). For the in-game companion addon's own, separate changelog, see
 Version format: `{stage} - v{major.minor}.{build}`, e.g. `Pre-Release - v0.7.0001`. See
 `core/version.py` for the real bump rules.
 
+## Pre-Release - v0.7.0009 (2026-09-07)
+
+- **Vendored sim updated**: `wowsims/tbc-new` bumped v0.0.130 -> v0.0.131 (caps armor damage
+  reduction at 75% - a physical-damage-mitigation fix that doesn't affect any currently-profiled
+  spec's own typical encounter). Verified clean across all 15 class/spec profiles.
+
 ## Pre-Release - v0.7.0008 (2026-09-07)
 
 - **Real bug fix**: the "out of mana" warning before Run Report now correctly appears on a
