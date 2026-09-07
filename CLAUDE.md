@@ -58,9 +58,13 @@ Missing Enchants/Missing Gems measure the real gap between them.
 
 ```
 CORE ENGINE   (core/)       — knows nothing about classes, specs, or expansions
-SPEC PROFILE  (profiles/)   — data only, e.g. profiles/tbc/survival-hunter.yaml
+SPEC PROFILE  (profiles/)   — data only, e.g. profiles/tbc/survival_hunter/profile.json
 SIM ADAPTER   (adapters/)   — one per wowsims repo, e.g. adapters/tbc/
 ```
+
+The conceptual contract every adapter implements (illustrative shape, not a literal class anywhere
+in the codebase - the real `adapters/tbc/` implementation is a set of module-level functions across
+`adapter.py`/`valuation.py`, not one `SimAdapter` class with these exact method names):
 
 ```python
 class SimAdapter:
@@ -371,30 +375,16 @@ regression-checked through it).
 
 Still open from §8 (Outputs): `results.csv`/`winner.json` as literal files (currently substituted
 by `data/cache/tiered_report.json` + the HTML ledger, not the spec'd files themselves). Package
-goals are effectively covered by Stage 5's interaction matrix now that it's built.
+goals are conceptually covered by Stage 5's interaction matrix, but that module still has no
+checked-in entry point (see its own status note above) - "covered" here means the real analysis
+exists and was proven once, not that a reader can actually run it today without writing new glue
+code.
 
-**Stage 7 (new, added 2026-08-23, PRIORITY — confirmed by the user, not just idea-collection
-anymore): decompose the re-sweep so a weekly gear change doesn't force a full recompute.**
-Directly motivated by watching this session's Stage 5 sweep take 15-20+ minutes live, and the
-realization that this isn't a one-off cost - it's what would happen EVERY WEEK after a raid, every
-single time any gear changes. Root cause, confirmed by tracing the actual caching mechanism:
-`sim_cache.json`'s key is a hash of the FULL 17-slot gear config being evaluated, not per-candidate
-- so every trial config (baseline-with-one-slot-swapped) embeds the ENTIRE baseline, meaning a
-single changed slot (say Legs) changes the hash of literally every OTHER candidate's trial config
-too, even ones with zero real relationship to Legs. The cache isn't wrong, it's just far more
-conservative than necessary: most candidates' true MV doesn't actually depend on unrelated slots'
-specific contents, but the current architecture can't tell the difference between "genuinely
-coupled, must recompute" and "hash technically changed, but the real number provably didn't."
-
-This is the same problem already sketched under "Idea collection" below (decompose into
-independent single-slot evaluation + explicit joint search only over ACTUALLY-coupled subgroups -
-rings, trinkets, weapons, tier-set slots), now confirmed as a real, lived cost rather than a
-theoretical one, and made worse by Stage 5's interaction matrix (pairs multiply the same problem
-across two slots, and which slots even count as "active set slots" can shift week to week as she
-moves between set bonuses). Not yet scoped in detail - the open question from that idea-collection
-note still applies (the baseline `DPS*(P)` itself shifts every time P gains an item, so no caching
-scheme fully eliminates recompute proportional to remaining-candidate-count) - but this is now a
-real near-term priority to design properly, not a someday idea.
+**Stage 7 (the re-sweep-caching idea, added 2026-08-23) - superseded, see "Backlog #8 (decomposed
+re-sweep caching) — CLOSED" in "Future scope" below.** The idea was investigated for real and the
+user decided against it (no clean "provably independent slot" case in WoW's combat math, plus a
+dedicated machine's uncertain payoff) - kept as a one-line pointer here only so the original
+motivation (a live 15-20+ minute Stage 5 sweep) isn't lost from this section's own history.
 
 **Dropped from §8, per the user (2026-08-23) — gold-based decisions are explicitly not something
 this tool should factor in.** This kills two §8 items outright, not just "not yet": per-currency
@@ -585,12 +575,30 @@ Affliction/Destruction) can flip which items are worth chasing a socket bonus on
 
 A 16th class/spec beyond this session's 15 is not scoped.
 
-## Future scope (deferred to final implementation, not now)
+## Future scope (originally "deferred to final implementation" - most of this has since shipped;
+   restructured 2026-09-07 into what's actually still open vs. what's resolved, since almost every
+   item this section originally listed as a someday wishlist is now marked Done/Built/Decided
+   below it - the old header and opening paragraph no longer matched the section's own contents)
 
-User wants a GUI eventually: run a sim on demand, a phase toggle to switch reference/candidate
-data between phases, a character-select dropdown (this tool should support simming more than one
-character, not just Lerynia), and a raid/zone scope filter (2026-08-23) - let the user directly
-limit which raids get scanned for upgrade candidates
+### Still genuinely deferred (real, open, not yet done)
+
+- **SmartScreen warning on the installer** - accepted for now (2026-08-31), real tracked reminder
+  to revisit with a code-signing cert later. See `FUTURE_TASKS.md`.
+- **Wowhead tooltip gems/enchants** - the real Wowhead tooltip embed (shipped, see "Shipped"
+  below) shows each item's base stats only; passing the actual recommended gems/enchants into
+  Wowhead's `data-wowhead="gems=...&ench=..."` attribute so the tooltip reflects the fully-
+  optimized item needs real plumbing (`ledger_data.json` doesn't currently carry gem/enchant ids
+  per row) - not done, flag if wanted.
+- **File-naming clarity pass** - the first real pass (2026-08-31, see "Shipped" below) found and
+  fixed one unclear name; the pass itself stays open-ended by design ("if a future session spots
+  one, same treatment") rather than being a one-time completed task.
+
+### Shipped (built, or a real decision made and no longer open)
+
+User originally wanted a GUI eventually: run a sim on demand, a phase toggle to switch reference/
+candidate data between phases, a character-select dropdown (this tool should support simming more
+than one character, not just Lerynia), and a raid/zone scope filter (2026-08-23) - let the user
+directly limit which raids get scanned for upgrade candidates
 at all, not just which phase. Real motivating case: a fresh level 70 starting in Phase 5 wouldn't
 actually be raiding Sunwell Plateau day one even though it's technically "in phase" - without a
 way to say "I can currently get into Karazhan and Gruul's, not SWP," the candidate pool search
@@ -693,9 +701,6 @@ count, cause not fully understood - more cores might not help at all) - plus the
 of getting each household member's own synced character data onto a shared machine. Re-open only
 if the sweep's current real ~7-minute cost (post the 2026-08-24 60.7% fix, see the
 `project-bridge-exe-overhead` memory) becomes a genuine problem again - not a live question.
-
-**SmartScreen warning on the installer - accepted for now (2026-08-31), real tracked reminder to
-revisit with a code-signing cert later. See `FUTURE_TASKS.md`.**
 
 **Decided 2026-08-31: no hit-target toggle, ever - drop the idea entirely, not just defer it.**
 Every profile's real reference BiS/candidate pool data stays built from the 6% (moonkin-present)
