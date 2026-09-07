@@ -8,6 +8,20 @@ version). For the in-game companion addon's own, separate changelog, see
 Version format: `{stage} - v{major.minor}.{build}`, e.g. `Pre-Release - v0.7.0001`. See
 `core/version.py` for the real bump rules.
 
+## Pre-Release - v0.7.0012 (2026-09-07)
+
+- **Gem choice is now a live, automatic decision, not a hand-curated list.** Previously, whether an
+  item's gem-socket bonus was worth chasing (instead of pure stat gems) depended on a per-profile
+  list that had to be manually re-verified whenever new gear was added - correct only for whatever
+  had already been checked. Every item's real socket bonus is now considered automatically, every
+  time, with no maintenance needed.
+- **Real, per-character stat weight recalculation**, mirroring the same methodology wowsims.com's
+  own "Calculate EP Weights" tool uses: two real sims per tracked stat measure its true current
+  marginal DPS value against your actual equipped gear. A stat you're already capped on (Hit Rating
+  being the common case) now measures out at essentially zero value automatically, the same way it
+  would if you recalculated weights on wowsims.com itself - no more stale, one-size-fits-all stat
+  priorities. Runs as its own visible stage during a report sweep.
+
 ## Pre-Release - v0.7.0011 (2026-09-07)
 
 - **Two more real accuracy bugs fixed**: candidate pools now correctly consider every armor type a
