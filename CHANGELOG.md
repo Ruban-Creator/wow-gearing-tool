@@ -8,6 +8,16 @@ version). For the in-game companion addon's own, separate changelog, see
 Version format: `{stage} - v{major.minor}.{build}`, e.g. `Pre-Release - v0.7.0001`. See
 `core/version.py` for the real bump rules.
 
+## Pre-Release - v0.7.0010 (2026-09-07)
+
+- **Major bug fix**: 9 of the 15 class/spec profiles (Affliction/Demonology/Destruction Warlock,
+  Balance Druid, Combat Rogue, Elemental Shaman, Enhancement Shaman, Retribution Paladin, Shadow
+  Priest) never actually got their conjured mana/combat item (Demonic Rune, Flame Cap, etc.) to
+  fire in any real sim run - a real sim-engine requirement (the item's id must also appear in a
+  second, previously-unpopulated list) was silently unmet, so every affected report understated
+  those specs' real DPS, most severely for characters running low on mana. Verified live:
+  real DPS gains up to +20 for the profiles that needed it most.
+
 ## Pre-Release - v0.7.0009 (2026-09-07)
 
 - **Vendored sim updated**: `wowsims/tbc-new` bumped v0.0.130 -> v0.0.131 (caps armor damage
