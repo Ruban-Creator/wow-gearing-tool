@@ -7489,3 +7489,103 @@ real off-hand drop now appears: "Talisman of Nightbane" +2.2 DPS (Nightbane, Kar
 the already-known "Talisman of Kalecgos" (+7.3 DPS, curated pool). The weapon-type eligible pool
 grew from 176 to 213 real items (+37), confirming the mechanism fired correctly. Verified:
 `check_ledger_consistency.py --skip-html` passes clean for all 15 profiles.
+
+## 2026-09-07 - Real bug fixed: meta gems only ever satisfied ONE hardcoded meta, not any real one
+
+Picked up per the user's own real report: our gem recommendations always suggest pure-Red gems
+everywhere, "deactivating" Balance Druid's real meta gem (Chaotic Skyfire Diamond) - confirmed by
+comparing against a real wowsims.com gem-optimizer run for the same character, which correctly kept
+the meta active.
+
+**Root cause**: `core/gem_optimizer.py`'s `ensure_meta_requirement()` only ever knew about ONE real
+meta gem's requirement (`RELENTLESS_EARTHSTORM_DIAMOND = 32409`, Lerynia's own, hand-verified from
+her real in-game tooltip during an earlier session) - a hardcoded single-entry table. `meta_gem_id`
+is resolved dynamically per real character (`find_owned_meta_gem()`, never a profile-level
+constant), so ANY of the other 17 real meta gems in the game would silently get zero enforcement -
+confirmed exactly this for Balance Druid's own real meta.
+
+**Per the user's own good question ("why build our own catalogue when wowsims does this correctly
+already")**: checked whether wowsims' own vendored source already has this data, rather than
+hand-curating one entry at a time or trusting memory (which the ORIGINAL entry's own comment
+already flagged as unreliable - "three web sources disagreed with each other first"). It does -
+`sim/tbc-new/ui/core/proto_utils/gems.ts`'s `MetaGemCondition` definitions are wowsims' own real,
+maintained, complete catalogue of all 18 real meta gems' activation requirements. Transcribed
+verbatim into a new `profiles/tbc/reference/meta_gem_conditions.json` (matching this repo's own
+"fixed game-mechanic reference table" convention) rather than reimplementing or guessing - this
+also directly corrected my own wrong recollection (I initially guessed "2 Blue or Yellow" for
+Chaotic Skyfire Diamond; the real requirement is just "at least 2 Blue Gems").
+
+Two real requirement shapes exist in wowsims' own data: `min_colors` (needs >= N of each color,
+simultaneously - covers 14 of the 18 real metas, including both Balance Druid's and Lerynia's) and
+`compare_colors` ("more X than Y" - a genuinely different, open-ended mechanic, 4 real metas:
+Bracing/Enigmatic/Mystical/Potent Unstable). Generalized `ensure_meta_requirement()` for the
+`min_colors` case (the only kind any of the 15 profiles' real gear has hit so far); `compare_colors`
+metas are explicitly a no-op for now (flagged in the code, not guessed at) since no real profile has
+needed one yet.
+
+**Real refinement while generalizing**: when multiple default-gemmed sockets are available to swap,
+prefers converting a socket whose OWN native color is already off-Red first - costs nothing extra
+(the swap's stat cost is the same either way) but can incidentally trigger a real per-item socket
+bonus too, rather than converting an already-correctly-Red socket for no added benefit.
+
+**Verified live**: Balance Druid's Head now gets `[Chaotic Skyfire Diamond, Glowing Nightseye]`
+(Purple, Red+Blue hybrid) - matching wowsims' own real choice for that slot EXACTLY - plus one more
+Purple gem elsewhere in her gear, correctly satisfying "2 Blue" overall. Lerynia's own
+pre-existing-correct case (Relentless Earthstorm Diamond, 2/2/2) re-verified unchanged - counts
+Red:12/Yellow:2/Blue:2, no regression from the generalization. `check_ledger_consistency.py
+--skip-html` passes clean for all 15 profiles. Dead code removed (`_best_green_gem()`, fully
+superseded by the new general `_best_gem_matching_any()`).
+
+**IN PROGRESS, real second bug found - CORRECTING an earlier wrong conclusion in this same entry's
+own first draft, not leaving it stand.** wowsims' real Shoulder gem choice (`Pauldrons of Malorne`)
+uses `[Purple(24056), Orange(24059)]`, not our `[Purple, Red]` - the item's real `gemSockets` are
+`[Blue, Yellow]` with a real `socketBonus` (+4 Spell Damage) for matching both.
+
+First attempt at checking this via `gem_optimizer.verify_gem_choice()` gave a WRONG, invalid answer
+(pure stats "winning") - caught immediately by the user ("this is bullshit you would deactivate meta
+gems we established that"): that comparison let the "pure stats" trial silently overwrite the
+shoulder's own Purple gem (one of the two real gems satisfying her "2 Blue" meta requirement) with
+plain Red, dropping her real Blue count to 1 - the sim can't see that this breaks her meta's real
+activation, so it reported a DPS number for a gear state that would be silently broken in actual
+gameplay. Redone properly holding the meta requirement fixed (re-running `ensure_meta_requirement()`
+on the WHOLE resulting config for both trials, confirmed Blue count = 2 in both) - **still showed a
+loss for chasing the bonus (-6.51 DPS)**, but this SECOND attempt was ALSO wrong: `chase_bonus_gems_
+for_item()` picks a socket's gem via `_best_gem_of_color(color)` - an EXACT PURE color match only,
+never a hybrid - so for the shoulder's Blue/Yellow sockets it picked pure Blue/Yellow gems (Spirit/
+Intellect only, ZERO spellpower) instead of the Purple/Orange HYBRIDS wowsims actually used (which
+carry real spellpower alongside their color). A real, separate, confirmed bug in gem selection, not
+a genuine "chasing this loses" finding - re-ran a THIRD time using wowsims' own exact real gem picks
+for both sockets (`[24056, 24059]`) instead: **+2.15 DPS, a real, confirmed win** for chasing this
+item's socket bonus, once fairly compared. The user's instinct was right at every step of this.
+
+**Real root cause, not yet fixed in code as of this NOTES.md write**: `chase_bonus_gems_for_item()`'s
+own gem selection needs to become hybrid-aware (reuse the same `_best_gem_matching_any()` built for
+the meta-requirement fix above, instead of `_best_gem_of_color()`'s pure-only match) - this affects
+socket-bonus verification for every profile, not just this one item, likely explains other items
+that were never flagged as bonus-worth-chasing when they actually are. **Not yet fixed/re-verified
+repo-wide as of this note** - in progress, continue from here after any compaction.
+
+**Real, valuable side-finding, worth reusing later**: wowsims' own real "Suggest Gems" (and its
+"Suggest Reforges") button is NOT a simple heuristic or per-item comparison - it's a genuine LINEAR
+PROGRAMMING solver, `ReforgeOptimizer` (`sim/tbc-new/ui/core/components/suggest_reforges_action.tsx`,
+~2157 lines, using the real `yalps` JS LP library - `YalpsCoefficients`/`YalpsConstraints`/
+`YalpsVariables`). It encodes the meta gem's own real color requirement (`getMetaGemColorCounts()`/
+`addMetaGemColorCoefficients()`, reading the SAME `MetaGemCondition` catalogue this session already
+transcribed into `meta_gem_conditions.json`) AND each item's real socket bonus as actual LP
+constraints/coefficients, solved JOINTLY with real stat weights - not a greedy per-slot pick. This is
+genuinely why it correctly balances all three at once where our simpler per-item real-sim-comparison
+approach needs to get each piece (meta requirement, socket bonus, hybrid-awareness) separately
+correct by hand. Full LP-based reimplementation is a MUCH bigger undertaking than today's fixes -
+flagged here as real, valuable, already-proven-correct prior art if this tool's own gem optimization
+is ever revisited at that scope, not something to casually reimplement today.
+
+**Reference data preserved verbatim, so a compaction never loses the concrete numbers this
+investigation is built on** - the real wowsims.com RaidSimRequest the user captured for Béarforceone
+(seed=1, 30000 iterations, giving 1400.97 DPS/0.016s OOM once ferociousInspiration was corrected)
+lives at the top of this same investigation's own earlier entries in this file; the specific gem ids
+central to the meta/socket-bonus question: Head=32480 (Magnified Moon Specs, sockets Meta+Blue),
+Shoulder=29095 (Pauldrons of Malorne, sockets Blue+Yellow, socketBonus +4 SpellDamage index 4/5).
+Meta gem = 34220 (Chaotic Skyfire Diamond, "at least 2 Blue Gems" per wowsims' own real
+`MetaGemCondition` data). wowsims' own real, confirmed-correct gem picks for these two items:
+Head=[34220, 24056(Glowing Nightseye, Purple/Red+Blue)], Shoulder=[24056, 24059(Potent Noble Topaz,
+Orange/Red+Yellow)].

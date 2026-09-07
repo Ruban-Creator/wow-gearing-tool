@@ -1,0 +1,21 @@
+{
+  "_comment": "Real, complete meta-gem activation requirements for every meta gem in the game - transcribed verbatim from wowsims' own authoritative source (sim/tbc-new/ui/core/proto_utils/gems.ts, MetaGemCondition definitions), not invented or guessed. The sim's own Go engine does NOT model or check these at all (a meta gem's stat bonus applies unconditionally in-sim regardless of real activation state - confirmed via item_effects.go) - this table exists so this tool's own gem CHOICES respect real, in-game meta-gem activation, matching what a real player actually needs socketed for the bonus to be real. 'type' is either 'min_colors' (needs at least minRed/minYellow/minBlue of each, simultaneously) or 'compare_colors' (needs strictly more of compareGreater than compareLesser) - the two real condition shapes wowsims' own MetaGemCondition class supports.",
+  "25890": {"name": "Destructive Skyfire Diamond", "description": "Requires at least 2 Red Gems, at least 2 Yellow Gems, and at least 2 Blue Gems.", "type": "min_colors", "minRed": 2, "minYellow": 2, "minBlue": 2},
+  "25893": {"name": "Mystical Skyfire Diamond", "description": "Requires more Blue Gems than Yellow Gems.", "type": "compare_colors", "compareGreater": "blue", "compareLesser": "yellow"},
+  "25894": {"name": "Swift Skyfire Diamond", "description": "Requires at least 2 Yellow Gems and at least 1 Red Gem.", "type": "min_colors", "minRed": 1, "minYellow": 2, "minBlue": 0},
+  "25895": {"name": "Enigmatic Skyfire Diamond", "description": "Requires more Red Gems than Yellow Gems.", "type": "compare_colors", "compareGreater": "red", "compareLesser": "yellow"},
+  "25896": {"name": "Powerful Earthstorm Diamond", "description": "Requires at least 3 Blue Gems.", "type": "min_colors", "minRed": 0, "minYellow": 0, "minBlue": 3},
+  "25897": {"name": "Bracing Earthstorm Diamond", "description": "Requires more Red Gems than Blue Gems.", "type": "compare_colors", "compareGreater": "red", "compareLesser": "blue"},
+  "25898": {"name": "Tenacious Earthstorm Diamond", "description": "Requires at least 5 Blue Gems.", "type": "min_colors", "minRed": 0, "minYellow": 0, "minBlue": 5},
+  "25899": {"name": "Brutal Earthstorm Diamond", "description": "Requires at least 2 Red Gems, at least 2 Yellow Gems, and at least 2 Blue Gems.", "type": "min_colors", "minRed": 2, "minYellow": 2, "minBlue": 2},
+  "25901": {"name": "Insightful Earthstorm Diamond", "description": "Requires at least 2 Red Gems, at least 2 Yellow Gems, and at least 2 Blue Gems.", "type": "min_colors", "minRed": 2, "minYellow": 2, "minBlue": 2},
+  "28556": {"name": "Swift Windfire Diamond", "description": "Requires at least 2 Yellow Gems and at least 1 Red Gem.", "type": "min_colors", "minRed": 1, "minYellow": 2, "minBlue": 0},
+  "28557": {"name": "Swift Starfire Diamond", "description": "Requires at least 2 Yellow Gems and at least 1 Red Gem.", "type": "min_colors", "minRed": 1, "minYellow": 2, "minBlue": 0},
+  "32409": {"name": "Relentless Earthstorm Diamond", "description": "Requires at least 2 Red Gems, at least 2 Yellow Gems, and at least 2 Blue Gems.", "type": "min_colors", "minRed": 2, "minYellow": 2, "minBlue": 2},
+  "32410": {"name": "Thundering Skyfire Diamond", "description": "Requires at least 2 Red Gems, at least 2 Yellow Gems, and at least 2 Blue Gems.", "type": "min_colors", "minRed": 2, "minYellow": 2, "minBlue": 2},
+  "32640": {"name": "Potent Unstable Diamond", "description": "Requires more Blue Gems than Yellow Gems.", "type": "compare_colors", "compareGreater": "blue", "compareLesser": "yellow"},
+  "32641": {"name": "Imbued Unstable Diamond", "description": "Requires at least 3 Yellow Gems.", "type": "min_colors", "minRed": 0, "minYellow": 3, "minBlue": 0},
+  "34220": {"name": "Chaotic Skyfire Diamond", "description": "Requires at least 2 Blue Gems.", "type": "min_colors", "minRed": 0, "minYellow": 0, "minBlue": 2},
+  "35501": {"name": "Eternal Earthstorm Diamond", "description": "Requires at least 2 Blue Gems and at least 1 Yellow Gem.", "type": "min_colors", "minRed": 0, "minYellow": 1, "minBlue": 2},
+  "35503": {"name": "Ember Skyfire Diamond", "description": "Requires at least 3 Red Gems.", "type": "min_colors", "minRed": 3, "minYellow": 0, "minBlue": 0}
+}

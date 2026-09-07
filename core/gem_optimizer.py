@@ -64,13 +64,13 @@ GEM_MATCHES = {
 
 def _all_gems() -> list[dict]:
     """Real, confirmed bug fixed 2026-09-06: this used to return every gem in the DB
-    regardless of phase, so _best_gem_of_color()/_best_green_gem() (and therefore the
-    default gem itself, see _phase_legal_default_gem()) could pick a gem that isn't
+    regardless of phase, so _best_gem_of_color()/_best_gem_matching_any() (and therefore
+    the default gem itself, see _phase_legal_default_gem()) could pick a gem that isn't
     actually obtainable yet at the report's own current phase - unlike candidate GEAR
     items, which were already phase-gated (item["phase"] <= current_phase) everywhere
     else in this pipeline. All 15 profiles' real primary_gem_id resolves to a Phase 3
     gem, so every Phase 1/2 report was affected. Filtered here, once, so every real
-    caller (_best_gem_of_color, _best_green_gem) is automatically phase-legal.
+    caller (_best_gem_of_color, _best_gem_matching_any) is automatically phase-legal.
 
     Also excludes `unique` and `requiredProfession`-gated gems - a real, second bug
     caught while testing the phase fix itself (2026-09-06): the naive phase-only filter
@@ -111,49 +111,77 @@ def _default_gem_score() -> float:
     return 0.0
 
 
-# Her actual meta gem. Its real in-game activation requirement - confirmed
-# from the user's own in-game tooltip screenshot, not guessed (three web
-# sources disagreed with each other first): "Requires at least 2 Red
-# Gems / at least 2 Yellow Gems / at least 2 Blue Gems", counted across
-# her WHOLE gear, not per item. The sim itself does NOT model or check
-# this at all (ApplyMetaGemCriticalDamageEffect in item_effects.go applies
-# the 3% crit damage bonus unconditionally, confirmed from source - no
-# color-count check anywhere) - so a pure-Agility-everywhere gem choice
-# would silently fail this requirement in REAL gameplay (0 Blue, 0 Yellow)
-# even though the sim's own reported number wouldn't reflect the loss.
-# This is specific to THIS meta gem's real requirement, not a general
-# rule - a different meta gem would need its own confirmed requirement
-# before this logic should apply to it.
-RELENTLESS_EARTHSTORM_DIAMOND = 32409
-_META_REQUIREMENT = {RELENTLESS_EARTHSTORM_DIAMOND: {RED: 2, YELLOW: 2, BLUE: 2}}
+# Real, COMPLETE meta-gem activation requirements for every meta gem in the
+# game - loaded from profiles/tbc/reference/meta_gem_conditions.json, itself
+# transcribed verbatim from wowsims' own authoritative source
+# (sim/tbc-new/ui/core/proto_utils/gems.ts's MetaGemCondition definitions -
+# their real, maintained catalogue, not something worth re-deriving or
+# hand-curating one entry at a time ourselves). The sim's own Go engine does
+# NOT model or check this at all (ApplyMetaGemCriticalDamageEffect in
+# item_effects.go applies a meta's stat bonus unconditionally, confirmed
+# from source - no color-count check anywhere) - so a pure-default-gem-
+# everywhere choice can silently fail a real meta's real in-game activation
+# requirement even though the sim's own reported number wouldn't reflect the
+# loss. Real bug found 2026-09-07: this used to be a single hand-curated
+# entry (only Relentless Earthstorm Diamond, the one meta actually observed
+# on a real character so far) - any OTHER real meta gem (found dynamically
+# per-character via find_owned_meta_gem(), never a profile-level constant)
+# silently got no enforcement at all, confirmed live for Balance Druid's own
+# real meta (Chaotic Skyfire Diamond, "at least 2 Blue Gems") producing an
+# all-Red gem choice that would leave her real meta inactive in game.
+_META_GEM_CONDITIONS = repo_root.load_json(
+    os.path.join(REPO_ROOT, "profiles", "tbc", "reference", "meta_gem_conditions.json"))
+_COLOR_NAME_TO_CONST = {"red": RED, "yellow": YELLOW, "blue": BLUE}
 
 
-def _best_green_gem() -> int | None:
-    """No pure-Agility (or even hunter-relevant AP/RAP/Crit/Hit) gem
-    exists in Blue at all (checked directly against the DB - every
-    quality-4 Blue gem is Stamina/Spirit/Intellect, none relevant to a
-    physical DPS build), so satisfying the Blue+Yellow requirement always
-    costs real stat value regardless of which gem is picked. A Green gem
-    (Blue+Yellow hybrid) counts toward BOTH requirements from one socket,
-    so 2 Green gems satisfy "2 Blue AND 2 Yellow" - fewer sockets given up
-    than any other real combination (a pure-Yellow + pure-Blue pair would
-    need one MORE socket for the same coverage, since Green counts twice)."""
-    green_gems = [g for g in _all_gems() if g["color"] == GREEN]
-    best = _best_gem(green_gems)
-    return best[0] if best else None
+def _best_gem_matching_any(colors: set[int]) -> int | None:
+    """Best real, phase-legal gem (by crude score) whose own GEM_MATCHES
+    set intersects `colors` - i.e., any gem that counts toward at least one
+    of the still-missing pure colors passed in. Prefers a gem covering MORE
+    of `colors` simultaneously (a hybrid satisfying two missing colors at
+    once costs one socket instead of two - the same real saving
+    `_best_green_gem()` already made for the one previously-hardcoded
+    meta), tie-broken by crude score."""
+    best_gem, best_coverage, best_score = None, -1, -1.0
+    for g in _all_gems():
+        coverage = len(GEM_MATCHES.get(g["color"], set()) & colors)
+        if coverage == 0:
+            continue
+        score = _crude_score(g["stats"])
+        if coverage > best_coverage or (coverage == best_coverage and score > best_score):
+            best_gem, best_coverage, best_score = g["id"], coverage, score
+    return best_gem
 
 
 def ensure_meta_requirement(config: list[dict], equipped_items: list, meta_gem_id: int | None) -> list[dict]:
-    """Swaps the fewest possible pure-Agility (Red) sockets to Green gems
-    so her actual meta gem's real activation requirement is met, if it
-    isn't already. No-op for any meta gem other than the one confirmed
-    above, and a no-op if the requirement's already satisfied by whatever
-    real gems already happen to be socketed."""
-    requirement = _META_REQUIREMENT.get(meta_gem_id)
-    if not requirement:
+    """Swaps the fewest possible default-gem sockets to real gems so her
+    actual meta gem's real in-game activation requirement is met, if it
+    isn't already - using the complete, real meta-gem catalogue in
+    _META_GEM_CONDITIONS (see that table's own module-level comment).
+    No-op for an unknown meta gem id (never invent a requirement), a
+    'compare_colors' meta (a genuinely different mechanic - "more X than Y"
+    has no fixed target to swap toward the way a minimum does; none of this
+    tool's own 15 profiles have hit one of these 4 real metas yet, flagged
+    rather than guessed at), or if the requirement's already satisfied by
+    whatever real gems already happen to be socketed.
+
+    Real refinement, 2026-09-07 (per the user, comparing against wowsims'
+    own real gem-optimizer output): when multiple default-gem sockets are
+    available to swap, prefers one whose OWN native declared socket color
+    is NOT pure Red - i.e., prefers converting an already-off-color socket
+    (Blue/Yellow/hybrid) to the needed hybrid gem over converting a
+    naturally-Red socket. This costs nothing extra (the swap's stat cost is
+    the same either way - some default-gem value is unavoidably given up
+    for the meta regardless of which socket), but an off-color socket is
+    also more likely to be part of that same item's own real socket bonus
+    color requirement, so this can incidentally keep or gain a socket bonus
+    for free rather than for no reason converting a socket that was already
+    correctly Red for its own bonus."""
+    condition = _META_GEM_CONDITIONS.get(str(meta_gem_id))
+    if not condition or condition["type"] != "min_colors":
         return config
 
-    counts = {RED: 0, BLUE: 0, YELLOW: 0}
+    counts = {RED: 0, YELLOW: 0, BLUE: 0}
     for it in config:
         for gem_id in it.get("gems") or []:
             gem = idb.gem_by_id(gem_id) if gem_id else None
@@ -163,39 +191,53 @@ def ensure_meta_requirement(config: list[dict], equipped_items: list, meta_gem_i
                 if pure_color in counts:
                     counts[pure_color] += 1
 
-    missing_blue = max(0, requirement.get(BLUE, 0) - counts[BLUE])
-    missing_yellow = max(0, requirement.get(YELLOW, 0) - counts[YELLOW])
-    swaps_needed = max(missing_blue, missing_yellow)  # one Green gem covers one of each simultaneously
-    if swaps_needed == 0:
+    missing = {
+        RED: max(0, condition["minRed"] - counts[RED]),
+        YELLOW: max(0, condition["minYellow"] - counts[YELLOW]),
+        BLUE: max(0, condition["minBlue"] - counts[BLUE]),
+    }
+    if not any(missing.values()):
         return config
 
-    green_gem = _best_green_gem()
-    if green_gem is None:
-        return config  # nothing real to swap to - leave as-is rather than invent one
-
     default_gem = _phase_legal_default_gem()
-    new_config = [dict(entry) for entry in config]
-    swapped = 0
+    default_gem_color = (idb.gem_by_id(default_gem) or {}).get("color")
+
+    # Every currently-swappable (still-default-gemmed) real socket, tagged
+    # with its own native color - off-color sockets sorted first (the real
+    # refinement above).
+    available = []
     for entry_idx, it in enumerate(equipped_items):
-        if swapped >= swaps_needed or not it:
+        if not it:
             continue
         item = idb.by_id(it["id"])
         sockets = item.get("gemSockets") or [] if item else []
-        gems = list(new_config[entry_idx].get("gems") or [])
-        for socket_idx, color in enumerate(sockets):
-            if swapped >= swaps_needed:
-                break
+        gems = config[entry_idx].get("gems") or []
+        for socket_idx, native_color in enumerate(sockets):
             if socket_idx < len(gems) and gems[socket_idx] == default_gem:
-                gems[socket_idx] = green_gem
-                swapped += 1
-        if gems:
-            new_config[entry_idx]["gems"] = gems
+                available.append((entry_idx, socket_idx, native_color))
+    available.sort(key=lambda t: t[2] == default_gem_color)
+
+    new_config = [dict(entry) for entry in config]
+    for entry_idx, socket_idx, _native_color in available:
+        still_missing = {c for c, n in missing.items() if n > 0}
+        if not still_missing:
+            break
+        gem_id = _best_gem_matching_any(still_missing)
+        if gem_id is None:
+            break  # nothing real left to swap to - leave the rest as-is rather than invent one
+        gem = idb.gem_by_id(gem_id)
+        gems = list(new_config[entry_idx].get("gems") or [])
+        gems[socket_idx] = gem_id
+        new_config[entry_idx]["gems"] = gems
+        for pure_color in GEM_MATCHES.get(gem["color"], set()):
+            if pure_color in missing:
+                missing[pure_color] = max(0, missing[pure_color] - 1)
     return new_config
 
 
 def _best_gem_of_color(color: int) -> int | None:
     """Best real gem of an EXACT pure color (Red/Blue/Yellow), by the same
-    crude STAT_WEIGHTS score used for _best_green_gem - a legal, reasonable
+    crude STAT_WEIGHTS score used for _best_gem_matching_any - a legal, reasonable
     representative gem for that color, not a claim that it's the objectively
     best choice. Only ever used to build ONE candidate loadout for
     verify_gem_choice to real-sim-test against pure Agility - the crude
