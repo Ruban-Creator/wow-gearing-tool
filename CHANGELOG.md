@@ -8,6 +8,22 @@ version). For the in-game companion addon's own, separate changelog, see
 Version format: `{stage} - v{major.minor}.{build}`, e.g. `Pre-Release - v0.7.0001`. See
 `core/version.py` for the real bump rules.
 
+## Pre-Release - v0.7.0007 (2026-09-07)
+
+- **Accuracy pass across all 15 class/spec profiles**: reconciled every profile's assumed raid
+  buffs/debuffs against wowsims.com's own real default data plus real raid-composition knowledge,
+  fixing several DPS-affecting assumptions:
+  - Leader of the Pack now assumes the fully-talented (Improved) version for Warrior.
+  - Windfury Totem's default assumption was raised to the fully-talented (Improved) version for
+    every profile that didn't already override it.
+  - The raid Hunter's Agility assumed for Expose Weakness's raid-wide benefit now scales with
+    phase, instead of a single flat number used for every phase.
+  - Shadow Priest's totem assumptions were corrected to match her real raid group.
+  - All 3 Warlock specs now correctly assume Shadow Weaving and Improved Shadow Bolt uptime, both
+    real, previously-missing debuffs that meaningfully affect Warlock damage.
+  - Ferocious Inspiration (a Beastmastery Hunter pet buff) is no longer assumed for the 7 pure
+    caster profiles, since a real raid never groups a Beastmastery Hunter with its casters.
+
 ## Pre-Release - v0.7.0006 (2026-09-07)
 
 - **Real bug fix**: found and fixed the real cause of Run Report sometimes silently failing to
