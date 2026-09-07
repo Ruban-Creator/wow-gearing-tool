@@ -56,8 +56,13 @@ contribute or run off the latest, unreleased commit.
 ## Download
 
 **[Latest release](https://github.com/Ruban-Creator/wow-gearing-tool/releases/latest)** - download
-`RGT-Setup.exe` and run it. Windows may show a SmartScreen warning since the installer isn't
-code-signed yet - click "More info" → "Run anyway".
+`RGT-Setup.exe` and run it.
+
+> **About the Windows SmartScreen warning:** the installer isn't code-signed yet, so Windows will
+> show a blue "Windows protected your PC" screen when you run it. This is expected and known - it's
+> not a sign of anything malicious, just what an unsigned installer always triggers regardless of
+> how many people have downloaded it safely. Click **"More info"**, then **"Run anyway"** to
+> continue. Code signing is planned for later; for now, this step is unavoidable.
 
 ## Building from source
 
