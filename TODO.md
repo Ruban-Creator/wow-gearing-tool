@@ -31,7 +31,25 @@ brought our own sim's delta for Crimson Bracers of Gloom -> Mindstorm Wristbands
 against wowsims.com's own +19.26 - a 0.07 DPS difference, fully inside noise. Nothing further to do
 here.
 
-## Align assumed raid buffs/debuffs per profile with wowsims.com's own defaults + fix unrealistic raid-comp assumptions
+## Align assumed raid buffs/debuffs per profile with wowsims.com's own defaults + fix unrealistic raid-comp assumptions - CLOSED, 2026-09-07
+
+The "real next step" this entry called for (a fuller per-profile audit against both wowsims.com's own
+defaults and real raid-comp knowledge) is done - a real, live class-by-class walkthrough across all 15
+profiles, using wowsims.com's actual Export->JSON data (not icon-state reading) plus a real reference
+raid comp the user provided. Full trail across many dated NOTES.md entries (2026-09-07): every
+flagged discrepancy was traced to its real sim-source effect (no-op vs genuinely DPS-relevant) before
+asking for a raid-comp judgment call, not treated as an automatic fix. Real changes shipped: Leader of
+the Pack -> Improved (Warrior), Expose Weakness Hunter Agility made phase-aware (all profiles),
+Windfury Totem's shared default -> Improved (fixing Rogue/Feral Cat Druid + a stale Hunter 2H file
+found along the way), Shadow Priest's totem assumptions realigned to Arcane Mage's real group, Shadow
+Weaving + Improved Shadow Bolt uptime added to all 3 Warlocks, and Ferocious Inspiration correctly
+removed from all 7 pure-caster profiles (the exact `ferociousInspiration`-on-Balance-Druid case this
+entry itself called out as the motivating example) - matching the same real raid-comp-realism
+reasoning this entry originally asked for. Destro-Fire's own stale settings variant was investigated
+separately and closed as genuinely out of scope (shares the same BiS as the main Destruction build -
+a rotation-priority question, not a gearing one), not left as an unresolved thread.
+
+---
 
 Raised by the user (2026-09-06) while diffing Béarforceone's real settings against her own websim
 export to chase a baseline-DPS gap: our per-profile `raid_buffs_overlay.json`/`settings_template.json`
