@@ -8,6 +8,15 @@ version). For the in-game companion addon's own, separate changelog, see
 Version format: `{stage} - v{major.minor}.{build}`, e.g. `Pre-Release - v0.7.0001`. See
 `core/version.py` for the real bump rules.
 
+## Pre-Release - v0.7.0011 (2026-09-07)
+
+- **Two more real accuracy bugs fixed**: candidate pools now correctly consider every armor type a
+  class can legally equip (not just its own top tier - a caster's cloth item, or a physical spec's
+  off-armor-type piece, can genuinely be BiS), and the full item-DB sweep now correctly considers
+  real off-hand-only items for every affected caster profile, both previously excluded entirely.
+  Verified live: several profiles' "Achieved BiS" panels now correctly show real upgrade candidates
+  in slots that previously, incorrectly, showed nothing left to find.
+
 ## Pre-Release - v0.7.0010 (2026-09-07)
 
 - **Major bug fix**: 9 of the 15 class/spec profiles (Affliction/Demonology/Destruction Warlock,
