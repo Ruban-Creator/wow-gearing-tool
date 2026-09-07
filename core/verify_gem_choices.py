@@ -130,8 +130,15 @@ def main():
     print(f"\n[+{time.time()-start:.1f}s] Screened {len(results)}, {len(to_resolve)} close enough to resolve @ {RESOLVE_ITERATIONS}.\n")
 
     for trial_config, slot_idx, item, res in to_resolve:
+        # refine_chase_gems=True only here (real cost control, 2026-09-07):
+        # the small number of items that clear the cheap screen are worth
+        # the extra ~10s/item real-sim gem search; every screened candidate
+        # would not be (150+ items x ~10s = 25-30+ minutes added to an
+        # already real ~15-minute-class run - see verify_gem_choice()'s own
+        # docstring).
         resolved = gopt.verify_gem_choice(item, meta_gem_id, SETTINGS_TEMPLATE, trial_config,
-                                           slot_idx, RESOLVE_ITERATIONS, opt.SEED)
+                                           slot_idx, RESOLVE_ITERATIONS, opt.SEED,
+                                           refine_chase_gems=True)
         res.update(resolved)
         res["resolved"] = True
         print(f"  [resolve] {res['name']:40s} delta={res['delta']:+7.2f}  tied={res['tied_within_noise']}")

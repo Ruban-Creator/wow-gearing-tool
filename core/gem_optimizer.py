@@ -456,9 +456,28 @@ def _candidates_matching_any(colors: set[int], n: int,
     return [gid for _, _, gid in scored[:n]]
 
 
+# Real, FIXED, cheap iteration budget for _real_sim_refine_chase_gems()'s
+# own internal candidate search - added 2026-09-07, per the user, after
+# the first version reused whatever `iterations` the OUTER caller passed
+# in (3000 during verify_gem_choices.py's cheap screen pass, but a real
+# 30000 during its resolve pass for any item close enough to need one).
+# With top_n=8 candidates across a 2-socket item, that's up to 14 EXTRA
+# real sim calls per item ON TOP of the existing screen+resolve funnel -
+# at 30000 iterations each, this would have multiplied an already-real
+# 15-minute-class full-profile run well past that, not a small overhead.
+# The refinement's own job is choosing WHICH gem is likely best (a
+# discovery/screening task), not producing the final, publication-quality
+# DPS number - that final number still comes from verify_gem_choice()'s
+# own real evaluate() call at the CALLER's actual requested precision,
+# using whichever gem this cheap search found. Matches the same
+# "SCREEN_ITERATIONS way cheaper than RESOLVE_ITERATIONS" cost-tiering
+# convention already used throughout this whole pipeline.
+_GEM_REFINE_ITERATIONS = 1500
+
+
 def _real_sim_refine_chase_gems(item: dict, meta_gem_id: int | None, settings_path: str,
                                  baseline_config: list[dict], slot_idx: int,
-                                 equipped_items: list, iterations: int, seed: int,
+                                 equipped_items: list, seed: int,
                                  top_n: int = 8) -> list[int]:
     """Greedy, per-socket REAL-SIM refinement of chase_bonus_gems_for_item()'s
     crude-score guess - added 2026-09-07, per the user, after cap-awareness
@@ -486,10 +505,12 @@ def _real_sim_refine_chase_gems(item: dict, meta_gem_id: int | None, settings_pa
     verify_gem_choice() already applies to the outer chase-vs-default
     decision, one level deeper: for each non-meta socket, real-sim-tests
     up to `top_n` crude-score candidates (holding every other socket at
-    its current best pick),
-    keeping whichever real DPS is highest - a bounded, cheap greedy search
-    (at most top_n-1 extra real sim calls per socket), not a full
-    combinatorial search across every socket at once."""
+    its current best pick), keeping whichever real DPS is highest - a
+    bounded, cheap greedy search (at most top_n-1 extra real sim calls per
+    socket, always at the cheap, fixed _GEM_REFINE_ITERATIONS - see that
+    constant's own module comment for why this must NOT scale with the
+    caller's own requested precision), not a full combinatorial search
+    across every socket at once."""
     sockets = item.get("gemSockets") or []
     if not sockets:
         return []
@@ -502,7 +523,7 @@ def _real_sim_refine_chase_gems(item: dict, meta_gem_id: int | None, settings_pa
         entry["gems"] = gems_trial
         trial_config = list(baseline_config)
         trial_config[slot_idx] = entry
-        return valuation.evaluate(settings_path, trial_config, iterations, seed)["combined"]
+        return valuation.evaluate(settings_path, trial_config, _GEM_REFINE_ITERATIONS, seed)["combined"]
 
     best_dps = dps_for(gems)
     for socket_idx, color in enumerate(sockets):
@@ -522,19 +543,31 @@ def _real_sim_refine_chase_gems(item: dict, meta_gem_id: int | None, settings_pa
 
 def verify_gem_choice(item: dict, meta_gem_id: int | None, settings_path: str,
                        baseline_config: list[dict], slot_idx: int,
-                       iterations: int, seed: int) -> dict:
+                       iterations: int, seed: int, refine_chase_gems: bool = False) -> dict:
     """Real-sim compare pure Agility (best_gems_for_item) against the item's
-    own socket-bonus-chased loadout (chase_bonus_gems_for_item, refined by
-    _real_sim_refine_chase_gems - see that function's own docstring for
-    why crude/cap-aware score alone isn't trusted to pick WHICH real gem
-    fills a matching socket, only whether chasing is worth it at all),
-    with the item actually equipped in slot_idx of baseline_config so its
-    printed socketBonus is genuinely active. Returns whichever wins, with
-    the real DPS delta and noise - never a STAT_WEIGHTS score standing in
-    for this decision, per CLAUDE.md's "never shortcut to EP-only ranking"
-    rule applied to gem choice specifically (see gem_optimizer.py's module
-    docstring for the earlier, disproven attempt at a crude-score shortcut
-    here)."""
+    own socket-bonus-chased loadout (chase_bonus_gems_for_item, optionally
+    refined by _real_sim_refine_chase_gems - see that function's own
+    docstring for why crude/cap-aware score alone isn't trusted to pick
+    WHICH real gem fills a matching socket, only whether chasing is worth
+    it at all), with the item actually equipped in slot_idx of
+    baseline_config so its printed socketBonus is genuinely active.
+    Returns whichever wins, with the real DPS delta and noise - never a
+    STAT_WEIGHTS score standing in for this decision, per CLAUDE.md's
+    "never shortcut to EP-only ranking" rule applied to gem choice
+    specifically (see gem_optimizer.py's module docstring for the earlier,
+    disproven attempt at a crude-score shortcut here).
+
+    `refine_chase_gems` defaults to False (real, deliberate cost control,
+    per the user, 2026-09-07): _real_sim_refine_chase_gems() is itself
+    cheap per item (~10s, at the fixed _GEM_REFINE_ITERATIONS budget), but
+    verify_gem_choices.py's own SCREEN pass calls this function for EVERY
+    real candidate with sockets - a full profile can easily have 150+ of
+    those, which would multiply into 25-30+ minutes added to what's
+    already a real ~15-minute-class budget if every screen call refined.
+    Pass True only for the SMALL number of items that clear the screen and
+    are being resolved at full precision - the same "cheap broad screen,
+    expensive narrow resolve" funnel discipline already used everywhere
+    else in this pipeline, just applied to gem selection too."""
     if not (item.get("gemSockets") or []):
         return {"applicable": False}
 
@@ -544,8 +577,11 @@ def verify_gem_choice(item: dict, meta_gem_id: int | None, settings_path: str,
     if crude_chase_gems == pure_agility_gems:
         return {"applicable": False}  # every socket was already Red/Meta - nothing to compare
 
-    chase_gems = _real_sim_refine_chase_gems(item, meta_gem_id, settings_path, baseline_config,
-                                              slot_idx, baseline_config, iterations, seed)
+    if refine_chase_gems:
+        chase_gems = _real_sim_refine_chase_gems(item, meta_gem_id, settings_path, baseline_config,
+                                                  slot_idx, baseline_config, seed)
+    else:
+        chase_gems = crude_chase_gems
 
     base_entry = dict(baseline_config[slot_idx])
 

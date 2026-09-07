@@ -7655,3 +7655,50 @@ fix - the wrong, crude-score-derived second gem).
 Updated `profiles/tbc/balance_druid/chase_bonus_gems.json`: added item 29095 to `item_ids` plus its
 own real gem override. Verified: `check_ledger_consistency.py --skip-html` clean for all 15
 profiles; import-sanity clean for all 7 touched modules.
+
+## 2026-09-07 - Real cost-control fix + complete, systematic gem-choice re-verification
+
+**Real performance bug caught by the user before it became a problem**: my `_real_sim_refine_chase_gems()`
+(the top-8-candidate real-sim search added earlier the same day) ran its OWN internal candidate
+comparisons at whatever `iterations` the OUTER caller passed - fine for a single, targeted check, but
+`verify_gem_choices.py`'s own SCREEN pass calls `verify_gem_choice()` for EVERY real candidate with
+sockets (150+ for a typical profile) - multiplying up to 14 extra real sim calls per item, at
+whatever precision tier was active. Timed live: ~10s per item even at a cheap 3000-iteration outer
+call - at scale, this would have added 25-30+ minutes to what's already a real ~15-minute-class
+verification run, exactly the concern the user raised before it actually happened.
+
+**Fixed with two real, separate changes**: (1) `_real_sim_refine_chase_gems()`'s own internal search
+now ALWAYS runs at a fixed, cheap `_GEM_REFINE_ITERATIONS = 1500` budget, never scaling with the
+caller's own requested precision - the refinement's job is choosing WHICH gem is likely best, not
+producing the final DPS number (that still comes from the caller's own real evaluate() call at full
+precision). (2) `verify_gem_choice()` gained a `refine_chase_gems: bool = False` parameter - the
+expensive real-sim search now only runs for the small number of items that clear the cheap screen and
+reach RESOLVE_ITERATIONS (`verify_gem_choices.py`'s own resolve-tier call passes `refine_chase_gems=
+True` explicitly; the screen-tier call keeps the default False) - the same "cheap broad screen,
+expensive narrow resolve" funnel discipline already used everywhere else in this pipeline, just
+applied to gem selection too. Real, confirmed separately: `verify_gem_choice()`/`_real_sim_refine_
+chase_gems()` are ONLY ever called from the standalone `verify_gem_choices.py` maintenance tool - the
+real production report pipeline (`run_upgrade_sweep.py`) only uses the fast, no-extra-sim-calls
+`best_gems_for_item()` - so this cost risk was real for the verification tool, never for an actual
+user-facing report.
+
+**Real, complete re-verification, now properly cost-bounded**: re-ran `verify_gem_choices.py` for
+Balance Druid with the fix in place - **82.7 seconds total**, not 25-30 minutes. Checked 23 real
+candidates with sockets from her real candidate pool (not just currently-equipped items); found 7
+MORE real, confirmed, resolved wins beyond the shoulder/legs already found by hand: Nordrassil
+Headpiece (+1.81), Thunderheart Headguard (+1.94), Nordrassil Wrath-Mantle (+1.25), Thunderheart
+Shoulderpads (+1.31), Bracers of Havok (+2.32), Thunderheart Bands (+2.56), Breeches of Natural
+Aggression (+2.00) - all real, sim-verified, clear of noise. Added all 7 plus the earlier-found
+29343 (Haramad's Leggings, +2.02, a currently-equipped item this candidate-pool-only sweep doesn't
+cover) to `chase_bonus_gems.json`'s `item_ids` + their own exact real gem overrides. 5 of the 20
+screened candidates correctly confirmed pure Runed Crimson Spinel still wins (no false positives),
+8 tied within noise (correctly left as pure, matching the existing "ties aren't real" ground rule).
+
+Verified: `check_ledger_consistency.py --skip-html` clean for all 15 profiles.
+
+**Honest answer to "does this now work at least as well as wowsims' own gem tool"**: for every item
+actually checked so far (the shoulder, legs, and this candidate-pool sweep of 20 more), yes -
+matching or beating wowsims' own real picks with real sim proof, not just directionally. Not yet
+re-run for the other 14 profiles' own candidate pools/currently-equipped gear - the same real gap
+(crude-score-derived chase-bonus gems for OTHER classes' own off-color-socket items) likely still
+exists there too, just not yet verified. A real, worthwhile follow-up, not done this pass.
