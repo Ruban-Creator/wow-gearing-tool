@@ -7453,3 +7453,39 @@ current). Verified: `check_ledger_consistency.py --skip-html` passes clean for a
 (structural check against each profile's existing cached report - a full fresh sweep for the other
 9 affected profiles wasn't re-run this pass given the ~3-minute-per-profile cost, but the fix is the
 same shared, generic code path already proven live for Balance Druid).
+
+## 2026-09-07 - Real, confirmed root cause for "the offhand slot never shows an upgrade"
+
+Picked up per the user's own real-game knowledge ("i know there is other offhands that genuinely
+perform better") for Béarforceone's Weapon/offhand slot. Two real, well-reasoned alternate
+hypotheses were raised and checked first, both ruled out via direct source read, not assumed:
+- **Shared-pool bug (like the old Ring1/Ring2 issue, backlog #16)?** No - confirmed via
+  `core/marginal_value.py`'s `set_shared_slot_groups()`: `one_hand_plus_offhand_item` maps to an
+  EMPTY shared-pair list (`[]`), unlike `dual_wield` which correctly shares mainhand/offhand as one
+  pool. Mainhand and offhand are already independent slots for this topology.
+- **Routing bug (an offhand item silently evaluated as mainhand)?** No - confirmed via
+  `run_upgrade_sweep.py`'s `slot_for_item()`: `hand_type == OFF_HAND` already routes correctly to
+  `"offhand"`, independent of `"mainhand"`/`"weapon_2h"`. Already fixed correctly back in Stage 6.2.
+
+**Real root cause, found by reading `core/sweep_all_loot.py`'s own `eligible()` function**: EVERY
+type-13 (weapon-category) item - including a pure off-hand stat-stick item like Karaborian Talisman/
+Talisman of Kalecgos/Talisman of Nightbane (`weaponType: 5` = `WeaponTypeOffHand`, confirmed via
+`sim/tbc-new/proto/common.proto`) - is gated by `item.get("weaponType") in rules["weapon_ok"]` BEFORE
+it ever reaches the (already-correct) mainhand/offhand routing logic. None of the 7
+`one_hand_plus_offhand_item` profiles (Affliction/Demonology/Destruction Warlock, Arcane Mage,
+Balance Druid, Elemental Shaman, Shadow Priest) had `5` in their `weapon_ok` list - so any real
+off-hand item NOT already in the hand-curated wowsims-preset pool was silently excluded from the
+full DB sweep entirely. "Talisman of Kalecgos" only ever appeared because it's part of the curated
+`candidate_pool.json` (sourced directly from wowsims' own preset gear, bypassing this filter) - real
+off-hand drops/crafted/reputation items outside that curated set had no path to ever being found.
+
+Per the user, also checked whether Shaman needed Shield (`WeaponTypeShield = 7`) added too (a real
+Shaman can legally equip one) - `elemental_shaman` already had it from an earlier pass, no fix
+needed there. Druid/Priest/Mage/Warlock correctly have no Shield access (no real WoW shield skill).
+
+**Fixed**: added `5` (WeaponTypeOffHand) to all 7 profiles' `weapon_ok`. **Real, live-verified
+effect**: re-ran the same fresh Béarforceone Phase 1 sweep - a genuinely new, previously-invisible
+real off-hand drop now appears: "Talisman of Nightbane" +2.2 DPS (Nightbane, Karazhan), alongside
+the already-known "Talisman of Kalecgos" (+7.3 DPS, curated pool). The weapon-type eligible pool
+grew from 176 to 213 real items (+37), confirming the mechanism fired correctly. Verified:
+`check_ledger_consistency.py --skip-html` passes clean for all 15 profiles.
