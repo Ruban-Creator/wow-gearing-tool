@@ -90,7 +90,27 @@
   .title-block .sub{color:var(--ink-muted); font-size:13.5px;}
   .title-block .sub b{color:var(--ink); font-weight:600;}
 
+  .header-right{display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
   .stat-strip{display:flex; gap:16px; flex-wrap:wrap;}
+  /* Dark-mode toggle (2026-09-07) - the CSS custom properties above already
+     carry a full dark palette (system-preference-driven since this report's
+     first version), this just adds an explicit override so a reader isn't
+     stuck following their OS setting. */
+  .theme-toggle{
+    display:flex; align-items:center; justify-content:center;
+    width:36px; height:36px; flex:0 0 auto; align-self:flex-start;
+    background:var(--surface); border:1px solid var(--border-soft); border-radius:8px;
+    box-shadow:var(--shadow); cursor:pointer; color:var(--ink-muted);
+  }
+  .theme-toggle:hover{color:var(--ink); border-color:var(--border);}
+  .theme-toggle svg{width:18px; height:18px; display:block;}
+  .theme-toggle .icon-dark{display:none;}
+  :root[data-theme="dark"] .theme-toggle .icon-light{display:none;}
+  :root[data-theme="dark"] .theme-toggle .icon-dark{display:block;}
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) .theme-toggle .icon-light{display:none;}
+    :root:not([data-theme="light"]) .theme-toggle .icon-dark{display:block;}
+  }
   .stat{
     background:var(--surface); border:1px solid var(--border-soft); border-radius:8px;
     padding:8px 14px; box-shadow:var(--shadow); min-width:108px;
@@ -381,6 +401,20 @@
   }
 </style>
 
+<script>
+  // Real, blocking (runs before .wrap paints) - applies a stored theme
+  // override before first render so there's no flash of the wrong theme.
+  // Wrapped in try/catch: file:// pages sometimes throw on localStorage
+  // access (private-browsing-style restrictions), and a missing override
+  // is a correct no-op - the CSS above already follows the OS preference.
+  try {
+    const stored = localStorage.getItem('rgt_report_theme');
+    if (stored === 'light' || stored === 'dark') {
+      document.documentElement.setAttribute('data-theme', stored);
+    }
+  } catch (e) {}
+</script>
+
 <div class="wrap">
 
   <header class="top">
@@ -389,26 +423,32 @@
       <div class="sub">__REPORT_SUBTITLE__</div>
       <div class="sub" id="source-scope-note" style="display:none; color:var(--warn-strong);"></div>
     </div>
-    <div class="stat-strip">
-      <div class="stat">
-        <div class="k">Baseline DPS</div>
-        <div class="v mono" id="stat-baseline">–</div>
+    <div class="header-right">
+      <div class="stat-strip">
+        <div class="stat">
+          <div class="k">Baseline DPS</div>
+          <div class="v mono" id="stat-baseline">–</div>
+        </div>
+        <div class="stat" id="stat-oom-box">
+          <div class="k">Out of Mana</div>
+          <div class="v mono" id="stat-oom">–</div>
+        </div>
+        <div class="stat">
+          <div class="k">Sim commit</div>
+          <div class="v mono" id="stat-sha" style="font-size:13px;">–</div>
+        </div>
+        <button class="stat stat-button" id="buffs-open-btn" type="button" hidden>
+          <div class="k">Raid Buffs</div>
+          <div class="v" id="stat-buffs-count">–</div>
+        </button>
+        <button class="stat stat-button" id="consumables-open-btn" type="button" hidden>
+          <div class="k">Used Consumables</div>
+          <div class="v" id="stat-consumables-count">–</div>
+        </button>
       </div>
-      <div class="stat" id="stat-oom-box">
-        <div class="k">Out of Mana</div>
-        <div class="v mono" id="stat-oom">–</div>
-      </div>
-      <div class="stat">
-        <div class="k">Sim commit</div>
-        <div class="v mono" id="stat-sha" style="font-size:13px;">–</div>
-      </div>
-      <button class="stat stat-button" id="buffs-open-btn" type="button" hidden>
-        <div class="k">Raid Buffs</div>
-        <div class="v" id="stat-buffs-count">–</div>
-      </button>
-      <button class="stat stat-button" id="consumables-open-btn" type="button" hidden>
-        <div class="k">Used Consumables</div>
-        <div class="v" id="stat-consumables-count">–</div>
+      <button class="theme-toggle" id="theme-toggle-btn" type="button" aria-label="Toggle dark/light theme" title="Toggle dark/light theme">
+        <svg class="icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        <svg class="icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>
       </button>
     </div>
   </header>
@@ -771,6 +811,24 @@ document.getElementById('stat-sha').textContent = DATA.sim_commit_sha.slice(0, 1
   closeBtn.addEventListener('click', closeModal);
   overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !overlay.hidden) closeModal(); });
+})();
+
+// Dark-mode toggle (2026-09-07) - the early <script> right after </style>
+// already applies any stored override before first paint; this just wires
+// the button so a reader can actually change it. Reads the CURRENT
+// effective theme via the media query (not just the attribute) so the
+// first click from a system-dark browser correctly switches to light
+// rather than re-applying dark.
+(function(){
+  const btn = document.getElementById('theme-toggle-btn');
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  btn.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme')
+      || (prefersDark ? 'dark' : 'light');
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('rgt_report_theme', next); } catch (e) {}
+  });
 })();
 
 // Backlog #5 (CLAUDE.md Future Scope) - real, human-readable labels for any

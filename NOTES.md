@@ -7296,3 +7296,29 @@ matching the exact real numbers from the user's own earlier screenshot (27.0s/11
 instead") - proving the OOM warning now appears correctly on the FIRST run, not just the second.
 File restored immediately after. Confirmed `oom_check.check()` has exactly one real call site
 (`gui/api.py`), so the signature change (`name_realm` -> `char_data`) has no other callers to break.
+
+## 2026-09-07 - Report ledger: real dark-mode toggle added
+
+Per the user (their Firefox has an OS-level dark preference, and they liked the report's own dark
+palette better than reading in light mode - wanted an explicit toggle rather than relying purely on
+`prefers-color-scheme`). `core/report_template.html` already had a COMPLETE dark palette defined
+(`:root[data-theme="dark"]` + the `prefers-color-scheme: dark` media query) from this report's
+original build - it just had no toggle control, so a reader had no way to override their OS setting.
+
+Added: a small icon button (sun/moon, inline SVG, no emoji) in the header next to the stat strip,
+wrapped together in a new `.header-right` flex container so the existing title/stat-strip
+`space-between` layout is unaffected. An early, blocking `<script>` right after `</style>` (before
+`.wrap` renders) applies any stored override from `localStorage` before first paint, avoiding a
+flash of the wrong theme. The click handler reads the CURRENTLY EFFECTIVE theme (checking the
+media query when no explicit attribute is set yet) so the first click from a system-dark browser
+correctly flips to light rather than re-applying dark. Both `localStorage` calls are wrapped in
+try/catch - this report is opened as a real `file://` page per character, and defensively matches
+the same resilience already used elsewhere in this codebase for browser storage.
+
+Verified visually via the Browser tool against a real rendered report (Béarforceone's actual Phase 1
+ledger) - both directions (light->dark, dark->light) render correctly with no unstyled/mispainted
+elements anywhere on the page, icon swaps correctly, no console errors. (One real testing-tool
+quirk found and worked around, not a bug in the shipped code: this session's preview tool renders a
+file outside the project's own scratch dir as a `data:` URL, which throws `SecurityError` on any raw
+`localStorage` access - not an issue for a genuine `file://`-opened report, and the shipped code's
+own try/catch already tolerates it either way.)
