@@ -7322,3 +7322,41 @@ quirk found and worked around, not a bug in the shipped code: this session's pre
 file outside the project's own scratch dir as a `data:` URL, which throws `SecurityError` on any raw
 `localStorage` access - not an issue for a genuine `file://`-opened report, and the shipped code's
 own try/catch already tolerates it either way.)
+
+## 2026-09-07 - Sim update: v0.0.130 -> v0.0.131, per the runbook
+
+Picked up while investigating a real, small (~1.1%) DPS discrepancy between this tool and
+wowsims.com's own live site for Balance Druid (see the earlier same-day entries) - checked whether
+we were simply pinned behind their live deployment. `git -C sim/tbc-new fetch --tags` found
+`v0.0.131` (one tag ahead of our pin) plus 15 further un-tagged commits already on `origin/master`
+(a log-viewer refactor, an APL strict-sequence double-hook fix, new consumables, a Hunter-item
+crash fix) - per the runbook's own stated preference, bumped to the real tagged release (v0.0.131),
+not raw `master` HEAD, since the wowsims team hasn't cut a release covering that later work yet.
+
+**Real diff, v0.0.130 -> v0.0.131**: exactly one substantive change -
+`sim/core/spell_resistances.go`'s `GetArmorDamageModifier()` now caps armor damage reduction at
+75% (`max(1-defenderArmor/(defenderArmor+armorConstant), 0.25)`), plus its own new test. This is a
+PHYSICAL damage-mitigation formula - confirmed via source read, not assumed - so it only matters
+for a target with enough combined armor-reduction debuffs to have exceeded 75% mitigation before
+this fix; none of the 15 currently-profiled specs' own real encounter/debuff assumptions come close
+to that regime.
+
+**Full runbook verification, all real, not skipped**: no `.proto` changes (protobuf regen not
+needed for this specific bump - was needed for a quick EARLIER throwaway test against full `master`
+tip, which does add a new `BoglingRoot` consumable field, but that's not part of this real v0.0.131
+commit). All 3 binaries rebuilt fresh (`wowsimcli.exe`/`bridge.exe`/`simserver.exe`,
+`--tags=with_db` on the two that need it - confirmed via fresh timestamps). `sim_commit_sha.txt`/
+`sim_version_label.txt` rebaked. Killed any stale `simserver.exe` process before verifying (none
+were running). 22/22 real modules touching the sim import clean. A real live sim call succeeds for
+all 3 weapon topologies in use (`one_hand_plus_offhand_item` via Balance Druid,
+`dual_wield` via the Combat Rogue synthetic fixture, `two_hand` via Rubán). `check_ledger_
+consistency.py --skip-html` passes clean for all 15 real profile/character pairs (driven via a
+small Python subprocess loop rather than a bash for-loop, since bash's own encoding mangles the two
+real accented character names - `Rubán`/`Béarforceone` - the same known gotcha already in memory).
+
+**Real, direct before/after comparison, not assumed safe**: re-ran the exact same Balance Druid
+settings/seed/iteration combination under both the OLD (v0.0.130) and NEW (v0.0.131) binaries -
+byte-for-byte identical DPS both times (1384.71). Confirms this bump is safe (no regression to the
+profile under live investigation) AND confirms it does NOT explain the small residual ~1.1% gap
+against wowsims.com's live site seen this session - that gap is still real and unexplained, not a
+sim-version-lag artifact. Ruled out via a genuine test, not assumed away.
