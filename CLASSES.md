@@ -17,62 +17,46 @@ a new gotcha; don't let the lesson live only in NOTES.md's session log.
   sourced from the same phase/preset file the rest of the profile's data came from - never guessed
   from a stat-weight table. Color/stat family must match the class's real primary stat (Agility,
   Strength, Intellect+SpellDamage, etc).
-- A pure-primary-stat gem doesn't always win a socket bonus check - `chase_bonus_gems.json`'s
-  `item_ids` set is real, sim-verified exceptions only (`core/verify_gem_choices.py`'s real A/B
-  methodology: pure primary-stat vs the item's own socket-bonus-chased loadout, real DPS, not a
-  linear EP guess). A new profile starts with an **empty** chase-bonus set, not inherited from
-  another class - verify its own candidates before assuming any bonus is worth chasing.
-- **This exception is REVOKED as of 2026-08-31 - do not reuse `chase_bonus_gems.json` across
-  sibling specs, even with byte-identical EP weights.** The original claim (below, kept for the
-  historical record) was that "byte-identical EP weights -> same socket-bonus verdict, since it's
-  purely a function of stat weights, never rotation/pet/class mechanics" was proven wrong by a
-  real, full re-verification: Beastmastery Hunter's `chase_bonus_gems.json` had been reused
-  verbatim from Survival Hunter's own (byte-identical EP weights, spot-checked at the time) since
-  2026-08-25, but a real 22-item `core/verify_gem_choices.py` re-run found **10 genuine, resolved
-  socket-bonus wins** (+2.6 to +10.5 DPS, all clearly outside noise) that the spot-check missed
-  entirely - BM's real Ravager pet contributes ~30% of her total DPS, and effective stat value
-  shifts with that pet-DPS-share the same way already documented below for Demonology vs
-  Affliction/Destruction Warlock. A byte-identical EP-weight table does NOT capture a pet's own
-  separate contribution - two specs can share literal Agility/Hit/Crit weights on paper and still
-  disagree on whether a specific item's socket bonus is worth it, because the pet's share of total
-  DPS is a real, separate variable the EP table doesn't encode. **Always run the full
-  `verify_gem_choices.py` pass for every new profile, no exception based on sibling-spec EP-weight
-  equality alone** - a spot-check on a handful of items is not sufficient replacement, since this
-  exact case (Beastmastery) WAS spot-checked and still missed 10 real wins.
-
-  <details><summary>Original (now-revoked) reasoning, 2026-08-25</summary>
-
-  Claimed: when a new profile shares its *entire* item pool with an already-verified profile (two
-  specs under one class dir, e.g. Beastmastery/Survival Hunter) AND its real EP weights are
-  confirmed byte-identical to that profile's own (check both specs' real `presets.ts` preset
-  blocks directly, don't assume), reusing the already-verified `chase_bonus_gems.json` list was
-  considered defensible, not a shortcut - the socket-bonus-vs-pure-stat question was assumed to be
-  purely a function of stat weights, never rotation/pet/class mechanics. Spot-checking a handful of
-  fresh real sim calls on any candidates the prior run never covered was meant to catch a bad reuse
-  - it did not (see above).
-  </details>
-
-- **Gem selection is phase-aware as of 2026-09-06 (`time_horizon.get_current_phase()`,
+- **A pure-primary-stat gem doesn't always win a socket bonus check - `gem_optimizer.
+  best_gems_for_item()` decides this LIVE, automatically, via a combined crude/EP score (rebuilt
+  2026-09-07, replacing the old per-profile `chase_bonus_gems.json` curated-list design entirely -
+  that file is gone, don't recreate it).** No per-profile setup needed beyond the usual
+  `stat_weights.json`/`primary_gem_id` - a new profile's items get real socket-bonus consideration
+  from day one, with no manual verification pass required first. `core/verify_gem_choices.py` still
+  exists as a real-sim AUDIT of this live formula's own decisions (not a gate, not a curation
+  feeder) - worth running once for a new profile to sanity-check the formula isn't badly
+  miscalibrated for that class (see its own module docstring), but its result doesn't need
+  hand-copying anywhere.
+- **The historical caution behind this rebuild, still worth knowing**: a pet-heavy spec's own
+  pet-DPS-share can change whether a given item's socket bonus is worth chasing even when its raw
+  EP/stat_weights table is byte-identical to a sibling spec's (confirmed directly: Beastmastery
+  Hunter's real Ravager pet contributes ~30% of her total DPS, and a real, careful re-verification
+  found 10 genuine socket-bonus wins a byte-identical-EP-weight assumption would have missed
+  entirely - see NOTES.md's 2026-08-31 entry for the full numbers). The live combined-score formula
+  doesn't model pet-DPS-share explicitly either (it's still linear/EP-based, same real precision
+  floor as before) - `verify_gem_choices.py`'s audit is exactly how a pet-heavy profile's own
+  miscalibration would still surface, so don't skip running it once for a new pet-heavy spec.
+- **Gem selection is phase-aware (`time_horizon.get_current_phase()`,
   `gem_optimizer._phase_legal_default_gem()`/`_all_gems()`) - a new profile's `primary_gem_id` gets
   this automatically, nothing extra to wire up.** But any dev tool that calls into gem selection
   (`build_owned_config()` and anything downstream of it) now REQUIRES
-  `time_horizon.set_current_phase()` to have been called first, or it raises loud - check every new
-  standalone script the same way `verify_default_enchants.py`/`verify_gem_choices.py`/
-  `build_profile_settings.py` needed this added on 2026-09-07.
+  `time_horizon.set_current_phase()` AND `gem_optimizer.set_active_capped_totals(<character's real
+  equipped items>)` to have both been called first, or gem choice silently ignores hit-cap
+  awareness (the latter) / picks a phase-illegal gem (the former) - check every new standalone
+  script the same way `verify_default_enchants.py`/`verify_gem_choices.py`/
+  `build_profile_settings.py`/`run_upgrade_sweep.py`/`run_optimizer.py`/`oom_check.py` all do this.
+  **`set_active_capped_totals()` MUST be called with the character's REAL, actually-equipped gear
+  (`character.json`'s own `equipped.items`), never `optimizer.build_owned_config()`'s idealized
+  substitute** - a real, confirmed bug (2026-09-07): using the idealized baseline understated a real
+  character's Hit Rating by a wide margin (106 vs the real, wowsims-matching 118), since the
+  idealized config fills empty/uncurated sockets with the profile's own default Spell Damage gem,
+  not what she's actually wearing.
 - **`_all_gems()`'s phase filter also excludes `unique`/`requiredProfession`-gated gems - a real,
-  separate correctness fix, not just phase-legality.** Found 2026-09-07 re-verifying
-  `chase_bonus_gems.json` under this fix: Survival Hunter's ENTIRE 9-item chase-bonus list (built
-  2026-08-24) turned out to have been verified against an illegally-selected substitute gem for
-  off-color sockets - the pre-fix `_best_gem_of_color()` picked "Crimson Sun" (33131, unique +
-  Jewelcrafting-only) as the best RED representative, a real gem no character could legally
-  multi-socket without the profession. Once excluded, every one of those 9 "wins" flipped to a
-  real, resolved LOSS (up to -11.94 DPS) - the socket-bonus loadout was never actually beating pure
-  primary-stat once restricted to legally-obtainable gems. **Any `chase_bonus_gems.json` verified
-  before 2026-09-06 needs a real re-run of `verify_gem_choices.py`-style logic with the active
-  chase-bonus set forced empty first** (comparing an item already in the file against itself is a
-  tautology - `best_gems_for_item()` special-cases listed ids to already return the chase loadout,
-  so a naive re-run of `verify_gem_choices.py` unmodified can never re-check an existing entry, only
-  find brand-new ones). See NOTES.md's 2026-09-07 entry for the full per-profile results.
+  separate correctness fix, not just phase-legality.** A profession-gated or unique substitute gem
+  can't legally be multi-socketed across several candidate items at once, so treating it as a
+  generally-available "best gem of this color" silently assumes a profession/uniqueness constraint
+  this pipeline has no business assuming - confirmed to flip real verdicts when this was found and
+  fixed (2026-09-06/07), see NOTES.md for the numbers.
 
 ## Non-obvious real filename conventions
 

@@ -60,13 +60,10 @@ def verify(profile_dir: str, name_realm: str) -> dict[str, int]:
     # stripped and isolated regardless of what other slots resolve to, so
     # an empty starting point doesn't bias the result.
     gc.set_active_default_enchants({})
-    chase_bonus = repo_root.load_json(os.path.join(profile_dir, "chase_bonus_gems.json"))
-    gem_optimizer.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
-    gem_optimizer.set_active_chase_bonus_gem_overrides(
-        {int(k): v for k, v in chase_bonus.get("gems", {}).items()})
     set_bonus.set_active_item_sets_go(os.path.join(REPO_ROOT, "sim", "tbc-new", profile["set_bonus_go_source"]))
 
     character = repo_root.load_json(os.path.join(USER_DATA_DIR, "characters", name_realm, "character.json"))
+    gem_optimizer.set_active_capped_totals(character["equipped"]["items"])
     known_professions = {p["name"] for p in character["character"]["professions"]}
     baseline_config = opt.build_owned_config(character["equipped"]["items"], known_professions)
     settings_path = os.path.join(profile_dir, "settings_template.json")

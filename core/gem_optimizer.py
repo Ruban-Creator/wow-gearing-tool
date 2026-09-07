@@ -1,37 +1,51 @@
-"""Gem choice for a given item's real sockets - currently just pure
-Agility (gear_config.DEFAULT_GEM) in every non-meta socket, matched
-position-for-position to gemSockets. Applied consistently to BOTH
-non-owned candidates AND her currently-equipped items when building
+"""Gem choice for a given item's real sockets. Applied consistently to
+BOTH non-owned candidates AND her currently-equipped items when building
 baseline_config - the tool's own MV(i) = DPS*(P∪{i}) - DPS*(P) formula
 means DPS*(P) is the BEST achievable from P (gems included), not
 "whatever happens to be socketed right now".
 
-Caught from a real report: the user flagged Gloves of Dexterous
-Manipulation + Ranger-General's Chestguard (commonly cited P2 SV BiS) as
-looking like a downgrade despite community consensus - tracing it down
-found her own currently-equipped Rift Stalker Hauberk was still socketed
-with the older Delicate Living Ruby (phase 1, agi 8) instead of Delicate
-Crimson Spinel (phase 3, agi 10, DEFAULT_GEM) - a free re-gem she hadn't
-done, silently understating her own baseline.
+Current design (`best_gems_for_item()`, rebuilt 2026-09-07): a LIVE,
+automatic combined score, no manual per-item curation - for any item with
+sockets, compares (a) the best default gem in every socket (max raw
+stats, no bonus) against (b) the best real color-matching gem in every
+socket (triggers the item's own real socketBonus - TBC's socket bonuses
+are all-or-nothing per item, so "chase" always means every socket at
+once, never a partial/combinatorial choice) plus that bonus's own real
+stat value, both scored cap-aware (see `_crude_score()`/
+`set_active_capped_totals()`), and picks whichever wins.
 
-A "smart" version of this function existed briefly: chase an item's
-socket bonus (TBC's bonuses are all-or-nothing per item - every socket
-must color-match simultaneously) by picking AP/RAP/Crit hybrid gems
-instead of pure Agility, whenever a crude STAT_WEIGHTS-based score said
-the hybrid + bonus beat pure Agility. Real-sim-tested against Ranger-
-General's Chestguard and disproven decisively: pure Agility on her
-current gear scored 2701.4, her real (partly outdated) actual gems
-scored 2656.0, and the "smart" bonus-chasing choice scored 2651.6 -
-WORSE than even her suboptimal real gems, not better. STAT_WEIGHTS'
-linear per-point weighting doesn't capture that Agility is a Hunter
-multi-stat-conversion stat (RAP/Crit/Armor), so it systematically
-undervalues Agility relative to flat AP/RAP stacking. Reverted rather
-than guessed back into a "better" heuristic - a real fix would need each
-candidate gem choice verified against the actual sim (CLAUDE.md's "never
-shortcut to EP-only ranking" rule, applied to gem choice, not just item
-choice), which isn't built yet. The gem catalog + color-matching helpers
-below are kept as real, DB-grounded groundwork for that, just not wired
-into the decision until it's proven against the sim.
+Real history worth keeping, since it explains why this design looks the
+way it does rather than something more elaborate:
+
+1. An early "smart" version chased sockets whenever a crude STAT_WEIGHTS
+   score said to, with no cap-awareness at all. Real-sim-tested against
+   Ranger-General's Chestguard (Survival Hunter) and disproven
+   decisively: pure Agility scored 2701.4, her real (partly outdated)
+   gems scored 2656.0, the "smart" choice scored 2651.6 - WORSE than even
+   her suboptimal real gems. Linear per-point weighting doesn't capture
+   that Agility is a Hunter multi-stat-conversion stat (RAP/Crit/Armor) -
+   a real, permanent caution about trusting crude EP scoring for
+   multi-stat-conversion classes specifically, not fully solved by
+   anything below.
+2. A later rebuild added real-sim verification per candidate
+   (`verify_gem_choice()`) feeding a hand-curated, per-profile static
+   list (`chase_bonus_gems.json`) - correct for whatever had been
+   checked, silently "don't chase" for everything else until a human
+   re-ran the check. Dropped 2026-09-07 per the user ("a combined score
+   is still better and especially future-proof compared to a static
+   list") in favor of the live formula above - `verify_gem_choice()`
+   remains as a real-sim AUDIT of that formula's own decisions (see its
+   own docstring), not something production depends on.
+3. Cap-awareness (Hit Rating past its real threshold scoring as zero
+   value) was tried, reverted the same day on a self-inflicted bug (it
+   was checked against the tool's own IDEALIZED baseline gear, not her
+   real equipped gear, silently understating her real total), then
+   restored correctly once that was found - see `_crude_score()`'s own
+   module comment for the full story.
+
+None of this claims to match wowsims.com's own real Suggest Gems tool
+exactly - confirmed by the user that their tool also mis-chases sometimes
+too, so parity with an imperfect reference was never the right bar.
 """
 from __future__ import annotations
 
@@ -90,20 +104,39 @@ def _all_gems() -> list[dict]:
             and not g.get("requiredProfession")]
 
 
-# Real, capped-stat awareness for crude gem scoring - added 2026-09-07, per
-# the user, after a real gem-candidate mis-pick was traced to exactly this
-# gap. `_crude_score()`'s plain linear sum treats every point of every stat
-# as worth its flat per-point weight forever - true for Spell Damage/Crit/
-# Haste, but Hit Rating (spell and melee) is a real THRESHOLD stat: once a
-# character's total hit rating clears the real miss-chance-vs-a-raid-boss
-# threshold, every further point is worth exactly zero (miss chance can't
-# go negative). Confirmed live: Balance Druid's own real stat_weights.json
-# weights Spell Hit Rating at 1.91/point (by far her highest weight), so a
-# crude score picked a pure +8 Hit Rating gem over a +5 Spell Damage/+4
-# Crit hybrid - but her real character sheet already shows 17.35% Spell
-# Hit, past the real 17% cap (see below), so those 8 points were worth
-# ZERO in practice; the real sim (which does model the true threshold)
-# picked the Spell Damage/Crit gem instead, exactly as this fix now does.
+# Real, capped-stat awareness for crude gem scoring. Real, confirmed
+# failure mode without it: a pure Hit Rating gem scores enormous by crude
+# linear weight even when every one of its points is actually worthless
+# past her real hit cap - reproduced live against Pauldrons of Malorne
+# (Great Lionseye, +10 Spell Hit, outscored a real +5 Spell Dmg/+4 Crit
+# hybrid despite the hybrid being the actually-correct pick).
+#
+# This was tried once already, 2026-09-07, via a ComputeStats RPC call
+# (`valuation.get_final_stats()`) - reverted the same day for TWO real
+# reasons, but only one of them was actually a reason to drop the
+# CONCEPT: (1) interleaving ComputeStats calls with the existing RunSim
+# calls on the same pooled simserver.exe processes triggered the already-
+# documented "crashes under sustained load" instability (see the
+# project_bridge_exe_overhead memory) - a real, valid reason to stop
+# making that RPC call, not a reason cap-awareness itself is wrong. (2)
+# it "didn't fix" the Pauldrons case - but that was a self-inflicted bug,
+# not a limitation of cap-awareness: the check was run against
+# `baseline_config` (optimizer.build_owned_config()'s IDEALIZED gear,
+# which fills any empty/uncurated socket with the profile's own default
+# Spell Damage gem), not her REAL, actual equipped gear - the exact same
+# "106 vs 118" mistake this file's own earlier investigation had already
+# found and fixed once (her real Hit Rating, summed from her ACTUAL
+# equipped items, is 118 - matching wowsims.com exactly; the idealized
+# baseline understates it at 106 because it doesn't reflect what she's
+# really wearing). Conflating "this specific test was wrong" with "the
+# whole feature is wrong" was a real mistake, caught by the user.
+#
+# Fixed properly this time: hand-summed only (no RPC, no simserver.exe
+# call at all - completely immune to the interleaving bug that caused the
+# actual regression), computed from the character's REAL, current
+# equipped gear (`set_active_capped_totals()`, called once per report/
+# character with `character.json`'s own real `equipped.items` - NEVER
+# `build_owned_config()`'s idealized substitute).
 #
 # Real constants, from the sim's own Go source, not guessed:
 # - SpellHitRatingPerHitPercent/PhysicalHitRatingPerHitPercent
@@ -117,8 +150,13 @@ def _all_gems() -> list[dict]:
 # Stat indices per proto/common.proto's real Stat enum: 12=SpellHitRating,
 # 20=MeleeHitRating. Expertise (a related but structurally different
 # mechanic - reduces dodge/parry chance, not miss chance, with its own
-# separate real conversion) is NOT modeled here yet - a real, flagged gap,
-# not silently assumed equivalent.
+# separate real conversion) is NOT modeled here yet - a real, flagged gap.
+# Real target-side hit debuffs (Totem of Wrath +3%, Misery +3%) also
+# reduce effective miss chance on top of gear-based Hit Rating - not
+# modeled here either, so this threshold is slightly more generous
+# (understates how capped a character really is) than her true in-raid
+# cap - a real, flagged approximation that makes this check too
+# PERMISSIVE if anything, never too aggressive.
 SPELL_HIT_RATING_PER_PERCENT = 12.615385
 MELEE_HIT_RATING_PER_PERCENT = 15.769233
 SPELL_HIT_STAT_IDX = 12
@@ -127,50 +165,47 @@ _CAP_RATING = {
     SPELL_HIT_STAT_IDX: 17.0 * SPELL_HIT_RATING_PER_PERCENT,   # ~214.5 rating
     MELEE_HIT_STAT_IDX: 8.0 * MELEE_HIT_RATING_PER_PERCENT,    # ~126.2 rating
 }
+# Empty dict = "no cap data yet" = no discount applied (never divide-by-
+# zero or crash a caller that hasn't set this up) - a pipeline entry point
+# MUST call set_active_capped_totals() with the character's real equipped
+# gear before any gem-choice code runs, same "set once at startup"
+# convention as stat_weights.py/gear_config.py.
+_active_capped_totals: dict[int, float] = {}
 
 
-def _capped_stat_totals(equipped_items: list, settings_path: str | None = None) -> dict[int, float]:
-    """Real, current total rating for each capped stat (see _CAP_RATING).
+def set_active_capped_totals(real_equipped_items: list) -> None:
+    """Hand-summed total rating per capped stat (see _CAP_RATING) from the
+    character's REAL, currently-equipped gear (character.json's own
+    `equipped.items` - real item ids + real socketed gems, exactly as she
+    actually has them). Must NOT be called with optimizer.build_owned_config()'s
+    idealized substitute - see this section's own module comment for the
+    real bug that mistake caused. No ComputeStats RPC, no simserver.exe
+    call at all - purely local arithmetic over already-loaded DB data, so
+    this can never trigger the RunSim/ComputeStats pool-interleaving
+    instability the earlier RPC-based attempt hit.
 
-    When `settings_path` is given, uses the TRUE, real, fully-buffed/
-    talented total via `valuation.get_final_stats()` (a real ComputeStats
-    RPC, cached) - the authoritative number, including raid buffs/talents/
-    set bonuses/racials that a hand-summed total can never fully capture.
-    Real bug found and fixed 2026-09-07: this function originally ALWAYS
-    hand-summed from raw item/gem data, which disagreed with wowsims.com's
-    own reported total for a real character by a wide margin (Balance
-    Druid: hand-sum found ~106 rating, her real total is materially
-    higher) - close enough to matter for a cap threshold decision, not a
-    rounding difference to shrug off.
-
-    Falls back to the hand-summed approximation (items' own
-    scalingOptions stats + socketed gems, NOT raid buffs/talents/racials -
-    a real, documented limitation) when `settings_path` isn't given (e.g.
-    ensure_meta_requirement()'s own call site doesn't have one readily
-    available) or when the real ComputeStats call degrades to None -
-    directionally useful even when imperfect, never silently skipped.
-    Accepts either real `equipped_items` (character.json's own shape) or a
-    baseline/trial config list (optimizer.Candidate.as_entry()'s shape) -
-    both carry the same real `id`/`gems` fields, so either works here."""
-    if settings_path is not None:
-        final_stats = valuation.get_final_stats(settings_path, equipped_items)
-        if final_stats is not None:
-            return {idx: final_stats[idx] if idx < len(final_stats) else 0.0 for idx in _CAP_RATING}
-
+    A real, acknowledged approximation, not full precision: doesn't
+    include raid buffs/talents/racials (a hand-summed gear-only total,
+    same real, documented limitation the rest of this codebase's gear-only
+    sums share, e.g. core/set_bonus.py's own item lookups), and doesn't
+    subtract whichever specific socket a given candidate gem would
+    actually replace - it's her whole gear's current total, held constant
+    for the lifetime of one report. Both mean this check is, if anything,
+    slightly too conservative/permissive (it can slightly over-count
+    headroom already used by the very socket being reconsidered) rather
+    than too aggressive - an accepted tradeoff for staying fast and simple,
+    not a precision this tool claims."""
+    global _active_capped_totals
     totals = {idx: 0.0 for idx in _CAP_RATING}
-    for it in equipped_items:
+    for it in real_equipped_items:
         if not it:
             continue
         item = idb.by_id(it["id"])
         if item:
             # Real items carry their stats in scalingOptions["0"]["stats"] -
             # a sparse {stat_index_str: value} dict, NOT a flat array like
-            # gems use (confirmed bug fixed 2026-09-07: this originally
-            # read item.get("stats"), which real items never have at all -
-            # `idb.by_id()`'s own item dicts have no "stats" key, so this
-            # silently summed to zero for every real character, matching
-            # the established real pattern already used elsewhere in this
-            # codebase, e.g. core/set_bonus.py's own identical lookup).
+            # gems use, matching the established pattern already used in
+            # core/set_bonus.py/core/sweep_all_loot.py.
             item_stats = item.get("scalingOptions", {}).get("0", {}).get("stats", {})
             for idx in totals:
                 totals[idx] += item_stats.get(str(idx), 0)
@@ -181,30 +216,32 @@ def _capped_stat_totals(equipped_items: list, settings_path: str | None = None) 
                 for idx in totals:
                     if idx < len(gem_stats):
                         totals[idx] += gem_stats[idx]
-    return totals
+    _active_capped_totals = totals
 
 
-def _crude_score(stats: list[float], capped_totals: dict[int, float] | None = None) -> float:
-    """`capped_totals`, when given, is the character's CURRENT total rating
-    per capped stat EXCLUDING this candidate gem's own contribution - any
-    of `stats`' own points that would push the total past the real cap are
-    discounted to zero value (see _CAP_RATING's own module comment)."""
+def _crude_score(stats: list[float]) -> float:
+    """Cap-aware: any of `stats`' own points in a stat tracked by
+    _CAP_RATING get discounted to whatever real headroom is left (per
+    `_active_capped_totals`, see `set_active_capped_totals()`) before
+    being weighted - a raw, uncapped Hit Rating point that's already past
+    her real cap is worth exactly zero here, matching the real in-game
+    mechanic (miss chance can't go negative)."""
     weights = stat_weights.get_active()
     total = 0.0
     for i, v in enumerate(stats):
         if not v:
             continue
-        if capped_totals is not None and i in _CAP_RATING:
-            headroom = max(0.0, _CAP_RATING[i] - capped_totals.get(i, 0.0))
-            v = min(v, headroom) if v > 0 else v
+        if v > 0 and i in _CAP_RATING:
+            headroom = max(0.0, _CAP_RATING[i] - _active_capped_totals.get(i, 0.0))
+            v = min(v, headroom)
         total += weights.get(str(i), 0) * v
     return total
 
 
-def _best_gem(candidates: list[dict], capped_totals: dict[int, float] | None = None) -> tuple[int, float] | None:
+def _best_gem(candidates: list[dict]) -> tuple[int, float] | None:
     best = None
     for g in candidates:
-        score = _crude_score(g["stats"], capped_totals)
+        score = _crude_score(g["stats"])
         if best is None or score > best[1]:
             best = (g["id"], score)
     return best
@@ -241,20 +278,19 @@ _META_GEM_CONDITIONS = repo_root.load_json(
 _COLOR_NAME_TO_CONST = {"red": RED, "yellow": YELLOW, "blue": BLUE}
 
 
-def _best_gem_matching_any(colors: set[int], capped_totals: dict[int, float] | None = None) -> int | None:
+def _best_gem_matching_any(colors: set[int]) -> int | None:
     """Best real, phase-legal gem (by crude score) whose own GEM_MATCHES
     set intersects `colors` - i.e., any gem that counts toward at least one
     of the still-missing pure colors passed in. Prefers a gem covering MORE
     of `colors` simultaneously (a hybrid satisfying two missing colors at
-    once costs one socket instead of two - the same real saving
-    `_best_green_gem()` already made for the one previously-hardcoded
-    meta), tie-broken by cap-aware crude score (see `_crude_score()`)."""
+    once costs one socket instead of two), tie-broken by crude score
+    (see `_crude_score()`)."""
     best_gem, best_coverage, best_score = None, -1, -1.0
     for g in _all_gems():
         coverage = len(GEM_MATCHES.get(g["color"], set()) & colors)
         if coverage == 0:
             continue
-        score = _crude_score(g["stats"], capped_totals)
+        score = _crude_score(g["stats"])
         if coverage > best_coverage or (coverage == best_coverage and score > best_score):
             best_gem, best_coverage, best_score = g["id"], coverage, score
     return best_gem
@@ -324,13 +360,12 @@ def ensure_meta_requirement(config: list[dict], equipped_items: list, meta_gem_i
                 available.append((entry_idx, socket_idx, native_color))
     available.sort(key=lambda t: t[2] == default_gem_color)
 
-    capped_totals = _capped_stat_totals(equipped_items)
     new_config = [dict(entry) for entry in config]
     for entry_idx, socket_idx, _native_color in available:
         still_missing = {c for c, n in missing.items() if n > 0}
         if not still_missing:
             break
-        gem_id = _best_gem_matching_any(still_missing, capped_totals)
+        gem_id = _best_gem_matching_any(still_missing)
         if gem_id is None:
             break  # nothing real left to swap to - leave the rest as-is rather than invent one
         gem = idb.gem_by_id(gem_id)
@@ -376,18 +411,15 @@ def _phase_legal_default_gem() -> int:
     return legal if legal is not None else default_gem
 
 
-def chase_bonus_gems_for_item(item: dict, meta_gem_id: int | None,
-                               equipped_items: list | None = None,
-                               settings_path: str | None = None) -> list[int]:
+def chase_bonus_gems_for_item(item: dict, meta_gem_id: int | None) -> list[int]:
     """The alternate candidate: fill every non-meta socket with a real gem
     that MATCHES the item's own declared socket color (TBC armor sockets
     are always pure Red/Blue/Yellow or Meta, never a hybrid requirement
-    themselves - that part was always true), so the item's real socketBonus
-    actually triggers. This is real, legal gear - just a specific candidate
-    loadout, not yet a claim it's better than the profile's own pure
-    default gem. See verify_gem_choice for the real sim comparison that
-    decides that, replacing the old STAT_WEIGHTS-based "smart" heuristic
-    this function's predecessor was disproven on (NOTES.md, 2026-08-2x).
+    themselves), so the item's real socketBonus actually triggers. Real
+    legal gear, cap-aware (see `_crude_score()`) - just not yet a claim
+    it's better than pure default gems everywhere; `best_gems_for_item()`
+    is what actually decides that, via a real combined score (see its own
+    docstring).
 
     Real bug fixed 2026-09-07, caught live comparing against a real
     wowsims.com gem-optimizer run: this used to call _best_gem_of_color()
@@ -398,196 +430,82 @@ def chase_bonus_gems_for_item(item: dict, meta_gem_id: int | None,
     mechanics). For a caster this mattered a lot: the best pure Blue/Yellow
     gems in this DB carry Spirit/Intellect only, zero spellpower, while the
     best Purple/Orange hybrids carry real spellpower alongside the matching
-    color - real-sim-verified for Pauldrons of Malorne (Balance Druid): the
-    pure-color version LOST to the profile's own default gem (-6.51 DPS),
-    the hybrid-aware version (matching wowsims' own real picks) WON
-    (+2.15 DPS) - the same item, the only difference being which real gem
-    fills the matching-color slot. Now uses _best_gem_matching_any({color}),
-    the same hybrid-aware helper ensure_meta_requirement() already uses.
+    color. Uses _best_gem_matching_any({color}), the same hybrid-aware
+    helper ensure_meta_requirement() already uses.
 
-    `equipped_items`, when given, makes this cap-aware too (see
-    _CAP_RATING's own module comment) - without it, the tie-break between
-    two same-coverage hybrid candidates falls back to plain crude score,
-    which can pick an over-capped Hit Rating gem over a real, uncapped
-    upgrade (confirmed live: exactly this, for this same shoulder item's
-    second socket, before this parameter existed). `settings_path`, when
-    ALSO given, makes the cap check itself accurate (a real ComputeStats
-    total, not a hand-summed approximation - see _capped_stat_totals()).
-
-    Real, exact per-item overrides checked FIRST (set_active_chase_bonus_
-    gem_overrides()) - crude/cap-aware scoring alone was confirmed, live,
-    to sometimes disagree with what a real sim-verification run actually
-    found to be the winning gem (Pauldrons of Malorne: crude score picks
-    Great Dawnstone, real-sim-tested best is Potent Noble Topaz) - once an
-    item has been through that real verification, the EXACT winning gems
-    get used every time, not silently re-derived and possibly wrong
-    again."""
+    TBC's own socket-bonus mechanic is all-or-nothing PER ITEM (every
+    socket must color-match simultaneously or the bonus doesn't trigger at
+    all) - there is no cross-socket tradeoff to search over once an item
+    is being "chased" at all, since every socket independently just needs
+    its own single best color-matching gem. A per-socket independent pick
+    like this already IS the combination-optimal chase loadout for that
+    mechanic - no combinatorial search needed, unlike a game with
+    partial/tiered socket bonuses."""
     sockets = item.get("gemSockets") or []
     if not sockets:
         return []
-    override = _active_chase_bonus_gem_overrides.get(item.get("id"))
-    if override is not None:
-        return list(override)
     meta_gem = meta_gem_id if meta_gem_id is not None else 0
-    capped_totals = _capped_stat_totals(equipped_items, settings_path) if equipped_items is not None else None
     gems = []
     for color in sockets:
         if color == idb.META_GEM_COLOR:
             gems.append(meta_gem)
         else:
-            gems.append(_best_gem_matching_any({color}, capped_totals) or _phase_legal_default_gem())
+            gems.append(_best_gem_matching_any({color}) or _phase_legal_default_gem())
     return gems
 
 
-def _candidates_matching_any(colors: set[int], n: int,
-                              capped_totals: dict[int, float] | None = None) -> list[int]:
-    """Top `n` real, phase-legal gems whose own GEM_MATCHES intersects
-    `colors` - same ranking _best_gem_matching_any() uses (coverage first,
-    then cap-aware crude score), just keeping the top N instead of only
-    the single best, so a caller can real-sim-test between them instead of
-    trusting crude score alone to pick the winner."""
-    scored = []
-    for g in _all_gems():
-        coverage = len(GEM_MATCHES.get(g["color"], set()) & colors)
-        if coverage == 0:
-            continue
-        scored.append((coverage, _crude_score(g["stats"], capped_totals), g["id"]))
-    scored.sort(key=lambda t: (-t[0], -t[1]))
-    return [gid for _, _, gid in scored[:n]]
-
-
-# Real, FIXED, cheap iteration budget for _real_sim_refine_chase_gems()'s
-# own internal candidate search - added 2026-09-07, per the user, after
-# the first version reused whatever `iterations` the OUTER caller passed
-# in (3000 during verify_gem_choices.py's cheap screen pass, but a real
-# 30000 during its resolve pass for any item close enough to need one).
-# With top_n=8 candidates across a 2-socket item, that's up to 14 EXTRA
-# real sim calls per item ON TOP of the existing screen+resolve funnel -
-# at 30000 iterations each, this would have multiplied an already-real
-# 15-minute-class full-profile run well past that, not a small overhead.
-# The refinement's own job is choosing WHICH gem is likely best (a
-# discovery/screening task), not producing the final, publication-quality
-# DPS number - that final number still comes from verify_gem_choice()'s
-# own real evaluate() call at the CALLER's actual requested precision,
-# using whichever gem this cheap search found. Matches the same
-# "SCREEN_ITERATIONS way cheaper than RESOLVE_ITERATIONS" cost-tiering
-# convention already used throughout this whole pipeline.
-_GEM_REFINE_ITERATIONS = 1500
-
-
-def _real_sim_refine_chase_gems(item: dict, meta_gem_id: int | None, settings_path: str,
-                                 baseline_config: list[dict], slot_idx: int,
-                                 equipped_items: list, seed: int,
-                                 top_n: int = 8) -> list[int]:
-    """Greedy, per-socket REAL-SIM refinement of chase_bonus_gems_for_item()'s
-    crude-score guess - added 2026-09-07, per the user, after cap-awareness
-    alone was confirmed NOT sufficient. Real, correct picture (found by
-    actually tracing the discrepancy rather than trusting either side's
-    number blindly): Balance Druid's TRUE current Hit Rating from her real
-    gear is 118 (matches wowsims exactly, confirmed via a direct item-by-
-    item sum) - but her real EFFECTIVE hit chance also includes real,
-    separate TARGET-side debuffs (Totem of Wrath +3%, Misery +3%) that
-    reduce the target's own chance to avoid her spells, on top of her own
-    gear-based Hit Rating - a genuinely different mechanic layer a
-    gear-only rating sum can never see. Modeling the TRUE combined
-    threshold correctly would need both layers together, which is real,
-    non-trivial complexity - not something to keep hand-rolling after
-    getting it wrong twice already. `top_n` widened from 3 to 8 instead:
-    real-sim-testing a wider shortlist means the genuinely-best candidate
-    still gets found and correctly evaluated by the ACTUAL sim (which
-    natively models gear, debuffs, and caps together, correctly) even when
-    crude/cap-aware scoring alone ranks it outside a narrow top-3 - the
-    same 'never shortcut to EP-only ranking' principle, applied by
-    widening the pre-filter rather than perfecting an inherently
-    approximate score.
-
-    This applies the SAME 'never shortcut to EP-only ranking' rule
-    verify_gem_choice() already applies to the outer chase-vs-default
-    decision, one level deeper: for each non-meta socket, real-sim-tests
-    up to `top_n` crude-score candidates (holding every other socket at
-    its current best pick), keeping whichever real DPS is highest - a
-    bounded, cheap greedy search (at most top_n-1 extra real sim calls per
-    socket, always at the cheap, fixed _GEM_REFINE_ITERATIONS - see that
-    constant's own module comment for why this must NOT scale with the
-    caller's own requested precision), not a full combinatorial search
-    across every socket at once."""
+def _pure_gems_for_item(item: dict, meta_gem_id: int | None) -> list[int]:
+    """The profile's own single best default gem in every non-meta socket,
+    ignoring socket color entirely - maximizes raw stats, never triggers a
+    socket bonus. Position-matched to gemSockets so a meta socket never
+    silently loses its gem."""
     sockets = item.get("gemSockets") or []
     if not sockets:
         return []
-    capped_totals = _capped_stat_totals(equipped_items, settings_path) if equipped_items is not None else None
-    gems = list(chase_bonus_gems_for_item(item, meta_gem_id, equipped_items, settings_path))
-    base_entry = dict(baseline_config[slot_idx])
+    meta_gem = meta_gem_id if meta_gem_id is not None else 0
+    default_gem = _phase_legal_default_gem()
+    return [meta_gem if color == idb.META_GEM_COLOR else default_gem for color in sockets]
 
-    def dps_for(gems_trial: list[int]) -> float:
-        entry = dict(base_entry)
-        entry["gems"] = gems_trial
-        trial_config = list(baseline_config)
-        trial_config[slot_idx] = entry
-        return valuation.evaluate(settings_path, trial_config, _GEM_REFINE_ITERATIONS, seed)["combined"]
 
-    best_dps = dps_for(gems)
-    for socket_idx, color in enumerate(sockets):
-        if color == idb.META_GEM_COLOR:
-            continue
-        for candidate in _candidates_matching_any({color}, top_n, capped_totals):
-            if candidate == gems[socket_idx]:
-                continue
-            trial_gems = list(gems)
-            trial_gems[socket_idx] = candidate
-            dps = dps_for(trial_gems)
-            if dps > best_dps:
-                best_dps = dps
-                gems[socket_idx] = candidate
-    return gems
+def _gems_stat_score(gem_ids: list[int]) -> float:
+    """Cap-aware crude score (see `_crude_score()`) of a list of real gem
+    ids, summed. Used to compare a full socket loadout against another."""
+    total = 0.0
+    for gid in gem_ids:
+        gem = idb.gem_by_id(gid) if gid else None
+        if gem:
+            total += _crude_score(gem["stats"])
+    return total
 
 
 def verify_gem_choice(item: dict, meta_gem_id: int | None, settings_path: str,
                        baseline_config: list[dict], slot_idx: int,
-                       iterations: int, seed: int, refine_chase_gems: bool = False) -> dict:
-    """Real-sim compare pure Agility (best_gems_for_item) against the item's
-    own socket-bonus-chased loadout (chase_bonus_gems_for_item, optionally
-    refined by _real_sim_refine_chase_gems - see that function's own
-    docstring for why crude/cap-aware score alone isn't trusted to pick
-    WHICH real gem fills a matching socket, only whether chasing is worth
-    it at all), with the item actually equipped in slot_idx of
-    baseline_config so its printed socketBonus is genuinely active.
-    Returns whichever wins, with the real DPS delta and noise - never a
-    STAT_WEIGHTS score standing in for this decision, per CLAUDE.md's
-    "never shortcut to EP-only ranking" rule applied to gem choice
-    specifically (see gem_optimizer.py's module docstring for the earlier,
-    disproven attempt at a crude-score shortcut here).
-
-    `refine_chase_gems` defaults to False (real, deliberate cost control,
-    per the user, 2026-09-07): _real_sim_refine_chase_gems() is itself
-    cheap per item (~10s, at the fixed _GEM_REFINE_ITERATIONS budget), but
-    verify_gem_choices.py's own SCREEN pass calls this function for EVERY
-    real candidate with sockets - a full profile can easily have 150+ of
-    those, which would multiply into 25-30+ minutes added to what's
-    already a real ~15-minute-class budget if every screen call refined.
-    Pass True only for the SMALL number of items that clear the screen and
-    are being resolved at full precision - the same "cheap broad screen,
-    expensive narrow resolve" funnel discipline already used everywhere
-    else in this pipeline, just applied to gem selection too."""
+                       iterations: int, seed: int) -> dict:
+    """AUDIT tool, not a production decision-maker: real-sim compares pure
+    default gems (_pure_gems_for_item) against this item's own socket-
+    bonus-chased loadout (chase_bonus_gems_for_item), with the item
+    actually equipped in slot_idx of baseline_config so its printed
+    socketBonus is genuinely active. Used by core/verify_gem_choices.py to
+    check whether `best_gems_for_item()`'s own LIVE combined-score decision
+    (see that function's docstring) actually agrees with what a real sim
+    finds - a spot-check on the crude/EP scoring's own accuracy (and, by
+    extension, on `stat_weights.json`'s own calibration for this profile),
+    not a gate production has to pass before trusting a gem choice.
+    Production never calls this - `best_gems_for_item()` decides live,
+    every time, with no sim call."""
     if not (item.get("gemSockets") or []):
         return {"applicable": False}
 
-    pure_agility_gems = best_gems_for_item(item, meta_gem_id)
-    crude_chase_gems = chase_bonus_gems_for_item(item, meta_gem_id, equipped_items=baseline_config,
-                                                  settings_path=settings_path)
-    if crude_chase_gems == pure_agility_gems:
+    pure_gems = _pure_gems_for_item(item, meta_gem_id)
+    chase_gems = chase_bonus_gems_for_item(item, meta_gem_id)
+    if chase_gems == pure_gems:
         return {"applicable": False}  # every socket was already Red/Meta - nothing to compare
-
-    if refine_chase_gems:
-        chase_gems = _real_sim_refine_chase_gems(item, meta_gem_id, settings_path, baseline_config,
-                                                  slot_idx, baseline_config, seed)
-    else:
-        chase_gems = crude_chase_gems
 
     base_entry = dict(baseline_config[slot_idx])
 
     # Real bug found and fixed 2026-09-07, caught live by the user ("this is
     # bullshit you would deactivate meta gems we established that"): simply
-    # dropping pure_agility_gems into this slot can silently break her real
+    # dropping pure_gems into this slot can silently break her real
     # meta-gem requirement if THIS item happened to be one of the (possibly
     # several) real gems satisfying it - the sim doesn't model meta
     # activation at all, so it would score that broken state as if nothing
@@ -599,7 +517,7 @@ def verify_gem_choice(item: dict, meta_gem_id: int | None, settings_path: str,
     # to both sides - a fair, meta-respecting comparison either way.
     pure_config = list(baseline_config)
     pure_entry = dict(base_entry)
-    pure_entry["gems"] = pure_agility_gems
+    pure_entry["gems"] = pure_gems
     pure_config[slot_idx] = pure_entry
     pure_config = ensure_meta_requirement(pure_config, baseline_config, meta_gem_id)
     pure_result = valuation.evaluate(settings_path, pure_config, iterations, seed)
@@ -615,103 +533,76 @@ def verify_gem_choice(item: dict, meta_gem_id: int | None, settings_path: str,
     sem_a = pure_result["player_stdev"] / (iterations ** 0.5)
     sem_b = chase_result["player_stdev"] / (iterations ** 0.5)
     noise = (sem_a ** 2 + sem_b ** 2) ** 0.5
+    real_winner_gems = chase_gems if delta > 0 else pure_gems
+    formula_gems = best_gems_for_item(item, meta_gem_id)
 
     return {
         "applicable": True,
-        "pure_agility_dps": pure_result["combined"],
+        "pure_dps": pure_result["combined"],
         "chase_bonus_dps": chase_result["combined"],
-        "delta": delta,  # positive = chasing the socket bonus wins
+        "delta": delta,  # positive = chasing the socket bonus really wins
         "noise_stdev": noise,
         "tied_within_noise": abs(delta) < 2 * noise,
-        "winner": "chase_bonus" if delta > 0 else "pure_agility",
-        "pure_agility_gems": pure_agility_gems,
+        "winner": "chase_bonus" if delta > 0 else "pure",
+        "pure_gems": pure_gems,
         "chase_bonus_gems": chase_gems,
+        # Did the live combined-score formula (best_gems_for_item, what
+        # production actually uses) pick the same gems the real sim just
+        # confirmed are genuinely better? False here means the formula got
+        # this ONE item wrong - worth a look (a stat_weights.json miscalibration,
+        # most likely), not silently ignored.
+        "formula_agrees_with_sim": formula_gems == real_winner_gems,
     }
 
 
-# Real, resolved (30k-iteration) sim results from core/verify_gem_choices.py,
-# 2026-08-24: pure-stat gem vs each item's own socket-bonus-chased loadout.
-# Per-profile since Stage 6 (multi-class support) - this was Hunter/Agility-
-# specific verified data (Survival Hunter's 37 real candidates with sockets;
-# 9 had a real, resolved DPS gain from chasing their own bonus instead) and
-# must never be silently assumed to apply to another class's candidate pool.
-# Loaded from profiles/tbc/<class>_<spec>/chase_bonus_gems.json via
-# set_active_chase_bonus_ids() (same "set once at startup" pattern as
-# stat_weights.py/gear_config.py) - a new profile starts with an EMPTY set
-# until verify_gem_choices.py is actually re-run against its own real
-# candidate pool, never inheriting another profile's verified items.
-_active_chase_bonus_ids: set[int] | None = None
-# Real, exact winning gem ids per item id, added 2026-09-07 - optional,
-# separate from _active_chase_bonus_ids (a plain "yes/no" flag). Needed
-# because chase_bonus_gems_for_item()'s own crude-score fallback (used
-# when no override exists here) doesn't always land on the SAME gem a real
-# sim-verification run confirmed as the actual winner (see gem_optimizer.py's
-# own module docstring on crude score's real, confirmed unreliability for
-# this decision) - without persisting the EXACT verified gems, production
-# use of an already-curated "yes, chase this" item could re-derive a
-# DIFFERENT, unverified (and possibly worse) gem choice every time, not the
-# one that was actually proven correct. Defaults to empty (never breaking
-# an existing profile that hasn't set one) - set via
-# set_active_chase_bonus_gem_overrides(), sourced from chase_bonus_gems.json's
-# own optional "gems" map.
-_active_chase_bonus_gem_overrides: dict[int, list[int]] = {}
-
-
-def set_active_chase_bonus_ids(item_ids: set[int]) -> None:
-    global _active_chase_bonus_ids
-    _active_chase_bonus_ids = item_ids
-
-
-def set_active_chase_bonus_gem_overrides(overrides: dict[int, list[int]]) -> None:
-    global _active_chase_bonus_gem_overrides
-    _active_chase_bonus_gem_overrides = overrides
-
-
-def get_active_chase_bonus_ids() -> set[int]:
-    if _active_chase_bonus_ids is None:
-        raise RuntimeError(
-            "gem_optimizer.set_active_chase_bonus_ids() was never called - a pipeline "
-            "entry point must load a profile's chase_bonus_gems.json and call "
-            "set_active_chase_bonus_ids() before any gem-choice code runs."
-        )
-    return _active_chase_bonus_ids
-
-
 def best_gems_for_item(item: dict, meta_gem_id: int | None) -> list[int]:
-    """Pure Agility (DEFAULT_GEM) in every non-meta socket, position-
-    matched to gemSockets so a meta socket never silently loses its gem -
-    EXCEPT for the small, real-sim-verified set in CHASE_BONUS_ITEM_IDS,
-    where chasing the item's own socket bonus is a confirmed, resolved DPS
-    win instead.
+    """LIVE, automatic combined-score decision - no static per-item list,
+    no manual curation, works for any real item the first time it's seen.
+    Replaced 2026-09-07, per the user ("i want a combined score, it is
+    still better and especially future proof compared to a static list"):
+    the prior design (CHASE_BONUS_ITEM_IDS -> chase_bonus_gems.json) needed
+    a human to run core/verify_gem_choices.py and hand-curate every single
+    item's real-sim-verified answer into a per-profile file before that
+    item's own socket bonus was ever considered - correct only for
+    whatever had already been checked, silently defaulting to "don't
+    chase" for everything else, forever, until someone remembered to
+    re-check it.
 
-    An earlier version of this function used STAT_WEIGHTS to decide
-    whether chasing an item's socket bonus (color-matching every socket,
-    accepting an AP/RAP/Crit hybrid instead of pure Agility) scored higher
-    than ignoring it. Real-sim-tested against Ranger-General's Chestguard
-    and disproven decisively: pure Agility on her current gear scored
-    2701.4, her real (partly mismatched) actual gems scored 2656.0, and the
-    "smart" bonus-chasing choice scored 2651.6 - WORSE than even her
-    current suboptimal gems, not better. STAT_WEIGHTS' linear per-point
-    weighting doesn't capture that Agility is a Hunter multi-stat-
-    conversion stat (RAP/Crit/Armor), so it systematically undervalues
-    Agility relative to flat AP/RAP stacking - so the crude heuristic was
-    disabled rather than guessed back into a "better" one.
+    Computes both real candidates and picks whichever scores higher, cap-
+    aware (see `_crude_score()`/`set_active_capped_totals()`):
+    - `_pure_gems_for_item()`: best default gem in every socket, ignoring
+      color - maximum raw stats, no socket bonus.
+    - `chase_bonus_gems_for_item()`: best real gem that color-matches each
+      socket - triggers the item's own real socketBonus, at some stat
+      cost.
+    The chase score is `_gems_stat_score(chase_gems) + _crude_score(item's
+    own real socketBonus stats)` - crediting the bonus's own real stat
+    value, since it only actually applies once every socket matches (TBC's
+    socket bonuses are all-or-nothing per item, so there's no partial
+    credit and no cross-socket combination search needed - see
+    `chase_bonus_gems_for_item()`'s own docstring).
 
-    That was N=1, though - core/verify_gem_choices.py later ran the SAME
-    real-sim comparison (gem_optimizer.verify_gem_choice, not STAT_WEIGHTS)
-    across all 37 of her real candidates with sockets and found "pure
-    Agility always wins" does NOT generalize: 9 items have a real, resolved
-    (30k-iteration) DPS gain from chasing their own bonus instead. Those 9
-    are CHASE_BONUS_ITEM_IDS, sourced from real per-item sim results, not a
-    formula - every other item defaults to pure Agility, including every
-    item never checked, since nothing broader than what was actually
-    verified is ever claimed here.
-    """
+    A real, accepted limitation, same as wowsims' own real Suggest Gems
+    tool (confirmed by the user to also chase badly sometimes): this is
+    still linear/EP-based scoring, not a real sim - it can occasionally
+    get a specific item wrong the same way any EP approximation can
+    (STAT_WEIGHTS' own historical Ranger-General's-Chestguard case is the
+    proof this isn't purely theoretical - a hybrid gem's real value from a
+    multi-stat-conversion stat like Agility isn't fully linear). Cap-
+    awareness (Hit Rating specifically) closes the single largest,
+    concretely-reproduced gap; `core/verify_gem_choices.py` remains as a
+    real-sim AUDIT of this formula's own decisions (not a gate production
+    depends on), so a genuine miscalibration surfaces for a human to
+    investigate (likely a `stat_weights.json` fix) rather than staying
+    invisible."""
     sockets = item.get("gemSockets") or []
     if not sockets:
         return []
-    if item.get("id") in get_active_chase_bonus_ids():
-        return chase_bonus_gems_for_item(item, meta_gem_id)
-    meta_gem = meta_gem_id if meta_gem_id is not None else 0
-    default_gem = _phase_legal_default_gem()
-    return [meta_gem if color == idb.META_GEM_COLOR else default_gem for color in sockets]
+    pure_gems = _pure_gems_for_item(item, meta_gem_id)
+    chase_gems = chase_bonus_gems_for_item(item, meta_gem_id)
+    if chase_gems == pure_gems:
+        return pure_gems  # every socket was already the default color/Meta - nothing to compare
+
+    pure_score = _gems_stat_score(pure_gems)
+    chase_score = _gems_stat_score(chase_gems) + _crude_score(item.get("socketBonus") or [])
+    return chase_gems if chase_score > pure_score else pure_gems

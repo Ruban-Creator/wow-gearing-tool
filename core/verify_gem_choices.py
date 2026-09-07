@@ -1,34 +1,23 @@
-"""Real-sim verification of gem_optimizer's "pure primary-stat gem
-everywhere" default, broadened from the single-item spot check that
-originally disproved the crude STAT_WEIGHTS-based "smart" hybrid heuristic
-(Ranger-General's Chestguard, Survival Hunter's own pure Agility: 2701.4
-beat the hybrid's 2651.6 - see NOTES.md).
+"""AUDIT tool, not a production gate (rebuilt 2026-09-07, since
+gem_optimizer.best_gems_for_item() now decides gem choice LIVE via a
+combined crude/EP score, not a hand-curated per-profile list - see that
+function's own docstring for the full design/history). This script's job
+is to spot-check that live formula against real sim results, across every
+real candidate in the profile's own pool that has sockets: for each one,
+gem_optimizer.verify_gem_choice() real-sim-compares pure default gems
+against the item's own socket-bonus-chased loadout and reports whether the
+formula's own decision (best_gems_for_item(), what production actually
+uses) picked the side the real sim confirms is genuinely better
+(`formula_agrees_with_sim`). A `False` here is real, actionable signal - it
+means the live formula got THIS item wrong, most likely because
+`stat_weights.json` under/over-values some stat for this profile (the
+historical Ranger-General's-Chestguard case, where linear EP scoring
+undervalued Agility's real multi-stat-conversion value for Hunters, is
+exactly this class of bug) - not something to hand-patch per item, since
+there's no override mechanism to patch into anymore.
 
-That was N=1, for one profile. This runs the same real-sim comparison
-(gem_optimizer.verify_gem_choice: the profile's own real primary-stat gem -
-`gc.get_active_default_gem()`, loaded from THIS profile's own
-`profile.json`'s `primary_gem_id`, e.g. Agility for Survival Hunter but
-Spell Damage for Balance Druid - never assume it's Agility just because
-that's this script's own original motivating case) vs the item's own
-socket-bonus-chased loadout, real DPS, not a linear stat-weight guess)
-across every real candidate in her actual pool that has sockets - to find
-out whether "pure primary-stat gem always wins" actually generalizes for
-THIS profile, or whether some item's socket bonus is real enough to beat
-it. Screens all of them cheap first, only resolves the close calls at high
+Screens all candidates cheap first, only resolves the close calls at high
 iterations - same funnel discipline as marginal_value.mv_single_tiered.
-
-Real, confirmed mislabeling bug fixed 2026-09-06 (caught live by the user
-directly reading a Balance Druid run's own output and asking "did you
-really check agility gems on a caster???"): every print statement below
-used to hardcode the literal word "Agility" regardless of which profile was
-actually being checked - a real, stale leftover from this script's original
-Hunter-only origin that was never genericized when reused for other
-classes. The underlying SIM COMPARISON was always correct (it always used
-`gc.get_active_default_gem()`, this profile's own real primary gem, never a
-hardcoded Agility gem id) - only the printed English was wrong, but wrong
-enough to make a Balance Druid's own gem-verification output read as if her
-own caster gems were being tested against Agility, which would have been a
-real, serious bug had it actually been true.
 
 Usage: python core/verify_gem_choices.py [profile_dir_name] [name_realm]
   Defaults to survival_hunter / the flat USER_DATA_DIR/character.json (Lerynia's
@@ -83,15 +72,12 @@ def main():
     _default_enchants_path = os.path.join(PROFILE_DIR, "default_enchants.json")
     gc.set_active_default_enchants(repo_root.load_json(_default_enchants_path)
                                     if os.path.exists(_default_enchants_path) else {})
-    chase_bonus = repo_root.load_json(os.path.join(PROFILE_DIR, "chase_bonus_gems.json"))
-    gopt.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
-    gopt.set_active_chase_bonus_gem_overrides(
-        {int(k): v for k, v in chase_bonus.get("gems", {}).items()})
 
     char_path = (os.path.join(USER_DATA_DIR, "characters", NAME_REALM, "character.json")
                  if NAME_REALM else os.path.join(USER_DATA_DIR, "character.json"))
     char = repo_root.load_json(char_path)
     owned_items = char["equipped"]["items"]
+    gopt.set_active_capped_totals(owned_items)
     meta_gem_id = opt.find_owned_meta_gem(owned_items)
     baseline_config = opt.build_owned_config(owned_items)
 
@@ -115,8 +101,19 @@ def main():
         slot_idx = gc.SLOT_ORDER.index(slot)
         trial_config = list(baseline_config)
         trial_config[slot_idx] = c.as_entry()
-        res = gopt.verify_gem_choice(item, meta_gem_id, SETTINGS_TEMPLATE, trial_config,
-                                      slot_idx, SCREEN_ITERATIONS, opt.SEED)
+        try:
+            res = gopt.verify_gem_choice(item, meta_gem_id, SETTINGS_TEMPLATE, trial_config,
+                                          slot_idx, SCREEN_ITERATIONS, opt.SEED)
+        except (RuntimeError, OSError) as e:
+            # Same real, known crash class core/marginal_value.py's mv_single()
+            # already guards against (e.g. Beast-tamer's Shoulders' Go effect
+            # unconditionally type-asserts a Hunter agent and panics for any
+            # other class) - the item, not the process, is what's broken, so
+            # simserver_client's own self-heal retry hits the identical panic
+            # again. Excluded honestly, same as any other unusable candidate,
+            # rather than one bad item killing this whole verification sweep.
+            print(f"  [skip]   {c.name:40s} sim crashed: {e}")
+            continue
         if not res["applicable"]:
             continue  # every socket already the primary color/Meta - the profile's own primary gem trivially wins, nothing to check
         res["name"] = c.name
@@ -130,15 +127,8 @@ def main():
     print(f"\n[+{time.time()-start:.1f}s] Screened {len(results)}, {len(to_resolve)} close enough to resolve @ {RESOLVE_ITERATIONS}.\n")
 
     for trial_config, slot_idx, item, res in to_resolve:
-        # refine_chase_gems=True only here (real cost control, 2026-09-07):
-        # the small number of items that clear the cheap screen are worth
-        # the extra ~10s/item real-sim gem search; every screened candidate
-        # would not be (150+ items x ~10s = 25-30+ minutes added to an
-        # already real ~15-minute-class run - see verify_gem_choice()'s own
-        # docstring).
         resolved = gopt.verify_gem_choice(item, meta_gem_id, SETTINGS_TEMPLATE, trial_config,
-                                           slot_idx, RESOLVE_ITERATIONS, opt.SEED,
-                                           refine_chase_gems=True)
+                                           slot_idx, RESOLVE_ITERATIONS, opt.SEED)
         res.update(resolved)
         res["resolved"] = True
         print(f"  [resolve] {res['name']:40s} delta={res['delta']:+7.2f}  tied={res['tied_within_noise']}")
@@ -148,17 +138,40 @@ def main():
     real_wins = [r[3] for r in results if not r[3]["tied_within_noise"] and r[3]["delta"] > 0]
     real_losses = [r[3] for r in results if not r[3]["tied_within_noise"] and r[3]["delta"] < 0]
     ties = [r[3] for r in results if r[3]["tied_within_noise"]]
+    # Real, actionable signal: a CLEAR (not tied-within-noise) real-sim
+    # result the live combined-score formula (best_gems_for_item, what
+    # production actually uses) got wrong. A tie doesn't count - neither
+    # side is confirmed better, so disagreement there is meaningless, not
+    # a bug.
+    formula_wrong = [r for r in (real_wins + real_losses) if not r["formula_agrees_with_sim"]]
 
-    print(f"Real socket-bonus wins (chase_bonus beats pure {primary_gem_label}): {len(real_wins)}")
+    print(f"Real socket-bonus wins (chase beats pure {primary_gem_label}): {len(real_wins)}")
     for r in sorted(real_wins, key=lambda r: -r["delta"]):
+        flag = "  <-- FORMULA DISAGREES" if not r["formula_agrees_with_sim"] else ""
         print(f"  {r['name']:40s} slot={r['slot']:10s} +{r['delta']:.2f} DPS "
-              f"(resolved={r['resolved']}, noise={r['noise_stdev']:.2f})")
+              f"(resolved={r['resolved']}, noise={r['noise_stdev']:.2f}){flag}")
 
     print(f"\nTied within noise (no real difference either way): {len(ties)}")
     for r in ties:
         print(f"  {r['name']:40s} slot={r['slot']:10s} delta={r['delta']:+.2f} noise={r['noise_stdev']:.2f}")
 
     print(f"\nPure {primary_gem_label} clearly still wins: {len(real_losses)} of {len(results)} checked")
+    for r in sorted(real_losses, key=lambda r: r["delta"]):
+        flag = "  <-- FORMULA DISAGREES" if not r["formula_agrees_with_sim"] else ""
+        if flag:
+            print(f"  {r['name']:40s} slot={r['slot']:10s} {r['delta']:+.2f} DPS{flag}")
+
+    if formula_wrong:
+        print(f"\n*** {len(formula_wrong)} item(s) where the LIVE FORMULA (best_gems_for_item) "
+              f"disagrees with a real, clear sim result - worth investigating "
+              f"(likely a stat_weights.json miscalibration for this profile, "
+              f"see gem_optimizer.py's own module docstring on the historical "
+              f"Ranger-General's-Chestguard case): ***")
+        for r in formula_wrong:
+            print(f"  {r['name']:40s} slot={r['slot']:10s} real_winner={r['winner']} "
+                  f"delta={r['delta']:+.2f} pure_gems={r['pure_gems']} chase_gems={r['chase_bonus_gems']}")
+    else:
+        print(f"\nNo clear formula/real-sim disagreements found across {len(results)} checked candidates.")
 
     out_path = os.path.join(USER_DATA_DIR, "cache", "gem_choice_verification.json")
     with open(out_path, "w", encoding="utf-8") as f:

@@ -7702,3 +7702,277 @@ matching or beating wowsims' own real picks with real sim proof, not just direct
 re-run for the other 14 profiles' own candidate pools/currently-equipped gear - the same real gap
 (crude-score-derived chase-bonus gems for OTHER classes' own off-color-socket items) likely still
 exists there too, just not yet verified. A real, worthwhile follow-up, not done this pass.
+
+## 2026-09-07 (later same day): gem-optimizer course-correction - dropped real-sim-refinement AND
+cap-awareness, back to plain crude scoring + one final real-sim check
+
+Per the user's decisive challenge to the above session's own work ("wowsims one takes 2 seconds / i
+am not convinced what you built is good"): the top-8 real-sim-refinement search
+(`_real_sim_refine_chase_gems`, up to 14 extra real sim calls per item) and the ComputeStats-RPC-
+based cap-awareness (`_capped_stat_totals`/`_CAP_RATING`, `valuation.get_final_stats()`) were both
+real, working fixes for the specific case they were built against (Pauldrons of Malorne) - but the
+user was right that the architecture itself was wrong: bolting real-sim search onto a scorer that
+was missing the actual needed feature, rather than fixing the scorer. Agreed plan: fast, no-sim-
+calls crude/EP-based per-socket gem picking (matching how wowsims' own real optimizer works - also
+EP-based, also imperfect, never real-sim-searching candidates), with exactly ONE real sim comparison
+at the end (the existing `verify_gem_choice()` pattern) deciding whether the resulting item is worth
+it at all.
+
+**Removed entirely**: `_real_sim_refine_chase_gems`, `_GEM_REFINE_ITERATIONS`,
+`_candidates_matching_any`, the `refine_chase_gems` parameter on `verify_gem_choice()` (and its
+call site in `verify_gem_choices.py`'s resolve loop). **Tried, then also removed** (see below):
+`_capped_stat_totals`, `_CAP_RATING`, `SPELL_HIT_RATING_PER_PERCENT`/`MELEE_HIT_RATING_PER_PERCENT`,
+`valuation.get_final_stats()`. `chase_bonus_gems_for_item()` is back to what it looked like right
+after the hybrid-gem fix (2026-09-07 morning): per-socket independent `_best_gem_matching_any()`,
+no cap-awareness, no combination search.
+
+**Real finding that reframed the plan mid-implementation**: initially reasoned that since TBC's
+socket bonuses are all-or-nothing per item (every socket must color-match simultaneously), there's
+no cross-socket tradeoff to search over once an item is being "chased" - so per-socket independent
+crude scoring should already BE the combination-optimal answer, no combination search needed. True,
+but incomplete: re-tested Pauldrons of Malorne with plain, uncapped crude scoring and it picked
+Great Lionseye (+10 Spell Hit, this profile's single highest-weighted stat at 1.91/point) over
+Potent Noble Topaz (+5 Spell Dmg/+4 Crit) for its Yellow socket - flipping the already-confirmed
++2.15 DPS real win into a false -5.86 DPS loss. So briefly restored the cap-awareness machinery
+(real ComputeStats RPC, no per-candidate refinement) to fix this specific mis-rank.
+
+**That restoration was itself wrong, on two counts, found empirically within the same session**:
+(1) it didn't even fix the motivating case - her real Spell Hit total, via BOTH the RPC and a
+hand-summed approximation, came back 106 rating, nowhere near the real ~214.5 cap, so no discount
+applied either way; the crude mis-rank has some OTHER cause (STAT_WEIGHTS' own linear-weight
+imprecision far from its calibration point, the same class of issue the module's own historical
+Ranger-General's-Chestguard docstring already documents) that cap-awareness was never going to
+catch. (2) it introduced a real, newly-triggered, 100%-reproducible instability: interleaving
+ComputeStats calls with the existing RunSim calls on the same pooled simserver.exe processes
+reliably crashed 13 of 23 real candidates in a row (`interface conversion: *balance.BalanceDruid is
+not hunter.HunterAgent` - the same Beast-tamer's-Shoulders-class panic `marginal_value.py`'s own
+`mv_single()` already guards against, but through a code path `verify_gem_choice()` didn't). Reverted
+both the refinement AND the cap-awareness rather than keep either - the actual, sufficient reason
+Pauldrons of Malorne doesn't regress in PRODUCTION is unrelated to any of this: its exact,
+real-sim-verified gems are pinned via `_active_chase_bonus_gem_overrides`
+(`chase_bonus_gems.json`'s own "gems" map), which always short-circuits crude scoring entirely for
+any item that's already been through real verification - confirmed this is true for every one of
+Balance Druid's 9 already-curated chase-bonus items (their PURE and CHASE sides both resolve to the
+identical override value once curated, so `chase_bonus_gems_for_item()`'s own internal scoring
+precision literally cannot regress an already-verified item).
+
+**Real, standing limitation, now explicit rather than silently assumed away**: for a genuinely NEW,
+not-yet-curated item (no override yet), plain uncapped crude scoring can occasionally mis-rank a
+stat like Hit Rating and produce a "chase" candidate that a real sim then correctly reports as a
+loss, even when a smarter gem choice for that same item would have won - an honest precision floor
+of the fast/no-sim-calls design, the same tradeoff wowsims' own real optimizer accepts too. The
+override map is the intended safety net: a human periodically re-runs `verify_gem_choices.py`
+(or the equivalent revalidation script) with the active chase-bonus set forced empty, catches any
+item whose crude "chase" pick was wrong, and pins the correct gems - never assumed correct without
+that check.
+
+**Real, separate, unresolved infrastructure finding, flagged but NOT root-caused this session**:
+while re-verifying, discovered `core/verify_gem_choices.py` (run as `python core/verify_gem_choices.py
+balance_druid`, no other invocation style) deterministically crashes on the same 13 real candidates
+every time, with the exact Beast-tamer's-Shoulders panic text, in well under the time a genuine live
+sim call could take. Exhaustively ruled out: item content (isolated single-item and full-loop
+reproductions of the IDENTICAL logic via `python -c` succeed cleanly, every time, with correct DPS
+deltas matching history); `SIMSERVER_POOL_SIZE`/concurrency (forced to 1, no change); stale
+bytecode (`__pycache__` cleared, no change); a poisoned on-disk cache (`sim_cache.jsonl` grepped for
+the panic text - zero matches, and errors are never cached in this codebase - confirmed from
+`valuation.evaluate()`'s own source, the `raise` happens before `sim_cache.put()`); a bad-path
+monkeypatch artifact (repeated with a correctly-configured, real cache directory - the crash
+persists in the real file invocation regardless of whether reads are cache-hits or forced-live).
+The most telling asymmetry: forcing every `sim_cache.get()` to miss (guaranteeing genuinely live
+calls) while writing to the REAL cache directory made the crash disappear completely, all 23 items
+succeeding with correct results in ~4.8s of real subprocess time - yet the real, unmodified `python
+core/verify_gem_choices.py balance_druid` invocation, run immediately after (with those exact same
+results now legitimately cached), STILL crashes identically. This means the two invocations are
+computing genuinely different cache keys or hitting the sim pipeline in a genuinely different way
+for reasons not identified - not a flaw in gem_optimizer.py's own logic (proven correct via the
+successful isolated calls), but a real, separate anomaly in how this one maintenance script's
+process/cache/pool interaction differs from equivalent inline code. Does NOT affect production
+report generation (`run_upgrade_sweep.py`) for any already-curated profile, since `best_gems_for_item()`
+only reaches `chase_bonus_gems_for_item()`'s crude-scoring path for items with NO override yet -
+every already-verified chase-bonus item (all 15 profiles' own curated sets) short-circuits via the
+override regardless. Confirmed via `check_ledger_consistency.py --skip-html`: 528/0 (Lerynia,
+survival_hunter), 1169/0 (Béarforceone, balance_druid), 1762/0 + 1 pre-existing harmless warning
+(Rubán, arms_warrior) - all clean, no regression. Worth a dedicated, supervised debugging session
+if `verify_gem_choices.py` needs to run again soon (the same "simserver.exe crashes under sustained
+load, cause still unknown" class of issue already flagged in the project_bridge_exe_overhead
+memory) - not chased further here, since it doesn't block any real user-facing deliverable.
+
+Also fixed along the way, real and worth keeping regardless of the above mystery:
+`adapters/tbc/simserver_client.py`'s `SimServerPool.run()` only self-healed on a clean
+`RuntimeError` ("no output") - broadened to also catch `OSError` (a process that dies mid-write
+raises this instead, confirmed live from an actual mid-request crash). `core/verify_gem_choices.py`'s
+main screen loop now catches `(RuntimeError, OSError)` per-candidate and excludes just that one,
+mirroring `core/marginal_value.py`'s own established pattern for this exact class of crash, instead
+of letting one bad candidate kill the whole sweep.
+
+## 2026-09-07 (later still): gem-optimizer rebuilt AGAIN - live combined score replaces the
+static curated list entirely; hit-cap awareness restored properly
+
+Per the user, directly challenging the just-shipped course-correction above: "i want a combined
+score, it is still better and especially future proof compared to a static list" - and separately,
+"i don't understand why we abandoned soft caps(hit) that works perfect on wowsims tool." Both real,
+correct challenges to what had just been committed:
+
+**The static list was a real, standing weakness, not an acceptable trade for simplicity.** The
+prior design (`chase_bonus_gems.json`'s `item_ids`/`gems` map, `_active_chase_bonus_ids`/
+`_active_chase_bonus_gem_overrides`) needed a human to run `verify_gem_choices.py` and hand-curate
+every single item's real-sim-verified answer before that item's own socket bonus was ever
+considered - correct only for whatever had already been checked, silently defaulting to "don't
+chase" for everything else, forever, until someone remembered to re-run it. Not future-proof: a
+brand-new item added to the DB (a sim update, a new profile) gets zero socket-bonus consideration
+until manually verified.
+
+**Real correction on cap-awareness, owned directly rather than defended**: abandoning hit-cap
+awareness in the immediately-prior entry was the wrong conclusion drawn from a real finding. The
+concept isn't wrong - Hit Rating past its real threshold genuinely has zero value, a real game
+mechanic, not invented complexity. What was actually wrong: the cap check was run against
+`optimizer.build_owned_config()`'s IDEALIZED baseline gear (which fills empty/uncurated sockets
+with the profile's own default Spell Damage gem), not the character's REAL, actually-equipped
+gear - the exact same "106 vs 118" mistake this file's own earlier entry the same day had already
+found and fixed once (her real Hit Rating, hand-summed from her ACTUAL equipped items, is 118 -
+matching wowsims.com exactly; the idealized baseline understates it at 106 because it doesn't
+reflect what she's really wearing). The ComputeStats-RPC-interleaving crash was real and worth
+avoiding, but the fix for that is "stop making that specific RPC call," not "delete cap-awareness
+as a concept."
+
+**New design (`core/gem_optimizer.py`)**:
+- `best_gems_for_item(item, meta_gem_id)` is now a live, automatic combined score, computed fresh
+  for every item, every time - no per-item lookup, no curation file. Compares `_pure_gems_for_item()`
+  (best default gem in every socket, ignoring color) against `chase_bonus_gems_for_item()` (best
+  real color-matching gem per socket - unchanged, still hybrid-aware) PLUS that item's own real
+  `socketBonus` stat value (credited only once every socket matches, since TBC's socket bonuses are
+  all-or-nothing per item - no cross-socket combination search needed, confirmed correct reasoning
+  from the immediately-prior entry, kept). Picks whichever total crude/EP score is higher.
+- `set_active_capped_totals(real_equipped_items)` (new) - hand-summed Hit/Melee Hit Rating totals
+  from the character's REAL equipped gear (`character.json`'s own `equipped.items`), no RPC call at
+  all, so this can never trigger the ComputeStats/RunSim pool-interleaving instability that caused
+  the earlier crash. `_crude_score()` reads this module-level active state automatically (same "set
+  once at startup" convention as `stat_weights.py`) and discounts any Hit-Rating-carrying stat past
+  its real remaining headroom before weighting it.
+- Every real pipeline entry point (`build_profile_settings.py`, `oom_check.py`, `run_optimizer.py`,
+  `run_upgrade_sweep.py`, `verify_default_enchants.py`, `verify_gem_choices.py`) now calls
+  `gem_optimizer.set_active_capped_totals()` with the character's real equipped items, replacing
+  the old `set_active_chase_bonus_ids()`/`set_active_chase_bonus_gem_overrides()` two-liner.
+- `verify_gem_choice()`/`verify_gem_choices.py` are repurposed as a real-sim AUDIT of the live
+  formula's own decisions, not a curation feeder - each result now carries
+  `formula_agrees_with_sim` (does `best_gems_for_item()`'s live pick match what the real sim just
+  confirmed is genuinely better), and the script's final report calls out any clear (non-noise)
+  disagreement explicitly, flagged as a likely `stat_weights.json` miscalibration to investigate,
+  not something to hand-patch per item (there's no override mechanism left to patch into).
+- Deleted: all 15 profiles' `chase_bonus_gems.json` files (confirmed unused anywhere else first),
+  `_active_chase_bonus_ids`/`_active_chase_bonus_gem_overrides` and their setters/getters,
+  `_CAP_RATING`'s prior broken (idealized-baseline) wiring.
+
+**Real verification against genuine wowsims.com ground truth** (the same two items this session's
+own earlier entry already captured real, confirmed-correct answers for - Head=32480/Magnified Moon
+Specs, Shoulder=29095/Pauldrons of Malorne, Béarforceone/Balance Druid):
+- Cap-awareness now correctly reports her real total Spell Hit as 118 (matches wowsims exactly),
+  not the earlier buggy 106.
+- Shoulder: live formula picks `[32215, 32210]` (chase wins) - the SAME direction as wowsims' real
+  `[24056, 24059]`, but different, objectively-higher-stat gems within each matching color (32215/
+  32210 are strictly better than 24056/24059 by raw stats, same color, both legal at Phase 3, no
+  restrictions on either) - a real, defensible improvement over wowsims' own capture, not a
+  regression, though it means exact parity with their capture isn't claimed.
+- Head: live formula picks pure (`[34220, 32196]`), wowsims' capture picks chase (`[34220, 24056]`).
+  Traced the actual crude scores: pure=12 (12 Spell Damage), chase=11 (6 Spell Damage from the gem +
+  5 from the item's own real socketBonus) - a near-tie by design (1 crude point apart), exactly the
+  kind of close call a linear EP model can legitimately land on either side of. Not treated as a bug
+  to chase further - confirmed directly with the user that wowsims' own real Suggest Gems tool also
+  mis-chases sometimes, so exact parity with an imperfect reference was never the right bar; a
+  real-sim call would be needed to know the TRUE answer for this one item, which is exactly what
+  `verify_gem_choices.py`'s audit role exists to spot-check over time, not something production
+  blocks on.
+- Full regression: `check_ledger_consistency.py --skip-html` clean for all three real characters
+  (Lerynia 528/0, Béarforceone 1169/0, Rubán 1762/0 + 1 pre-existing harmless warning) - though this
+  only re-validates already-cached report data; a real, fresh `run_upgrade_sweep.py` run for
+  Béarforceone was also kicked off to confirm the new live-formula code path runs clean end-to-end
+  in the actual production pipeline, not just in isolated test calls.
+
+## 2026-09-07 (still later): real, empirical stat-weight recomputation - `core/stat_weight_calc.py`
+(new), mirroring wowsims' own actual methodology, checked from their source not guessed
+
+Per the user, challenging the hand-rolled hit-cap discount from the entry above: "i don't
+understand why we abandoned soft caps(hit) that works perfect on wowsims tool / check how wowsims
+solved these caps." Read their real source rather than assume - genuinely surprising finding:
+`Stats.computeEP()` (`sim/tbc-new/ui/core/proto_utils/stats.ts:547`) is a PURE, completely
+uncapped linear dot product (`stat * weight`, summed) - zero built-in cap/threshold logic anywhere
+in their gem/item EP scoring (`computeGemEP`/`computeItemEP` in `player.tsx` both call this
+directly). A real "remaining hit cap" value does exist (`player.tsx:828`) but is wired only into a
+display panel (`character_stats.tsx`), never into ranking. So their picker is exactly as "dumb" as
+ours was.
+
+**Where their real cap-awareness actually comes from**: their "Calculate EP Weights" feature
+(`player.computeStatWeights` -> Go's `runStatWeights`/`buildStatWeightRequests` in
+`sim/tbc-new/sim/core/statweight.go`) computes each stat's weight via two REAL, full sims per
+stat - current gear, then current gear plus a small bonus of that one stat - using the actual DPS
+delta as the weight. A hit-capped character's own freshly-measured Hit Rating weight comes out
+near-zero automatically, with real talents/target debuffs/buffs already baked in (it's an actual
+RaidSimRequest, not a formula) - no special-casing needed anywhere. "Soft caps work perfectly on
+wowsims" isn't a clever formula, it's that their weights, when freshly recalculated, are empirically
+derived from real sim deltas at the character's actual current state.
+
+**Real conventions confirmed and mirrored directly from `buildStatWeightRequests()`, not
+reinvented**: symmetric +/-10 rating perturbation for most stats (a single gem's typical impact);
+Armor/BonusArmor/ArmorPenetration use +/-100 (10x); Expertise uses
++/-(`ExpertisePerQuarterPercentReduction` * 2) = a real 0.5% dodge/parry reduction's worth of
+rating (`base_stats_auto_gen.go`); Hit Rating (both Spell and Melee) and Expertise use an
+ASYMMETRIC 0-to-+mod perturbation, not symmetric - the real current position is the meaningful
+"low" baseline for stats that are usually already high in real end-game gear, not a hypothetically
+lower one. Real cost, measured on this machine: ~1.5s/side @ 15000 iterations/side (a real
+"resolve"-grade total split in half, matching wowsims' own halving) - ~24s for Balance Druid's 8
+real tracked stats, comfortably inside the user's own stated 1-minute budget, confirmed by the
+user's own follow-up question before building it.
+
+**New `core/gem_optimizer.py`-adjacent module `core/stat_weight_calc.py`**:
+`compute_stat_weights(settings_path, real_equipped_items, tracked_stats, iterations_per_side,
+seed) -> {stat_idx: (weight, noise_stdev)}` - real noise propagated too (per CLAUDE.md's "noise
+honesty" rule), from both sims' `player_stdev`/sqrt(iterations). Wired into
+`core/run_upgrade_sweep.py` as a new, real, visible pipeline stage ("Computing stat weights",
+`stage_index`/`stage_total` in the existing progress-callback shape the GUI already consumes) -
+per the user's explicit ask ("it would need its own stage so we can show in the gui what is
+happening"). Real, confirmed result for Béarforceone: her real Spell Hit weight dropped from the
+static preset's 1.91 (her highest tracked weight, the exact source of the earlier crude-scoring
+mis-rank) to **0.000 (+/-0.083)** - a genuine, empirical confirmation she's at/past her real
+effective cap (gear rating + real target debuffs, both automatically reflected since it's a real
+sim), with zero hand-rolled formula.
+
+**Real, self-inflicted bug found and fixed the same session, before it did more damage**: the
+first version of this wrote the freshly-computed weights straight back into the profile's own
+git-tracked `stat_weights.json`. Two real problems, both found by tracing through carefully rather
+than declaring victory on the first working run: (1) a stat whose computed weight rounds to 0.0
+(exactly what happened to Hit Rating) would silently stop being "tracked" on every future run,
+since tracked-stat detection reads nonzero keys from that same file - the opposite of correct,
+since "genuinely zero right now" is precisely the state worth re-checking later, not a reason to
+stop forever. (2) these numbers are a function of ONE character's real current gear - overwriting
+the shared, profile-level file would corrupt them for any OTHER real character on the same
+class/spec profile (a real, plausible case per this project's own multi-character-per-profile
+support). Real fix: `stat_weights.json` (git-tracked) stays a stable, NEVER-automatically-
+overwritten reference for which stats a class considers relevant at all plus a fallback value;
+`core/stat_weights.py` gained `computed_path()`/`load_computed()`/`save_computed()` for a real,
+separate, per-(character, profile) file under `USER_DATA_DIR/characters/<name_realm>/
+stat_weights_computed_<profile>.json` - the ACTUAL, freshly-measured numbers, regenerated every
+sweep (near-free on a repeat run against unchanged gear, since it's the same `sim_cache`-backed
+`valuation.evaluate()` path every other real sim call already uses).
+
+**Second real architectural finding, also caught before wiring it in wrong**: `core/
+sweep_all_loot.py`'s own candidate-shortlisting (`eligible_items()`/`run()`) deliberately reloads
+the STATIC, profile-level preset every time - its own docstring: the shortlist output is
+namespaced by `(profile, phase)`, shared across every character running that profile, not
+recomputed per-character. Applying fresh, per-character weights there would silently break that
+existing, deliberate sharing/caching property (two different real characters on the same profile
+would start getting different candidate shortlists, and the "shared, not per-character" caching
+rationale would no longer hold) - a genuinely bigger, separate change than today's actual ask.
+Real fix: `run_upgrade_sweep.py`'s own `stat_weights.set_active(_fresh_weights)` call is placed
+AFTER `sweep_all_loot.run()` returns (which internally resets to the static preset as part of its
+own normal operation) - so the shared candidate-shortlisting stage keeps using the static preset,
+unchanged, exactly as its own design intends, while every gem-choice decision for the rest of the
+pipeline (screening/confirming/resolving, all of which run after this point) uses the real,
+fresh, per-character weights instead.
+
+Verified: full, real end-to-end `run_upgrade_sweep.py` run for Béarforceone completed clean
+(24.0s, mostly cache hits from the prior verification run's own calls), `stat_weights.json`
+confirmed untouched (`git diff` clean), the real per-character computed file written correctly.
+`check_ledger_consistency.py --skip-html` clean for all three real characters after regenerating
+`ledger_data.json` via `build_ledger_data.build_with_diff()` (the same real call site
+`gui/api.py`'s own report flow uses) - Lerynia 528/0, Béarforceone 1562/0 + 1 pre-existing harmless
+warning, Rubán 1762/0 + 1 pre-existing harmless warning.

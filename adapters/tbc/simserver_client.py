@@ -113,7 +113,20 @@ class SimServerPool:
         request through it forever, not just the one that killed it.
         Replaces it with a freshly-spawned process and retries once before
         giving up, so a single process death degrades to "one slow request"
-        instead of silently wrecking the rest of a multi-hour run."""
+        instead of silently wrecking the rest of a multi-hour run.
+
+        Real gap found and fixed 2026-09-07 (hit live re-running
+        verify_gem_choices.py after a known Beast-tamer's-Shoulders-style
+        Go panic - see marginal_value.py's own comment on this class of
+        crash - killed a simserver.exe process mid-request): a process that
+        dies WHILE a write is in flight fails with a raw OSError from
+        stdin.write() on the now-broken pipe (Windows: "[Errno 22] Invalid
+        argument"), not the clean RuntimeError SimServerProcess.run() raises
+        for a cleanly-exited process with no output. Only RuntimeError was
+        ever caught here, so this exact death mode escaped the self-heal
+        entirely and crashed whatever multi-hour sweep was running - the
+        same "one bad item takes down everything" failure this pool exists
+        to prevent, just via a different exception type than expected."""
         self._ensure_started()
         self._available.acquire()
         with self._lock:
@@ -121,7 +134,7 @@ class SimServerPool:
         try:
             try:
                 return server.run(raid_sim_request)
-            except RuntimeError:
+            except (RuntimeError, OSError):
                 server = SimServerProcess()  # replaces the dead one below
                 return server.run(raid_sim_request)
         finally:

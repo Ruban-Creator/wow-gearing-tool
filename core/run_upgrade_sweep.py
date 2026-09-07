@@ -33,6 +33,7 @@ import set_bonus  # noqa: E402
 import acquisition_gate  # noqa: E402
 import time_horizon  # noqa: E402
 import stat_weights  # noqa: E402
+import stat_weight_calc  # noqa: E402
 import gem_optimizer  # noqa: E402
 import sweep_all_loot  # noqa: E402
 import local_config  # noqa: E402
@@ -739,7 +740,7 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     # distinction SETTINGS_2H already encodes.
     is_weave_profile = SETTINGS_2H != SETTINGS_TEMPLATE
     stage_sequence[:] = [
-        "Starting sweep", "Building candidate pool", "Computing baseline",
+        "Starting sweep", "Computing stat weights", "Building candidate pool", "Computing baseline",
         "Screening", "Confirming", "Resolving", "Sidegrade-checking", "Raid-AP lookups",
     ]
     if profile["weapon_topology"] != "two_hand":
@@ -786,23 +787,90 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
 
     gc.set_active_default_gem(profile["primary_gem_id"])
     # Real, sim-verified per-slot BiS enchants (see gear_config.py's own
-    # comment on why this exists) - optional file, same "honest empty
-    # default" pattern as chase_bonus_gems.json for a profile that hasn't
-    # had this built yet.
+    # comment on why this exists) - optional file, empty default for a
+    # profile that hasn't had this built yet.
     _default_enchants_path = os.path.join(profile_dir, "default_enchants.json")
     default_enchants = (repo_root.load_json(_default_enchants_path)
                          if os.path.exists(_default_enchants_path) else {})
     gc.set_active_default_enchants(default_enchants)
-    chase_bonus = repo_root.load_json(os.path.join(profile_dir, "chase_bonus_gems.json"))
-    gem_optimizer.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
-    gem_optimizer.set_active_chase_bonus_gem_overrides(
-        {int(k): v for k, v in chase_bonus.get("gems", {}).items()})
+    gem_optimizer.set_active_capped_totals(char["equipped"]["items"])
     set_bonus.set_active_item_sets_go(os.path.join(REPO_ROOT, "sim", "tbc-new", profile["set_bonus_go_source"]))
     mv.set_shared_slot_groups(profile["weapon_topology"])
     known_professions = {p["name"] for p in char["character"]["professions"]}
     pool_key_to_slots = opt.build_pool_key_to_slots(profile["weapon_topology"])
 
     owned_items = char["equipped"]["items"]
+
+    # Real, empirical stat-weight recomputation (2026-09-07), per the user
+    # ("i want a combined score, it is still better and especially future
+    # proof compared to a static list" + "check how wowsims solved these
+    # caps"): wowsims' own gem/item EP formula has zero built-in cap logic
+    # (confirmed directly from their source, see core/stat_weight_calc.py's
+    # own module docstring) - their tool "handles hit caps perfectly"
+    # because its EP WEIGHTS are recomputed via two real sims per tracked
+    # stat (current gear vs. current gear + a small bonus), so a capped
+    # stat's own freshly-measured marginal value comes out near-zero
+    # automatically, with real talents/target debuffs/buffs baked in since
+    # it's an actual sim, not a formula. Mirrors that exact methodology
+    # here, against her REAL current gear (opt.build_true_owned_config() -
+    # never the idealized substitute, same real bug already found and
+    # fixed for gem_optimizer.set_active_capped_totals() the same day).
+    # Real, measured cost: ~1.5s/side * 2 sides per tracked stat (~8 for
+    # Balance Druid) = ~24s on a cold cache - and a pure cache hit (near
+    # zero) on any repeat run against unchanged gear, since this reuses the
+    # same valuation.evaluate()/sim_cache path every other real sim call in
+    # this pipeline already goes through.
+    #
+    # Persisted to a real, per-CHARACTER computed file (stat_weights.py's
+    # save_computed(), NOT the profile's own git-tracked stat_weights.json)
+    # - a real bug, found and fixed the same day it was introduced, made
+    # writing to the shared profile file a mistake on two counts: (1) a
+    # stat whose computed weight rounds to 0.0 (a hit-capped character's
+    # real Spell Hit weight, confirmed live) would silently stop being
+    # "tracked" on every future run, since tracked-stat detection reads
+    # nonzero keys - exactly the wrong behavior, since "genuinely zero
+    # right now" is the informative state worth re-checking later, not a
+    # reason to stop checking forever; (2) these numbers are a function of
+    # ONE character's real current gear - overwriting the shared,
+    # profile-level file would corrupt them for any OTHER real character
+    # using the same class/spec profile.
+    #
+    # Re-applied via set_active() further below, AFTER sweep_all_loot.run()
+    # - that module's OWN eligible_items()/run() deliberately reload the
+    # static, profile-level preset every time (its own docstring: the
+    # candidate shortlist output is namespaced by (profile, phase), shared
+    # across every character on that profile, not recomputed per-character)
+    # - so applying the fresh numbers before that call would just get
+    # silently clobbered by its own internal reset. The real per-character
+    # win lands where it actually matters and was actually asked for -
+    # gem_optimizer.py's combined-score gem choice, which runs during
+    # screening/confirming/resolving, all AFTER sweep_all_loot.run()
+    # returns - not sweep_all_loot's own shared, cross-character candidate
+    # shortlist itself, which stays on the static preset by the same
+    # deliberate design its own docstring already describes.
+    milestone("Computing stat weights")
+    _tracked_stats = sorted(int(k) for k, v in stat_weights.get_active().items() if v)
+    _real_gear_for_weights = opt.build_true_owned_config(owned_items)
+
+    def _compute_one_weight(stat_idx: int) -> tuple[int, float, float]:
+        result = stat_weight_calc.compute_stat_weights(
+            SETTINGS_TEMPLATE, _real_gear_for_weights, [stat_idx],
+            stat_weight_calc.ITERATIONS_PER_SIDE, opt.SEED)
+        weight, noise = result[stat_idx]
+        return stat_idx, weight, noise
+
+    print(f"Computing {len(_tracked_stats)} real stat weights @ "
+          f"{stat_weight_calc.ITERATIONS_PER_SIDE} iterations/side...")
+    _weight_results = run_with_progress(_compute_one_weight, _tracked_stats, "Computing stat weights",
+                                         progress_cb=progress_cb, stage_sequence=stage_sequence)
+    _fresh_weights = dict(stat_weights.get_active())
+    for stat_idx, weight, noise in _weight_results:
+        old = _fresh_weights.get(str(stat_idx), 0)
+        flag = "  <-- NOISY (>50% of value)" if noise > abs(weight) * 0.5 else ""
+        print(f"  stat {stat_idx:3d}: {old:7.3f} -> {weight:7.3f} (+/-{noise:.3f}){flag}")
+        _fresh_weights[str(stat_idx)] = round(weight, 4)
+    stat_weights.save_computed(USER_DATA_DIR, name_realm, profile_dir_name, _fresh_weights)
+
     # Real bug found and fixed 2026-08-31: EQUIPPED gear is still fully
     # excluded (already wearing it, nothing to recommend), but bags/bank
     # items are now real candidates again, tagged with owned_location
@@ -912,6 +980,12 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     # easy-to-forget manual step; see the plan's Context section).
     milestone("Building candidate pool")
     sweep_path = sweep_all_loot.run(phase_num, profile_dir, excluded_source_keys)
+    # Real, necessary re-application (see the "Computing stat weights" stage's
+    # own comment above): sweep_all_loot.run() just reset the active weights
+    # back to the static, profile-level preset internally (its own, deliberate
+    # shared-across-characters design) - restore the real, freshly-computed
+    # per-character weights now, before any gem-choice scoring runs.
+    stat_weights.set_active(_fresh_weights)
     sweep_items = repo_root.load_json(sweep_path)
     owned_by_id = {it["id"]: it for it in owned_items if it}
     meta_gem_id = opt.find_owned_meta_gem(owned_items)
@@ -1704,9 +1778,11 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     # suboptimal or empty real socket silently disappeared from the report
     # with no visible gap, the same blind spot Missing Enchants closed for
     # enchants specifically. Reuses gem_optimizer.best_gems_for_item()
-    # directly - no new curation needed, unlike Stage 2's enchant work,
-    # since gem choice is entirely DB/stat-weight/sim-verified already
-    # (including any real chase_bonus_gems.json exception).
+    # directly - no curation needed at all (2026-09-07 rebuild: gem choice
+    # is a live combined-score decision now, not a hand-curated list), so
+    # this automatically picks up any real socket bonus on her own
+    # currently-equipped gear, not just whatever had previously been
+    # manually checked.
     def _gem_names(ids: list[int]) -> str:
         names = [idb.gem_by_id(g)["name"] if g and idb.gem_by_id(g) else "(empty)" for g in ids]
         return ", ".join(names)
@@ -1736,13 +1812,8 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
         if tied_within_noise or delta <= 0:
             # Same real, deliberate rule as Missing Enchants: a delta <= 0
             # means her real current gems already beat (or tie) the
-            # DB/sim-verified "optimal" loadout for this item - not a gap
-            # to close. Can legitimately happen for an item whose socket
-            # bonus IS a real, verified chase_bonus_gems.json win but whose
-            # OTHER, un-owned socket color happens to score lower than a
-            # generic default - best_gems_for_item() already accounts for
-            # verified exceptions, so this is a defensive check, not an
-            # expected common case.
+            # formula-decided "optimal" loadout for this item - not a gap
+            # to close. A defensive check, not an expected common case.
             continue
 
         missing_gems.append({
