@@ -795,6 +795,8 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     gc.set_active_default_enchants(default_enchants)
     chase_bonus = repo_root.load_json(os.path.join(profile_dir, "chase_bonus_gems.json"))
     gem_optimizer.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
+    gem_optimizer.set_active_chase_bonus_gem_overrides(
+        {int(k): v for k, v in chase_bonus.get("gems", {}).items()})
     set_bonus.set_active_item_sets_go(os.path.join(REPO_ROOT, "sim", "tbc-new", profile["set_bonus_go_source"]))
     mv.set_shared_slot_groups(profile["weapon_topology"])
     known_professions = {p["name"] for p in char["character"]["professions"]}

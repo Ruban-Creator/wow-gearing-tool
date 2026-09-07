@@ -85,6 +85,8 @@ def main():
                                     if os.path.exists(_default_enchants_path) else {})
     chase_bonus = repo_root.load_json(os.path.join(PROFILE_DIR, "chase_bonus_gems.json"))
     gopt.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
+    gopt.set_active_chase_bonus_gem_overrides(
+        {int(k): v for k, v in chase_bonus.get("gems", {}).items()})
 
     char_path = (os.path.join(USER_DATA_DIR, "characters", NAME_REALM, "character.json")
                  if NAME_REALM else os.path.join(USER_DATA_DIR, "character.json"))

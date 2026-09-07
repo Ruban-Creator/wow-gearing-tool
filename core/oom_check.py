@@ -70,6 +70,8 @@ def _settings_and_baseline(profile_dir: str, char_data: dict, phase_num: int):
     gc.set_active_default_enchants(default_enchants)
     chase_bonus = repo_root.load_json(os.path.join(profile_dir, "chase_bonus_gems.json"))
     gem_optimizer.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
+    gem_optimizer.set_active_chase_bonus_gem_overrides(
+        {int(k): v for k, v in chase_bonus.get("gems", {}).items()})
 
     known_professions = {p["name"] for p in char_data["character"]["professions"]}
     baseline_config = opt.build_owned_config(char_data["equipped"]["items"], known_professions)

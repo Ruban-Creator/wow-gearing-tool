@@ -7589,3 +7589,69 @@ Meta gem = 34220 (Chaotic Skyfire Diamond, "at least 2 Blue Gems" per wowsims' o
 `MetaGemCondition` data). wowsims' own real, confirmed-correct gem picks for these two items:
 Head=[34220, 24056(Glowing Nightseye, Purple/Red+Blue)], Shoulder=[24056, 24059(Potent Noble Topaz,
 Orange/Red+Yellow)].
+
+## 2026-09-07 - Gem-optimizer investigation, resolved: 3 real fixes, the exact wowsims-matching answer
+
+Closing out the full investigation above (meta-gem generalization -> cap-awareness detour ->
+real-sim refinement). Final, complete picture, all real bugs found and fixed:
+
+**Real correction to my own earlier claim, caught live by the user**: I initially said Balance
+Druid was "nowhere near her spell hit cap" (based on a ComputeStats call against `baseline_config`,
+the tool's own IDEALIZED gear) and walked that back as a misremembering when the user pushed back.
+Traced it down properly: her REAL current Hit Rating (summed item-by-item from her actual equipped
+gear) is **118**, matching wowsims.com's own displayed value EXACTLY - my earlier "106" was simply
+computed from the wrong config (the idealized baseline, whose other sockets don't carry her real
+gems). The user was right to push back both times. Further real finding: her displayed 17.35%
+doesn't come from rating alone (118 rating = 9.35%) - the rest is real, separate TARGET-side hit
+debuffs (Totem of Wrath +3%, Misery +3%) that reduce the target's own avoidance, a genuinely
+different mechanic layer than the player's own Hit Rating stat. Modeling the TRUE combined
+threshold (gear rating + raid debuffs together) correctly is real, non-trivial complexity - not
+something worth hand-rolling a third time after getting it wrong twice already.
+
+**Real fix #3 (cap-awareness) - kept, but as a best-effort refinement, not the primary decider**:
+`_capped_stat_totals()` now tries a REAL ComputeStats call first (`valuation.get_final_stats()`,
+new function mirroring the existing `get_agility()` pattern) for an authoritative total, falling
+back to a corrected hand-sum (fixed a real bug in the same pass: items store stats in
+`scalingOptions["0"]["stats"]`, a sparse dict, NOT a flat array like gems - the original hand-sum
+read a field real items never have, silently summing to zero) only when ComputeStats isn't given a
+`settings_path` or degrades. Still doesn't include raid-debuff-based hit contributions (a known,
+documented limitation) - directionally useful, not authoritative on its own.
+
+**Real fix #4 (the actual decisive one) - real-sim-tested candidate shortlist**: per the user,
+since crude/cap-aware scoring was confirmed unreliable for picking WHICH real gem fills a
+matching-color socket (not just whether to chase at all), added `_real_sim_refine_chase_gems()` -
+a greedy, per-socket REAL sim comparison across the top 8 crude-score candidates per needed color
+(widened from an initial top-3, since the genuinely-best real candidate, Potent Noble Topaz, didn't
+rank in a narrow top-3 by crude score even with cap-awareness). This is the SAME "never shortcut to
+EP-only ranking" principle `verify_gem_choice()` already applied to the outer chase-vs-default
+decision, now applied one level deeper.
+
+**Real fix #5 - the SAME meta-breaking bug I caught in my own earlier ad-hoc test also existed in
+production code**: `verify_gem_choice()`'s own "pure stats" comparison config could silently break
+the character's real meta-gem requirement whenever the item under test happened to be one of the
+gems satisfying it in her real gear - exactly the "this is bullshit you would deactivate meta gems"
+bug the user caught in my OWN scratch test earlier, just hiding in the real, shared function too.
+Fixed: both the "pure" and "chase" trial configs now get `ensure_meta_requirement()` re-applied
+before comparing, so whichever real fix is cheapest gets applied consistently to both sides.
+
+**Final, complete, real result for Pauldrons of Malorne (Balance Druid's shoulder)**: 
+`chase_bonus_gems: [24056, 24059]` - EXACTLY wowsims' own real gem picks. `pure_agility_dps:
+1450.43` (now correctly meta-preserving). `chase_bonus_dps: 1452.58`. **delta: +2.15 DPS, a real,
+confirmed win** - fully reconciled with wowsims' own live result, not just directionally similar.
+
+**Real, additional gap found and fixed while wiring this up for production, not just verification**:
+adding an item to `chase_bonus_gems.json`'s `item_ids` list only tells the pipeline "yes, chase this
+item's bonus" - the ACTUAL gem choice still got re-derived via the (confirmed-unreliable) crude
+score at read time, which could pick a DIFFERENT, worse gem than what was actually verified. Added
+a new, optional `"gems": {item_id: [gem_ids]}` override map to `chase_bonus_gems.json`'s own schema
+(`gem_optimizer.set_active_chase_bonus_gem_overrides()`, wired into all 6 real call sites:
+`build_profile_settings.py`, `oom_check.py`, `run_upgrade_sweep.py`, `run_optimizer.py`,
+`verify_default_enchants.py`, `verify_gem_choices.py`) - once an item has gone through real
+sim-verification, the EXACT winning gems are persisted and used directly, not re-derived and risked
+being wrong again. Confirmed live: production `best_gems_for_item()` now returns `[24056, 24059]`
+for Pauldrons of Malorne, matching the verified result exactly (was `[24056, 31861]` before this
+fix - the wrong, crude-score-derived second gem).
+
+Updated `profiles/tbc/balance_druid/chase_bonus_gems.json`: added item 29095 to `item_ids` plus its
+own real gem override. Verified: `check_ledger_consistency.py --skip-html` clean for all 15
+profiles; import-sanity clean for all 7 touched modules.

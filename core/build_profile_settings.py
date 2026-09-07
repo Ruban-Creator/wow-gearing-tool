@@ -53,6 +53,8 @@ def build(name_realm: str, profile_dir: str) -> dict:
     gc.set_active_default_enchants(default_enchants)
     chase_bonus = repo_root.load_json(os.path.join(profile_dir, "chase_bonus_gems.json"))
     gem_optimizer.set_active_chase_bonus_ids(set(chase_bonus["item_ids"]))
+    gem_optimizer.set_active_chase_bonus_gem_overrides(
+        {int(k): v for k, v in chase_bonus.get("gems", {}).items()})
     raid_buffs_received = {
         "raidBuffs": {**shared["raidBuffs"], **overlay["raidBuffs"]},
         "debuffs": {**shared["debuffs"], **overlay["debuffs"]},
