@@ -7398,8 +7398,14 @@ listing every possible alternative). `destruction_warlock/settings_template_fire
 flagged stale/deferred, "we will forfeit fire destro for now") was NOT touched - same standing
 decision as before, not reopened by this fix.
 
-**Real, separate, NOT-yet-investigated gap flagged, not fixed**: `arcane_mage`'s `conjuredId` is `0`
-- she has no conjured item assigned at all, a different kind of gap (never chosen one, vs. chosen-
-but-broken) - flagged for a future look, not touched this pass.
+**Real, separate question resolved, not a gap**: `arcane_mage`'s `conjuredId` is `0` - checked
+whether this is the same bug in different clothes, per the user's own correct instinct ("could be
+due to mage using mana gems"). Confirmed via source (`sim/tbc-new/sim/mage/mana_gems.go`,
+`registerManaGems()`) that every Mage gets her own self-generated Mana Gem (3 charges, ~2340-2460
+mana each, item 22044) registered UNCONDITIONALLY by the sim's own Mage class code
+(`mage.go:102`), entirely independent of `consumables.conjuredId`/`conjuredItems` - her rotation's
+existing `autocastOtherCooldowns` action is exactly what triggers it. Verified live via the raw sim
+result: item 22044 shows 10000 real gain events across 5000 iterations (2 uses/fight on average) -
+the mechanic genuinely fires. `conjuredId: 0` is correct as-is, not a bug - no fix needed.
 
 Verified: `check_ledger_consistency.py --skip-html` passes clean for all 15 profiles after the fix.
