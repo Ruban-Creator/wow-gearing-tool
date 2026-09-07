@@ -7221,7 +7221,16 @@ preset (`P1_DESTRUCTION_FIRE_EP`, Fire/Shadow-damage-weighted, `presets.ts:56-58
 never actually used for this file. A real multi-phase candidate pool/reference BiS is blocked on that
 missing upstream data - per this project's own "never invent data" rule, hand-curating a Phase 2-5
 gear progression from Wowhead was the only alternative, which goes against the established
-preset-sourcing preference and is real, substantial curation work on its own. Per the user, this
-isn't actually a gap to fill: "fire destro usually becomes bad after p1" - the build stops being
-competitive past Phase 1 in real theorycrafting, which is exactly why wowsims never built out its
-gear progression further. Closed permanently, not revisited unless that changes.
+preset-sourcing preference and is real, substantial curation work on its own. Per the user's first
+pass, this looked like a dead end ("fire destro usually becomes bad after p1") - **corrected
+immediately after by the user with real, more precise theorycrafting**: it actually becomes
+situationally viable again in Sunwell (Phase 5) or later Phase 3/4 content specifically WHEN a Fire
+Mage is present in the raid to maintain Improved Scorch (a real Fire-damage-taken debuff), or as a
+Shadow-Bolt-focused fallback when a Shadow Priest is present without a Fire Mage - not simply "bad
+forever past Phase 1." So the underlying spec choice is real and comp-conditional, not obsolete - the
+data gap above (no wowsims-shipped gear progression past Phase 1) is still the actual, unchanged
+blocker, and still not worth hand-curating from Wowhead unprompted. Correctly scoped as: blocked on
+the same real upstream data gap, not blocked because the spec itself stopped mattering - revisit if
+wowsims ever ships Phase 3+ gear data for it, or if the user wants to commit to hand-curating that
+progression themselves knowing it's genuinely comp-conditional (Fire Mage or Shadow Priest presence),
+not universally correct for every raid.
