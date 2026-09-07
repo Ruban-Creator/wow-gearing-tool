@@ -751,6 +751,39 @@ def main(name_realm: str, phase: str, profile_dir: str, progress_cb=None,
     stat_weights.set_active(stat_weights.load(profile_dir))
     time_horizon.set_current_phase(phase_num)
     time_horizon.set_active_ref_dir(os.path.join(profile_dir, "reference_bis"))
+
+    # Real, phase-dependent raid Hunter Agility for Expose Weakness's raid-
+    # wide AP grant (2026-09-07, per the user's own real data: a raid
+    # Hunter's Agility rises across TBC Anniversary progression - see
+    # profiles/tbc/_shared/expose_weakness_hunter_agility_by_phase.json).
+    # debuffs.exposeWeaknessHunterAgility is baked into every profile's
+    # committed settings_template.json at Phase 1's own value (1080, also
+    # _shared/raid_buffs_received.json's flat default) - override it here
+    # for every other phase, same temp-file pattern as the duration/potion
+    # overrides above (never mutates the committed file itself). This
+    # affects every profile's own personal sim, not just Hunter's - see
+    # sim/tbc-new/sim/core/debuffs.go's ExposeWeaknessAura.
+    _ew_agility_by_phase = repo_root.load_json(
+        os.path.join(REPO_ROOT, "profiles", "tbc", "_shared",
+                      "expose_weakness_hunter_agility_by_phase.json"))
+    _ew_agility = _ew_agility_by_phase.get(str(phase_num))
+    if _ew_agility is not None:
+        def _override_ew_agility(path: str, tag: str) -> str:
+            settings = repo_root.load_json(path)
+            if settings.get("debuffs", {}).get("exposeWeaknessHunterAgility") == _ew_agility:
+                return path
+            settings.setdefault("debuffs", {})["exposeWeaknessHunterAgility"] = _ew_agility
+            cache_dir = os.path.join(USER_DATA_DIR, "cache")
+            os.makedirs(cache_dir, exist_ok=True)
+            out_path = os.path.join(cache_dir, f"_settings_{profile_dir_name}_{tag}_ewagi{_ew_agility}.json")
+            with open(out_path, "w", encoding="utf-8") as f:
+                json.dump(settings, f)
+            return out_path
+
+        _overridden_2h_ew = _override_ew_agility(SETTINGS_2H, "2h") if SETTINGS_2H != SETTINGS_TEMPLATE else None
+        SETTINGS_TEMPLATE = _override_ew_agility(SETTINGS_TEMPLATE, "main")
+        SETTINGS_2H = _overridden_2h_ew if _overridden_2h_ew else SETTINGS_TEMPLATE
+
     gc.set_active_default_gem(profile["primary_gem_id"])
     # Real, sim-verified per-slot BiS enchants (see gear_config.py's own
     # comment on why this exists) - optional file, same "honest empty

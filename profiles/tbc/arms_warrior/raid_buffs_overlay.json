@@ -4,8 +4,7 @@
   "partyBuffs": {
     "ferociousInspiration": 2,
     "braidedEterniumChain": true,
-    "windfuryTotem": "TristateEffectImproved",
-    "leaderOfThePack": "TristateEffectRegular"
+    "windfuryTotem": "TristateEffectImproved"
   },
   "playerBuffs": {}
 }

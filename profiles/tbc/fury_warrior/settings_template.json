@@ -28,7 +28,7 @@
   },
   "partyBuffs": {
     "ferociousInspiration": 2,
-    "leaderOfThePack": "TristateEffectRegular",
+    "leaderOfThePack": "TristateEffectImproved",
     "drums": "LesserDrumsOfBattle",
     "graceOfAirTotem": "TristateEffectImproved",
     "strengthOfEarthTotem": "TristateEffectImproved",

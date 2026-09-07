@@ -1,0 +1,8 @@
+{
+  "_comment": "Assumed Agility of the raid's Expose-Weakness-casting Survival Hunter, by phase - per the user (2026-09-07), a real raid Hunter's Agility rises across TBC Anniversary progression. Feeds debuffs.exposeWeaknessHunterAgility (see sim/tbc-new/sim/core/debuffs.go's ExposeWeaknessAura), consumed by every profile's own personal sim as an assumed external buff, not just Hunter's. raid_buffs_received.json's own flat 1080 default matches Phase 1 exactly - core/run_upgrade_sweep.py overrides it at runtime for every other phase using this table.",
+  "1": 1080,
+  "2": 1150,
+  "3": 1210,
+  "4": 1210,
+  "5": 1250
+}

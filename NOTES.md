@@ -6972,3 +6972,78 @@ Ferocious Inspiration, Drums, and both Expose Weakness chips all render correctl
 Wowhead icon/link AND their own real distinguishing info intact. No other `BUFF_SPELL_IDS` entry
 shares a spell id (checked directly), so this exact collision class of bug is now fully closed, not
 just patched for the one case found.
+
+## 2026-09-07: class-by-class wowsims discrepancy walkthrough - Hunter/Warrior real decisions
+
+Continuing the wowsims.com comparison above, the user asked to resolve Hunter and Warrior's real
+discrepancies before moving on to the rest, rather than cataloging the whole list and deciding
+later - real per-item calls, not a batch rubber-stamp.
+
+**Battle Shout not being "assumed" on a Warrior - investigated, not a gap.** The user asked why
+wowsims doesn't list Battle Shout as an external raid-buff assumption for a DPS Warrior. Traced to
+a real, separate mechanism from `partyBuffs.battleShout` (the generic, class-agnostic buff any
+profile's settings can request, applied via `core/buffs.go:183`'s `ApplyFixedShoutAura`): a
+Warrior's own `class_options.json` has `"defaultShout": "WarriorShoutBattle"`, and
+`sim/tbc-new/sim/warrior/shouts.go:69` shows this makes the sim auto-apply the Battle Shout aura
+during `CharacterBuildPhaseBuffs` - i.e. as a real, pre-pull self-buff, not something the rotation
+has to remember to cast (which is why grepping `arms.apl.json`/`fury.apl.json` for an explicit
+Battle Shout cast turned up nothing - there isn't one, because it's not needed). Both mechanisms
+share the same `BattleShoutCategory` exclusive-effect tag, so our own `partyBuffs.battleShout:
+Improved` (present alongside the class option) doesn't double-stack - it's real but redundant for
+Warrior specifically, harmless, no code change made.
+
+**Real, per-item DPS-effect audit before asking for raid-comp judgment calls.** Rather than treat
+every wowsims-diff line as equally worth a decision, traced each flagged buff's actual sim
+implementation (`sim/tbc-new/sim/core/buffs.go`/`debuffs.go`) to separate genuine DPS-relevant
+discrepancies from pure no-ops for a given class - no point asking the user to make a raid-comp
+call on a buff that provably changes nothing. Confirmed **zero DPS effect for a physical-damage-only
+Warrior**, regardless of on/off: Blessing of Salvation (threat multiplier only), Blessing of Wisdom
+(MP5 - Rage-based), Divine Spirit (Spirit->SpellDamage/HealingPower - no spell damage dealt),
+Shadow Protection (resistance only), Insect Swarm (reduces the *target's* own hit chance - a
+tank-survivability effect, not a DPS one), Judgement of Light/Wisdom (health/mana return - no mana
+bar for Wisdom's case), Arcane Brilliance (+40 Int, no DPS use), and Curse of Elements specifically
+for Warrior (boosts Arcane/Fire/Frost/Shadow damage taken - 100% physical damage dealer benefits
+none of that). These stay exactly as configured, no decision needed either way.
+
+**Real decisions made, informed by an actual raid-comp reference the user provided**
+(wowhead.com/tbc/raid-composition, a real "usual" 40-man comp with 2 Feral Druids, 1 Balance
+Druid, 3 Warlocks (Affliction + 2x Demonology), etc. - its own debuff tracker shows real assumed
+uptimes, not a hypothetical):
+
+- **Curse of Elements (Hunter, both specs): keep Improved.** The reference comp shows 3x Curse of
+  the Elements active with 3 real Warlocks present - dropping to wowsims' conservative "absent"
+  default would understate a debuff that's realistically almost always up. No code change (already
+  `TristateEffectImproved` in `_shared/raid_buffs_received.json`).
+- **Faerie Fire (Hunter, both specs): keep Improved.** The same reference comp shows 1x Improved
+  Faerie Fire explicitly active (a Balance/Boomkin talent per the user's own correction, not
+  Feral as first assumed here). No code change (already Improved in the shared file).
+- **Leader of the Pack (Warrior, both specs): update Regular -> Improved**, matching wowsims - 2
+  real Feral Druids in the reference comp, and the +20 melee crit rating tier is a near-universal
+  talent pickup for endgame Feral builds. `_shared/raid_buffs_received.json` already defaults to
+  Improved; the real fix was removing a per-profile downgrade override
+  (`arms_warrior`/`fury_warrior`'s own `raid_buffs_overlay.json` had explicitly forced
+  `"leaderOfThePack": "TristateEffectRegular"`) and patching the two profiles' committed
+  `settings_template.json` to match a clean rebuild (verified byte-for-byte via a real base+overlay
+  merge check, not just eyeballed). Real, live-sim-verified DPS effect for Arms Warrior:
+  Improved vs Regular is +16.9 DPS at 3000 iterations (1825.9 vs 1809.0) - genuinely real, not a
+  no-op, confirming this was worth fixing.
+- **Expose Weakness raid Hunter Agility - made genuinely phase-aware, not just re-picked a single
+  number.** `debuffs.exposeWeaknessHunterAgility` (the assumed Agility of the raid's own
+  Expose-Weakness-casting Survival Hunter, feeding every profile's own personal sim via
+  `sim/tbc-new/sim/core/debuffs.go`'s `ExposeWeaknessAura` - this affects everyone's AP, not just
+  Hunter's own report) was a flat `1080` baked into every profile's settings, which only ever
+  matched wowsims' own Phase 1 assumption; the wowsims diff flagged `1210` for a later-phase
+  export. Per the user's own real, phase-by-phase progression data (not guessed): Phase 1 = 1080,
+  Phase 2 = 1150, Phase 3 = 1210, Phase 4 = 1210, Phase 5 = 1250. New
+  `profiles/tbc/_shared/expose_weakness_hunter_agility_by_phase.json` holds this table;
+  `core/run_upgrade_sweep.py` overrides `debuffs.exposeWeaknessHunterAgility` at runtime for
+  whichever phase is active (same real temp-settings-file pattern already used for the duration and
+  combat-potion overrides - never mutates the committed `settings_template.json`, which stays at
+  its own real Phase 1 value and is used unmodified whenever phase 1 is requested - confirmed live,
+  no new temp file gets written in that case). Verified: a real live sim call at Phase 3 with the
+  overridden value (1210) ran clean and returned a valid DPS number; the override's own path-
+  selection logic was checked directly for all 5 phases (1080/1150/1210/1210/1250 resolve exactly
+  as expected, Phase 1 short-circuits to the original file).
+
+Next: continue the class-by-class walkthrough for the remaining, not-yet-reviewed profiles (Druid,
+Rogue, Priest, Paladin, Shaman x2, Warlock x3, Mage) - same per-item DPS-effect-first approach.
