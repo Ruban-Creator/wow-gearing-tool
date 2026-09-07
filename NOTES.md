@@ -7409,3 +7409,47 @@ result: item 22044 shows 10000 real gain events across 5000 iterations (2 uses/f
 the mechanic genuinely fires. `conjuredId: 0` is correct as-is, not a bug - no fix needed.
 
 Verified: `check_ledger_consistency.py --skip-html` passes clean for all 15 profiles after the fix.
+
+## 2026-09-07 - Real, confirmed root cause for the "Achieved BiS isn't real BiS" report: armor_ok was too narrow
+
+Picked up per the user's own theory ("are we taking cloth gear into consideration for balance
+druids?"), asked after flagging Béarforceone's Wrist/Waist/Legs/Weapon(idol) as not real BiS
+earlier the same day. Checked `profiles/tbc/balance_druid/loot_eligibility.json`: `armor_ok: [2]`
+(Leather only) - Cloth (`ArmorTypeCloth = 1`, confirmed via `sim/tbc-new/proto/common.proto`) was
+entirely excluded, even though Druids can legally equip Cloth in real WoW.
+
+**Root cause, confirmed via `core/sweep_all_loot.py`'s own comment**: this was a real, deliberate,
+documented scope decision, just one that never got reconsidered per-spec: "Hunter: Leather+Mail,
+Cloth/Plate excluded as a scope decision - technically equippable, never physical-DPS-competitive."
+That reasoning holds for a PHYSICAL spec (armor type doesn't affect a melee/ranged attacker's own
+stat itemization, and lower armor is a straight downgrade) but never should have applied to a
+CASTER sharing that class (Balance Druid, Elemental Shaman) - a caster's item value is spellpower/
+crit/hit-driven, so a cloth piece can genuinely out-itemize the leather/mail equivalent. Likely
+just copied from the melee spec's own file without re-deriving for the caster.
+
+**Per the user, once Warrior/Paladin's own melee case was also raised** ("Warrior and Paladins
+might use leather") - real TBC BiS lists do occasionally include an off-armor-type piece even for
+physical DPS when its itemization is strong enough. Decided to widen `armor_ok` for EVERY profile
+to list every armor type that class can legally equip (not just its own top tier), accepting the
+real, deliberate increase in candidate-pool size/full-sweep compute time this causes:
+- Warrior/Paladin: `[3,4]` -> `[1,2,3,4]` (arms_warrior, fury_warrior, retribution_paladin)
+- Hunter/Shaman: `[2,3]`/`[3]` -> `[1,2,3]` (survival_hunter, beastmastery_hunter,
+  elemental_shaman, enhancement_shaman)
+- Rogue/Druid: `[2]` -> `[1,2]` (combat_rogue, balance_druid, feral_cat_druid)
+- Priest/Mage/Warlock: already `[1]` (Cloth-only classes) - correct, no change.
+
+**Real, live-verified effect - ran a genuinely fresh full sweep for Béarforceone (Balance Druid,
+Phase 1) after the fix**: 94 real cloth-armor items now appear in the eligible pool (zero before).
+The previously-flagged non-BiS slots are GONE from "Achieved BiS" entirely - Wrist, Waist, and Legs
+now show real, resolved upgrade candidates instead (Bracers of Havok +9.8 DPS [Crafted, BiS until
+P1], Belt of Divine Inspiration +16.1 DPS [Gruul's Lair drop], Spellstrike Pants +10.8 DPS [Crafted,
+BiS until P2], among several others per slot) - exactly the slots the user's own real-game knowledge
+flagged as wrong. "Achieved BiS" now correctly shows only Head/Shoulder/Chest/Weapon - a real,
+substantive, verified fix, not a cosmetic one.
+
+Updated `core/sweep_all_loot.py`'s own docstring to describe the new, corrected reasoning (so a
+future reader doesn't rediscover the old "not worth the compute" framing as if it were still
+current). Verified: `check_ledger_consistency.py --skip-html` passes clean for all 15 profiles
+(structural check against each profile's existing cached report - a full fresh sweep for the other
+9 affected profiles wasn't re-run this pass given the ~3-minute-per-profile cost, but the fix is the
+same shared, generic code path already proven live for Balance Druid).

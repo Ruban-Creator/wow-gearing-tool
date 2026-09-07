@@ -10,9 +10,18 @@ Eligibility, all from the DB's own fields plus one profile-supplied file
 allowlists, Stage 6.1 - previously hardcoded Hunter constants, generalized
 once Arms Warrior became the second real profile to test this against):
 - classAllowlist (if present) must include the profile's class_id.
-- Armor pieces: armorType in the profile's armor_ok list (Hunter: Leather+
-  Mail, Cloth/Plate excluded as a scope decision - technically equippable,
-  never physical-DPS-competitive, not worth the compute; Warrior: Mail+Plate).
+- Armor pieces: armorType in the profile's armor_ok list. Reversed 2026-09-07 -
+  every profile's armor_ok now lists EVERY armor type that class can legally
+  equip (Cloth up through its own max proficiency: Hunter/Shaman Leather+Mail+
+  Cloth, Warrior/Paladin Plate+Mail+Leather+Cloth, Rogue/Druid Leather+Cloth,
+  Priest/Mage/Warlock Cloth only), not just the class's own "native" top tier.
+  Originally scoped down to just the top tier or two ("never physical-DPS-
+  competitive, not worth the compute") - reopened per the user: real TBC BiS
+  lists do occasionally include an off-armor-type piece (a caster's cloth item
+  out-itemizing the leather/mail equivalent is common; even a physical spec's
+  plate/mail slot can lose to a leather/cloth piece with strong enough
+  itemization). Real, meaningful increase in candidate-pool size/full-sweep
+  compute time for every profile - accepted deliberately, not an oversight.
 - Weapons: weaponType in the profile's weapon_ok list (real per-class TBC
   weapon proficiencies).
 - Ranged: rangedWeaponType in the profile's ranged_ok list.
