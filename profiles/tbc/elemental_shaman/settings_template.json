@@ -27,7 +27,7 @@
     "insectSwarm": true
   },
   "partyBuffs": {
-    "ferociousInspiration": 1,
+    "ferociousInspiration": 0,
     "leaderOfThePack": "TristateEffectMissing",
     "drums": "LesserDrumsOfBattle",
     "graceOfAirTotem": "TristateEffectMissing",

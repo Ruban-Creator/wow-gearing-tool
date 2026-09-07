@@ -2,6 +2,7 @@
   "raidBuffs": {},
   "debuffs": {},
   "partyBuffs": {
+    "ferociousInspiration": 0,
     "graceOfAirTotem": "TristateEffectMissing",
     "strengthOfEarthTotem": "TristateEffectMissing",
     "windfuryTotem": "TristateEffectMissing",

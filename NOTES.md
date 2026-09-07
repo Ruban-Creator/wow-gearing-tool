@@ -7180,4 +7180,34 @@ buff assumptions (missing `manaSpringTotem`/`moonkinAura`/`totemOfWrath`/`wrathO
 destro for now" - left untouched, not part of today's fix, flagged here so a future session doesn't
 need to rediscover it from scratch if this variant becomes relevant again.
 
-Next: Arcane Mage is the last remaining profile in the class-by-class walkthrough.
+**Arcane Mage - zero code changes.** Pure Arcane/Fire spell caster; every physical-damage-taken/
+dealt/AP buff flagged (Battle Shout, Blood Frenzy, Curse of Recklessness, Expose Armor, Faerie Fire,
+Gift of Arthas, Grace of Air/Strength of Earth Totem, Hunter's Mark, Insect Swarm, Judgement of
+Light, Leader of the Pack, Mangle, Sunder Armor, Totem Twisting, Windfury Totem) is a confirmed
+no-op. `isbUptime` (absent, wowsims 0.72) is ALSO a genuine no-op for her specifically, unlike the
+Warlocks above - Improved Shadow Bolt only boosts Shadow-school damage taken, and her real kit
+(Arcane Missiles/Blast, Fireball, Pyroblast, Scorch) deals zero Shadow damage. Ferocious Inspiration
+and Expose Weakness Agility already correct/fixed. This closes the full 15-profile class-by-class
+walkthrough - every profile has now been reviewed against the real wowsims.com comparison.
+
+**Real, repo-wide correction found immediately after: Ferocious Inspiration should never be assumed
+for a pure caster profile.** Every profile's `ferociousInspiration` had been treated as a "usual,
+plausible raid assumption" the same way Curse of Elements/Faerie Fire were earlier in this arc - but
+per the user, this doesn't hold the same way: Ferocious Inspiration comes specifically from a Beast
+Mastery Hunter's own pet, and real raids conventionally compose groups by ROLE (a melee cluster and a
+caster cluster), specifically so melee-synergy buffs like this one reach the melee group efficiently
+while casters get their own totems/Arcane Brilliance in a separate group - "you usually don't put BM
+Hunters into caster groups." Unlike the earlier Curse of Elements/Faerie Fire calls (where the
+specific reference comp's exact grouping was explicitly NOT meant to be read as a hard rule, since any
+raid could plausibly slot those classes differently), this is a real, general raid-composition
+convention, not an artifact of one example comp. Removed `ferociousInspiration` (set to `0`, gated by
+the sim's own `partyBuffs.FerociousInspiration > 0` check, `sim/tbc-new/sim/core/buffs.go:243`) from
+all 7 pure-caster profiles' `raid_buffs_overlay.json` and committed `settings_template.json`: Balance
+Druid, Elemental Shaman, all 3 Warlocks, Shadow Priest, Arcane Mage. Left unchanged (still correctly
+assumed at 1, or 2 for the two Warrior profiles' own override) for the 8 physical/melee-adjacent
+profiles: Survival/Beastmastery Hunter, Arms/Fury Warrior, Combat Rogue, Feral Cat Druid, Enhancement
+Shaman, Retribution Paladin - all plausible real groupmates for a BM Hunter. Verified byte-exact
+against a clean base+overlay rebuild across all 15 profiles; real, live-sim-confirmed DPS effect for
+Arcane Mage (synthetic fixture, 3000 iterations): -83.5 DPS (~3% of her total), a genuinely
+meaningful correction to that profile's reported baseline/candidate DPS going forward, not a rounding
+adjustment.

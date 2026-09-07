@@ -5,6 +5,7 @@
     "isbUptime": 0.59
   },
   "partyBuffs": {
+    "ferociousInspiration": 0,
     "graceOfAirTotem": "TristateEffectMissing",
     "strengthOfEarthTotem": "TristateEffectMissing",
     "windfuryTotem": "TristateEffectMissing",

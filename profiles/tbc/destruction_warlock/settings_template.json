@@ -29,7 +29,7 @@
     "isbUptime": 0.59
   },
   "partyBuffs": {
-    "ferociousInspiration": 1,
+    "ferociousInspiration": 0,
     "leaderOfThePack": "TristateEffectMissing",
     "drums": "LesserDrumsOfBattle",
     "graceOfAirTotem": "TristateEffectMissing",
