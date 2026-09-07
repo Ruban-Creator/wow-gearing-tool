@@ -600,9 +600,33 @@ const BUFF_SPELL_IDS = {
   graceOfAirTotem: 25359, leaderOfThePack: 17007, manaSpringTotem: 25570,
   manaTideTotems: 16190, moonkinAura: 24907, sanctityAura: 20218,
   strengthOfEarthTotem: 25528, totemOfWrath: 30706, windfuryTotem: 25587,
-  wrathOfAirTotem: 3738,
+  wrathOfAirTotem: 3738, drums: 35476,
   blessingOfKings: 20217, blessingOfMight: 27141, blessingOfSalvation: 25895,
   blessingOfWisdom: 25894, innervates: 29166, unleashedRage: 30809,
+  // Real bug fixed 2026-09-07 (caught live): these two were simply absent
+  // from this map, so their chips silently fell back to plain, unlinked
+  // text - not a wowhead-rewrite bug like the suffix one above, just a real
+  // missing entry. Spell id sourced from sim/tbc-new/sim/core/debuffs.go's
+  // own ExposeWeaknessAura (ActionID 34503) - the sim's own synthetic aura
+  // for this debuff, not a guess. `drums` above covers only the Battle
+  // variant (35476) since that's the only one any real profile currently
+  // uses (confirmed via grep) - a future profile using a War variant
+  // (35475) would need its own value-aware lookup, not just this key.
+  exposeWeaknessUptime: 34503, exposeWeaknessHunterAgility: 34503,
+};
+// Real second bug fixed 2026-09-07, caught live right after the first fix
+// shipped: exposeWeaknessUptime/exposeWeaknessHunterAgility are two SEPARATE
+// config values sharing the SAME real spell id (34503) - wowhead's own
+// script rewrites the linked text to that one spell's real name ("Expose
+// Weakness") for both, which is fine on its own, but the ONLY thing that
+// used to distinguish the two chips ("Uptime" vs "Hunter Agility") was
+// baked into that same now-overwritten label, not the suffix - so both
+// chips collapsed to "Expose Weakness: <number>" with no way to tell which
+// number was which. Real fix: a real, per-key qualifier that stays outside
+// the wowhead-linked text, same as the value suffix already does.
+const LABEL_QUALIFIERS = {
+  exposeWeaknessUptime: ' (uptime)',
+  exposeWeaknessHunterAgility: ' (source Agility)',
 };
 function whSpellLink(text, spellId){
   const safe = escapeHtml(text);
@@ -613,13 +637,26 @@ function buffChipText(key, value){
   if (value === false || value === 0 || value === null || value === undefined) return null;
   if (value === 'TristateEffectMissing') return null;
   const label = humanizeKey(key);
-  let text;
-  if (value === true || value === 'TristateEffectRegular') text = label;
-  else if (value === 'TristateEffectImproved') text = label + ' (Improved)';
-  else if (typeof value === 'number') text = label + ': ' + value;
-  else if (typeof value === 'string') text = label + ': ' + humanizeKey(value);
-  else text = label;
-  return {text, html: whSpellLink(text, BUFF_SPELL_IDS[key])};
+  const qualifier = LABEL_QUALIFIERS[key] || '';
+  // Real bug fixed 2026-09-07 (caught live by the user): a rank/count suffix
+  // ("(Improved)", ": 1") used to be baked into the SAME text wowhead's own
+  // tooltip script wraps in the <a data-type="spell"> link - that script
+  // rewrites the link's own displayed text to the spell's real database
+  // name once its icon/tooltip loads, silently discarding whatever suffix
+  // we'd appended. Confirmed live: "Power Word: Fortitude (Improved)" and
+  // "Ferocious Inspiration: 1" both rendered with the suffix missing.
+  // Fix: the suffix now lives OUTSIDE the wowhead-linked element entirely,
+  // as its own escaped text immediately after - wowhead's script only ever
+  // touches the <a> it attached its icon to, never a later sibling.
+  let valueSuffix = '';
+  if (value === true || value === 'TristateEffectRegular') valueSuffix = '';
+  else if (value === 'TristateEffectImproved') valueSuffix = ' (Improved)';
+  else if (typeof value === 'number') valueSuffix = ': ' + value;
+  else if (typeof value === 'string') valueSuffix = ': ' + humanizeKey(value);
+  const suffix = qualifier + valueSuffix;
+  const text = label + suffix;
+  const html = whSpellLink(label, BUFF_SPELL_IDS[key]) + escapeHtml(suffix);
+  return {text, html};
 }
 // Backlog #19's own section moved behind a header button + modal 2026-09-06
 // per the user - an always-open inline section was clutter most readers

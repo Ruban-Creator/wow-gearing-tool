@@ -6888,3 +6888,87 @@ All 6 profiles' `settings_template.json` regenerated, re-swept, ledger-rebuilt, 
 1169/0). The scratch tool (`verify_ring_enchants.py`) is not checked in - narrow, one-off, real
 candidate list hardcoded from this session's own direct DB lookup; if a future profile needs the
 same treatment, the 4 real candidate ids are now documented here, not lost.
+
+## 2026-09-07 - Real, live wowsims.com buff-defaults comparison + 3 real "Assumed Raid Buffs"
+   rendering bugs found and fixed (caught live by the user while reviewing the comparison)
+
+Per the user's own follow-up on the mechanical half of the raid-buff-realism TODO item: captured
+every one of the 15 profiles' real default buffs directly from wowsims.com's own live site via its
+real Export → JSON feature (not screenshots/icon-state guessing - that was tried first and proved
+unreliable, see below), then diffed against what each of our own profiles actually assumes. Real
+result: 265 total differences across 15 profiles (226 "we assume it, wowsims doesn't" - the
+expected, already-known maximalist-shared-baseline pattern; 22 "wowsims assumes it, we don't" -
+real, previously-unknown gaps in OUR OWN settings, e.g. no Warlock spec assumes Shadow
+Weaving/Shadow Embrace/Screech even though wowsims does, Balance Druid is missing Demoralizing
+Roar/Shout + Thunderclap + Moonkin Aura + Scorpid Sting, Retribution Paladin is missing its own
+real 2pc T4 Judgement of Command bonus; 15 "both assume it, different value" - mostly Expose
+Weakness's source-Agility value, which we hardcode at 1080 everywhere but wowsims varies
+1000-1210 per class/topology). Delivered as two Artifact pages for the user's own review (a
+per-profile buff matrix, and the wowsims-comparison/discrepancy report) - raid-comp realism calls
+deliberately left to the user, not decided unilaterally.
+
+**Real methodology finding, not just data**: wowsims' own site has NO single, one-size "default" -
+its buffs/debuffs panel genuinely differs by which Preset Configuration is selected, confirmed by
+the user's own manual cross-check (Hunter's 2H preset assumes Windfury Totem + Totem Twisting that
+the DW preset doesn't, and Faerie Fire at a different rank). Real, live decision with the user: use
+the DW preset for Hunter comparisons is wrong given our own tool's melee-weave feature genuinely
+supports 2H too - switched Hunter's comparison to the 2H preset specifically per the user's own
+call, re-diffed (3 real discrepancies for Hunter, down from 4, with the false windfury/totem-
+twisting alarms gone). Every other profile's comparison stays on whatever was its own single/
+primary preset, per the user's own explicit "this will only matter for hunter I think" - they'll
+manually spot-check any other profile that looks off rather than have every profile re-verified
+against every alternate preset up front.
+
+**Real automation-reliability finding, not fixed, just routed around**: wowsims.com's own "Export"
+dropdown and its "JSON" menu item proved genuinely unreliable to click programmatically across
+THREE different automation paths tried in sequence (the in-app Browser pane's viewport-emulation
+coordinate space turned out scaled ~0.93x from the real click-target space, causing systematic
+misclicks; computer-use's own browser tier is read-only by design; even Claude-in-Chrome's real,
+trusted OS-level clicks on the correctly-identified element intermittently failed to register on
+this specific Bootstrap dropdown, cause not fully understood - possibly a real conflict between the
+extension's synthetic event dispatch and this component's own outside-click-to-close listener).
+Real, pragmatic resolution: the user did the actual clicking themselves (faster and fully reliable
+for them), Claude read the resulting JSON export via `document.querySelector('.exporter-textarea')`
+each time - a real, live example of falling back to the user for the one interaction step
+automation couldn't do reliably, rather than spending more time forcing it.
+
+**Three real, previously-undiscovered rendering bugs in the "Assumed Raid Buffs" feature itself
+(shipped 2026-09-06, backlog #19), caught live by the user cross-referencing the rendered report
+against the raw JSON while reviewing the comparison - not something either data-collection effort
+above was looking for:**
+
+1. **Wowhead's own tooltip script silently discards any text we append to a buff chip's label.**
+   `report_template.html`'s `whSpellLink()` wrapped the ENTIRE chip text (base label + our own
+   appended rank/count suffix, e.g. "Power Word: Fortitude (Improved)" or "Ferocious Inspiration:
+   1") inside the same `<a data-type="spell">` element Wowhead's own real tooltip script attaches
+   its icon to - that script rewrites the link's own displayed text to the spell's real database
+   name once it loads, which is just "Power Word: Fortitude" or "Ferocious Inspiration", silently
+   erasing our own appended info. Confirmed live in a real rendered report: every Improved-rank
+   buff and every numeric-count buff (Ferocious Inspiration's real stack count, Totem of Wrath,
+   Mana Tide Totems) has been displaying as if it were the plain/Regular version or with no count
+   at all, in every report, since this feature shipped the day before. Real fix: the suffix now
+   lives OUTSIDE the wowhead-linked element as its own separately-escaped text node - Wowhead's
+   script only ever touches the `<a>` element itself, never a text sibling after it.
+2. **Two real buffs had no spell-ID entry in `BUFF_SPELL_IDS` at all** (Expose Weakness, Drums) -
+   not a Wowhead-script issue, just a real, plain missing map entry, so their chips fell back to
+   unlinked plain text with no icon/tooltip. Real ids sourced directly from the sim's own Go source
+   (`sim/tbc-new/sim/core/debuffs.go`'s `ExposeWeaknessAura`, `ActionID{SpellID: 34503}`; `buffs.go`'s
+   `drumsSpellConfig`, `ActionID{SpellID: 35476}` for the Battle variant - the only one any real
+   profile currently uses, confirmed via grep), not guessed.
+3. **A real, second-order bug from fix #1's own change, caught immediately after it shipped**:
+   `exposeWeaknessUptime` and `exposeWeaknessHunterAgility` are two separate config values that
+   share the SAME real spell id (34503) - once fix #1 moved the numeric suffix outside the link,
+   Wowhead's script still rewrote BOTH chips' linked text to the same generic "Expose Weakness",
+   collapsing what used to (accidentally) read as two distinct labels into two identical-looking
+   chips differing only by their trailing number, with no way to tell which was which. Real fix: a
+   new `LABEL_QUALIFIERS` map carries the real disambiguating text ("(uptime)", "(source Agility)")
+   as part of the suffix (outside the link) rather than the label (inside it) - confirmed live,
+   renders as "Expose Weakness (uptime): 0.9" and "Expose Weakness (source Agility): 1080".
+
+Verified live via a real render (`core/render_report.py` + the actual `character.json`/
+`ledger_data_*.json` on disk for Béarforceone and Lerynia, opened in-browser) after each of the 3
+fixes, not just read from source - confirmed the exact real chip HTML for Power Word: Fortitude,
+Ferocious Inspiration, Drums, and both Expose Weakness chips all render correctly with their real
+Wowhead icon/link AND their own real distinguishing info intact. No other `BUFF_SPELL_IDS` entry
+shares a spell id (checked directly), so this exact collision class of bug is now fully closed, not
+just patched for the one case found.
