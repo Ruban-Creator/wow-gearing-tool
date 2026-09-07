@@ -8,6 +8,16 @@ version). For the in-game companion addon's own, separate changelog, see
 Version format: `{stage} - v{major.minor}.{build}`, e.g. `Pre-Release - v0.7.0001`. See
 `core/version.py` for the real bump rules.
 
+## Pre-Release - v0.7.0006 (2026-09-07)
+
+- **Real bug fix**: found and fixed the real cause of Run Report sometimes silently failing to
+  start at all on a character with no cached data yet (a fresh install, or a character run for the
+  first time) - a pre-flight check could crash invisibly before the actual sweep ever got a chance
+  to run. Run Report should now always start, even on a genuinely first-ever run.
+- **Coverage improvement**: 6 more profiles (Balance Druid, Enhancement Shaman, all 3 Warlock
+  specs, Arcane Mage) gained a real, verified ring enchant recommendation where none existed
+  before.
+
 ## Pre-Release - v0.7.0005 (2026-09-07)
 
 - **Real accuracy fix**: your report's "Baseline DPS" now reflects your gear exactly as it really
