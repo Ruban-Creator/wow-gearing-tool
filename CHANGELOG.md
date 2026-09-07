@@ -8,6 +8,13 @@ version). For the in-game companion addon's own, separate changelog, see
 Version format: `{stage} - v{major.minor}.{build}`, e.g. `Pre-Release - v0.7.0001`. See
 `core/version.py` for the real bump rules.
 
+## Pre-Release - v0.7.0008 (2026-09-07)
+
+- **Real bug fix**: the "out of mana" warning before Run Report now correctly appears on a
+  character's very first run, not just the second - it used to skip itself silently the first time
+  since no cached character data existed yet to check against. Confirmed fixed via a genuine
+  fresh-install test.
+
 ## Pre-Release - v0.7.0007 (2026-09-07)
 
 - **Accuracy pass across all 15 class/spec profiles**: reconciled every profile's assumed raid
