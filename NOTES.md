@@ -7108,6 +7108,76 @@ per-character gear difference, not a shared raid-comp question). Verified byte-e
 base+overlay rebuild across all 15 profiles, and a real live sim call confirmed the new
 `manaTideTotems` key works end to end (1720.8 DPS, no error).
 
-Next: continue the class-by-class walkthrough for the remaining, not-yet-reviewed profiles
-(Retribution Paladin, Elemental/Enhancement Shaman, Affliction/Demonology/Destruction Warlock,
-Arcane Mage) - same per-item DPS-effect-first approach.
+**Retribution Paladin - zero code changes, two items worth explaining.** Every physical/threat/mana
+no-op already established elsewhere (Arcane Brilliance, Blessing of Salvation/Wisdom, Divine Spirit,
+Insect Swarm, Judgement of Light, Power Word Fortitude, Shadow Protection) applies here too. Sanctity
+Aura (`ours: Missing`) is self-applied for any Paladin with the talent
+(`sim/tbc-new/sim/paladin/talents.go:36`), same self-cast pattern as Battle Shout/Moonkin Aura.
+`jocRetribution2pt4` (`ours: absent, wowsims: true`) looked like a real missing setting - it's a real
+proto field (`Debuffs.joc_retribution_2pt4`) but grepping the ENTIRE sim and UI source trees found it
+consumed nowhere in this engine version - a dead field wowsims' own website still defaults to true
+even though it does nothing in the pinned build, matching the already-known "preset field
+non-functional in this engine version" gotcha in CLASSES.md. Gift of Arthas/Mangle/Unleashed
+Rage/Blessing of Might/Gift of the Wild/Ferocious Inspiration were all already correctly assumed.
+
+**Elemental Shaman - zero code changes.** Pure Nature-spell caster; every AP/melee-physical buff
+flagged (Battle Shout, Blessing of Might, Grace of Air/Strength of Earth Totem, Leader of the Pack,
+Unleashed Rage, Windfury Totem, Totem Twisting) is a confirmed no-op. Drums of Battle (grants BOTH
+melee and spell haste - real, already correctly assumed) and Ferocious Inspiration already correct.
+`shadowPriestDps: 0` vs wowsims' 800 - checked against the reference comp's grouping (Elemental sits
+in Group 3, the Shadow Priest in Group 4 - same "different group, no Vampiric Touch mana return"
+reasoning already established for Balance Druid) - 0 is correct here too.
+
+**Enhancement Shaman - zero code changes, confirmed via her actual real APL, not inferred.**
+`windfuryTotem`/`graceOfAirTotem`/`strengthOfEarthTotem` all show `Missing` in her settings, which
+looked like real gaps until checking `sim/tbc-new/ui/shaman/enhancement/apls/default.apl.json`
+directly - she casts Windfury Totem (spell 25587) herself and totem-twists it with Grace of Air
+(25359), plus maintains her own Earth/Water totems, right there in her real rotation. She's not
+depending on any external assumption - she generates these herself, so `Missing` is the honest,
+correct value. Every other flagged item (Blessing of Salvation/Wisdom, Divine Spirit, Insect Swarm,
+Judgement of Light, Screech, Shadow Protection) is a confirmed no-op for her physical damage.
+
+**Warlock (Affliction/Demonology/Destruction) - two real, repo-wide gaps found and fixed; one
+static Destro-Fire variant left as-is per the user.** Every physical/AP/threat no-op already
+established elsewhere applies to all 3 specs (100% spell-damage casters) - Battle Shout, Blessing of
+Might/Salvation, Grace of Air/Strength of Earth Totem, Insect Swarm, Judgement of Light, Leader of
+the Pack, Screech, Shadow Protection, Totem Twisting, Unleashed Rage, Windfury Totem all confirmed
+no-ops; Shadow Embrace specifically debuffs PHYSICAL damage taken (checked source), also a no-op for
+a 100%-spell-damage class despite the name suggesting otherwise. Two real, missing gaps found and
+fixed, added to all 3 profiles' `raid_buffs_overlay.json` (`debuffs` block) and their committed
+`settings_template.json`:
+- **Shadow Weaving: `true`.** A real target-side debuff (+2%/stack, up to 10% Shadow damage taken,
+  `sim/tbc-new/sim/core/debuffs.go:686`) from a Shadow Priest's own casts - unlike Vampiric Touch's
+  party-scoped mana return, this applies to the TARGET, so it benefits the whole raid regardless of
+  grouping. All 3 specs deal real Shadow damage; the reference comp has exactly 1 Shadow Priest.
+  Per the user, agreed this should be assumed true.
+- **`isbUptime` (Improved Shadow Bolt debuff uptime): 0.72/0.72/0.59** matching wowsims' own
+  per-spec capture. Traced the real mechanism first (`debuffs.go:519-544`): at `uptime == 0` (our
+  prior, effectively-absent state) the sim tracks this DYNAMICALLY from the simmed character's own
+  landed Shadow Bolt casts; a nonzero value instead force-applies a STATIC assumed uptime regardless
+  of her own actual rotation. Initially looked like our dynamic tracking might be MORE accurate than
+  wowsims' static assumption (self-cast Shadow Bolt already lands real hits in every Warlock's own
+  rotation) - but per the user's correction, the real comp has 3 Warlocks total, and the debuff is
+  single-target/shared: another Warlock's Shadow Bolt lands can ALSO maintain it, something our solo
+  individual sim genuinely can't see (same fundamental limitation Expose Weakness's own analytical
+  workaround exists for) - so wowsims' static, multi-Warlock-aware uptime is the more honest choice
+  here, not a gap to leave alone.
+
+Real, live-sim-verified DPS effect for all 3 specs (synthetic fixtures, 3000 iterations, corrected
+after an initial test-script bug reused the same temp filename across profiles and silently hit a
+stale cache entry - caught by noticing 3 different specs produced an identical result to 12
+significant digits, refixed with per-profile-unique temp filenames): Affliction +242.2 DPS,
+Demonology +252.2 DPS, Destruction +272.4 DPS - roughly 9-10% of total DPS each, genuinely
+significant, not a rounding effect.
+
+**Found, explicitly deferred per the user**: `destruction_warlock/settings_template_fire.json` (the
+alternate Destro-Fire build, not part of the automated sweep pipeline per its own `profile.json`
+note - manually-verified only) has drifted significantly stale from the main settings file's raid-
+buff assumptions (missing `manaSpringTotem`/`moonkinAura`/`totemOfWrath`/`wrathOfAirTotem`/
+`eyeOfTheNight`/`chainOfTheTwilightOwl` entirely, and showing stale values for
+`leaderOfThePack`/`graceOfAirTotem`/`strengthOfEarthTotem`/`windfuryTotem`/`battleShout`/
+`totemTwisting` that don't match any of today's fixes either). Per the user: "we will forfeit fire
+destro for now" - left untouched, not part of today's fix, flagged here so a future session doesn't
+need to rediscover it from scratch if this variant becomes relevant again.
+
+Next: Arcane Mage is the last remaining profile in the class-by-class walkthrough.

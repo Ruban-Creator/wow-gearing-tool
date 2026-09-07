@@ -24,7 +24,9 @@
     "huntersMark": "TristateEffectImproved",
     "exposeWeaknessUptime": 0.9,
     "exposeWeaknessHunterAgility": 1080,
-    "insectSwarm": true
+    "insectSwarm": true,
+    "shadowWeaving": true,
+    "isbUptime": 0.72
   },
   "partyBuffs": {
     "ferociousInspiration": 1,

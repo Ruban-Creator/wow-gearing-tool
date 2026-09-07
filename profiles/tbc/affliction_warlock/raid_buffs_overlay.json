@@ -1,6 +1,9 @@
 {
   "raidBuffs": {},
-  "debuffs": {},
+  "debuffs": {
+    "shadowWeaving": true,
+    "isbUptime": 0.72
+  },
   "partyBuffs": {
     "graceOfAirTotem": "TristateEffectMissing",
     "strengthOfEarthTotem": "TristateEffectMissing",
