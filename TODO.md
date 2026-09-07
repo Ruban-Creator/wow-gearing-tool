@@ -85,17 +85,21 @@ a mix of real removals and real new finds. Full per-profile before/after table i
 2026-09-07 entry. All 15 profiles re-swept, ledger-rebuilt, and `check_ledger_consistency.py --skip-
 html` clean afterward.
 
-## Ring-enchant coverage gap (found during Stage 2 of the baseline-honesty plan, 2026-09-07)
+## Ring-enchant coverage gap - CLOSED, 2026-09-07
 
-Several caster profiles (Balance Druid, Enhancement Shaman, all 3 Warlocks, Arcane Mage, Shadow
-Priest, Elemental Shaman) are missing a `default_enchants.json` entry for ring1/ring2 specifically
-(plus offhand/ranged for topologies that don't use them) - confirmed this isn't a tooling gap:
-`build_default_enchants.py`'s only real source, each profile's own wowsims preset `gear_sets/
-pN.gear.json`, never itemizes a ring enchant at all (Enchanting is an optional profession, so a
-generic preset can't assume one). Filling this needs a genuinely different source than Stage 2's
-existing tooling: hand-research a real, verified generic ring enchant per profile via Wowhead, then
-sim-verify it the same way every other `default_enchants.json` entry already is - not a "just rerun
-the script" fix. Not started.
+Real correction found before starting: 2 of the originally-flagged 8 profiles (Shadow Priest,
+Elemental Shaman) already had real, verified ring coverage - only 6 genuinely lacked it (Balance
+Druid, Enhancement Shaman, all 3 Warlocks, Arcane Mage). Real, DB-sourced fix, not hand-researched
+from Wowhead as originally planned - TBC's own sim DB (`sim/tbc-new/assets/database/db.json`)
+directly confirmed 4 real Enchanting-only ring enchants (`requiredProfession: 3`) that no wowsims
+preset itemizes but the sim engine DOES implement. All 6 profiles re-verified via the same
+isolate-and-verify methodology as `verify_default_enchants.py` (sim decides, never a stat-weight
+guess) - 5 casters picked "Enchant Ring - Spellpower" (+8.98 to +14.48 DPS), the 1 melee profile
+(Enhancement Shaman) correctly picked "Enchant Ring - Stats" instead (+8.45 DPS). See NOTES.md's
+2026-09-07 entry for the full per-profile table and the real candidate ids. The offhand/ranged
+"gap" mentioned in this entry's original wording was never a real actionable one - a caster's real
+offhand item and wand/ranged slot have no enchant in actual TBC, so their absence from
+`default_enchants.json` is correct, not a coverage hole.
 
 ## Fresh-install "Run Report" doesn't start - REAL ROOT CAUSE FOUND AND FIXED (2026-09-07), not yet confirmed on a second machine
 

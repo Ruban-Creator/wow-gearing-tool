@@ -6837,3 +6837,54 @@ already reproduced (missing `character.json`) - if a genuinely fresh installer i
 machine has some OTHER, separate root cause (e.g. a packaging/payload gap), this fix wouldn't catch
 that. TODO.md's entry kept open rather than closed outright, pending a real test on a second
 machine to confirm this was the whole story.
+
+## 2026-09-07 - Ring-enchant coverage gap (TODO.md) closed for real, real DB data found - the
+   earlier "presets never itemize rings" framing was right, but the tracked profile list was stale
+
+Picked up next per the standing overnight backlog authorization. First correction before doing any
+work: re-checked each of the 8 profiles Stage 2's own entry named as missing ring coverage
+(balance_druid, enhancement_shaman, all 3 Warlocks, arcane_mage, shadow_priest, elemental_shaman) -
+**2 of the 8 (shadow_priest, elemental_shaman) already had real, sim-verified `ring1`/`ring2`
+entries** (effectId 2928, survived Stage 2's own re-verification pass untouched since they were
+never flagged as new candidates). The "8 profiles" figure in the earlier entry was itself stale by
+the time this pass started - only 6 genuinely lacked coverage.
+
+**Real, DB-sourced candidate source found, not invented**: TBC genuinely does have 4 real
+Enchanting-only ring enchants (`requiredProfession: 3`, confirmed directly against
+`sim/tbc-new/assets/database/db.json`'s own `enchants` collection, not assumed from general TBC
+knowledge - a first instinct that "TBC has no ring enchants at all, that's a WotLK thing" would have
+been WRONG and was caught by checking the source instead of trusting memory): `2928` "Enchant Ring -
+Spellpower" (+12/+12), `2929` "Enchant Ring - Striking" (some rating, stat index 41 - tested empty
+for every profile tried, so its real identity was never resolved further), `2930` "Enchant Ring -
+Healing Power" (+20/+7), `2931` "Enchant Ring - Stats" (+4 to all 4 primary stats). `wowsims`
+presets never itemize these (Enchanting is optional, matching Stage 2's original framing exactly) -
+but the sim engine DOES implement them, confirmed by real, positive, resolved deltas below.
+`achievable_enchant()`'s existing profession gate already handles per-character achievability at
+read time - no new gating code needed.
+
+**New scratch tool, same isolate-and-verify methodology as `verify_default_enchants.py`'s own
+`verify()`** (strip the tested ring slot's enchant to 0 first for a fair, enchant-neutral reference
+point, then test each of the 4 real candidates against that SAME zero point, keep only the single
+best if it clears `CLEAR_THRESHOLD`) - never a stat-weight guess, the sim decided every case:
+
+| Profile | ring1/ring2 winner | Gain |
+|---|---|---|
+| balance_druid (Béarforceone, real character) | Enchant Ring - Spellpower (2928) | +8.98 DPS |
+| affliction_warlock | Enchant Ring - Spellpower (2928) | +9.83 DPS |
+| demonology_warlock | Enchant Ring - Spellpower (2928) | +12.52 DPS |
+| destruction_warlock | Enchant Ring - Spellpower (2928) | +14.48 DPS |
+| arcane_mage | Enchant Ring - Spellpower (2928) | +12.47 DPS |
+| enhancement_shaman | Enchant Ring - Stats (2931) | +8.45 DPS |
+
+Real, sensible split, not an artifact: every caster profile picked Spellpower, the one MELEE
+profile in this batch (Enhancement Shaman) correctly picked the all-primary-stat enchant instead
+(Striking scored 0 for her too, same as every caster - its real effect, whatever it converts to,
+apparently isn't melee-relevant either, or simply too small to clear the noise floor at 3000
+iterations here). ring1/ring2 came out identical for every profile (expected - both are generic
+slots with no real per-socket distinction), tested independently anyway rather than assumed.
+
+All 6 profiles' `settings_template.json` regenerated, re-swept, ledger-rebuilt, and
+`check_ledger_consistency.py --skip-html` clean afterward (234/0, 219/0, 135/0, 147/0, 162/0,
+1169/0). The scratch tool (`verify_ring_enchants.py`) is not checked in - narrow, one-off, real
+candidate list hardcoded from this session's own direct DB lookup; if a future profile needs the
+same treatment, the 4 real candidate ids are now documented here, not lost.
