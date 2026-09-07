@@ -7211,3 +7211,17 @@ against a clean base+overlay rebuild across all 15 profiles; real, live-sim-conf
 Arcane Mage (synthetic fixture, 3000 iterations): -83.5 DPS (~3% of her total), a genuinely
 meaningful correction to that profile's reported baseline/candidate DPS going forward, not a rounding
 adjustment.
+
+**Destro-Fire's stale `settings_template_fire.json` - investigated what full support would require,
+closed as a permanent non-issue, not a deferred backlog item.** The user asked what it would take to
+bring this alternate build up to full parity. Real findings: wowsims itself only ever shipped Phase 1
+gear-set data for it (`destro_fire_preraid.gear.json`/`destro_fire_t4.gear.json` - no t5/t6/swp
+equivalents exist anywhere in the sim's source), alongside a real, genuinely distinct stat-weight
+preset (`P1_DESTRUCTION_FIRE_EP`, Fire/Shadow-damage-weighted, `presets.ts:56-58`) that our tool has
+never actually used for this file. A real multi-phase candidate pool/reference BiS is blocked on that
+missing upstream data - per this project's own "never invent data" rule, hand-curating a Phase 2-5
+gear progression from Wowhead was the only alternative, which goes against the established
+preset-sourcing preference and is real, substantial curation work on its own. Per the user, this
+isn't actually a gap to fill: "fire destro usually becomes bad after p1" - the build stops being
+competitive past Phase 1 in real theorycrafting, which is exactly why wowsims never built out its
+gear progression further. Closed permanently, not revisited unless that changes.
