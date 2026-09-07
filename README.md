@@ -9,6 +9,9 @@
   <a href="https://github.com/wowsims/tbc-new">wowsims/tbc-new</a>'s own simulation engine.
 </p>
 
+> **⚠️ Pre-release.** RGT is under active, daily development - bugs get found and fixed
+> continuously, and things may change without notice. It's usable today, but expect rough edges.
+
 ---
 
 ## What it does
@@ -46,9 +49,15 @@ cheap linear approximation of this; RGT exists to be right exactly where that ap
 
 ## Status
 
-Actively developed, pre-release. 15 class/spec profiles are built and verified; a packaged
-Windows installer exists but hasn't been published as a GitHub Release yet. If you want to run it
-today, you'll need to build from source - see below.
+Actively developed, pre-release. 15 class/spec profiles are built and verified. A packaged
+Windows installer is available below - building from source is only needed if you want to
+contribute or run off the latest, unreleased commit.
+
+## Download
+
+**[Latest release](https://github.com/Ruban-Creator/wow-gearing-tool/releases/latest)** - download
+`RGT-Setup.exe` and run it. Windows may show a SmartScreen warning since the installer isn't
+code-signed yet - click "More info" → "Run anyway".
 
 ## Building from source
 
